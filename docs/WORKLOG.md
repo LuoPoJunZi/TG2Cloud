@@ -540,7 +540,8 @@ WebDAV/rclone/Telegram 链路和最终双 EXE frozen 验收尚未完成。
 
 ### 最终 Release artifacts
 
-`dist/` 仅包含以下三个正式文件：
+本地 Phase 5 构建时，`dist/` 仅包含以下三个验证文件；它们是本机冻结验证证据，
+不是 GitHub Release 上传来源：
 
 - `TG2Cloud-CloudDrive2-Deployer.exe`：54,454,325 bytes；SHA256
   `ee1619185e9ecf39573f017fe4a0c818b63ecfd14b73d2f0fc815f8bda656ec7`。
@@ -578,10 +579,33 @@ Release Blocker；在 `docs/MANUAL_ACCEPTANCE.md` 的关键真实环境项目完
   Release 均不在本阶段创建。
 - 本阶段只整理 README、CHANGELOG、RELEASE_NOTES、Checklist 和 WORKLOG；不修改运行源码、
   Logo、版本或构建配置，也不重新运行 PyInstaller。
-- 上传资产限定为两个现有 PySide6 EXE 和 `SHA256SUMS.txt`。发布前重新计算确认：
-  CloudDrive2 为 `ee1619185e9ecf39573f017fe4a0c818b63ecfd14b73d2f0fc815f8bda656ec7`，
-  OpenList 为 `c486e51a0a2d54b6d768ef3f892784386760263723f23aa342e715de192db172`。
+- Release 资产限定为两个 PySide6 EXE 和 `SHA256SUMS.txt`。本地 Phase 5 的旧 EXE 与哈希
+  只作为本机验证记录，不提交、不手工上传，也不要求与 GitHub Runner 的重现构建一致；
+  Release 校验值必须由 Windows Build Job 对本次实际生成的两个 EXE 计算。
 - Phase 5.1 真实 VPS、WebDAV、Telegram、重复部署、Update、Repair/Backup 和文件规模验收
   继续保持 Pending；RC1 资产发布后不得同名覆盖，发现阻断问题应进入新的 RC。
 - GitHub 发布结果、tag 指向和 source commit 以本阶段最终命令结果及 Release 页面为准；
   不在仓库中记录凭据或尝试让 commit 内容自引用其自身 SHA。
+
+## 2026-09-19 — RC1 GitHub Actions 构建发布修正
+
+- 首次推送 `v1.0.0-rc.1` 后，GitHub Actions Windows Job 通过，但 Linux Job 因
+  ShellCheck `SC1091`/`SC2015` 失败，因此没有创建 GitHub Release，也没有上传 Release assets。
+- 两版 `remote_install.sh` 只做等价的 ShellCheck 收尾：为动态加载的受控 helper 增加 source
+  提示，并把 `A && B || fail` 改为显式 `if`；没有修改 Tunnel、Telegram、SQLite、rclone、
+  streaming、verify 或部署语义。
+- `tests.yml` 以 `shellcheck -x` 校验全部 10 个当前 Shell 脚本，补齐配置保护 helper 和测试
+  harness，避免新脚本遗漏静态检查。
+- 新增 `release.yml`：只响应 `v1.0.0-rc.1` Tag（或显式手动调度），Windows Build Job 在
+  固定 Tag 上执行测试、Ruff 和一次 `build.ps1 -Edition All`；它白名单核对两个 EXE，按本次
+  实际文件生成 `SHA256SUMS.txt`，再上传一个 Actions artifact。
+- Release Job 不运行 `build.ps1`，只下载上述 artifact，重新核验 SHA256 和精确三文件集合，
+  然后创建标题为 `TG2Cloud v1.0.0 RC1` 的 Pre-release 并上传同一组文件。若同名 Release
+  已存在则拒绝覆盖。
+- `.gitignore` 增加全局 `*.exe` 防护；`build/`、`dist/` 继续忽略。本地工具、EXE、dist 和
+  build 不进入提交。
+- 本轮提交前验证：完整 pytest 215 passed、4 skipped、36 subtests passed；Ruff、compileall、
+  官方 ShellCheck 0.11.0、10 个 Bash `-n`、actionlint 1.7.12 和 `git diff --check` 均通过。
+- 由于 RC1 Tag 曾在失败 CI 后提前推送且尚无 Release，本轮将在 `main` Branch CI 全绿后，
+  仅删除并重新创建同名 RC1 Tag，使其准确指向包含发布 Workflow 的已验证提交；不会创建
+  Stable `v1.0.0`。实际 Actions 构建、Release 资产与远端 SHA256 结果仍待远端运行完成。

@@ -1,0 +1,207 @@
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - v1.0.0-rc.1
+
+permissions:
+  actions: read
+  contents: write
+
+env:
+  RELEASE_TAG: v1.0.0-rc.1
+  RELEASE_TITLE: TG2Cloud v1.0.0 RC1
+  RELEASE_ARTIFACT: TG2Cloud-v1.0.0-rc.1-windows
+
+concurrency:
+  group: release-v1.0.0-rc.1
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.preflight.outputs.publish }}
+    steps:
+      - name: Check immutable tag and release state
+        id: preflight
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --silent
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} already exists; nothing will be replaced."
+            echo "publish=false" >> "${GITHUB_OUTPUT}"
+          else
+            echo "publish=true" >> "${GITHUB_OUTPUT}"
+          fi
+
+  windows-build:
+    needs: prepare
+    if: needs.prepare.outputs.publish == 'true'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout immutable release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+
+      - name: Verify checked-out tag
+        shell: pwsh
+        run: |
+          $tag = (git describe --tags --exact-match HEAD).Trim()
+          if ($tag -ne $env:RELEASE_TAG) {
+            throw "Checked out $tag instead of $env:RELEASE_TAG"
+          }
+          Write-Output "Release commit: $((git rev-parse HEAD).Trim())"
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.13"
+
+      - name: Install uv
+        run: python -m pip install uv==0.11.28
+
+      - name: Unit and scenario tests
+        run: >
+          uv run
+          --with-requirements requirements-build.txt
+          --with-requirements payload_clouddrive2/requirements.txt
+          python -m unittest discover -s tests -v
+
+      - name: Ruff
+        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py vps_resources.py payload_clouddrive2/app tests
+
+      - name: Build and self-test Windows EXE once
+        timeout-minutes: 20
+        shell: pwsh
+        run: |
+          $env:TG2CLOUD_BUILD_PYTHON = (Get-Command python -ErrorAction Stop).Source
+          ./build.ps1 -Edition All
+
+      - name: Generate and verify release package
+        shell: pwsh
+        run: |
+          $expectedExe = @(
+            "TG2Cloud-CloudDrive2-Deployer.exe",
+            "TG2Cloud-OpenList-Deployer.exe"
+          )
+          $actualExe = @(
+            Get-ChildItem -LiteralPath ./dist -File -Filter '*.exe' |
+              Sort-Object Name |
+              Select-Object -ExpandProperty Name
+          )
+          if (Compare-Object $expectedExe $actualExe) {
+            throw "Unexpected EXE set: $($actualExe -join ', ')"
+          }
+
+          $hashLines = foreach ($name in $expectedExe) {
+            $hash = (Get-FileHash -LiteralPath "./dist/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
+            "$hash  $name"
+          }
+          $hashLines | Set-Content -LiteralPath ./dist/SHA256SUMS.txt -Encoding ascii
+
+          $expectedAssets = @($expectedExe + 'SHA256SUMS.txt') | Sort-Object
+          $actualAssets = @(
+            Get-ChildItem -LiteralPath ./dist -File |
+              Sort-Object Name |
+              Select-Object -ExpandProperty Name
+          )
+          if (Compare-Object $expectedAssets $actualAssets) {
+            throw "Unexpected release assets: $($actualAssets -join ', ')"
+          }
+          Get-Content -LiteralPath ./dist/SHA256SUMS.txt
+
+      - name: Upload the GitHub-built release package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: ${{ env.RELEASE_ARTIFACT }}
+          path: |
+            dist/TG2Cloud-CloudDrive2-Deployer.exe
+            dist/TG2Cloud-OpenList-Deployer.exe
+            dist/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
+  release:
+    needs:
+      - prepare
+      - windows-build
+    if: >-
+      needs.prepare.outputs.publish == 'true' &&
+      needs.windows-build.result == 'success'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout release notes from the immutable tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Download the Windows Build Job artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: ${{ env.RELEASE_ARTIFACT }}
+          path: release-assets
+
+      - name: Verify downloaded package and SHA256
+        run: |
+          set -euo pipefail
+          mapfile -t actual < <(find release-assets -maxdepth 1 -type f -printf '%f\n' | sort)
+          expected=(
+            SHA256SUMS.txt
+            TG2Cloud-CloudDrive2-Deployer.exe
+            TG2Cloud-OpenList-Deployer.exe
+          )
+          diff <(printf '%s\n' "${expected[@]}") <(printf '%s\n' "${actual[@]}")
+          (
+            cd release-assets
+            sha256sum --check SHA256SUMS.txt
+          )
+
+      - name: Create GitHub pre-release from the same package
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          if gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" >/dev/null 2>&1; then
+            echo "Release ${RELEASE_TAG} appeared after preflight; refusing to replace it." >&2
+            exit 1
+          fi
+          gh release create "${RELEASE_TAG}" \
+            release-assets/TG2Cloud-CloudDrive2-Deployer.exe \
+            release-assets/TG2Cloud-OpenList-Deployer.exe \
+            release-assets/SHA256SUMS.txt \
+            --repo "${GITHUB_REPOSITORY}" \
+            --verify-tag \
+            --prerelease \
+            --title "${RELEASE_TITLE}" \
+            --notes-file RELEASE_NOTES.md
+
+      - name: Verify published pre-release and exact asset set
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json tagName --jq .tagName)" = "${RELEASE_TAG}"
+          test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json name --jq .name)" = "${RELEASE_TITLE}"
+          test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft)" = false
+          test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isPrerelease --jq .isPrerelease)" = true
+          expected=(
+            SHA256SUMS.txt
+            TG2Cloud-CloudDrive2-Deployer.exe
+            TG2Cloud-OpenList-Deployer.exe
+          )
+          mapfile -t actual < <(
+            gh release view "${RELEASE_TAG}" \
+              --repo "${GITHUB_REPOSITORY}" \
+              --json assets \
+              --jq '.assets[].name' | sort
+          )
+          diff <(printf '%s\n' "${expected[@]}") <(printf '%s\n' "${actual[@]}")
+          gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json url --jq .url

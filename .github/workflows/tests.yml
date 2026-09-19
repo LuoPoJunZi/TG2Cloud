@@ -74,15 +74,17 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck rclone
-          shellcheck \
+          shellcheck -x \
             payload_clouddrive2/backup_retention.sh \
+            payload_clouddrive2/preserve_runtime_config.sh \
             payload_clouddrive2/remote_install.sh \
             payload_clouddrive2/repair_clouddrive_network.sh \
             payload_clouddrive2/manage.sh \
             payload_openlist/remote_install.sh \
             payload_openlist/manage.sh \
             payload_openlist/openlist_admin.sh \
-            payload_openlist/preserve_webdav_config.sh
+            payload_openlist/preserve_webdav_config.sh \
+            tests/manage_harness.sh
 
       - name: Set up runtime Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7

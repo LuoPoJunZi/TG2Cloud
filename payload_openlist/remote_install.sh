@@ -139,6 +139,7 @@ PRESERVE_CONFIG_HELPER="$SOURCE_DIR/preserve_webdav_config.sh"
   || fail "部署包缺少现有配置保护脚本"
 # shellcheck disable=SC1090
 source "$PRESERVE_CONFIG_HELPER"
+# shellcheck source=payload_clouddrive2/preserve_runtime_config.sh
 # shellcheck disable=SC1090
 source "$SOURCE_DIR/preserve_runtime_config.sh"
 [[ "$SOURCE_DIR/" != "$INSTALL_DIR/"* && "$INSTALL_DIR/" != "$SOURCE_DIR/"* ]] \
@@ -162,9 +163,10 @@ if [[ -d "$INSTALL_DIR" && ! -f "$INSTALL_DIR/docker-compose.yml" ]] \
   fail "目标安装目录已有非 TG2Cloud 文件：$INSTALL_DIR；不会覆盖，请检查后重新检测"
 fi
 if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
-  grep -Fq "container_name: $BOT_CONTAINER" "$INSTALL_DIR/docker-compose.yml" \
-    && grep -Fq "container_name: $OPENLIST_CONTAINER" "$INSTALL_DIR/docker-compose.yml" \
-    || fail "目标安装目录不是可识别的 TG2Cloud OpenList 部署；不会覆盖，请检查后重新检测"
+  if ! grep -Fq "container_name: $BOT_CONTAINER" "$INSTALL_DIR/docker-compose.yml" \
+    || ! grep -Fq "container_name: $OPENLIST_CONTAINER" "$INSTALL_DIR/docker-compose.yml"; then
+    fail "目标安装目录不是可识别的 TG2Cloud OpenList 部署；不会覆盖，请检查后重新检测"
+  fi
 fi
 sed -i 's/\r$//' "$CONFIG_FILE"
 if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
