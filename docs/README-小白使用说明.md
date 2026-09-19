@@ -539,7 +539,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh check
 
 ## 十、当前验证边界
 
-当前发布边界见 [TG2Cloud v1.0.0 发布检查清单](../TG2Cloud-v1.0.0-RELEASE-CHECKLIST.md)。
+当前发布边界见 [发布说明](../RELEASE_NOTES.md)和 [更新记录](../CHANGELOG.md)。
 源码测试不能代替真实 VPS 与目标云存储的生产环境验收。
 
 由于没有你的真实 VPS、Telegram 和 CloudDrive2 凭据，交付前无法替你完成真实 VPS 的端到端上传测试。

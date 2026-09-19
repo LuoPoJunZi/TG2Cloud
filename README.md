@@ -716,14 +716,9 @@ Windows 上构建 CloudDrive2、OpenList 两个 PySide6 部署器并分别执行
 ## 更多文档
 
 - [小白使用说明](docs/README-小白使用说明.md)
-- [v1.0.0 人工验收清单](docs/MANUAL_ACCEPTANCE.md)
-- [OpenList 实施与验收状态](docs/OPENLIST_IMPLEMENTATION.md)
 - [部署前填写信息清单](docs/填写信息清单.md)
-- 以下为上游 TG115 历史验收资料，不代表 TG2Cloud 当前版本：
-- [v1.6.2 更新与验收记录](docs/v1.6.2-更新与验收.md)
-- [v1.6.1 更新与验收记录](docs/v1.6.1-更新与验收.md)
-- [v1.6.0 优化与验收记录](docs/v1.6.0-优化与验收.md)
-- [验收与复核报告](docs/验收与复核报告.md)
+- [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md)
+- [品牌使用规范](docs/development/BRAND-GUIDE.md)
 - [第三方组件说明](docs/第三方组件说明.md)
 - [更新记录](CHANGELOG.md)
 - [发布说明](RELEASE_NOTES.md)

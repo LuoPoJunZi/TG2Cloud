@@ -14,7 +14,7 @@ assets/brand/
 
 > Source of Truth
 
-Codex 的任务是**使用这些资源**，不是重新设计 Logo。
+开发与发布过程应**使用这些资源**，而不是重新设计 Logo。
 
 ---
 
@@ -239,17 +239,18 @@ tg2cloud-icon-64.png
 修改主体造型
 ```
 
-派生资源必须记录：
+派生资源必须记录在：
 
 ```text
-docs/WORKLOG.md
+assets/brand/README.md
+以及对应的变更说明
 ```
 
 ---
 
 ## 10. 禁止事项
 
-Codex 不得：
+开发和发布过程中不得：
 
 - 重新设计 TG2Cloud 主 Logo；
 - 调用图像生成工具生成另一版；

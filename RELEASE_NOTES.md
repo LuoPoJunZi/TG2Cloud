@@ -48,8 +48,8 @@ TG115、debug 或 test EXE。
 5. 执行 WebDAV 验收，确认出现 `TG2CLOUD_DESTINATION=OK` 后再发送 Telegram 测试文件。
 6. 最后在所用云存储的官方客户端确认文件大小和可打开性。
 
-完整步骤见 [README](README.md)；真实 VPS 发布前验收见
-[人工验收清单](docs/MANUAL_ACCEPTANCE.md)。
+完整安装与验证步骤见 [README](README.md)。本 RC 的真实 VPS、WebDAV、Telegram 与不同文件
+规模验证仍需在用户自己的环境中完成。
 
 ## 旧 TG115 用户
 
@@ -75,14 +75,14 @@ TG2Cloud v1.0.0 不提供 TG115 原地自动升级。新安装使用独立目录
 - 同 Bot Token 多实例冲突由用户避免，没有分布式锁或跨系统 Token 扫描；
 - TG115 不会自动原地迁移到 TG2Cloud；
 - Windows EXE 未使用商业代码签名，SmartScreen 可能显示“未知发布者”；
-- CloudDrive2/OpenList、云存储和 VPS 组合较多，未完成的真实环境项目以
-  `docs/MANUAL_ACCEPTANCE.md` 和 Release Checklist 为准。
+- CloudDrive2/OpenList、云存储和 VPS 组合较多，真实环境验证结果以本 RC 的 GitHub
+  Actions、Release 资产以及用户实际验收为准。
 
 ## 发布状态
 
-当前状态为 **Release Candidate — Manual Acceptance Pending**。自动测试、正式构建、
-frozen 资源和 Windows 本机验证结果记录在 `docs/WORKLOG.md`；真实 VPS、Telegram、WebDAV、
-rclone 和不同文件规模的验收必须按实际结果完成后，才能判定为最终 READY。
+当前状态为 **Release Candidate — Manual Acceptance Pending**。自动测试和 Windows 构建由
+GitHub Actions 执行；真实 VPS、Telegram、WebDAV、rclone 和不同文件规模的验收必须按实际
+结果完成后，才能判定为最终 READY。
 
 TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进而来，继续保留 MIT
 许可证、原作者版权和必要致谢。
