@@ -1,10 +1,10 @@
-# TG2Cloud v1.0.0 Release Candidate
+# TG2Cloud v1.0.0
 
-**GitHub Pre-release：`v1.0.0-rc.1`**
+**GitHub Release：`v1.0.0`**
 
-本次预发布是 TG2Cloud v1.0.0 的 Release Candidate，不是 Stable Release。自动测试、Windows
-双 EXE 构建、frozen 资源、版本元数据和安全静态审计已经完成；真实 VPS、WebDAV、rclone、
-Telegram 端到端和不同文件规模仍待最终人工验收。希望使用稳定版本的用户应等待正式 v1.0.0。
+本次发布的两个 Windows EXE 由 GitHub Actions 从 `v1.0.0` 标签源码构建，附带对本次实际
+构建文件计算的 SHA256。真实 VPS、WebDAV、rclone、Telegram 端到端和不同文件规模仍待用户
+下载 Release 资产后人工验收；自动测试或离线自检不能代替这些实际测试。
 
 TG2Cloud 是一个将 Telegram 私聊中提交的文件自动转存到用户自有云存储的自托管工具：
 
@@ -80,9 +80,8 @@ TG2Cloud v1.0.0 不提供 TG115 原地自动升级。新安装使用独立目录
 
 ## 发布状态
 
-当前状态为 **Release Candidate — Manual Acceptance Pending**。自动测试和 Windows 构建由
-GitHub Actions 执行；真实 VPS、Telegram、WebDAV、rclone 和不同文件规模的验收必须按实际
-结果完成后，才能判定为最终 READY。
+当前版本为 **v1.0.0，真实环境验收待完成**。自动测试和 Windows 构建由 GitHub Actions
+执行；真实 VPS、Telegram、WebDAV、rclone 和不同文件规模的结果以用户实际测试为准。
 
 TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进而来，继续保留 MIT
 许可证、原作者版权和必要致谢。

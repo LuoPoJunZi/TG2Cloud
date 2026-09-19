@@ -25,12 +25,10 @@ CloudDrive2 或 OpenList 中自行挂载的存储。
 本仓库是在原作者 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 基础上的二次开发版本，
 重点加强了任务恢复、磁盘保护、流式传输、状态语义、升级回退、VPS 资源建议和日常诊断。
 
-> 当前版本：**TG2Cloud v1.0.0 Release Candidate**
+> 当前版本：**TG2Cloud v1.0.0**
 >
-> 当前 RC 标签：**v1.0.0-rc.1（GitHub Pre-release）**
->
-> 源码、自动测试和 Windows 构建验证已经完成；真实 VPS、Telegram 和 WebDAV 环境仍在进行
-> 最终人工验收。
+> GitHub Release 的 EXE 由 GitHub Actions Windows Runner 构建。真实 VPS、Telegram 和
+> WebDAV 端到端测试仍待用户在自己的环境中验收。
 
 > 仅转存你有权保存、备份和使用的内容，并遵守 Telegram、所用云存储、CloudDrive2/OpenList、内容来源平台及
 > 所在地的法律法规和服务条款。

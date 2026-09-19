@@ -1,9 +1,10 @@
 # 更新记录
 
-## TG2Cloud v1.0.0（Release Candidate）
+## TG2Cloud v1.0.0
 
-GitHub Pre-release 标签为 `v1.0.0-rc.1`；程序内部版本保持 `1.0.0`。本候选版已完成自动
-测试、Windows 构建和 frozen 资源验收，真实 VPS、WebDAV 与 Telegram 端到端验收仍待完成。
+GitHub Release 标签为 `v1.0.0`；程序内部版本为 `1.0.0`。两个 Windows EXE 由 GitHub
+Actions 从该标签源码构建，并以本次构建实际文件生成 SHA256 校验值。真实 VPS、WebDAV 与
+Telegram 端到端验收仍待用户下载 Release 资产后完成。
 
 - 新安装按 Edition 使用独立的 `tg2cloud-*` 安装目录、备份目录、容器和 Docker Network；
   CloudDrive2 与 OpenList 的内网 WebDAV 主机名同步更新。
