@@ -352,6 +352,42 @@ curl() { return 0; }
                     )
                     self.assertEqual(result.returncode == 0, allowed, result.stderr)
 
+    def test_openlist_port_discovery_does_not_confuse_bot_with_gateway(self) -> None:
+        script = (SOURCE / "payload_openlist/remote_install.sh").read_text(
+            encoding="utf-8"
+        )
+        preflight = "PORT_5244_OWNER=" + script.split("PORT_5244_OWNER=", 1)[1].split(
+            "DOCKER_ROOT_DIR=", 1
+        )[0]
+        harness = (
+            'OPENLIST_CONTAINER="tg2cloud-openlist"\n'
+            'docker() { printf "%s\\n" "$TG2CLOUD_TEST_PS"; }\n'
+            'ss() { :; }\n'
+            'fail() { printf "%s\\n" "$*" >&2; exit 3; }\n'
+            + preflight
+        )
+        cases = (
+            ("gateway_and_bot", "tg2cloud-openlist|127.0.0.1:5244->5244/tcp\ntg2cloud-openlist-bot|", True),
+            ("bot_without_port", "tg2cloud-openlist-bot|", True),
+            ("bot_owns_port", "tg2cloud-openlist-bot|127.0.0.1:5244->5244/tcp", False),
+            ("other_owns_port", "other|127.0.0.1:5244->5244/tcp", False),
+        )
+        for scenario, containers, allowed in cases:
+            with self.subTest(scenario=scenario):
+                result = subprocess.run(
+                    [BASH, "-c", harness],
+                    env=os.environ | {"TG2CLOUD_TEST_PS": containers},
+                    capture_output=True,
+                    timeout=20,
+                    check=False,
+                    **(
+                        {"creationflags": subprocess.CREATE_NO_WINDOW}
+                        if os.name == "nt"
+                        else {}
+                    ),
+                )
+                self.assertEqual(result.returncode == 0, allowed, result.stderr)
+
     def run_openlist_admin_reset(
         self, command_output: str
     ) -> subprocess.CompletedProcess[bytes]:
