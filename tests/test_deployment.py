@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -27,6 +28,56 @@ def bash_path(path: Path) -> str:
 
 @unittest.skipUnless(BASH, "需要 Bash；Linux CI 必须运行脚本故障测试")
 class DeploymentShellTests(unittest.TestCase):
+    def test_clouddrive_discovery_ignores_bot_but_detects_other_gateways(self) -> None:
+        gateway = "tg2cloud-clouddrive2|cloudnas/clouddrive2:latest|127.0.0.1:19798->19798/tcp"
+        bot = "tg2cloud-clouddrive2-bot|tg2cloud-clouddrive2-bot:latest|"
+        legacy = "tg115-clouddrive2|cloudnas/clouddrive2:legacy|"
+        other_gateway = "other-clouddrive2|cloudnas/clouddrive2:latest|"
+        image_matched_gateway = "storage|cloudnas/clouddrive2:latest|"
+        cases = (
+            ("bot_only", (bot, legacy), ()),
+            ("managed_gateway_and_bot", (gateway, bot, legacy), ("tg2cloud-clouddrive2",)),
+            ("gateway_detected_by_image", (bot, image_matched_gateway), ("storage",)),
+            (
+                "multiple_real_gateways",
+                (gateway, bot, legacy, other_gateway),
+                ("tg2cloud-clouddrive2", "other-clouddrive2"),
+            ),
+        )
+        for script_name in ("remote_install.sh", "repair_clouddrive_network.sh"):
+            script = (SOURCE / "payload_clouddrive2" / script_name).read_text(
+                encoding="utf-8"
+            )
+            match = re.search(
+                r"mapfile -t CD2_MATCHES < <\(\n(.*?)\n\s*\)", script, re.DOTALL
+            )
+            self.assertIsNotNone(match, script_name)
+            discovery = match.group(1)
+            harness = (
+                'docker() { printf "%s\\n" "$TG2CLOUD_TEST_PS"; }\n'
+                'BOT_CONTAINER="tg2cloud-clouddrive2-bot"\n'
+                "mapfile -t CD2_MATCHES < <(\n"
+                + discovery
+                + '\n)\nif ((${#CD2_MATCHES[@]})); then '
+                'printf "%s\\n" "${CD2_MATCHES[@]}"; fi\n'
+            )
+            for scenario, containers, expected in cases:
+                with self.subTest(script=script_name, scenario=scenario):
+                    result = subprocess.run(
+                        [BASH, "-c", harness],
+                        env=os.environ | {"TG2CLOUD_TEST_PS": "\n".join(containers)},
+                        capture_output=True,
+                        timeout=20,
+                        check=False,
+                        **(
+                            {"creationflags": subprocess.CREATE_NO_WINDOW}
+                            if os.name == "nt"
+                            else {}
+                        ),
+                    )
+                    self.assertEqual(result.returncode, 0, result.stderr.decode())
+                    self.assertEqual(tuple(result.stdout.decode().splitlines()), expected)
+
     def test_clouddrive_diagnostic_logs_redact_secrets(self) -> None:
         script = (SOURCE / "payload_clouddrive2/manage.sh").read_text(
             encoding="utf-8"
@@ -636,7 +687,7 @@ class DeploymentStructureTests(unittest.TestCase):
         ):
             self.assertTrue(version_file.is_file())
             metadata = version_file.read_text(encoding="utf-8")
-            self.assertIn("ProductVersion', '1.0.0'", metadata)
+            self.assertIn("ProductVersion', '1.0.1'", metadata)
             self.assertIn("TG2Cloud", metadata)
         self.assertNotIn("Source = 'installer_classic.py'", script)
         self.assertNotIn("import tkinter", script)
@@ -657,7 +708,7 @@ class DeploymentStructureTests(unittest.TestCase):
         )
         self.assertIn("timeout-minutes: 20", workflow)
         self.assertIn("WaitForExit(120000)", script)
-        self.assertIn("app_version=1.0.0", script)
+        self.assertIn("app_version=1.0.1", script)
         self.assertIn("Compare-Object $expectedArtifacts $actualArtifacts", script)
         self.assertNotIn('foreach ($edition in @("Modern", "Classic"))', workflow)
 

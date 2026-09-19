@@ -1,6 +1,6 @@
-# TG2Cloud v1.0.0：小白使用说明
+# TG2Cloud v1.0.1：小白使用说明
 
-> TG2Cloud v1.0.0；适用电脑：Windows 10 / Windows 11
+> TG2Cloud v1.0.1；适用电脑：Windows 10 / Windows 11
 > 64 位；适用 VPS：Ubuntu 或 Debian 64 位；推荐 VPS：2 核 CPU、4GB 内存、50GB 硬盘。
 
 ---

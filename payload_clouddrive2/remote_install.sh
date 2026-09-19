@@ -363,11 +363,11 @@ if [[ "${DEPLOY_CLOUDDRIVE2:-true}" == "true" ]]; then
   [[ -c /dev/fuse ]] || fail "VPS 没有提供 /dev/fuse；请让服务商开启 FUSE 后重试"
   mapfile -t CD2_MATCHES < <(
     docker ps --format '{{.Names}}|{{.Image}}|{{.Ports}}' \
-      | awk -F'|' '
+      | awk -F'|' -v bot_container="$BOT_CONTAINER" '
           (tolower($1) ~ /clouddrive2/ && tolower($1) !~ /^tg115-/) ||
           tolower($2) ~ /(^|\/)clouddrive2([:@]|$)/ ||
           tolower($2) ~ /cloudnas\/clouddrive2([:@]|$)/ {
-            if (tolower($1) ~ /^tg115-/) next
+            if (tolower($1) ~ /^tg115-/ || tolower($1) == tolower(bot_container)) next
             print $1
           }
         '

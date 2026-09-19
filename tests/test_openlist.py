@@ -78,8 +78,8 @@ class OpenListProductTests(unittest.TestCase):
         )
 
     def test_product_release_identity_is_tg2cloud_v1(self) -> None:
-        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_version, "1.0.0")
-        self.assertEqual(OPENLIST_PRODUCT.app_version, "1.0.0")
+        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_version, "1.0.1")
+        self.assertEqual(OPENLIST_PRODUCT.app_version, "1.0.1")
         self.assertEqual(
             CLOUDDRIVE2_PRODUCT.executable_name,
             "TG2Cloud-CloudDrive2-Deployer",

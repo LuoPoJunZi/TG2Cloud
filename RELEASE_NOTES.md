@@ -1,10 +1,15 @@
-# TG2Cloud v1.0.0
+# TG2Cloud v1.0.1
 
-**GitHub Release：`v1.0.0`**
+**GitHub Release：`v1.0.1`**
 
-本次发布的两个 Windows EXE 由 GitHub Actions 从 `v1.0.0` 标签源码构建，附带对本次实际
+本次发布的两个 Windows EXE 由 GitHub Actions 从 `v1.0.1` 标签源码构建，附带对本次实际
 构建文件计算的 SHA256。真实 VPS、WebDAV、rclone、Telegram 端到端和不同文件规模仍待用户
 下载 Release 资产后人工验收；自动测试或离线自检不能代替这些实际测试。
+
+本补丁版修复 CloudDrive2 首次部署中 Bot 容器被误判为第二个 CloudDrive2 网关，导致
+“发现多个正在运行的 CloudDrive2 容器”并中止网络修复的问题。多个真实 CloudDrive2 网关
+仍会被拦截；不会自动覆盖旧 TG115 安装。曾在 v1.0.0 遇到此报错的用户，可用 v1.0.1
+部署器重新执行，先核对 VPS 当前状态和完整日志，不要手动删除容器或数据。
 
 TG2Cloud 是一个将 Telegram 私聊中提交的文件自动转存到用户自有云存储的自托管工具：
 
@@ -48,12 +53,12 @@ TG115、debug 或 test EXE。
 5. 执行 WebDAV 验收，确认出现 `TG2CLOUD_DESTINATION=OK` 后再发送 Telegram 测试文件。
 6. 最后在所用云存储的官方客户端确认文件大小和可打开性。
 
-完整安装与验证步骤见 [README](README.md)。本 RC 的真实 VPS、WebDAV、Telegram 与不同文件
+完整安装与验证步骤见 [README](README.md)。本版本的真实 VPS、WebDAV、Telegram 与不同文件
 规模验证仍需在用户自己的环境中完成。
 
 ## 旧 TG115 用户
 
-TG2Cloud v1.0.0 不提供 TG115 原地自动升级。新安装使用独立目录、容器和 Network；旧目录、
+TG2Cloud v1.0.1 不提供 TG115 原地自动升级。新安装使用独立目录、容器和 Network；旧目录、
 容器和备份不会被自动覆盖、停止、迁移或删除。若旧实例占用固定 19798/5244 端口，TG2Cloud
 会停止并要求用户自行处理，不会自动换端口。详见
 [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md)。
@@ -75,12 +80,12 @@ TG2Cloud v1.0.0 不提供 TG115 原地自动升级。新安装使用独立目录
 - 同 Bot Token 多实例冲突由用户避免，没有分布式锁或跨系统 Token 扫描；
 - TG115 不会自动原地迁移到 TG2Cloud；
 - Windows EXE 未使用商业代码签名，SmartScreen 可能显示“未知发布者”；
-- CloudDrive2/OpenList、云存储和 VPS 组合较多，真实环境验证结果以本 RC 的 GitHub
+- CloudDrive2/OpenList、云存储和 VPS 组合较多，真实环境验证结果以本版本的 GitHub
   Actions、Release 资产以及用户实际验收为准。
 
 ## 发布状态
 
-当前版本为 **v1.0.0，真实环境验收待完成**。自动测试和 Windows 构建由 GitHub Actions
+当前版本为 **v1.0.1，真实环境验收待完成**。自动测试和 Windows 构建由 GitHub Actions
 执行；真实 VPS、Telegram、WebDAV、rclone 和不同文件规模的结果以用户实际测试为准。
 
 TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进而来，继续保留 MIT

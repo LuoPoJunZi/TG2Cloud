@@ -1,5 +1,17 @@
 # 更新记录
 
+## TG2Cloud v1.0.1
+
+GitHub Release 标签为 `v1.0.1`；程序内部版本为 `1.0.1`。Windows EXE 继续由
+GitHub Actions 从标签源码构建，并对本次实际生成的文件计算 SHA256。
+
+- 修复 CloudDrive2 首次部署启动 Bot 后，网络修复阶段把
+  `tg2cloud-clouddrive2-bot` 误判为第二个 CloudDrive2 网关容器，导致基础部署失败的问题。
+- 仅从 CloudDrive2 网关发现结果中排除当前 Edition 的 Bot；存在多个真实网关时仍拒绝自动修改，
+  旧 TG115 容器和固定端口冲突保护保持不变。
+- 增加两处容器发现逻辑的 Bash 回归测试；OpenList 业务流程、Telegram、SQLite、rclone、
+  streaming、Tunnel 和 verify 未改动。真实 VPS 端到端结果仍待用户验收。
+
 ## TG2Cloud v1.0.0
 
 GitHub Release 标签为 `v1.0.0`；程序内部版本为 `1.0.0`。两个 Windows EXE 由 GitHub

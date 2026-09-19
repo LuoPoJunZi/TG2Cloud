@@ -25,7 +25,7 @@ CloudDrive2 或 OpenList 中自行挂载的存储。
 本仓库是在原作者 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 基础上的二次开发版本，
 重点加强了任务恢复、磁盘保护、流式传输、状态语义、升级回退、VPS 资源建议和日常诊断。
 
-> 当前版本：**TG2Cloud v1.0.0**
+> 当前版本：**TG2Cloud v1.0.1**
 >
 > GitHub Release 的 EXE 由 GitHub Actions Windows Runner 构建。真实 VPS、Telegram 和
 > WebDAV 端到端测试仍待用户在自己的环境中验收。
@@ -53,7 +53,7 @@ Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
 Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 ```
 
-TG2Cloud v1.0.0 的 Windows EXE 当前未提供商业代码签名，首次运行时 Windows SmartScreen
+TG2Cloud v1.0.1 的 Windows EXE 当前未提供商业代码签名，首次运行时 Windows SmartScreen
 可能显示“未知发布者”；请从本仓库 Release 下载并核对 SHA-256，不要关闭 Defender 或
 Windows Security。
 
@@ -123,7 +123,7 @@ TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑�
 
 ## 当前版本
 
-当前产品版本为 `TG2Cloud v1.0.0`，提供两个独立的 PySide6 Edition：
+当前产品版本为 `TG2Cloud v1.0.1`，提供两个独立的 PySide6 Edition：
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -294,7 +294,7 @@ CloudDrive2；此时第 3 页必须填写 Bot 容器实际能够访问的 WebDAV
 继续保留 SQLite、`rclone.conf`、下载目录、日志以及 CloudDrive2 配置和挂载数据。只有明确勾选
 “使用本页配置覆盖 VPS 当前 .env”才应用本次表单值；升级前请先备份。升级会先在隔离目录构建
 候选镜像，并为旧代码、配置和数据库创建回退点；新版本未通过健康核验时只使用原有的有限内部
-回退逻辑，TG2Cloud v1.0.0 不提供正式自动 Restore。
+回退逻辑，TG2Cloud v1.0.1 不提供正式自动 Restore。
 
 ### 7. 完整按钮顺序
 
@@ -558,7 +558,7 @@ CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList �
 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级
 并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的
 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的
-TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.0.0 不提供正式自动 Restore 或 Uninstall。
+TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.0.1 不提供正式自动 Restore 或 Uninstall。
 
 ## 常见问题
 
