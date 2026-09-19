@@ -75,7 +75,9 @@ create_backup() (
   local db_temp_name="" services_stopped=false exit_code
 
   # Invoked indirectly by the signal/error trap below.
-  # shellcheck disable=SC2329
+  # ShellCheck 0.9 reports the trap body as unreachable (SC2317), while newer
+  # versions report the indirect function invocation itself (SC2329).
+  # shellcheck disable=SC2317,SC2329
   recover_backup_failure() {
     exit_code=$?
     [[ "$exit_code" -ne 0 ]] || exit_code=1

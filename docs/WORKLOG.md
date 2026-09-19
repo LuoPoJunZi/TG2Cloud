@@ -605,7 +605,9 @@ Release Blocker；在 `docs/MANUAL_ACCEPTANCE.md` 的关键真实环境项目完
 - `.gitignore` 增加全局 `*.exe` 防护；`build/`、`dist/` 继续忽略。本地工具、EXE、dist 和
   build 不进入提交。
 - 本轮提交前验证：完整 pytest 215 passed、4 skipped、36 subtests passed；Ruff、compileall、
-  官方 ShellCheck 0.11.0、10 个 Bash `-n`、actionlint 1.7.12 和 `git diff --check` 均通过。
+  官方 ShellCheck 0.9.0/0.11.0、10 个 Bash `-n`、actionlint 1.7.12 和 `git diff --check`
+  均通过。首次修正提交的远端 Ubuntu ShellCheck 0.9.0 还报告 trap 间接调用的 `SC2317`；
+  已与现有新版 `SC2329` 注释一起做版本兼容抑制，不改变 backup trap 行为。
 - 由于 RC1 Tag 曾在失败 CI 后提前推送且尚无 Release，本轮将在 `main` Branch CI 全绿后，
   仅删除并重新创建同名 RC1 Tag，使其准确指向包含发布 Workflow 的已验证提交；不会创建
   Stable `v1.0.0`。实际 Actions 构建、Release 资产与远端 SHA256 结果仍待远端运行完成。
