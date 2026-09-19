@@ -1,3 +1,3 @@
-"""Telegram to 115 transfer service."""
+"""TG2Cloud Telegram-to-cloud transfer service."""
 
-__version__ = "1.6.2"
+__version__ = "1.0.0"

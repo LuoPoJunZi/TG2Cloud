@@ -38,6 +38,8 @@ from app.verify_destination import DestinationVerificationError, verify_destinat
 import installer as modern_installer
 from installer import (
     APP_VERSION,
+    BRAND_ICON_ASSET,
+    BRAND_LOGO_ASSET,
     DEFAULTS,
     MANAGED_CD2_WEBDAV_URL,
     ConfirmHostKeyPolicy,
@@ -50,7 +52,9 @@ from installer import (
     Tunnel,
     UserRejectedHostKey,
     b64,
+    dependency_report,
     fingerprint_sha256,
+    machine_markers,
     make_app,
     packaged_self_test,
     re_safe_remote_stage,
@@ -59,6 +63,8 @@ from installer import (
 )
 from vps_resources import (
     GIB,
+    LEGACY_PROBE_BEGIN,
+    LEGACY_PROBE_END,
     PROBE_BEGIN,
     PROBE_END,
     VpsResources,
@@ -87,13 +93,13 @@ def valid_installer_values() -> dict[str, str]:
         "telegram_api_id": "12345",
         "telegram_api_hash": "a" * 32,
         "allowed_user_id": "987654321",
-        "cd2_url": "http://clouddrive2:19798/dav",
+        "cd2_url": "http://tg2cloud-clouddrive2:19798/dav",
         "cd2_username": "user",
         "cd2_password": "password",  # pragma: allowlist secret
         "cd2_target": "",
         "local_budget_gb": "20",
-        "min_free_disk_gb": "20",
-        "install_dir": "/opt/tg115",
+        "min_free_disk_gb": "8",
+        "install_dir": "/opt/tg2cloud-clouddrive2",
         "timezone": "Asia/Shanghai",
         "deploy_clouddrive2": "true",
     }
@@ -158,6 +164,24 @@ class InstallerHelpersTests(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         keys.save(str(path))
 
+    def test_cloud_default_disk_values_and_generated_env(self) -> None:
+        self.assertEqual(DEFAULTS["local_budget_gb"], "20")
+        self.assertEqual(DEFAULTS["min_free_disk_gb"], "8")
+        backend = make_installer_backend()
+        values = valid_installer_values()
+        pairs = dict(
+            line.split("=", 1) for line in backend._build_config(values).splitlines()
+        )
+        self.assertEqual(pairs["LOCAL_TEMP_BUDGET_GB"], "20")
+        self.assertEqual(pairs["MIN_FREE_DISK_GB"], "8")
+        values["local_budget_gb"] = "12"
+        values["min_free_disk_gb"] = "9"
+        pairs = dict(
+            line.split("=", 1) for line in backend._build_config(values).splitlines()
+        )
+        self.assertEqual(pairs["LOCAL_TEMP_BUDGET_GB"], "12")
+        self.assertEqual(pairs["MIN_FREE_DISK_GB"], "9")
+
     def test_ssh_host_key_names_cover_default_custom_and_ipv6_ports(self) -> None:
         self.assertEqual(ssh_host_key_name("vps.example.com", 22), "vps.example.com")
         self.assertEqual(
@@ -194,7 +218,7 @@ class InstallerHelpersTests(unittest.TestCase):
         key = paramiko.ECDSAKey.generate()
         client = paramiko.SSHClient()
         with tempfile.TemporaryDirectory(prefix="tg115-hostkey-") as temp_name:
-            known_hosts = Path(temp_name) / "TG115-Deployer" / "known_hosts"
+            known_hosts = Path(temp_name) / "TG2Cloud-Deployer" / "known_hosts"
             policy = ConfirmHostKeyPolicy(
                 Mock(return_value=False),
                 KnownHostsStore(known_hosts),
@@ -215,7 +239,7 @@ class InstallerHelpersTests(unittest.TestCase):
         client = Mock()
         client.get_transport.return_value = None
         with tempfile.TemporaryDirectory(prefix="tg115-hostkey-") as temp_name:
-            known_hosts = Path(temp_name) / "TG115-Deployer" / "known_hosts"
+            known_hosts = Path(temp_name) / "TG2Cloud-Deployer" / "known_hosts"
             self._save_host_keys(known_hosts, [(values["vps_host"], key)])
             with patch.dict(os.environ, {"APPDATA": temp_name}):
                 session = RemoteSession(
@@ -241,7 +265,7 @@ class InstallerHelpersTests(unittest.TestCase):
         retry_client.get_transport.return_value = None
         client_factory = Mock(side_effect=[first_client, retry_client])
         with tempfile.TemporaryDirectory(prefix="tg115-hostkey-") as temp_name:
-            known_hosts = Path(temp_name) / "TG115-Deployer" / "known_hosts"
+            known_hosts = Path(temp_name) / "TG2Cloud-Deployer" / "known_hosts"
             self._save_host_keys(
                 known_hosts,
                 [(host_name, old_key), ("other.example.com", other_key)],
@@ -276,7 +300,7 @@ class InstallerHelpersTests(unittest.TestCase):
         )
         client_factory = Mock(return_value=client)
         with tempfile.TemporaryDirectory(prefix="tg115-hostkey-") as temp_name:
-            known_hosts = Path(temp_name) / "TG115-Deployer" / "known_hosts"
+            known_hosts = Path(temp_name) / "TG2Cloud-Deployer" / "known_hosts"
             self._save_host_keys(known_hosts, [(values["vps_host"], old_key)])
             with patch.dict(os.environ, {"APPDATA": temp_name}):
                 session = RemoteSession(
@@ -303,7 +327,7 @@ class InstallerHelpersTests(unittest.TestCase):
         )
         client_factory = Mock(side_effect=[first_client, retry_client])
         with tempfile.TemporaryDirectory(prefix="tg115-hostkey-") as temp_name:
-            known_hosts = Path(temp_name) / "TG115-Deployer" / "known_hosts"
+            known_hosts = Path(temp_name) / "TG2Cloud-Deployer" / "known_hosts"
             self._save_host_keys(known_hosts, [(values["vps_host"], old_key)])
             with patch.dict(os.environ, {"APPDATA": temp_name}):
                 session = RemoteSession(
@@ -351,6 +375,17 @@ class InstallerHelpersTests(unittest.TestCase):
         try:
             self.assertEqual(window.snapshot(), DEFAULTS)
             self.assertEqual(window.PAGE_TITLES[2], "03   CloudDrive2")
+            self.assertEqual(window.brand_name_label.text(), "TG2Cloud")
+            self.assertIn("CloudDrive2 Edition", window.brand_subtitle_label.text())
+            self.assertFalse(window.windowIcon().isNull())
+            self.assertFalse(window.brand_icon_label.pixmap().isNull())
+            self.assertFalse(
+                modern_installer.brand_pixmap(BRAND_LOGO_ASSET, 300, 100).isNull()
+            )
+            dialog = window._diagnostics_dialog()
+            self.assertFalse(dialog.windowIcon().isNull())
+            self.assertFalse(dialog.brand_logo_label.pixmap().isNull())
+            dialog.close()
             window.auth_group.button(1).click()
             app.processEvents()
             self.assertEqual(window.snapshot()["auth_method"], "SSH 密钥")
@@ -359,6 +394,12 @@ class InstallerHelpersTests(unittest.TestCase):
         finally:
             window.close()
             app.processEvents()
+
+    def test_official_brand_assets_are_required_local_resources(self) -> None:
+        report = dependency_report()
+        self.assertEqual(report["brand_missing"], [])
+        self.assertTrue((SOURCE / BRAND_ICON_ASSET).is_file())
+        self.assertTrue((SOURCE / BRAND_LOGO_ASSET).is_file())
 
     def test_redactor_removes_plain_encoded_and_url_credentials(self) -> None:
         values = valid_installer_values()
@@ -386,7 +427,7 @@ class InstallerHelpersTests(unittest.TestCase):
         session = RemoteSession.__new__(RemoteSession)
         session.values = {"sudo_password": "sudo-secret"}
         session.client = SimpleNamespace(get_transport=lambda: transport)
-        command = "INSTALL_DIR=/opt/tg115 bash /tmp/install.sh"
+        command = "INSTALL_DIR=/opt/tg2cloud-clouddrive2 bash /tmp/install.sh"
 
         code, output = session.run(command, sudo=True, timeout=2)
 
@@ -515,6 +556,7 @@ class InstallerHelpersTests(unittest.TestCase):
                             "vps_resources": True,
                         },
                         "payload_missing": [],
+                        "brand_missing": [],
                         "ready": True,
                     },
                 ),
@@ -524,23 +566,25 @@ class InstallerHelpersTests(unittest.TestCase):
             app.processEvents.assert_called_once()
             window.close.assert_called_once()
             self.assertIn("result=OK", result.read_text(encoding="utf-8"))
+            self.assertIn("brand_missing=", result.read_text(encoding="utf-8"))
 
     def test_base64_round_trip(self) -> None:
         value = "p@ss$ word/中文"
         self.assertEqual(base64.b64decode(b64(value)).decode(), value)
 
     def test_remote_cleanup_path_guard(self) -> None:
-        good = "/tmp/tg115-deploy-" + "a" * 32
+        good = "/tmp/tg2cloud-deploy-" + "a" * 32
         self.assertTrue(re_safe_remote_stage(good))
-        self.assertFalse(re_safe_remote_stage("/tmp/tg115-deploy-"))
+        self.assertFalse(re_safe_remote_stage("/tmp/tg2cloud-deploy-"))
         self.assertFalse(re_safe_remote_stage("/opt/tg115"))
-        self.assertFalse(re_safe_remote_stage("/tmp/tg115-deploy-" + "g" * 32))
-        self.assertFalse(re_safe_remote_stage("/tmp/tg115-deploy-" + "a" * 31))
+        self.assertFalse(re_safe_remote_stage("/tmp/tg2cloud-deploy-" + "g" * 32))
+        self.assertFalse(re_safe_remote_stage("/tmp/tg2cloud-deploy-" + "a" * 31))
+        self.assertFalse(re_safe_remote_stage("/tmp/tg115-deploy-" + "a" * 32))
 
     def test_full_validation_rejects_shell_metacharacters_in_install_dir(self) -> None:
         app = make_installer_backend()
         values = valid_installer_values()
-        values["install_dir"] = "/opt/tg115;touch /tmp/pwned"
+        values["install_dir"] = "/opt/tg2cloud-clouddrive2;touch /tmp/pwned"
         with self.assertRaisesRegex(ValueError, "安装目录"):
             app._validate(values)
 
@@ -549,6 +593,13 @@ class InstallerHelpersTests(unittest.TestCase):
         values = valid_installer_values()
         values["local_budget_gb"] = "nan"
         with self.assertRaisesRegex(ValueError, "有限数字"):
+            app._validate(values)
+
+    def test_full_validation_rejects_legacy_tg115_install_dir(self) -> None:
+        app = make_installer_backend()
+        values = valid_installer_values()
+        values["install_dir"] = "/opt/tg115"
+        with self.assertRaisesRegex(ValueError, "不会静默覆盖"):
             app._validate(values)
 
     def test_public_http_webdav_is_rejected(self) -> None:
@@ -600,7 +651,7 @@ class InstallerHelpersTests(unittest.TestCase):
     def test_install_dir_with_dot_segment_is_rejected(self) -> None:
         app = make_installer_backend()
         values = valid_installer_values()
-        values["install_dir"] = "/opt/tg115/./nested"
+        values["install_dir"] = "/opt/tg2cloud-clouddrive2/./nested"
         with self.assertRaisesRegex(ValueError, "安装目录"):
             app._validate(values)
 
@@ -655,6 +706,14 @@ class VpsResourceRecommendationTests(unittest.TestCase):
         self.assertTrue(resources.docker_root_detected)
         self.assertEqual(resources.docker_storage_available_bytes, 42 * GIB)
 
+    def test_probe_prefers_current_boundary_and_accepts_legacy_output(self) -> None:
+        legacy = self.probe_output().replace(PROBE_BEGIN, LEGACY_PROBE_BEGIN).replace(
+            PROBE_END, LEGACY_PROBE_END
+        )
+        self.assertEqual(parse_probe_output(legacy).cpu_cores, 2)
+        current = self.probe_output().replace("CPU_CORES=2", "CPU_CORES=4")
+        self.assertEqual(parse_probe_output(legacy + "\n" + current).cpu_cores, 4)
+
     def test_installer_probe_uses_current_install_path_and_publishes_advice(self) -> None:
         app = make_installer_backend()
         app._publish_resource_advice = Mock()
@@ -665,7 +724,8 @@ class VpsResourceRecommendationTests(unittest.TestCase):
         self.assertEqual(resources.cpu_cores, 2)
         self.assertEqual(advice.preferred_key, "balanced")
         command = session.run.call_args.args[0]
-        self.assertIn("/opt/tg115", command)
+        self.assertIn("/opt/tg2cloud-clouddrive2", command)
+        self.assertIn("/opt/tg2cloud-clouddrive2-backups", command)
         self.assertEqual(session.run.call_args_list[0].args, ("id -u",))
         self.assertEqual(session.run.call_args_list[0].kwargs, {"timeout": 10})
         self.assertEqual(
@@ -696,14 +756,21 @@ class VpsResourceRecommendationTests(unittest.TestCase):
             parse_probe_output(duplicate)
 
     def test_probe_command_accepts_only_safe_install_path(self) -> None:
-        command = build_probe_command("/opt/tg115")
+        command = build_probe_command(
+            "/opt/tg2cloud-clouddrive2",
+            "/opt/tg2cloud-clouddrive2-backups",
+        )
         self.assertIn(PROBE_BEGIN, command)
         self.assertIn("df -PB1", command)
         self.assertIn("timeout 5s du", command)
         self.assertIn("timeout 5s docker info", command)
-        self.assertIn("/opt/tg115", command)
+        self.assertIn("/opt/tg2cloud-clouddrive2", command)
+        self.assertIn("/opt/tg2cloud-clouddrive2-backups", command)
         with self.assertRaisesRegex(ValueError, "安装目录"):
-            build_probe_command("/opt/tg115;touch /tmp/pwned")
+            build_probe_command(
+                "/opt/tg2cloud-clouddrive2;touch /tmp/pwned",
+                "/opt/tg2cloud-clouddrive2-backups",
+            )
 
     def test_small_vps_prefers_stream_first_without_changing_defaults(self) -> None:
         advice = recommend_storage(
@@ -919,6 +986,15 @@ class SettingsTests(unittest.TestCase):
             self.assertEqual(settings.api_hash, "a" * 32)
             self.assertEqual(settings.cd2_target, "115/Telegram")
             self.assertEqual(settings.local_budget_bytes, 20 * 1024**3)
+            self.assertEqual(settings.min_free_disk_bytes, 8 * 1024**3)
+            with patch.dict(
+                os.environ,
+                env | {"LOCAL_TEMP_BUDGET_GB": "12", "MIN_FREE_DISK_GB": "9"},
+                clear=True,
+            ):
+                custom = Settings.from_env(create_directories=False)
+            self.assertEqual(custom.local_budget_bytes, 12 * 1024**3)
+            self.assertEqual(custom.min_free_disk_bytes, 9 * 1024**3)
             self.assertTrue(settings.download_dir.is_dir())
             self.assertTrue(settings.rclone_config_path.parent.is_dir())
 
@@ -1460,6 +1536,27 @@ class RcloneConfigTests(unittest.TestCase):
         self.assertEqual(client.remote(), "cd2:")
         self.assertEqual(client.remote("video.mp4"), "cd2:video.mp4")
 
+    def test_target_path_normalization_and_root_preparation(self) -> None:
+        for target, expected in (
+            ("", "cd2:video.mp4"),
+            ("Telegram", "cd2:Telegram/video.mp4"),
+            ("Media/Telegram", "cd2:Media/Telegram/video.mp4"),
+            ("/Telegram", "cd2:Telegram/video.mp4"),
+        ):
+            with self.subTest(target=target):
+                settings = SimpleNamespace(cd2_target=target)
+                client = RcloneClient(settings)
+                client.ensure_config = AsyncMock()
+                client._run = AsyncMock(return_value=(0, "", ""))
+                self.assertEqual(client.remote("video.mp4"), expected)
+                asyncio.run(client.prepare_destination())
+                commands = [call.args[0] for call in client._run.call_args_list]
+                self.assertEqual(commands, ["lsd"] if not target else ["mkdir", "lsd"])
+                client._run.reset_mock()
+                client.prepare_destination = AsyncMock()
+                asyncio.run(client.upload(Path("sample.bin"), "video.mp4"))
+                self.assertEqual(client._run.call_args.args[2], expected)
+
     def test_existing_config_is_reconciled_with_new_settings(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             config_path = Path(temp) / "rclone.conf"
@@ -1618,8 +1715,9 @@ class DestinationVerificationTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             settings = SimpleNamespace(data_dir=Path(temp))
             client = self.FakeRclone()
+            reports: list[str] = []
             remote_path = asyncio.run(
-                verify_destination(settings, client)  # type: ignore[arg-type]
+                verify_destination(settings, client, reports.append)  # type: ignore[arg-type]
             )
             self.assertTrue(client.authenticated)
             self.assertTrue(client.prepared)
@@ -1627,6 +1725,14 @@ class DestinationVerificationTests(unittest.TestCase):
             self.assertEqual(client.files, {})
             self.assertEqual(client.removed, [remote_path])
             self.assertEqual(list(Path(temp).iterdir()), [])
+            for marker in (
+                "TG2CLOUD_WEBDAV=OK",
+                "TG2CLOUD_UPLOAD=OK",
+                "TG2CLOUD_RENAME=OK",
+                "TG2CLOUD_DELETE=OK",
+            ):
+                self.assertIn(marker, reports)
+            self.assertTrue(all(marker.startswith("TG2CLOUD_") for marker in reports))
 
     def test_real_destination_verification_fails_closed_and_cleans(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -1868,7 +1974,7 @@ class UploadRecoveryTests(unittest.TestCase):
 
 class PayloadTests(unittest.TestCase):
     def test_windows_and_server_versions_match(self) -> None:
-        self.assertEqual(APP_VERSION, "1.6.2")
+        self.assertEqual(APP_VERSION, "1.0.0")
         self.assertEqual(__version__, APP_VERSION)
 
     def test_required_payload_files_exist(self) -> None:
@@ -1897,7 +2003,9 @@ class PayloadTests(unittest.TestCase):
     def test_real_verification_command_is_wired_into_installer(self) -> None:
         installer = (SOURCE / "installer.py").read_text(encoding="utf-8")
         self.assertIn("python -m app.verify_destination", installer)
-        self.assertIn("TG115_DESTINATION=OK", installer)
+        self.assertIn('markers.get("DESTINATION") != "OK"', installer)
+        self.assertIn("lookup tg2cloud-clouddrive2", installer)
+        self.assertIn("lookup clouddrive2", installer)
 
     def test_container_images_are_pinned_and_redeploy_does_not_pull_latest(self) -> None:
         compose = (PAYLOAD / "docker-compose.yml").read_text(encoding="utf-8")
@@ -1943,14 +2051,16 @@ class PayloadTests(unittest.TestCase):
         self.assertIn("{{.HostConfig.NetworkMode}}", repair)
         self.assertIn('network_mode: " network_mode', repair)
         self.assertIn("http://127.0.0.1:19798/dav", repair)
+        self.assertIn("for url_key in WEBDAV_URL_B64 CD2_WEBDAV_URL_B64", repair)
         self.assertIn('CD2_ENDPOINT_HOST="127.0.0.1"', repair)
         self.assertIn("recover_webdav_credentials", repair)
-        self.assertIn("/opt/tg115-backups", repair)
+        self.assertIn("/opt/tg2cloud-clouddrive2-backups", repair)
         self.assertIn("保留当前根目录设置", repair)
-        self.assertIn("docker network connect --alias clouddrive2 tg115", repair)
+        self.assertIn('docker network connect --alias "$CD2_MANAGED_CONTAINER"', repair)
+        self.assertNotIn("docker network connect --alias clouddrive2 tg115", repair)
         self.assertIn("socket.create_connection((h,19798),5)", repair)
         self.assertIn("python -m app.verify_destination", repair)
-        self.assertIn("TG115_REPAIR=SUCCESS", repair)
+        self.assertIn("TG2CLOUD_REPAIR=SUCCESS", repair)
         self.assertIn("remove_program_files", remote_install)
 
     def test_bot_container_is_non_root_and_restricted(self) -> None:
@@ -1964,7 +2074,38 @@ class PayloadTests(unittest.TestCase):
         self.assertIn("USER 10001:10001", dockerfile)
         self.assertIn("chown -R 10001:10001", remote_install)
         self.assertIn("umask 077", remote_install)
-        self.assertIn("install -d -m 700 /opt/tg115-backups", remote_install)
+        self.assertIn('BACKUP_DIR="/opt/tg2cloud-clouddrive2-backups"', remote_install)
+        self.assertIn('install -d -m 700 "$BACKUP_DIR"', remote_install)
+
+    def test_legacy_tg115_runtime_is_detected_without_destructive_migration(self) -> None:
+        remote_install = (PAYLOAD / "remote_install.sh").read_text(encoding="utf-8")
+        repair = (PAYLOAD / "repair_clouddrive_network.sh").read_text(
+            encoding="utf-8"
+        )
+        for script in (remote_install, repair):
+            self.assertIn("/opt/tg115", script)
+            self.assertIn("tg115-bot", script)
+            self.assertIn("tg115-clouddrive2", script)
+            self.assertIn("保留不动", script)
+            self.assertIn("重新检测", script)
+            self.assertNotIn("docker network connect --alias clouddrive2 tg115", script)
+            self.assertNotIn("docker network disconnect tg115", script)
+        self.assertIn("不会静默覆盖", remote_install)
+        self.assertIn("不会迁移、覆盖或修复", repair)
+
+    def test_machine_markers_prefer_current_protocol_over_legacy(self) -> None:
+        self.assertEqual(machine_markers("TG2CLOUD_DESTINATION=OK\n")["DESTINATION"], "OK")
+        self.assertEqual(machine_markers("TG115_DESTINATION=OK\n")["DESTINATION"], "OK")
+        output = (
+            "TG115_DESTINATION=OK\n"
+            "TG2CLOUD_DESTINATION=FAILED\n"
+            "TG115_WEBDAV_AUTH=FAILED\n"
+            "TG2CLOUD_WEBDAV_AUTH=OK\n"
+            "TG115_REPAIR=SUCCESS\n"
+        )
+        self.assertEqual(machine_markers(output)["DESTINATION"], "FAILED")
+        self.assertEqual(machine_markers(output)["WEBDAV_AUTH"], "OK")
+        self.assertEqual(machine_markers(output)["REPAIR"], "SUCCESS")
 
     def test_docker_build_context_excludes_secrets_and_runtime_data(self) -> None:
         dockerignore = (PAYLOAD / ".dockerignore").read_text(encoding="utf-8")

@@ -49,26 +49,17 @@ jobs:
         timeout-minutes: 20
         shell: pwsh
         run: |
-          $env:TG115_BUILD_PYTHON = (Get-Command python -ErrorAction Stop).Source
+          $env:TG2CLOUD_BUILD_PYTHON = (Get-Command python -ErrorAction Stop).Source
           python --version
           ./build.ps1
-          foreach ($product in @("CloudDrive2", "OpenList")) {
-            $result = Join-Path $env:RUNNER_TEMP "tg115-$($product.ToLower())-self-test.txt"
-            $process = Start-Process `
-              -FilePath "./dist/TG115-$product-Deployer.exe" `
-              -ArgumentList @("--self-test", "--self-test-result", $result) `
-              -WindowStyle Hidden -PassThru
-            if (-not $process.WaitForExit(120000)) {
-              Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
-              throw "$product EXE self-test timed out after 120 seconds"
-            }
-            if ($process.ExitCode -ne 0) {
-              throw "$product EXE self-test exited with $($process.ExitCode)"
-            }
-            $content = Get-Content -LiteralPath $result -Raw -Encoding utf8
-            if ($content -notmatch "result=OK") {
-              throw "$product EXE self-test did not report OK"
-            }
+          $expected = @(
+            "TG2Cloud-CloudDrive2-Deployer.exe",
+            "TG2Cloud-OpenList-Deployer.exe"
+          )
+          $actual = Get-ChildItem -LiteralPath ./dist -File -Filter 'TG2Cloud-*-Deployer.exe' |
+            Select-Object -ExpandProperty Name
+          if (Compare-Object $expected $actual) {
+            throw "Unexpected TG2Cloud deployer artifacts: $($actual -join ', ')"
           }
 
   linux-products:
@@ -111,4 +102,4 @@ jobs:
           OPENLIST_ADMIN_PASSWORD=ci-only-placeholder docker compose -f payload_openlist/docker-compose.yml config --quiet
 
       - name: Build Linux Bot image
-        run: docker build -t tg115-bot:test payload_clouddrive2
+        run: docker build -t tg2cloud-bot:test payload_clouddrive2

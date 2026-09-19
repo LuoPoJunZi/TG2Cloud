@@ -4,12 +4,12 @@ umask 077
 
 SOURCE_DIR="${1:-}"
 CONFIG_FILE="${2:-}"
-INSTALL_DIR="${INSTALL_DIR:-/opt/tg115-openlist}"
-BACKUP_DIR="/opt/tg115-openlist-backups"
-BOT_SERVICE="tg115-bot"
-BOT_CONTAINER="tg115-openlist-bot"
+INSTALL_DIR="${INSTALL_DIR:-/opt/tg2cloud-openlist}"
+BACKUP_DIR="/opt/tg2cloud-openlist-backups"
+BOT_SERVICE="tg2cloud-openlist-bot"
+BOT_CONTAINER="tg2cloud-openlist-bot"
 OPENLIST_SERVICE="openlist"
-OPENLIST_CONTAINER="tg115-openlist"
+OPENLIST_CONTAINER="tg2cloud-openlist"
 BACKUP=""
 DATABASE_BACKUP=""
 OPENLIST_BACKUP=""
@@ -25,11 +25,11 @@ OPENLIST_WAS_NEW=false
 
 PROGRAM_PATHS=(
   app .dockerignore backup_retention.sh Dockerfile docker-compose.yml manage.sh
-  openlist_admin.sh preserve_webdav_config.sh remote_install.sh requirements.txt
+  openlist_admin.sh preserve_runtime_config.sh preserve_webdav_config.sh remote_install.sh requirements.txt
 )
 
 log() {
-  printf '[TG115-OPENLIST] %s\n' "$*"
+  printf '[TG2Cloud-OpenList] %s\n' "$*"
 }
 
 remove_program_files() {
@@ -88,7 +88,7 @@ rollback_install() {
 }
 
 cleanup_release_stage() {
-  if [[ -n "$RELEASE_STAGE" && "$RELEASE_STAGE" == /opt/tg115-openlist-release-* && -d "$RELEASE_STAGE" ]]; then
+  if [[ -n "$RELEASE_STAGE" && "$RELEASE_STAGE" == /opt/tg2cloud-openlist-release-* && -d "$RELEASE_STAGE" ]]; then
     rm -rf -- "$RELEASE_STAGE"
   fi
   if [[ -n "$CANDIDATE_TAG" ]]; then
@@ -109,10 +109,10 @@ fail() {
       message+=" 自动恢复未完成，请保留备份并人工处理。"
     fi
   fi
-  printf '[TG115-OPENLIST][ERROR] %s\n' "$message" >&2
+  printf '[TG2Cloud-OpenList][ERROR] %s\n' "$message" >&2
   [[ -z "$OPENLIST_BACKUP" ]] \
-    || printf '[TG115-OPENLIST] OpenList 状态备份：%s\n' "$OPENLIST_BACKUP" >&2
-  printf 'TG115_RESULT=FAILED\n' >&2
+    || printf '[TG2Cloud-OpenList] OpenList 状态备份：%s\n' "$OPENLIST_BACKUP" >&2
+  printf 'TG2CLOUD_RESULT=FAILED\n' >&2
   exit 1
 }
 
@@ -129,22 +129,51 @@ trap cleanup_release_stage EXIT
   || fail "安装目录不能包含 . 或 .. 路径段"
 [[ "$(realpath -m -- "$INSTALL_DIR")" == "$INSTALL_DIR" ]] \
   || fail "安装目录不能经过符号链接"
+[[ "$INSTALL_DIR" != /opt/tg115-openlist ]] \
+  || fail "检测到旧 TG115 安装目录 /opt/tg115-openlist；TG2Cloud 不会静默覆盖，请先按迁移文档处理"
 SOURCE_DIR="$(realpath -e -- "$SOURCE_DIR")"
 CONFIG_FILE="$(realpath -e -- "$CONFIG_FILE")"
 PRESERVE_CONFIG_HELPER="$SOURCE_DIR/preserve_webdav_config.sh"
 [[ -f "$PRESERVE_CONFIG_HELPER" ]] || fail "部署包缺少 WebDAV 配置保留脚本"
+[[ -f "$SOURCE_DIR/preserve_runtime_config.sh" ]] \
+  || fail "部署包缺少现有配置保护脚本"
 # shellcheck disable=SC1090
 source "$PRESERVE_CONFIG_HELPER"
+# shellcheck disable=SC1090
+source "$SOURCE_DIR/preserve_runtime_config.sh"
 [[ "$SOURCE_DIR/" != "$INSTALL_DIR/"* && "$INSTALL_DIR/" != "$SOURCE_DIR/"* ]] \
   || fail "部署源目录和安装目录不能重叠"
 [[ "$CONFIG_FILE" != "$INSTALL_DIR/"* ]] || fail "请将输入配置放在安装目录之外"
 export INSTALL_DIR
+
+[[ ! -e /opt/tg115-openlist ]] || log "检测到旧目录 /opt/tg115-openlist；保留不动，新安装继续"
+if command -v docker >/dev/null 2>&1; then
+  for legacy_container in tg115-openlist-bot tg115-openlist; do
+    if docker container inspect "$legacy_container" >/dev/null 2>&1; then
+      log "检测到旧容器 $legacy_container；保留不动，不参与新部署"
+    fi
+  done
+  if docker network inspect tg115-openlist-net >/dev/null 2>&1; then
+    log "检测到旧 TG115 Network tg115-openlist-net；新部署不会使用或修改它"
+  fi
+fi
+if [[ -d "$INSTALL_DIR" && ! -f "$INSTALL_DIR/docker-compose.yml" ]] \
+  && [[ -n "$(find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
+  fail "目标安装目录已有非 TG2Cloud 文件：$INSTALL_DIR；不会覆盖，请检查后重新检测"
+fi
+if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
+  grep -Fq "container_name: $BOT_CONTAINER" "$INSTALL_DIR/docker-compose.yml" \
+    && grep -Fq "container_name: $OPENLIST_CONTAINER" "$INSTALL_DIR/docker-compose.yml" \
+    || fail "目标安装目录不是可识别的 TG2Cloud OpenList 部署；不会覆盖，请检查后重新检测"
+fi
 sed -i 's/\r$//' "$CONFIG_FILE"
-if tg115_preserve_existing_webdav_config "$CONFIG_FILE" "$INSTALL_DIR/.env"; then
-  grep -Fxq 'TG115_PRESERVE_WEBDAV=true' "$CONFIG_FILE" \
-    && log "已在 VPS 内复用现有 WebDAV 配置；不会输出或传回凭据"
-else
-  fail "无法安全保留 VPS 上的现有 WebDAV 配置"
+if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
+  if grep -Fxq 'TG2CLOUD_REDEPLOY_APPLY_CONFIG=true' "$CONFIG_FILE"; then
+    tg115_preserve_existing_webdav_config "$CONFIG_FILE" "$INSTALL_DIR/.env" \
+      || fail "无法安全保留 VPS 上的现有 WebDAV 配置"
+  fi
+  tg2cloud_prepare_redeploy_config "$CONFIG_FILE" "$INSTALL_DIR/.env" \
+    || fail "无法安全保留现有 TG2Cloud 配置"
 fi
 
 if [[ -r /etc/os-release ]]; then
@@ -210,6 +239,27 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 不可用"
 
+for target_container in "$BOT_CONTAINER" "$OPENLIST_CONTAINER"; do
+  if docker container inspect "$target_container" >/dev/null 2>&1; then
+    owner="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }}' "$target_container" 2>/dev/null || true)"
+    [[ "$owner" == "$INSTALL_DIR" && -f "$INSTALL_DIR/docker-compose.yml" ]] \
+      || fail "目标容器名 $target_container 已被其他部署使用；不会覆盖，请检查后重新检测"
+  fi
+done
+PORT_5244_OWNER="$(docker ps --format '{{.Names}}|{{.Ports}}' \
+  | awk -F'|' '$2 ~ /:5244->/ {print $1; exit}')"
+if [[ -n "$PORT_5244_OWNER" && "$PORT_5244_OWNER" != "$OPENLIST_CONTAINER" ]]; then
+  fail "固定端口 5244 被容器 $PORT_5244_OWNER 占用；请自行处理后重新检测，不会自动停用或改端口"
+fi
+if [[ -z "$PORT_5244_OWNER" ]]; then
+  if command -v ss >/dev/null 2>&1; then
+    [[ -z "$(ss -H -ltn '( sport = :5244 )')" ]] \
+      || fail "固定端口 5244 已被其他进程占用；请自行处理后重新检测"
+  elif timeout 2 bash -c 'echo >/dev/tcp/127.0.0.1/5244' >/dev/null 2>&1; then
+    fail "固定端口 5244 已被其他进程占用；请自行处理后重新检测"
+  fi
+fi
+
 DOCKER_ROOT_DIR="$(docker info --format '{{.DockerRootDir}}')" \
   || fail "无法读取 Docker 数据目录"
 [[ "$DOCKER_ROOT_DIR" == /* && "$DOCKER_ROOT_DIR" != *$'\n'* && "$DOCKER_ROOT_DIR" != *$'\r'* ]] \
@@ -237,8 +287,8 @@ mkdir -p \
 install -d -m 700 "$BACKUP_DIR"
 [[ -f "$INSTALL_DIR/openlist/data/data.db" ]] || OPENLIST_WAS_NEW=true
 
-RELEASE_STAGE="$(mktemp -d /opt/tg115-openlist-release-XXXXXXXX)"
-CANDIDATE_TAG="tg115-openlist-candidate:$(date +%s)-$$"
+RELEASE_STAGE="$(mktemp -d /opt/tg2cloud-openlist-release-XXXXXXXX)"
+CANDIDATE_TAG="tg2cloud-openlist-candidate:$(date +%s)-$$"
 log "在隔离目录预检新程序和配置"
 cp -a "$SOURCE_DIR/." "$RELEASE_STAGE/"
 install -m 600 "$CONFIG_FILE" "$RELEASE_STAGE/.env"
@@ -313,7 +363,7 @@ if ! wait_openlist_http; then
   fail "OpenList 没有在 VPS 本机 127.0.0.1:5244 正常响应"
 fi
 
-log "构建并启动 Telegram → 115 Bot"
+log "构建并启动 TG2Cloud Bot"
 docker compose build "$BOT_SERVICE"
 bash "$INSTALL_DIR/manage.sh" validate
 docker compose up -d --no-deps "$BOT_SERVICE"
@@ -334,13 +384,13 @@ if BACKUP_INVENTORY="$(tg115_backup_inventory "$BACKUP_DIR")"; then
 fi
 log "OpenList 与 Bot 基础部署完成；WebDAV 最终验收需在用户完成存储配置后单独执行"
 docker compose ps
-printf 'TG115_INSTALL_DIR=%s\n' "$INSTALL_DIR"
-printf 'TG115_BOT_HEALTH=healthy\n'
+printf 'TG2CLOUD_INSTALL_DIR=%s\n' "$INSTALL_DIR"
+printf 'TG2CLOUD_BOT_HEALTH=healthy\n'
 if [[ "$OPENLIST_WAS_NEW" == true ]]; then
-  printf 'TG115_OPENLIST_INITIALIZED=NEW\n'
+  printf 'TG2CLOUD_OPENLIST_INITIALIZED=NEW\n'
 else
-  printf 'TG115_OPENLIST_INITIALIZED=EXISTING\n'
+  printf 'TG2CLOUD_OPENLIST_INITIALIZED=EXISTING\n'
 fi
-printf 'TG115_OPENLIST_MANAGEMENT=127.0.0.1:5244\n'
-printf 'TG115_DESTINATION=PENDING_USER_CONFIGURATION\n'
-printf 'TG115_RESULT=SUCCESS\n'
+printf 'TG2CLOUD_OPENLIST_MANAGEMENT=127.0.0.1:5244\n'
+printf 'TG2CLOUD_DESTINATION=PENDING_USER_CONFIGURATION\n'
+printf 'TG2CLOUD_RESULT=SUCCESS\n'

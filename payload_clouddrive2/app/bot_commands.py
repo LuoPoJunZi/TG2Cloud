@@ -129,7 +129,7 @@ class CommandMixin:
     @staticmethod
     def _format_help() -> str:
         return (
-            "使用帮助\n\n"
+            "TG2Cloud 使用帮助\n\n"
             "提交文件：直接发送或转发视频、文档等文件\n"
             "状态查看：/status、/queue [页码]\n"
             "任务查看：/task <编号>\n"
@@ -598,7 +598,7 @@ class CommandMixin:
                 return
             await event.reply(
                 f"✅ 已批量确认 {len(task_ids)} 个任务。\n"
-                "这是你在 115 官方客户端集中核验后的人工记录；"
+                "这是你在所用云存储官方客户端集中核验后的人工记录；"
                 "如果还有更多，可再次发送 /confirm all。"
             )
             return
@@ -606,7 +606,7 @@ class CommandMixin:
         if task_id is None:
             await event.reply(
                 "用法：/confirm <任务编号|all>\n"
-                "只在 115 官方客户端看到文件大小正常、可以打开或播放后使用。"
+                "只在所用云存储官方客户端看到文件大小正常、可以打开或播放后使用。"
             )
             return
         result, task = self.db.confirm_115(task_id)
@@ -619,12 +619,12 @@ class CommandMixin:
         if result == "invalid":
             await event.reply(
                 f"任务当前状态为“{self._state_label(task['state'])}”，还不能确认。\n"
-                "必须先等 Bot 传输完成，并在 115 官方客户端看到完整文件。"
+                "必须先等 Bot 传输完成，并在所用云存储官方客户端看到完整文件。"
             )
             return
         await event.reply(
-            f"✅ 任务 #{task_id} 已标记为“115 官方端已由你确认”。\n"
-            "这是你的人工确认记录；Bot 没有调用 115 官方接口复验文件。"
+            f"✅ 任务 #{task_id} 已标记为“云存储官方端已由你确认”。\n"
+            "这是你的人工确认记录；Bot 没有调用云存储官方接口复验文件。"
         )
 
     async def _command_stream(

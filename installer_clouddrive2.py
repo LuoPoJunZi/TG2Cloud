@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""CloudDrive2 product entry for the shared TG115 PySide6 deployer."""
+"""CloudDrive2 product entry for the shared TG2Cloud PySide6 deployer."""
 
 from __future__ import annotations
 

@@ -90,7 +90,7 @@ class Settings:
             os.getenv("RCLONE_CONFIG_PATH", "/config/rclone/rclone.conf")
         )
         budget_gb = _float("LOCAL_TEMP_BUDGET_GB", 20.0)
-        min_free_gb = _float("MIN_FREE_DISK_GB", 20.0)
+        min_free_gb = _float("MIN_FREE_DISK_GB", 8.0)
         if (
             not math.isfinite(budget_gb)
             or not math.isfinite(min_free_gb)
@@ -99,19 +99,24 @@ class Settings:
         ):
             raise RuntimeError("磁盘预算和安全线必须是大于 0 的有限数字")
 
-        storage_backend = os.getenv("TG115_STORAGE_BACKEND", "clouddrive2").strip()
+        # Legacy TG115 compatibility: only use old environment keys when new ones are absent.
+        storage_backend = os.getenv(
+            "TG2CLOUD_STORAGE_BACKEND",
+            os.getenv("TG115_STORAGE_BACKEND", "clouddrive2"),
+        ).strip()
         destination_profiles = {
             "clouddrive2": ("CloudDrive2", "cd2"),
             "openlist": ("OpenList", "openlist"),
         }
         if storage_backend not in destination_profiles:
-            raise RuntimeError("TG115_STORAGE_BACKEND 不是受支持的存储后端")
+            raise RuntimeError("存储后端配置不是受支持的值")
         destination_label, default_remote_name = destination_profiles[storage_backend]
         rclone_remote_name = os.getenv(
-            "TG115_RCLONE_REMOTE_NAME", default_remote_name
+            "TG2CLOUD_RCLONE_REMOTE_NAME",
+            os.getenv("TG115_RCLONE_REMOTE_NAME", default_remote_name),
         ).strip()
         if rclone_remote_name != default_remote_name:
-            raise RuntimeError("TG115_RCLONE_REMOTE_NAME 与存储后端不匹配")
+            raise RuntimeError("rclone 远端名称与存储后端不匹配")
 
         settings = cls(
             api_id=api_id,

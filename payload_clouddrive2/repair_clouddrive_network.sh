@@ -2,23 +2,28 @@
 set -Eeuo pipefail
 umask 077
 
-INSTALL_DIR="${INSTALL_DIR:-/opt/tg115}"
+INSTALL_DIR="${INSTALL_DIR:-/opt/tg2cloud-clouddrive2}"
+BACKUP_DIR="/opt/tg2cloud-clouddrive2-backups"
+BOT_SERVICE="tg2cloud-clouddrive2-bot"
+BOT_CONTAINER="tg2cloud-clouddrive2-bot"
+CD2_MANAGED_CONTAINER="tg2cloud-clouddrive2"
+DOCKER_NETWORK="tg2cloud-clouddrive2-net"
 MODE="${1:-full}"
 
 log() {
-  printf '[TG115-REPAIR] %s\n' "$*"
+  printf '[TG2Cloud-REPAIR] %s\n' "$*"
 }
 
 fail() {
   trap - ERR
-  printf '[TG115-REPAIR][ERROR] %s\n' "$*" >&2
-  printf 'TG115_REPAIR=FAILED\n' >&2
+  printf '[TG2Cloud-REPAIR][ERROR] %s\n' "$*" >&2
+  printf 'TG2CLOUD_REPAIR=FAILED\n' >&2
   exit 1
 }
 
 recover_webdav_credentials() {
   local backup temp_env username_b64 password_b64 username password status
-  temp_env="$(mktemp /tmp/tg115-webdav-credentials.XXXXXX)"
+  temp_env="$(mktemp /tmp/tg2cloud-webdav-credentials.XXXXXX)"
   while IFS= read -r backup; do
     [[ -n "$backup" ]] || continue
     if ! tar -xOf "$backup" ./.env > "$temp_env" 2>/dev/null; then
@@ -56,7 +61,7 @@ recover_webdav_credentials() {
       return 0
     fi
   done < <(
-    find /opt/tg115-backups -maxdepth 1 -type f -name 'config-*.tar.gz' \
+    find "$BACKUP_DIR" -maxdepth 1 -type f -name 'config-*.tar.gz' \
       -printf '%T@ %p\n' 2>/dev/null \
       | sort -nr | cut -d' ' -f2-
   )
@@ -71,9 +76,30 @@ trap 'fail "修复在第 ${LINENO} 行失败。请保留完整日志。"' ERR
   || fail "安装目录必须是 /opt/ 下的安全绝对路径"
 [[ "/$INSTALL_DIR/" != *"/../"* && "/$INSTALL_DIR/" != *"/./"* ]] \
   || fail "安装目录不能包含 . 或 .. 路径段"
-[[ -f "$INSTALL_DIR/docker-compose.yml" ]] || fail "找不到现有 TG115 部署"
-[[ -f "$INSTALL_DIR/.env" ]] || fail "找不到现有 TG115 配置"
+[[ "$INSTALL_DIR" != /opt/tg115 ]] \
+  || fail "检测到旧 TG115 安装目录 /opt/tg115；TG2Cloud 不会迁移、覆盖或修复该部署"
+[[ -f "$INSTALL_DIR/docker-compose.yml" ]] || fail "找不到现有 TG2Cloud 部署"
+[[ -f "$INSTALL_DIR/.env" ]] || fail "找不到现有 TG2Cloud 配置"
 command -v docker >/dev/null 2>&1 || fail "Docker 不可用"
+
+[[ ! -e /opt/tg115 ]] || log "检测到旧目录 /opt/tg115；保留不动"
+for legacy_container in tg115-bot tg115-clouddrive2; do
+  if docker container inspect "$legacy_container" >/dev/null 2>&1; then
+    log "检测到旧容器 $legacy_container；保留不动，不参与修复"
+  fi
+done
+if docker network inspect tg115 >/dev/null 2>&1; then
+  log "检测到旧 TG115 Network tg115；本次修复不会使用或修改它"
+fi
+if [[ "$(docker inspect --format '{{.State.Running}}' tg115-clouddrive2 2>/dev/null || true)" == true \
+  && "$(docker inspect --format '{{.HostConfig.NetworkMode}}' tg115-clouddrive2 2>/dev/null || true)" == host ]]; then
+  if command -v ss >/dev/null 2>&1; then
+    [[ -z "$(ss -H -ltn '( sport = :19798 )')" ]] \
+      || fail "旧 TG115 正在占用固定端口 19798；请自行处理后重新检测，不会自动停用"
+  elif timeout 2 bash -c 'echo >/dev/tcp/127.0.0.1/19798' >/dev/null 2>&1; then
+    fail "旧 TG115 正在占用固定端口 19798；请自行处理后重新检测，不会自动停用"
+  fi
+fi
 
 cd "$INSTALL_DIR"
 docker compose config --quiet
@@ -81,14 +107,16 @@ docker compose config --quiet
 DEPLOY_CLOUDDRIVE2="$(awk -F= '$1=="DEPLOY_CLOUDDRIVE2" {print $2; exit}' .env)"
 DEPLOY_CLOUDDRIVE2="${DEPLOY_CLOUDDRIVE2%$'\r'}"
 
-docker network inspect tg115 >/dev/null 2>&1 || docker network create tg115 >/dev/null
+docker network inspect "$DOCKER_NETWORK" >/dev/null 2>&1 \
+  || docker network create "$DOCKER_NETWORK" >/dev/null
 
 mapfile -t CD2_MATCHES < <(
   docker ps --format '{{.Names}}|{{.Image}}|{{.Ports}}' \
     | awk -F'|' '
-        tolower($1) ~ /clouddrive2/ ||
+        (tolower($1) ~ /clouddrive2/ && tolower($1) !~ /^tg115-/) ||
         tolower($2) ~ /(^|\/)clouddrive2([:@]|$)/ ||
         tolower($2) ~ /cloudnas\/clouddrive2([:@]|$)/ {
+          if (tolower($1) ~ /^tg115-/) next
           print $1
         }
       '
@@ -100,6 +128,9 @@ PORT_19798_CONTAINER="$(
   docker ps --format '{{.Names}}|{{.Ports}}' \
     | awk -F'|' '$2 ~ /:19798->/ {print $1; exit}'
 )"
+if [[ "$PORT_19798_CONTAINER" == tg115-clouddrive2 ]]; then
+  fail "旧 TG115 容器正在占用固定端口 19798；请自行处理后重新检测，不会自动停用或改端口"
+fi
 if [[ -z "$CD2_CONTAINER" && -n "$PORT_19798_CONTAINER" ]]; then
   fail "容器 $PORT_19798_CONTAINER 占用 19798 端口，但无法确认它是 CloudDrive2；拒绝自动修改"
 fi
@@ -111,7 +142,7 @@ if [[ -z "$CD2_CONTAINER" ]]; then
   [[ -c /dev/fuse ]] || fail "VPS 没有提供 /dev/fuse"
   docker compose pull clouddrive2
   docker compose up -d clouddrive2
-  CD2_CONTAINER="tg115-clouddrive2"
+  CD2_CONTAINER="$CD2_MANAGED_CONTAINER"
 fi
 
 docker inspect "$CD2_CONTAINER" >/dev/null 2>&1 \
@@ -123,12 +154,12 @@ log "保留现有 CloudDrive2 容器和登录数据：$CD2_CONTAINER"
 CD2_NETWORK_MODE="$(
   docker inspect --format '{{.HostConfig.NetworkMode}}' "$CD2_CONTAINER"
 )"
-CD2_ENDPOINT_HOST="clouddrive2"
+CD2_ENDPOINT_HOST="$CD2_MANAGED_CONTAINER"
 if [[ "$CD2_NETWORK_MODE" == "host" || "$CD2_NETWORK_MODE" == container:* ]]; then
   log "CloudDrive2 使用 $CD2_NETWORK_MODE 网络；Bot 自动使用相同网络命名空间"
-  COMPOSE_TMP="$INSTALL_DIR/.docker-compose.yml.tg115-repair"
+  COMPOSE_TMP="$INSTALL_DIR/.docker-compose.yml.tg2cloud-repair"
   awk -v network_mode="$CD2_NETWORK_MODE" '
-    /^  tg115-bot:/ { in_bot=1; print; next }
+    /^  tg2cloud-clouddrive2-bot:/ { in_bot=1; print; next }
     in_bot && /^networks:/ { in_bot=0 }
     in_bot && /^    (extra_hosts|networks):[[:space:]]*$/ {
       skip_list=1
@@ -137,7 +168,7 @@ if [[ "$CD2_NETWORK_MODE" == "host" || "$CD2_NETWORK_MODE" == container:* ]]; th
     skip_list && /^      - / { next }
     skip_list { skip_list=0 }
     in_bot && /^    network_mode:/ { next }
-    in_bot && /^    container_name:[[:space:]]*tg115-bot[[:space:]]*$/ {
+    in_bot && /^    container_name:[[:space:]]*tg2cloud-clouddrive2-bot[[:space:]]*$/ {
       print
       print "    network_mode: " network_mode
       next
@@ -151,37 +182,39 @@ if [[ "$CD2_NETWORK_MODE" == "host" || "$CD2_NETWORK_MODE" == container:* ]]; th
   CD2_HOST_URL_B64="$(
     printf '%s' 'http://127.0.0.1:19798/dav' | base64 | tr -d '\n'
   )"
-  if grep -q '^CD2_WEBDAV_URL_B64=' "$INSTALL_DIR/.env"; then
-    sed -i \
-      "s|^CD2_WEBDAV_URL_B64=.*$|CD2_WEBDAV_URL_B64=$CD2_HOST_URL_B64|" \
-      "$INSTALL_DIR/.env"
-  else
-    printf 'CD2_WEBDAV_URL_B64=%s\n' "$CD2_HOST_URL_B64" \
-      >> "$INSTALL_DIR/.env"
-  fi
+  for url_key in WEBDAV_URL_B64 CD2_WEBDAV_URL_B64; do
+    if grep -q "^${url_key}=" "$INSTALL_DIR/.env"; then
+      sed -i "s|^${url_key}=.*$|${url_key}=$CD2_HOST_URL_B64|" \
+        "$INSTALL_DIR/.env"
+    else
+      printf '%s=%s\n' "$url_key" "$CD2_HOST_URL_B64" \
+        >> "$INSTALL_DIR/.env"
+    fi
+  done
   docker compose config --quiet
-  docker compose up -d --force-recreate tg115-bot
+  docker compose up -d --force-recreate "$BOT_SERVICE"
   CD2_ENDPOINT_HOST="127.0.0.1"
 else
   if [[ "$(
     docker inspect \
-      --format '{{if index .NetworkSettings.Networks "tg115"}}yes{{end}}' \
+      --format '{{if index .NetworkSettings.Networks "tg2cloud-clouddrive2-net"}}yes{{end}}' \
       "$CD2_CONTAINER"
   )" == "yes" ]]; then
-    log "刷新现有 tg115 网络连接和 clouddrive2 别名"
-    docker network disconnect tg115 "$CD2_CONTAINER"
+    log "刷新现有 $DOCKER_NETWORK 网络连接和 $CD2_MANAGED_CONTAINER 别名"
+    docker network disconnect "$DOCKER_NETWORK" "$CD2_CONTAINER"
   fi
-  docker network connect --alias clouddrive2 tg115 "$CD2_CONTAINER"
-  docker compose up -d tg115-bot
+  docker network connect --alias "$CD2_MANAGED_CONTAINER" \
+    "$DOCKER_NETWORK" "$CD2_CONTAINER"
+  docker compose up -d "$BOT_SERVICE"
 fi
 
 log "等待 CloudDrive2 管理端口和 Bot 内部 DNS/TCP 连通"
 NETWORK_OK="false"
 for _ in $(seq 1 45); do
   if curl -fsS --max-time 5 http://127.0.0.1:19798/ >/dev/null 2>&1 \
-    && docker exec -e TG115_CD2_ENDPOINT="$CD2_ENDPOINT_HOST" \
-      tg115-bot python -c \
-      'import os,socket; h=os.environ["TG115_CD2_ENDPOINT"]; socket.getaddrinfo(h,19798); s=socket.create_connection((h,19798),5); s.close()' \
+    && docker exec -e TG2CLOUD_CD2_ENDPOINT="$CD2_ENDPOINT_HOST" \
+      "$BOT_CONTAINER" python -c \
+      'import os,socket; h=os.environ["TG2CLOUD_CD2_ENDPOINT"]; socket.getaddrinfo(h,19798); s=socket.create_connection((h,19798),5); s.close()' \
       >/dev/null 2>&1; then
     NETWORK_OK="true"
     break
@@ -191,36 +224,36 @@ done
 
 if [[ "$NETWORK_OK" != "true" ]]; then
   docker ps -a --filter "name=$CD2_CONTAINER" || true
-  docker network inspect tg115 || true
+  docker network inspect "$DOCKER_NETWORK" || true
   fail "Bot 仍无法通过 $CD2_ENDPOINT_HOST:19798 访问 CloudDrive2"
 fi
 
 CD2_IP="$(
-  docker exec -e TG115_CD2_ENDPOINT="$CD2_ENDPOINT_HOST" \
-    tg115-bot python -c \
-    'import os,socket; print(socket.gethostbyname(os.environ["TG115_CD2_ENDPOINT"]))'
+  docker exec -e TG2CLOUD_CD2_ENDPOINT="$CD2_ENDPOINT_HOST" \
+    "$BOT_CONTAINER" python -c \
+    'import os,socket; print(socket.gethostbyname(os.environ["TG2CLOUD_CD2_ENDPOINT"]))'
 )"
 log "Bot 已解析并连通 CloudDrive2：$CD2_IP:19798"
 
 if [[ "$MODE" != "--network-only" ]]; then
   log "执行真实 WebDAV 写入、校验、改名和清理"
   if ! VERIFY_OUTPUT="$(
-    docker compose exec -T tg115-bot python -m app.verify_destination 2>&1
+    docker compose exec -T "$BOT_SERVICE" python -m app.verify_destination 2>&1
   )"; then
     printf '%s\n' "$VERIFY_OUTPUT"
     if grep -Eqi '401 Unauthorized|Invalid credentials' <<< "$VERIFY_OUTPUT" \
       && recover_webdav_credentials; then
       log "已从 VPS 安全备份恢复可用 WebDAV 凭据；保留当前根目录设置"
-      docker compose up -d --force-recreate tg115-bot
+      docker compose up -d --force-recreate "$BOT_SERVICE"
       for _ in $(seq 1 30); do
         [[ "$(
           docker inspect --format \
             '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' \
-            tg115-bot 2>/dev/null || true
+            "$BOT_CONTAINER" 2>/dev/null || true
         )" == "healthy" ]] && break
         sleep 2
       done
-      docker compose exec -T tg115-bot python -m app.verify_destination
+      docker compose exec -T "$BOT_SERVICE" python -m app.verify_destination
     else
       fail "真实 WebDAV 写入验收失败"
     fi
@@ -235,5 +268,5 @@ if [[ "$(readlink -f "$0")" != "$(readlink -f "$PERSISTED_REPAIR")" ]]; then
   log "Persisted the current repair program to $PERSISTED_REPAIR"
 fi
 
-printf 'TG115_REPAIR_CONTAINER=%s\n' "$CD2_CONTAINER"
-printf 'TG115_REPAIR=SUCCESS\n'
+printf 'TG2CLOUD_REPAIR_CONTAINER=%s\n' "$CD2_CONTAINER"
+printf 'TG2CLOUD_REPAIR=SUCCESS\n'

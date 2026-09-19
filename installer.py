@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TG115 desktop deployer using a single-file PySide6 interface.
+"""TG2Cloud desktop deployer using a single-file PySide6 interface.
 
 Keep ``vps_resources.py`` and both product payload directories beside this file, install the
 versions pinned in ``requirements-build.txt``, then run ``python installer.py``.
@@ -66,6 +66,13 @@ APP_VERSION = CLOUDDRIVE2_PRODUCT.app_version
 UI_VERSION = "qt-1.0-single"
 MANAGED_CD2_WEBDAV_URL = CLOUDDRIVE2_PRODUCT.webdav_url
 EMPTY_FIELD = ""
+BRAND_ICON_ASSET = "assets/brand/tg2cloud-icon-256.png"
+BRAND_LOGO_ASSET = "assets/brand/tg2cloud-logo.svg"
+REQUIRED_BRAND_ASSETS = (
+    BRAND_ICON_ASSET,
+    BRAND_LOGO_ASSET,
+    "assets/brand/tg2cloud.ico",
+)
 
 def secure_password(length: int = 28) -> str:
     """Return a copy-friendly password from a cryptographic random source."""
@@ -94,10 +101,11 @@ def defaults_for(product: ProductProfile) -> dict[str, str]:
         "cd2_target": product.webdav_target,
         "install_dir": product.install_dir,
         "local_budget_gb": "20",
-        "min_free_disk_gb": "8" if product.is_openlist else "20",
+        "min_free_disk_gb": "8",
         "timezone": "Asia/Shanghai",
         "auth_method": "密码",
         "deploy_clouddrive2": "true",
+        "redeploy_apply_config": "false",
     }
     if product.is_openlist:
         defaults["cd2_password"] = secure_password()
@@ -139,10 +147,14 @@ def dependency_report(
     missing = [
         name for name in product.required_payload if not resource_path(name).is_file()
     ]
+    brand_missing = [
+        name for name in REQUIRED_BRAND_ASSETS if not resource_path(name).is_file()
+    ]
     return {
         "modules": modules,
         "payload_missing": missing,
-        "ready": all(modules.values()) and not missing,
+        "brand_missing": brand_missing,
+        "ready": all(modules.values()) and not missing and not brand_missing,
     }
 
 
@@ -215,10 +227,10 @@ SOURCE_HINTS = {
         "Bot Token 来自 @BotFather；API ID 和 API Hash 来自 my.telegram.org；数字 ID 用于限制只有你本人可以使用。"
     ],
     "_build_cloud_tab": [
-        "部署完成后点击“打开 CloudDrive2 管理页”，登录 CloudDrive2、添加并挂载 115，然后开启 WebDAV。如果 WebDAV 根目录已经选中目标 Telegram 文件夹，子目录必须留空；只有根目录在更上层时才填写相对路径。"
+        "部署完成后点击“打开 CloudDrive2 管理页”，登录 CloudDrive2、添加并挂载你的云存储（例如 115），然后开启 WebDAV。如果 WebDAV 根目录已经选中目标 Telegram 文件夹，子目录必须留空；只有根目录在更上层时才填写相对路径。"
     ],
     "_build_options_tab": [
-        "源码默认仍为 20GB 本地预算和 20GB 磁盘安全线。检测只提供当前 VPS 的实例建议，点击应用后才会改输入框；部署前还会重新检测。单文件超过本地预算时自动使用流式模式。"
+        "源码默认仍为 20GB 本地任务预算和 8GB 磁盘安全线。检测只提供当前 VPS 的实例建议，点击应用后才会改输入框；部署前还会重新检测。单文件超过本地预算时自动使用流式模式。"
     ],
     "_build_config": [],
 }
@@ -434,7 +446,13 @@ if _SSH_IMPORT_ERROR is None:
             self.host = normalize_ssh_host(values["vps_host"])
             self.port = int(values["vps_port"])
             app_data = Path(os.getenv("APPDATA", Path.home()))
-            self.known_hosts = app_data / "TG115-Deployer" / "known_hosts"
+            self.known_hosts = app_data / "TG2Cloud-Deployer" / "known_hosts"
+            legacy_known_hosts = app_data / "TG115-Deployer" / "known_hosts"
+            if legacy_known_hosts.is_file() and not self.known_hosts.exists():
+                self.log(
+                    "检测到旧 TG115 SSH 主机记录；TG2Cloud 不会自动导入或覆盖，"
+                    "首次连接时请重新核对主机指纹。"
+                )
             self.host_keys = KnownHostsStore(self.known_hosts)
             self.client_factory = client_factory
             self.client = self._new_client()
@@ -799,7 +817,7 @@ if _SSH_IMPORT_ERROR is None:
             self.session.close()
 
     def re_safe_remote_stage(path: str) -> bool:
-        prefix = "/tmp/tg115-deploy-"  # nosec B108
+        prefix = "/tmp/tg2cloud-deploy-"  # nosec B108
         suffix = path.removeprefix(prefix)
         return (
             path.startswith(prefix)
@@ -849,28 +867,97 @@ if _BACKEND_IMPORT_ERROR is None:
             super().__init__(message)
             self.statuses = statuses
 
+    _MACHINE_MARKER = re.compile(r"^(TG2CLOUD|TG115)_([A-Z0-9_]+)=(.*)$")
+
+    def machine_markers(output: str) -> dict[str, str]:
+        """Read current protocol first; TG115 markers are legacy compatibility."""
+        current: dict[str, str] = {}
+        legacy: dict[str, str] = {}
+        for line in output.splitlines():
+            matched = _MACHINE_MARKER.fullmatch(line.strip())
+            if matched is None:
+                continue
+            namespace, key, value = matched.groups()
+            (current if namespace == "TG2CLOUD" else legacy)[key] = value
+        return legacy | current
+
+    def runtime_status_command(product: ProductProfile, install_dir: str) -> str:
+        """Read-only VPS probe; legacy names are detection-only, never targets."""
+        legacy_checks = [
+            f"test -e {shlex.quote(path)}" for path in product.legacy_install_dirs
+        ] + [
+            f"docker container inspect {shlex.quote(name)} >/dev/null 2>&1"
+            for name in product.legacy_containers
+        ]
+        script = f"""
+install_dir={shlex.quote(install_dir)}
+if {' || '.join(legacy_checks)}; then
+  printf 'TG2CLOUD_LEGACY=DETECTED\\n'
+else
+  printf 'TG2CLOUD_LEGACY=NONE\\n'
+fi
+if [[ -L "$install_dir" ]]; then
+  printf 'TG2CLOUD_STATUS=UNKNOWN\\n'
+  exit 2
+fi
+if [[ ! -f "$install_dir/docker-compose.yml" ]]; then
+  printf 'TG2CLOUD_STATUS=NOT_INSTALLED\\n'
+  exit 0
+fi
+if ! grep -Fq {shlex.quote('container_name: ' + product.bot_container)} "$install_dir/docker-compose.yml" \
+  || ! grep -Fq {shlex.quote('container_name: ' + product.storage_container)} "$install_dir/docker-compose.yml"; then
+  printf 'TG2CLOUD_STATUS=UNKNOWN\\n'
+  exit 2
+fi
+bot_health="$(docker inspect --format '{{{{if .State.Health}}}}{{{{.State.Health.Status}}}}{{{{else}}}}{{{{.State.Status}}}}{{{{end}}}}' {shlex.quote(product.bot_container)} 2>/dev/null || true)"
+gateway_running="$(docker inspect --format '{{{{.State.Running}}}}' {shlex.quote(product.storage_container)} 2>/dev/null || true)"
+if docker network inspect {shlex.quote(product.docker_network)} >/dev/null 2>&1; then network=PRESENT; else network=MISSING; fi
+if [[ {shlex.quote(product.key)} == clouddrive2 ]] \
+  && grep -Fxq 'DEPLOY_CLOUDDRIVE2=false' "$install_dir/.env"; then
+  gateway=EXTERNAL
+elif [[ "$gateway_running" == true ]]; then gateway=RUNNING
+else gateway=STOPPED
+fi
+if [[ {shlex.quote(product.key)} == openlist && "$gateway" == RUNNING ]] \
+  && ! curl -fsS --max-time 3 http://127.0.0.1:5244/ >/dev/null 2>&1; then
+  gateway=UNHEALTHY
+fi
+printf 'TG2CLOUD_BOT_HEALTH=%s\\nTG2CLOUD_GATEWAY=%s\\nTG2CLOUD_NETWORK=%s\\n' "${{bot_health:-missing}}" "$gateway" "$network"
+if [[ "$bot_health" == healthy && "$network" == PRESENT ]] \
+  && [[ "$gateway" == RUNNING || "$gateway" == EXTERNAL ]]; then
+  printf 'TG2CLOUD_STATUS=RUNNING\\n'
+else
+  printf 'TG2CLOUD_STATUS=STOPPED\\n'
+fi
+"""
+        return "bash -c " + shlex.quote(script)
+
     _VERIFICATION_STEPS = (
-        ("Bot 容器", "BOT_HEALTH=healthy", "BOT_HEALTH="),
-        ("OpenList 服务", "TG115_OPENLIST=OK", "TG115_OPENLIST=FAILED"),
-        ("WebDAV 认证", "TG115_WEBDAV_AUTH=OK", "TG115_WEBDAV_AUTH=FAILED"),
-        ("目标目录", "TG115_WEBDAV_LIST=OK", "TG115_WEBDAV_LIST=FAILED"),
-        ("测试写入", "TG115_WEBDAV_WRITE=OK", "TG115_WEBDAV_WRITE=FAILED"),
-        ("大小校验", "TG115_WEBDAV_SIZE=OK", "TG115_WEBDAV_SIZE=FAILED"),
-        ("临时改名", "TG115_WEBDAV_MOVE=OK", "TG115_WEBDAV_MOVE=FAILED"),
-        ("测试清理", "TG115_WEBDAV_DELETE=OK", "TG115_WEBDAV_DELETE=FAILED"),
+        ("OpenList 服务", "OPENLIST"),
+        ("WebDAV 认证", "WEBDAV_AUTH"),
+        ("目标目录", "WEBDAV_LIST"),
+        ("测试写入", "WEBDAV_WRITE"),
+        ("大小校验", "WEBDAV_SIZE"),
+        ("临时改名", "WEBDAV_MOVE"),
+        ("测试清理", "WEBDAV_DELETE"),
     )
 
     def verification_statuses(output: str) -> tuple[tuple[str, str], ...]:
-        statuses: list[tuple[str, str]] = []
-        for title, success_marker, failure_marker in _VERIFICATION_STEPS:
-            if success_marker in output:
-                state = "通过"
-            elif failure_marker in output or (
-                title == "Bot 容器" and "BOT_HEALTH=" in output
-            ):
-                state = "失败"
-            else:
-                state = "未执行"
+        markers = machine_markers(output)
+        bot_health = markers.get("BOT_HEALTH")
+        if bot_health is None:
+            # Legacy TG115 compatibility: early verify scripts emitted an unprefixed key.
+            bot_health = next(
+                (line.partition("=")[2] for line in output.splitlines()
+                 if line.startswith("BOT_HEALTH=")),
+                None,
+            )
+        statuses: list[tuple[str, str]] = [
+            ("Bot 容器", "通过" if bot_health == "healthy" else "失败" if bot_health else "未执行")
+        ]
+        for title, key in _VERIFICATION_STEPS:
+            value = markers.get(key)
+            state = "通过" if value == "OK" else "失败" if value == "FAILED" else "未执行"
             statuses.append((title, state))
         return tuple(statuses)
 
@@ -1046,10 +1133,15 @@ if _BACKEND_IMPORT_ERROR is None:
                     raise ValueError("公网 WebDAV 地址必须使用 HTTPS，避免密码明文传输")
             target = values["cd2_target"].strip()
             if any(ord(char) < 32 for char in target) or "\\" in target:
-                raise ValueError("115 目标路径不能包含控制字符或反斜杠")
+                raise ValueError("WebDAV 目标路径不能包含控制字符或反斜杠")
             if ".." in target.split("/"):
-                raise ValueError("115 目标路径不能包含 ..")
-            validate_install_dir(values["install_dir"])
+                raise ValueError("WebDAV 目标路径不能包含 ..")
+            install_dir = validate_install_dir(values["install_dir"])
+            if install_dir in self.product.legacy_install_dirs:
+                raise ValueError(
+                    f"检测到旧 TG115 安装目录 {install_dir}；TG2Cloud 不会静默覆盖，"
+                    "请改用当前版本的默认目录，或先按迁移文档处理旧部署"
+                )
             if not re.fullmatch("[A-Za-z0-9_+./-]+", values["timezone"]):
                 raise ValueError("时区格式不正确")
             if values["timezone"].startswith("/") or any(
@@ -1144,7 +1236,9 @@ if _BACKEND_IMPORT_ERROR is None:
             if uid_code != 0 or not uid_lines or (not uid_lines[-1].isdigit()):
                 raise RuntimeError("SSH 已连接，但无法确认 VPS 用户权限")
             code, output = session.run(
-                build_probe_command(basis[3]), sudo=uid_lines[-1] != "0", timeout=30
+                build_probe_command(basis[3], self.product.backup_dir),
+                sudo=uid_lines[-1] != "0",
+                timeout=30,
             )
             if code != 0:
                 raise RuntimeError("SSH 已连接，但无法读取 VPS CPU、内存和目标文件系统")
@@ -1181,6 +1275,12 @@ if _BACKEND_IMPORT_ERROR is None:
                 "WEBDAV_TARGET_PATH_B64": b64(
                     values["cd2_target"].strip().strip("/")
                 ),
+                "TG2CLOUD_STORAGE_BACKEND": self.product.key,
+                "TG2CLOUD_DESTINATION_LABEL": self.product.display_name,
+                "TG2CLOUD_RCLONE_REMOTE_NAME": (
+                    "openlist" if self.product.is_openlist else "cd2"
+                ),
+                # Compatibility aliases keep rollback to the proven TG115 core possible.
                 "TG115_STORAGE_BACKEND": self.product.key,
                 "TG115_DESTINATION_LABEL": self.product.display_name,
                 "TG115_RCLONE_REMOTE_NAME": (
@@ -1204,14 +1304,17 @@ if _BACKEND_IMPORT_ERROR is None:
                     if self.product.key == "clouddrive2"
                     else "false"
                 ),
+                "TG2CLOUD_REDEPLOY_APPLY_CONFIG": values.get(
+                    "redeploy_apply_config", "false"
+                ),
             }
             if self.product.is_openlist:
                 pairs["OPENLIST_ADMIN_PASSWORD"] = values[
                     "openlist_admin_password"
                 ]
-                pairs["TG115_PRESERVE_WEBDAV"] = values.get(
-                    "preserve_webdav", "false"
-                )
+                preserve = values.get("preserve_webdav", "false")
+                pairs["TG2CLOUD_PRESERVE_WEBDAV"] = preserve
+                pairs["TG115_PRESERVE_WEBDAV"] = preserve
             return "\n".join((f"{key}={value}" for key, value in pairs.items())) + "\n"
 
         def _add_payload_to_archive(self, archive: tarfile.TarFile) -> None:
@@ -1285,7 +1388,7 @@ if _BACKEND_IMPORT_ERROR is None:
                     f"CloudDrive2 与 Bot 位于同一台 VPS：已自动使用安全的容器内网 WebDAV 地址 {self.product.webdav_url}。"
                 )
             self._log("开始一键部署基础环境。请关注下方运行日志。")
-            with tempfile.TemporaryDirectory(prefix="tg115-deployer-") as temp_name:
+            with tempfile.TemporaryDirectory(prefix="tg2cloud-deployer-") as temp_name:
                 temp = Path(temp_name)
                 archive = temp / "payload.tar.gz"
                 config_file = temp / "config.env"
@@ -1294,7 +1397,7 @@ if _BACKEND_IMPORT_ERROR is None:
                 with tarfile.open(archive, "w:gz") as tar:
                     self._add_payload_to_archive(tar)
                 session = self._new_session(values)
-                remote_stage = f"/tmp/tg115-deploy-{uuid.uuid4().hex}"  # nosec B108
+                remote_stage = f"/tmp/tg2cloud-deploy-{uuid.uuid4().hex}"  # nosec B108
                 try:
                     self._log("SSH 连接成功，重新核对 VPS 资源和当前存储配置……")
                     resources, advice = self._probe_and_recommend(session, values)
@@ -1379,11 +1482,12 @@ if _BACKEND_IMPORT_ERROR is None:
                     code, output = session.run(
                         command, sudo=use_sudo, stream=self._log, timeout=1800
                     )
-                    if code != 0 or "TG115_RESULT=SUCCESS" not in output:
+                    result_markers = machine_markers(output)
+                    if code != 0 or result_markers.get("RESULT") != "SUCCESS":
                         raise RuntimeError("远程基础安装没有通过容器健康检查")
                     self._log("基础部署和容器自检通过。")
                     openlist_initialized = (
-                        "TG115_OPENLIST_INITIALIZED=NEW" in output
+                        result_markers.get("OPENLIST_INITIALIZED") == "NEW"
                     )
                     return OperationResult(
                         "部署成功",
@@ -1394,10 +1498,10 @@ if _BACKEND_IMPORT_ERROR is None:
                                 if openlist_initialized
                                 else "当前是已有 OpenList，原管理员凭据保持不变；登录后"
                             )
-                            + "添加 115 Open 存储并配置 WebDAV 用户；"
+                            + "添加你的云存储（例如 115 Open）并配置 WebDAV 用户；"
                             "然后执行最终 WebDAV 验收。"
                             if self.product.is_openlist
-                            else "Bot 已经在 VPS 上运行。\n\n下一步：点击“打开 CloudDrive2 管理页”，登录 CloudDrive2、添加 115 并开启 WebDAV；然后点击“WebDAV 验收（写入测试文件）”。"
+                            else "Bot 已经在 VPS 上运行。\n\n下一步：点击“打开 CloudDrive2 管理页”，登录 CloudDrive2、挂载你的云存储并开启 WebDAV；然后点击“WebDAV 验收（写入测试文件）”。"
                         ),
                         openlist_state=(
                             "new" if openlist_initialized else "existing"
@@ -1479,7 +1583,7 @@ if _BACKEND_IMPORT_ERROR is None:
             if not repair_script.is_file():
                 raise RuntimeError("部署器内部修复脚本缺失，请重新下载完整安装包")
             session = self._new_session(values)
-            remote_stage = f"/tmp/tg115-deploy-{uuid.uuid4().hex}"  # nosec B108
+            remote_stage = f"/tmp/tg2cloud-deploy-{uuid.uuid4().hex}"  # nosec B108
             try:
                 code, _ = session.run(f"mkdir -m 700 {remote_stage}")
                 if code != 0:
@@ -1505,7 +1609,7 @@ if _BACKEND_IMPORT_ERROR is None:
                 code, output = session.run(
                     command, sudo=use_sudo, stream=self._log, timeout=240
                 )
-                if code != 0 or "TG115_REPAIR=SUCCESS" not in output:
+                if code != 0 or machine_markers(output).get("REPAIR") != "SUCCESS":
                     raise RuntimeError("CloudDrive2 网络修复或 WebDAV 验收没有通过")
                 self._log("CloudDrive2 网络修复和 WebDAV 真实验收均已通过。")
                 return OperationResult(
@@ -1522,12 +1626,57 @@ if _BACKEND_IMPORT_ERROR is None:
 
         def check_openlist(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
-                values, "status", "TG115_STATUS=OK", timeout=120
+                values, "status", "STATUS", timeout=120
             )
+
+        def runtime_status(self, values: dict[str, str]) -> OperationResult:
+            self._validate_connection(values)
+            install_dir = validate_install_dir(values["install_dir"])
+            session = self._new_session(values)
+            try:
+                uid_code, uid_output = session.run("id -u", timeout=10)
+                if uid_code != 0 or not uid_output.strip().splitlines()[-1].isdigit():
+                    raise RuntimeError("无法确认 VPS 用户权限，未完成状态检查")
+                use_sudo = uid_output.strip().splitlines()[-1] != "0"
+                if use_sudo and not values.get("sudo_password"):
+                    sudo_code, _ = session.run("sudo -n true", timeout=10)
+                    if sudo_code != 0:
+                        raise RuntimeError("需要 sudo 权限才能读取 Docker 状态")
+                code, output = session.run(
+                    runtime_status_command(self.product, install_dir),
+                    sudo=use_sudo,
+                    timeout=30,
+                )
+                markers = machine_markers(output)
+                state = markers.get("STATUS", "UNKNOWN")
+                if code != 0 or state not in {"RUNNING", "STOPPED", "NOT_INSTALLED"}:
+                    raise RuntimeError("目标目录不是可识别的 TG2Cloud 安装，无法判定运行状态")
+                labels = {
+                    "RUNNING": "运行中",
+                    "STOPPED": "已安装但未正常运行",
+                    "NOT_INSTALLED": "未安装",
+                }
+                legacy = (
+                    "；另检测到旧 TG115，仅作提示，不参与本次状态判断"
+                    if markers.get("LEGACY") == "DETECTED"
+                    else ""
+                )
+                details = (
+                    f"；Bot={markers.get('BOT_HEALTH', 'unknown')}，"
+                    f"网关={markers.get('GATEWAY', 'unknown')}，"
+                    f"Network={markers.get('NETWORK', 'unknown')}"
+                    if state != "NOT_INSTALLED"
+                    else ""
+                )
+                return OperationResult(
+                    "运行状态", f"TG2Cloud {self.product.display_name}：{labels[state]}{details}{legacy}。"
+                )
+            finally:
+                session.close()
             return OperationResult(
                 "检查通过",
                 "OpenList 容器和 Bot 正在运行，VPS 本机 5244 管理端口可以访问。"
-                "这项检查不会读取 115 登录信息，也不代表 WebDAV 已配置完成。",
+                "这项检查不会读取云存储登录信息，也不代表 WebDAV 已配置完成。",
             )
 
         def _run_openlist_manage(
@@ -1569,7 +1718,7 @@ if _BACKEND_IMPORT_ERROR is None:
                 code, output = session.run(
                     command, sudo=use_sudo, stream=self._log, timeout=timeout
                 )
-                if code != 0 or expected_marker not in output:
+                if code != 0 or machine_markers(output).get(expected_marker) != "OK":
                     raise RuntimeError(
                         f"OpenList 管理操作没有通过（{action}）"
                     )
@@ -1578,17 +1727,11 @@ if _BACKEND_IMPORT_ERROR is None:
                 session.close()
 
         def openlist_status(self, values: dict[str, str]) -> OperationResult:
-            self._run_openlist_manage(
-                values, "status", "TG115_STATUS=OK", timeout=120
-            )
-            return OperationResult(
-                "运行状态",
-                "OpenList、Bot 和 VPS 回环管理端口均已通过检查。",
-            )
+            return self.runtime_status(values)
 
         def openlist_logs(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
-                values, "recent-logs", "TG115_LOGS=OK", timeout=120
+                values, "recent-logs", "LOGS", timeout=120
             )
             return OperationResult(
                 "日志已读取",
@@ -1597,17 +1740,17 @@ if _BACKEND_IMPORT_ERROR is None:
 
         def restart_bot(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
-                values, "restart-bot", "TG115_BOT_RESTART=OK", timeout=240
+                values, "restart-bot", "BOT_RESTART", timeout=240
             )
             return OperationResult(
-                "Bot 已重启", "TG115 Bot 已重新启动并通过健康检查。"
+                "Bot 已重启", "TG2Cloud Bot 已重新启动并通过健康检查。"
             )
 
         def restart_openlist(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
                 values,
                 "restart-openlist",
-                "TG115_OPENLIST_RESTART=OK",
+                "OPENLIST_RESTART",
                 timeout=240,
             )
             return OperationResult(
@@ -1617,11 +1760,11 @@ if _BACKEND_IMPORT_ERROR is None:
 
         def backup_openlist(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
-                values, "backup", "TG115_BACKUP=OK", timeout=600
+                values, "backup", "BACKUP", timeout=600
             )
             return OperationResult(
                 "备份完成",
-                "程序配置、TG115 数据库和 OpenList 状态已保存到 VPS 的受限备份目录。",
+                "程序配置、TG2Cloud 数据库和 OpenList 状态已保存到 VPS 的受限备份目录。",
             )
 
         def reset_openlist_admin(self, values: dict[str, str]) -> OperationResult:
@@ -1650,20 +1793,13 @@ if _BACKEND_IMPORT_ERROR is None:
                 code, output = session.run(
                     command, sudo=use_sudo, stream=None, timeout=120
                 )
-                values_by_key: dict[str, str] = {}
-                for line in output.splitlines():
-                    key, separator, value = line.partition("=")
-                    if separator and key in {
-                        "TG115_OPENLIST_ADMIN_RESET",
-                        "TG115_OPENLIST_ADMIN_USERNAME",
-                        "TG115_OPENLIST_ADMIN_PASSWORD",
-                    }:
-                        values_by_key[key] = value
-                password = values_by_key.get("TG115_OPENLIST_ADMIN_PASSWORD", "")
+                # Legacy TG115 compatibility is handled by machine_markers().
+                values_by_key = machine_markers(output)
+                password = values_by_key.get("OPENLIST_ADMIN_PASSWORD", "")
                 if (
                     code != 0
-                    or values_by_key.get("TG115_OPENLIST_ADMIN_RESET") != "OK"
-                    or values_by_key.get("TG115_OPENLIST_ADMIN_USERNAME") != "admin"
+                    or values_by_key.get("OPENLIST_ADMIN_RESET") != "OK"
+                    or values_by_key.get("OPENLIST_ADMIN_USERNAME") != "admin"
                     or not 8 <= len(password) <= 256
                     or any(ord(char) < 33 or ord(char) > 126 for char in password)
                 ):
@@ -1702,52 +1838,53 @@ if _BACKEND_IMPORT_ERROR is None:
                         f"docker compose logs --tail=40 {bot_service}"
                     )
                 else:
-                    command = f"cd {shlex.quote(install_dir)} && docker compose ps && docker inspect --format 'BOT_HEALTH={{{{if .State.Health}}}}{{{{.State.Health.Status}}}}{{{{else}}}}{{{{.State.Status}}}}{{{{end}}}}' {bot_container} && docker compose exec -T {bot_service} python -m app.verify_destination && docker compose logs --tail=40 {bot_service}"
+                    command = f"cd {shlex.quote(install_dir)} && docker compose ps && docker inspect --format 'TG2CLOUD_BOT_HEALTH={{{{if .State.Health}}}}{{{{.State.Health.Status}}}}{{{{else}}}}{{{{.State.Status}}}}{{{{end}}}}' {bot_container} && docker compose exec -T {bot_service} python -m app.verify_destination && docker compose logs --tail=40 {bot_service}"
                 code, output = session.run(
                     command, sudo=use_sudo, stream=self._log, timeout=120
                 )
+                markers = machine_markers(output)
                 statuses = verification_statuses(output)
                 if code != 0:
-                    if "TG115_OPENLIST=FAILED" in output:
+                    if markers.get("OPENLIST") == "FAILED":
                         raise OperationError(
                             "OpenList 当前没有正常运行，或 VPS 本机 5244 管理端口没有响应。"
                             "请先点击“重启 OpenList”，成功后再次验收。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_AUTH=FAILED" in output:
+                    if markers.get("WEBDAV_AUTH") == "FAILED":
                         raise OperationError(
-                            "无法登录 OpenList WebDAV。请确认已经创建 tg115 用户，"
+                            "无法登录 OpenList WebDAV。请确认已经创建与本页用户名一致的专用用户，"
                             "OpenList 中的密码与“配置 WebDAV”页一致，并已授予所需权限。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_LIST=FAILED" in output:
+                    if markers.get("WEBDAV_LIST") == "FAILED":
                         raise OperationError(
-                            "WebDAV 目标目录无法访问。请检查用户基本路径、/115/Telegram "
-                            "目标目录、115 Open 挂载状态和目录权限。",
+                            "WebDAV 目标目录无法访问。请检查用户基本路径、本页配置的目标目录、"
+                            "云存储挂载状态和目录权限。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_WRITE=FAILED" in output:
+                    if markers.get("WEBDAV_WRITE") == "FAILED":
                         raise OperationError(
                             "WebDAV 登录和目录访问成功，但无法写入测试文件。"
-                            "请检查创建／上传权限以及 VPS、115 端可用空间。",
+                            "请检查创建／上传权限以及 VPS、目标云存储端可用空间。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_SIZE=FAILED" in output:
+                    if markers.get("WEBDAV_SIZE") == "FAILED":
                         raise OperationError(
                             "测试文件已写入，但远端大小校验失败。"
-                            "请查看脱敏日志并检查 OpenList 与 115 Open 的上传状态。",
+                            "请查看脱敏日志并检查 OpenList 与目标云存储的上传状态。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_MOVE=FAILED" in output:
+                    if markers.get("WEBDAV_MOVE") == "FAILED":
                         raise OperationError(
                             "测试文件已写入，但远端改名或改名后的复验失败。"
                             "请检查移动／改名权限。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_DELETE=FAILED" in output:
+                    if markers.get("WEBDAV_DELETE") == "FAILED":
                         raise OperationError(
                             "测试文件无法安全清理。请检查删除权限，并在 OpenList 中核对"
-                            "是否残留 .tg115-verify- 开头的测试文件。",
+                            "是否残留 WebDAV 验收测试文件。",
                             statuses,
                         )
                     if "server gave HTTP response to HTTPS client" in output:
@@ -1757,16 +1894,19 @@ if _BACKEND_IMPORT_ERROR is None:
                         )
                     if (
                         self.product.key == "clouddrive2"
-                        and "lookup clouddrive2" in output
+                        and (
+                            "lookup tg2cloud-clouddrive2" in output
+                            or "lookup clouddrive2" in output
+                        )
                     ):
                         raise OperationError(
-                            "Bot 无法解析 CloudDrive2 Docker 服务名。请先点击“修复 CloudDrive2 网络”，成功后再验收。",
+                            "Bot 无法解析 CloudDrive2 Docker 地址。请先点击“修复 CloudDrive2 网络”，成功后再验收。",
                             statuses,
                         )
                     raise OperationError("远程状态检查失败", statuses)
-                if "BOT_HEALTH=healthy" not in output:
+                if dict(statuses)["Bot 容器"] != "通过":
                     raise OperationError("Bot 当前没有通过健康检查", statuses)
-                if "TG115_DESTINATION=OK" not in output:
+                if markers.get("DESTINATION") != "OK":
                     raise OperationError(
                         f"{self.product.display_name} WebDAV 写入、校验、改名和清理没有通过",
                         statuses,
@@ -1774,7 +1914,7 @@ if _BACKEND_IMPORT_ERROR is None:
                 self._log("WebDAV 验收通过：测试文件已写入、校验、改名并清理。")
                 return OperationResult(
                     "验收通过",
-                    f"Bot 容器健康；{self.product.display_name} WebDAV 已通过真实测试文件的写入、大小校验、改名和清理。\n\n注意：这只证明 {self.product.display_name} WebDAV 已接收文件；115 官方端应以官方客户端中大小正常且可以打开为准。",
+                    f"Bot 容器健康；{self.product.display_name} WebDAV 已通过真实测试文件的写入、大小校验、改名和清理。\n\n注意：这只证明 {self.product.display_name} WebDAV 已接收文件；上游云存储是否完成同步，请以对应官方客户端中的文件大小和可打开状态为准。",
                     statuses=statuses,
                 )
             finally:
@@ -1857,7 +1997,7 @@ def _require_qt() -> None:
 
 
 if _QT_IMPORT_ERROR is None:
-    # No external fonts, icon files, Node.js, browser runtime, or network assets.
+    # Product branding comes only from assets/brand; utility icons remain embedded.
     ICON_PATHS = {
         "server": '<rect x="4" y="3" width="16" height="7" rx="2"/><rect x="4" y="14" width="16" height="7" rx="2"/><path d="M8 6.5h.01M8 17.5h.01M12 6.5h5M12 17.5h5"/>',
         "plane": '<path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/>',
@@ -1959,6 +2099,22 @@ if _QT_IMPORT_ERROR is None:
         pixmap.setDevicePixelRatio(2)
         return QIcon(pixmap)
 
+    def brand_icon() -> QIcon:
+        """Load the official TG2Cloud icon from the bundled brand directory."""
+        return QIcon(str(resource_path(BRAND_ICON_ASSET)))
+
+    def brand_pixmap(asset: str, width: int, height: int) -> QPixmap:
+        """Load and scale an official TG2Cloud brand asset without modifying it."""
+        pixmap = QPixmap(str(resource_path(asset)))
+        if pixmap.isNull():
+            return pixmap
+        return pixmap.scaled(
+            width,
+            height,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+
     def label(text: str, role: str = "", wrap: bool = False) -> QLabel:
         widget = QLabel(text)
         if role:
@@ -2016,9 +2172,10 @@ if _QT_IMPORT_ERROR is None:
             "repair_clouddrive": "修复 CloudDrive2 网络",
             "verify": "WebDAV 验收",
             "detect_resources": "检测 VPS 并推荐",
+            "runtime_status": "查看运行状态",
             "openlist_status": "查看运行状态",
             "openlist_logs": "查看脱敏日志",
-            "restart_bot": "重启 TG115 Bot",
+            "restart_bot": "重启 TG2Cloud Bot",
             "restart_openlist": "重启 OpenList",
             "backup_openlist": "创建安全备份",
             "reset_openlist_admin": "恢复管理员密码",
@@ -2073,7 +2230,7 @@ if _QT_IMPORT_ERROR is None:
             self.setWindowTitle(
                 f"{self.product.app_title}  v{self.product.app_version}  |  Qt"
             )
-            self.setWindowIcon(icon("plane", "#3474ed", 48))
+            self.setWindowIcon(brand_icon())
             self.setMinimumSize(900, 600)
             screen = QApplication.primaryScreen()
             area = screen.availableGeometry() if screen else None
@@ -2097,16 +2254,23 @@ if _QT_IMPORT_ERROR is None:
             outer.setContentsMargins(28, 22, 28, 15)
             outer.setSpacing(15)
             header = QHBoxLayout()
-            logo = label("")
-            logo.setPixmap(icon("plane", "#ffffff", 29).pixmap(29, 29))
-            logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            logo.setFixedSize(52, 52)
-            logo.setStyleSheet("background:#3474ed;border-radius:15px;")
-            header.addWidget(logo)
+            self.brand_icon_label = label("")
+            self.brand_icon_label.setObjectName("BrandIcon")
+            self.brand_icon_label.setPixmap(
+                brand_pixmap(BRAND_ICON_ASSET, 56, 56)
+            )
+            self.brand_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.brand_icon_label.setFixedSize(60, 60)
+            header.addWidget(self.brand_icon_label)
             brand = QVBoxLayout()
             brand.setSpacing(3)
-            brand.addWidget(label("TG115", "Brand"))
-            brand.addWidget(label("Telegram → 115  ·  让部署更清晰", "Subtitle"))
+            self.brand_name_label = label("TG2Cloud", "Brand")
+            self.brand_subtitle_label = label(
+                f"From Telegram to Your Cloud  ·  {self.product.display_name} Edition",
+                "Subtitle",
+            )
+            brand.addWidget(self.brand_name_label)
+            brand.addWidget(self.brand_subtitle_label)
             header.addSpacing(4)
             header.addLayout(brand)
             header.addStretch()
@@ -2402,18 +2566,19 @@ if _QT_IMPORT_ERROR is None:
                 )
                 layout.addWidget(regenerate)
                 self.preserve_webdav = QCheckBox(
-                    "已有 OpenList：重新部署时保留 VPS 当前 WebDAV 配置"
+                    "明确覆盖全部配置时，仍保留 VPS 当前 WebDAV 与管理员配置"
                 )
                 self.preserve_webdav.setToolTip(
-                    "不会从 VPS 读取或显示密码；安装脚本只在 VPS 内复用现有配置"
+                    "仅与“使用本页配置覆盖 VPS 当前 .env”配合；凭据只在 VPS 内合并"
                 )
+                self.preserve_webdav.setEnabled(False)
                 self.preserve_webdav.toggled.connect(
                     self._update_preserve_webdav
                 )
                 layout.addWidget(self.preserve_webdav)
                 layout.addWidget(
                     self._hint(
-                        "先在 OpenList 添加 115 Open 存储，再创建专用 WebDAV 用户。"
+                        "先在 OpenList 添加你的云存储（例如 115 Open），再创建专用 WebDAV 用户。"
                         "用户名、密码和基本路径按本页建议填写；密码只在当前程序会话中保留。"
                     )
                 )
@@ -2421,7 +2586,7 @@ if _QT_IMPORT_ERROR is None:
                 layout.addWidget(self._hint(SOURCE_HINTS["_build_cloud_tab"][0]))
             layout.addWidget(
                 self._hint(
-                    "WebDAV 验收不等于 115 云端最终可用。请在 115 官方客户端确认文件大小与打开结果。",
+                    "WebDAV 验收只确认网关已接收文件。请在所用云存储的官方客户端确认最终文件大小和可打开状态。",
                     "SoftBox",
                 )
             )
@@ -2481,8 +2646,8 @@ if _QT_IMPORT_ERROR is None:
             )
             layout.addWidget(
                 self._hint(
-                    "部署后点击“打开 OpenList 管理页”，登录并由你本人添加 115 Open 存储。"
-                    "部署器不会读取 115 Cookie、Token 或登录信息。",
+                    "部署后点击“打开 OpenList 管理页”，登录并由你本人添加云存储（例如 115 Open）。"
+                    "部署器不会读取任何云盘 Cookie、Token、OAuth 凭据或登录信息。",
                     "SoftBox",
                 )
             )
@@ -2510,6 +2675,16 @@ if _QT_IMPORT_ERROR is None:
                     self._field("local_budget_gb"), self._field("min_free_disk_gb")
                 )
             )
+            self.redeploy_apply_config = QCheckBox(
+                "已有 TG2Cloud：重新部署时使用本页配置覆盖 VPS 当前 .env"
+            )
+            self.redeploy_apply_config.setToolTip(
+                "默认保留 VPS 上的全部现有配置；仅在确需修改配置且已备份时勾选"
+            )
+            self.redeploy_apply_config.toggled.connect(
+                self._update_redeploy_apply_config
+            )
+            layout.addWidget(self.redeploy_apply_config)
             resources_box = frame("SoftBox")
             resources_layout = QVBoxLayout(resources_box)
             resources_layout.setContentsMargins(14, 13, 14, 13)
@@ -2555,6 +2730,11 @@ if _QT_IMPORT_ERROR is None:
             definitions = (
                 ("test_connection", "server", "", "#6985aa"),
                 ("deploy", "rocket", "Primary", "#ffffff"),
+                *(
+                    (("runtime_status", "check", "", "#6985aa"),)
+                    if not self.product.is_openlist
+                    else ()
+                ),
                 ("open_clouddrive", "external", "", "#6985aa"),
                 ("repair_clouddrive", "wrench", "Repair", "#ac7b3e"),
                 ("verify", "check", "Verify", "#26896f"),
@@ -2562,6 +2742,7 @@ if _QT_IMPORT_ERROR is None:
             hints = {
                 "test_connection": "连接测试与 VPS 资源预检",
                 "deploy": "部署 Bot、运行环境与选定服务",
+                "runtime_status": "区分当前 TG2Cloud 与旧 TG115 实例",
                 "open_clouddrive": "通过固定 SSH 隧道打开管理页",
                 "repair_clouddrive": (
                     "检查容器与 VPS 回环管理端口"
@@ -2712,6 +2893,9 @@ if _QT_IMPORT_ERROR is None:
                 if (self.product.is_openlist or self.managed.isChecked())
                 else "false"
             )
+            values["redeploy_apply_config"] = (
+                "true" if self.redeploy_apply_config.isChecked() else "false"
+            )
             if self.product.is_openlist:
                 values["preserve_webdav"] = (
                     "true" if self.preserve_webdav.isChecked() else "false"
@@ -2775,6 +2959,13 @@ if _QT_IMPORT_ERROR is None:
         def _update_preserve_webdav(self, checked: bool) -> None:
             for name in ("cd2_username", "cd2_password", "cd2_target"):
                 self.field_boxes[name].setEnabled(not checked)
+            self._configuration_changed()
+
+        def _update_redeploy_apply_config(self, checked: bool) -> None:
+            if self.product.is_openlist:
+                self.preserve_webdav.setEnabled(checked)
+                if not checked:
+                    self.preserve_webdav.setChecked(False)
             self._configuration_changed()
 
         def _set_openlist_instance_state(self, state: str) -> None:
@@ -2865,7 +3056,7 @@ if _QT_IMPORT_ERROR is None:
 
         def export_log(self) -> None:
             now = dt.datetime.now(dt.UTC).astimezone()
-            name = f"tg115-{now:%Y%m%d-%H%M%S}.log"
+            name = f"tg2cloud-{now:%Y%m%d-%H%M%S}.log"
             path, _ = QFileDialog.getSaveFileName(
                 self, "导出脱敏日志", name, "Log files (*.log);;Text (*.txt)"
             )
@@ -2930,7 +3121,7 @@ if _QT_IMPORT_ERROR is None:
                     self,
                     "高级操作：恢复管理员密码",
                     "这会立即替换现有 OpenList 管理员密码，旧密码将失效。\n"
-                    "不会修改 WebDAV 用户密码，也不会读取 115 登录信息。\n\n"
+                    "不会修改 WebDAV 用户密码，也不会读取云存储登录信息。\n\n"
                     "确认继续？",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No,
@@ -2986,19 +3177,20 @@ if _QT_IMPORT_ERROR is None:
             next_steps = {
                 "test_connection": "下一步：补全配置并部署基础环境",
                 "deploy": (
-                    "下一步：打开 OpenList，添加 115 Open 并配置 WebDAV"
+                    "下一步：打开 OpenList，添加云存储并配置 WebDAV"
                     if self.product.is_openlist
-                    else "下一步：打开 CloudDrive2，挂载 115"
+                    else "下一步：打开 CloudDrive2，挂载云存储"
                 ),
                 "open_clouddrive": "下一步：完成存储和 WebDAV 配置后执行验收",
-                "verify": "请在 115 官方客户端确认最终文件",
+                "verify": "请在所用云存储的官方客户端确认最终文件",
                 "repair_clouddrive": (
                     "OpenList 基础服务检查通过；WebDAV 仍需单独验收"
                     if self.product.is_openlist
                     else "网络修复已完成，请关注官方端文件状态"
                 ),
                 "detect_resources": "可在部署选项页应用安全建议",
-                "openlist_status": "OpenList 和 Bot 当前运行正常",
+                "runtime_status": "请依据状态检查结果决定是否部署或修复",
+                "openlist_status": "请依据状态检查结果决定是否部署或修复",
                 "openlist_logs": "最近的脱敏日志已显示在下方",
                 "restart_bot": "Bot 已恢复运行，可继续发送任务",
                 "restart_openlist": "OpenList 管理端已恢复响应",
@@ -3127,15 +3319,25 @@ if _QT_IMPORT_ERROR is None:
             except (ValueError, KeyError, TypeError) as exc:
                 QMessageBox.warning(self, "无法应用建议", str(exc))
 
-        def show_diagnostics(self) -> None:
+        def _diagnostics_dialog(self) -> QDialog:
             report = dependency_report(self.product)
             dialog = QDialog(self)
             dialog.setWindowTitle("依赖检查与关于")
+            dialog.setWindowIcon(brand_icon())
             dialog.resize(700, 500)
             layout = QVBoxLayout(dialog)
+            about_logo = label("")
+            about_logo.setObjectName("AboutLogo")
+            about_logo.setPixmap(brand_pixmap(BRAND_LOGO_ASSET, 300, 100))
+            about_logo.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            about_logo.setAccessibleName("TG2Cloud Logo")
+            dialog.brand_logo_label = about_logo
+            layout.addWidget(about_logo)
             layout.addWidget(
                 label(
-                    f"{self.product.app_title}\n产品 v{self.product.app_version}  /  界面 {UI_VERSION}",
+                    f"{self.product.app_title}\n"
+                    "From Telegram to Your Cloud\n"
+                    f"产品 v{self.product.app_version}  /  界面 {UI_VERSION}",
                     "SectionTitle",
                     True,
                 )
@@ -3148,7 +3350,7 @@ if _QT_IMPORT_ERROR is None:
                         **report,
                         "backend_error": self.backend_error,
                         "preview_mode": self.preview,
-                        "note": "单文件界面；继续使用原项目的 vps_resources.py 和产品 payload。",
+                        "note": "TG2Cloud 不收集云存储账号、Token 或 Cookie；网盘配置只在用户自己的 CloudDrive2 或 OpenList 中完成。",
                     },
                     ensure_ascii=False,
                     indent=2,
@@ -3158,6 +3360,10 @@ if _QT_IMPORT_ERROR is None:
             buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
             buttons.rejected.connect(dialog.reject)
             layout.addWidget(buttons)
+            return dialog
+
+        def show_diagnostics(self) -> None:
+            dialog = self._diagnostics_dialog()
             dialog.exec()
 
         def closeEvent(self, event: Any) -> None:
@@ -3196,8 +3402,9 @@ def make_app() -> QApplication:
     ):
         os.environ["QT_QPA_PLATFORM"] = "offscreen"
     app = QApplication.instance() or QApplication([sys.argv[0]])
-    app.setApplicationName("TG115 Deployer")
-    app.setOrganizationName("TG115")
+    app.setApplicationName("TG2Cloud Deployer")
+    app.setOrganizationName("TG2Cloud")
+    app.setWindowIcon(brand_icon())
     app.setStyle("Fusion")
     fonts = QFontDatabase.families()
     family = next(
@@ -3227,7 +3434,7 @@ def packaged_self_test(
     result_path: Path,
     product: ProductProfile = CLOUDDRIVE2_PRODUCT,
 ) -> int:
-    """Check local runtime/resources only. Does not contact a VPS or validate 115."""
+    """Check local runtime/resources only; no VPS or cloud storage is contacted."""
     result_path = Path(result_path)
     gui_ok = False
     ui_error = ""
@@ -3275,6 +3482,7 @@ def packaged_self_test(
         f"pyside6_version={pyside6_version}",
         f"paramiko_version={paramiko_version}",
         "payload_missing=" + ",".join(report["payload_missing"]),
+        "brand_missing=" + ",".join(report["brand_missing"]),
         f"gui_runtime={'OK' if gui_ok else 'FAILED'}",
         f"backend_import={'OK' if backend_ok else 'FAILED'}",
         f"error={error}",
@@ -3321,7 +3529,7 @@ def main(
     if args.self_test:
         result_path = args.self_test_result
         if result_path is None:
-            result_path = Path(tempfile.gettempdir()) / "tg115-self-test.txt"
+            result_path = Path(tempfile.gettempdir()) / "tg2cloud-self-test.txt"
         return packaged_self_test(result_path, product)
     _require_qt()
     app = make_app()
@@ -3353,6 +3561,12 @@ def main(
                     app.processEvents()
                     if not window.grab().save(str(args.screenshots / f"{name}.png")):
                         raise RuntimeError("Screenshot write failed: " + name)
+                about = window._diagnostics_dialog()
+                about.show()
+                app.processEvents()
+                if not about.grab().save(str(args.screenshots / "about.png")):
+                    raise RuntimeError("Screenshot write failed: about")
+                about.close()
             except Exception as exc:  # noqa: BLE001 - preview capture boundary
                 capture_error.append(str(exc))
                 if sys.stderr is not None:

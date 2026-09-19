@@ -21,7 +21,7 @@ tg115_replace_env_value() {
 
 tg115_preserve_existing_webdav_config() {
   local candidate="$1" existing="$2" value primary legacy admin_password
-  grep -Fxq 'TG115_PRESERVE_WEBDAV=true' "$candidate" || return 0
+  grep -Eq '^(TG2CLOUD|TG115)_PRESERVE_WEBDAV=true$' "$candidate" || return 0
   [[ -f "$existing" && ! -L "$existing" ]] || {
     printf 'VPS 上不存在可复用的 .env\n' >&2
     return 1
@@ -53,5 +53,5 @@ EOF
     tg115_replace_env_value \
       "$candidate" OPENLIST_ADMIN_PASSWORD "$admin_password" || return 1
   fi
-  printf 'TG115_WEBDAV_CONFIG=PRESERVED\n'
+  printf 'TG2CLOUD_WEBDAV_CONFIG=PRESERVED\n'
 }

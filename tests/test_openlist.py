@@ -62,19 +62,34 @@ class OpenListProductTests(unittest.TestCase):
         )
 
     def test_product_runtime_identities_are_isolated(self) -> None:
-        self.assertEqual(OPENLIST_PRODUCT.install_dir, "/opt/tg115-openlist")
-        self.assertEqual(OPENLIST_PRODUCT.storage_container, "tg115-openlist")
-        self.assertEqual(OPENLIST_PRODUCT.bot_container, "tg115-openlist-bot")
-        self.assertEqual(OPENLIST_PRODUCT.docker_network, "tg115-openlist-net")
+        self.assertEqual(OPENLIST_PRODUCT.install_dir, "/opt/tg2cloud-openlist")
+        self.assertEqual(OPENLIST_PRODUCT.storage_container, "tg2cloud-openlist")
+        self.assertEqual(OPENLIST_PRODUCT.bot_container, "tg2cloud-openlist-bot")
+        self.assertEqual(OPENLIST_PRODUCT.docker_network, "tg2cloud-openlist-net")
         self.assertEqual(OPENLIST_PRODUCT.management_port, 5244)
         self.assertEqual(
-            OPENLIST_PRODUCT.webdav_url, "http://tg115-openlist:5244/dav/"
+            OPENLIST_PRODUCT.webdav_url, "http://tg2cloud-openlist:5244/dav/"
         )
-        self.assertEqual(OPENLIST_PRODUCT.webdav_target, "/115/Telegram")
+        self.assertEqual(OPENLIST_PRODUCT.webdav_username, "tg2cloud")
+        self.assertEqual(OPENLIST_PRODUCT.webdav_target, "")
         self.assertNotEqual(OPENLIST_PRODUCT.install_dir, CLOUDDRIVE2_PRODUCT.install_dir)
         self.assertNotEqual(
             OPENLIST_PRODUCT.docker_network, CLOUDDRIVE2_PRODUCT.docker_network
         )
+
+    def test_product_release_identity_is_tg2cloud_v1(self) -> None:
+        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_version, "1.0.0")
+        self.assertEqual(OPENLIST_PRODUCT.app_version, "1.0.0")
+        self.assertEqual(
+            CLOUDDRIVE2_PRODUCT.executable_name,
+            "TG2Cloud-CloudDrive2-Deployer",
+        )
+        self.assertEqual(
+            OPENLIST_PRODUCT.executable_name,
+            "TG2Cloud-OpenList-Deployer",
+        )
+        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_title, "TG2Cloud · CloudDrive2")
+        self.assertEqual(OPENLIST_PRODUCT.app_title, "TG2Cloud · OpenList")
 
     def test_generated_credentials_are_secure_and_session_scoped(self) -> None:
         first = secure_password()
@@ -83,14 +98,21 @@ class OpenListProductTests(unittest.TestCase):
         self.assertRegex(second, r"^[A-Za-z0-9_-]{28}$")
         self.assertNotEqual(first, second)
         defaults = defaults_for(OPENLIST_PRODUCT)
-        self.assertEqual(defaults["cd2_username"], "tg115")
-        self.assertEqual(defaults["cd2_target"], "/115/Telegram")
+        self.assertEqual(defaults["cd2_username"], "tg2cloud")
+        self.assertEqual(defaults["cd2_target"], "")
+        self.assertEqual(defaults["local_budget_gb"], "20")
         self.assertEqual(defaults["min_free_disk_gb"], "8")
         self.assertRegex(defaults["cd2_password"], r"^[A-Za-z0-9_-]{28}$")
         self.assertRegex(
             defaults["openlist_admin_password"], r"^[A-Za-z0-9_-]{28}$"
         )
         self.assertEqual(defaults["preserve_webdav"], "false")
+
+    def test_legacy_openlist_install_dir_is_rejected_before_deploy(self) -> None:
+        values = openlist_values()
+        values["install_dir"] = "/opt/tg115-openlist"
+        with self.assertRaisesRegex(ValueError, "不会静默覆盖"):
+            self.backend()._validate(values)
 
     @unittest.skipUnless(
         getattr(installer, "InstallerWindow", None) is not None,
@@ -112,6 +134,10 @@ class OpenListProductTests(unittest.TestCase):
             self.assertEqual(window.snapshot()["preserve_webdav"], "true")
             self.assertFalse(window.field_boxes["cd2_password"].isEnabled())
             self.assertIn("OpenList", window.windowTitle())
+            self.assertEqual(window.brand_name_label.text(), "TG2Cloud")
+            self.assertIn("OpenList Edition", window.brand_subtitle_label.text())
+            self.assertFalse(window.windowIcon().isNull())
+            self.assertFalse(window.brand_icon_label.pixmap().isNull())
             self.assertTrue(hasattr(window, "verification_summary"))
             for operation in (
                 "openlist_status",
@@ -153,6 +179,9 @@ TG115_WEBDAV_SIZE=FAILED
         self.assertEqual(statuses["测试写入"], "通过")
         self.assertEqual(statuses["大小校验"], "失败")
         self.assertEqual(statuses["临时改名"], "未执行")
+        current = dict(verification_statuses("TG2CLOUD_BOT_HEALTH=healthy\nTG2CLOUD_WEBDAV_AUTH=OK\nTG115_WEBDAV_AUTH=FAILED\nTG2CLOUD_UPLOAD=OK\n"))
+        self.assertEqual(current["Bot 容器"], "通过")
+        self.assertEqual(current["WebDAV 认证"], "通过")
 
     def test_openlist_verification_uses_manage_script_and_friendly_auth_error(
         self,
@@ -186,7 +215,14 @@ TG115_WEBDAV_AUTH=FAILED
         session = Mock()
         session.run.side_effect = [
             (0, "0\n"),
-            (0, "TG115_OPENLIST=OK\nTG115_BOT_HEALTH=healthy\nTG115_STATUS=OK\n"),
+            (
+                0,
+                (
+                    "TG2CLOUD_STATUS=RUNNING\nTG2CLOUD_LEGACY=DETECTED\n"
+                    "TG2CLOUD_BOT_HEALTH=healthy\nTG2CLOUD_GATEWAY=RUNNING\n"
+                    "TG2CLOUD_NETWORK=PRESENT\n"
+                ),
+            ),
         ]
         backend = self.backend(session_factory=Mock(return_value=session))
 
@@ -195,7 +231,9 @@ TG115_WEBDAV_AUTH=FAILED
         self.assertEqual(result.title, "运行状态")
         session.connect.assert_called_once_with()
         command = session.run.call_args_list[1].args[0]
-        self.assertIn("bash ./manage.sh status", command)
+        self.assertIn("bash -c", command)
+        self.assertIn("tg2cloud-openlist-bot", command)
+        self.assertNotIn("docker compose", command)
         self.assertNotIn(values["vps_password"], command)
         session.close.assert_called_once_with()
 
@@ -231,8 +269,14 @@ TG115_OPENLIST_ADMIN_PASSWORD={new_password}
         values = openlist_values()
         config = self.backend()._build_config(values)
         pairs = dict(line.split("=", 1) for line in config.splitlines())
+        self.assertEqual(pairs["TG2CLOUD_STORAGE_BACKEND"], "openlist")
+        self.assertEqual(pairs["TG2CLOUD_RCLONE_REMOTE_NAME"], "openlist")
         self.assertEqual(pairs["TG115_STORAGE_BACKEND"], "openlist")
         self.assertEqual(pairs["TG115_RCLONE_REMOTE_NAME"], "openlist")
+        self.assertEqual(pairs["LOCAL_TEMP_BUDGET_GB"], "20")
+        self.assertEqual(pairs["MIN_FREE_DISK_GB"], "8")
+        self.assertEqual(pairs["WEBDAV_TARGET_PATH_B64"], "")
+        self.assertEqual(pairs["CD2_TARGET_PATH_B64"], "")
         self.assertEqual(
             base64.b64decode(pairs["WEBDAV_URL_B64"]).decode(),
             OPENLIST_PRODUCT.webdav_url,
@@ -240,6 +284,7 @@ TG115_OPENLIST_ADMIN_PASSWORD={new_password}
         self.assertEqual(
             pairs["OPENLIST_ADMIN_PASSWORD"], values["openlist_admin_password"]
         )
+        self.assertEqual(pairs["TG2CLOUD_PRESERVE_WEBDAV"], "false")
         self.assertEqual(pairs["TG115_PRESERVE_WEBDAV"], "false")
         self.assertNotRegex(config, r"(?i)(115_cookie|115_token|cookie_115)")
 
@@ -324,7 +369,7 @@ class OpenListPayloadTests(unittest.TestCase):
         self.assertIn("payload/app/main.py", names)
         self.assertIn("payload/openlist_admin.sh", names)
         self.assertNotIn("payload/repair_clouddrive_network.sh", names)
-        self.assertIn("container_name: tg115-openlist", compose_text)
+        self.assertIn("container_name: tg2cloud-openlist", compose_text)
 
     def test_openlist_compose_is_private_pinned_and_restricted(self) -> None:
         compose = (OPENLIST_PAYLOAD / "docker-compose.yml").read_text(
@@ -336,29 +381,42 @@ class OpenListPayloadTests(unittest.TestCase):
         self.assertNotIn(":latest", compose)
         self.assertIn('"127.0.0.1:5244:5244"', compose)
         self.assertNotRegex(compose, r'(?m)^\s*-\s*"?5244:5244')
-        self.assertIn("container_name: tg115-openlist", compose)
-        self.assertIn("container_name: tg115-openlist-bot", compose)
-        self.assertIn("name: tg115-openlist-net", compose)
+        self.assertIn("container_name: tg2cloud-openlist", compose)
+        self.assertIn("container_name: tg2cloud-openlist-bot", compose)
+        self.assertIn("name: tg2cloud-openlist-net", compose)
         self.assertIn('user: "10001:10001"', compose)
         self.assertIn("read_only: true", compose)
         self.assertIn("no-new-privileges:true", compose)
 
     def test_openlist_install_separates_deploy_from_destination_verification(self) -> None:
         script = (OPENLIST_PAYLOAD / "remote_install.sh").read_text(encoding="utf-8")
-        self.assertIn("TG115_OPENLIST_INITIALIZED=NEW", script)
-        self.assertIn("TG115_OPENLIST_INITIALIZED=EXISTING", script)
-        self.assertIn("TG115_DESTINATION=PENDING_USER_CONFIGURATION", script)
+        self.assertIn("TG2CLOUD_OPENLIST_INITIALIZED=NEW", script)
+        self.assertIn("TG2CLOUD_OPENLIST_INITIALIZED=EXISTING", script)
+        self.assertIn("TG2CLOUD_DESTINATION=PENDING_USER_CONFIGURATION", script)
         self.assertNotIn("app.verify_destination", script)
         self.assertIn("chmod 600 \"$INSTALL_DIR/.env\"", script)
-        self.assertIn("/opt/tg115-openlist-backups", script)
+        self.assertIn("/opt/tg2cloud-openlist-backups", script)
         self.assertIn("openlist-state-", script)
-        self.assertIn("TG115_PRESERVE_WEBDAV=true", script)
         self.assertIn("tg115_preserve_existing_webdav_config", script)
         helper = (OPENLIST_PAYLOAD / "preserve_webdav_config.sh").read_text(
             encoding="utf-8"
         )
+        self.assertIn("(TG2CLOUD|TG115)_PRESERVE_WEBDAV=true", helper)
         self.assertIn("WEBDAV_PASSWORD_B64 CD2_WEBDAV_PASSWORD_B64", helper)
         self.assertNotIn('source "$INSTALL_DIR/.env"', script)
+
+    def test_openlist_legacy_detection_precedes_mutation(self) -> None:
+        script = (OPENLIST_PAYLOAD / "remote_install.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn("/opt/tg115-openlist", script)
+        self.assertIn("tg115-openlist-bot", script)
+        self.assertIn("tg115-openlist", script)
+        self.assertIn("保留不动", script)
+        self.assertIn("固定端口 5244", script)
+        self.assertLess(script.index("检测到旧目录"), script.index("apt-get"))
+        self.assertLess(script.index("目标容器名"), script.index('mkdir -p \\'))
+        self.assertNotIn("docker network disconnect tg115-openlist-net", script)
 
     def test_openlist_admin_reset_requires_explicit_confirmation(self) -> None:
         script = (OPENLIST_PAYLOAD / "openlist_admin.sh").read_text(
@@ -371,11 +429,11 @@ class OpenListPayloadTests(unittest.TestCase):
     def test_openlist_manage_supports_safe_desktop_operations(self) -> None:
         script = (OPENLIST_PAYLOAD / "manage.sh").read_text(encoding="utf-8")
         for marker in (
-            "TG115_STATUS=OK",
-            "TG115_LOGS=OK",
-            "TG115_BOT_RESTART=OK",
-            "TG115_OPENLIST_RESTART=OK",
-            "TG115_BACKUP=OK",
+            "TG2CLOUD_STATUS=OK",
+            "TG2CLOUD_LOGS=OK",
+            "TG2CLOUD_BOT_RESTART=OK",
+            "TG2CLOUD_OPENLIST_RESTART=OK",
+            "TG2CLOUD_BACKUP=OK",
         ):
             self.assertIn(marker, script)
         self.assertIn("create_backup", script)
@@ -395,11 +453,11 @@ class OpenListSettingsTests(unittest.TestCase):
                 "BOT_TOKEN_B64": encoded("123456:" + "a" * 30),
                 "ALLOWED_USER_ID": "987654321",
                 "WEBDAV_URL_B64": encoded(OPENLIST_PRODUCT.webdav_url),
-                "WEBDAV_USERNAME_B64": encoded("tg115"),
+                "WEBDAV_USERNAME_B64": encoded("tg2cloud"),
                 "WEBDAV_PASSWORD_B64": encoded("safe-webdav-password"),
-                "WEBDAV_TARGET_PATH_B64": encoded("115/Telegram"),
-                "TG115_STORAGE_BACKEND": "openlist",
-                "TG115_RCLONE_REMOTE_NAME": "openlist",
+                "WEBDAV_TARGET_PATH_B64": encoded("Telegram"),
+                "TG2CLOUD_STORAGE_BACKEND": "openlist",
+                "TG2CLOUD_RCLONE_REMOTE_NAME": "openlist",
                 "DATA_DIR": str(root / "data"),
                 "DOWNLOAD_DIR": str(root / "downloads"),
                 "LOG_DIR": str(root / "logs"),
@@ -410,7 +468,24 @@ class OpenListSettingsTests(unittest.TestCase):
             self.assertEqual(settings.storage_backend, "openlist")
             self.assertEqual(settings.destination_label, "OpenList")
             self.assertEqual(settings.rclone_remote_name, "openlist")
-            self.assertEqual(settings.cd2_target, "115/Telegram")
+            self.assertEqual(settings.cd2_target, "Telegram")
+
+    def test_legacy_tg115_environment_keys_remain_supported(self) -> None:
+        env = {
+            "TELEGRAM_API_ID": "12345",
+            "TELEGRAM_API_HASH_B64": encoded("a" * 32),
+            "BOT_TOKEN_B64": encoded("123456:" + "a" * 30),
+            "ALLOWED_USER_ID": "987654321",
+            "WEBDAV_URL_B64": encoded(OPENLIST_PRODUCT.webdav_url),
+            "WEBDAV_USERNAME_B64": encoded("tg2cloud"),
+            "WEBDAV_PASSWORD_B64": encoded("safe-webdav-password"),
+            "TG115_STORAGE_BACKEND": "openlist",
+            "TG115_RCLONE_REMOTE_NAME": "openlist",
+        }
+        with patch.dict(os.environ, env, clear=True):
+            settings = Settings.from_env(create_directories=False)
+        self.assertEqual(settings.storage_backend, "openlist")
+        self.assertEqual(settings.rclone_remote_name, "openlist")
 
     def test_remote_name_cannot_be_injected(self) -> None:
         env = {
@@ -419,10 +494,10 @@ class OpenListSettingsTests(unittest.TestCase):
             "BOT_TOKEN_B64": encoded("123456:" + "a" * 30),
             "ALLOWED_USER_ID": "987654321",
             "WEBDAV_URL_B64": encoded(OPENLIST_PRODUCT.webdav_url),
-            "WEBDAV_USERNAME_B64": encoded("tg115"),
+            "WEBDAV_USERNAME_B64": encoded("tg2cloud"),
             "WEBDAV_PASSWORD_B64": encoded("safe-webdav-password"),
-            "TG115_STORAGE_BACKEND": "openlist",
-            "TG115_RCLONE_REMOTE_NAME": "openlist;touch-pwned",
+            "TG2CLOUD_STORAGE_BACKEND": "openlist",
+            "TG2CLOUD_RCLONE_REMOTE_NAME": "openlist;touch-pwned",
         }
         with (
             patch.dict(os.environ, env, clear=True),

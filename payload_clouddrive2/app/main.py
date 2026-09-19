@@ -1022,7 +1022,7 @@ class TransferService(CommandMixin):
             asyncio.create_task(self._watch_loop(), name="watch-loop"),
         ]
         await self._notify(
-            "🤖 Telegram → 115 服务已启动。可使用输入框左侧菜单，"
+            "🤖 TG2Cloud 服务已启动。可使用输入框左侧菜单，"
             "或发送 /status 查看状态。"
         )
 

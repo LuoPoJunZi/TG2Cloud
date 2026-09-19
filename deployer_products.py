@@ -4,8 +4,11 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+RELEASE_VERSION = "1.0.0"
+
 SHARED_PAYLOAD_FILES = (
     "payload_clouddrive2/backup_retention.sh",
+    "payload_clouddrive2/preserve_runtime_config.sh",
     "payload_clouddrive2/.dockerignore",
     "payload_clouddrive2/Dockerfile",
     "payload_clouddrive2/requirements.txt",
@@ -46,6 +49,9 @@ class ProductProfile:
     requires_fuse: bool
     managed_toggle: bool
     payload_variant: str
+    legacy_install_dirs: tuple[str, ...]
+    legacy_containers: tuple[str, ...]
+    legacy_networks: tuple[str, ...]
     required_payload: tuple[str, ...]
 
     @property
@@ -56,22 +62,25 @@ class ProductProfile:
 CLOUDDRIVE2_PRODUCT = ProductProfile(
     key="clouddrive2",
     display_name="CloudDrive2",
-    app_title="Telegram → 115 CloudDrive2 部署器",
-    app_version="1.6.2",
-    executable_name="TG115-CloudDrive2-Deployer",
-    install_dir="/opt/tg115",
-    backup_dir="/opt/tg115-backups",
-    webdav_url="http://clouddrive2:19798/dav",
+    app_title="TG2Cloud · CloudDrive2",
+    app_version=RELEASE_VERSION,
+    executable_name="TG2Cloud-CloudDrive2-Deployer",
+    install_dir="/opt/tg2cloud-clouddrive2",
+    backup_dir="/opt/tg2cloud-clouddrive2-backups",
+    webdav_url="http://tg2cloud-clouddrive2:19798/dav",
     webdav_username="",
     webdav_target="",
     management_port=19798,
-    bot_service="tg115-bot",
-    bot_container="tg115-bot",
-    storage_container="tg115-clouddrive2",
-    docker_network="tg115",
+    bot_service="tg2cloud-clouddrive2-bot",
+    bot_container="tg2cloud-clouddrive2-bot",
+    storage_container="tg2cloud-clouddrive2",
+    docker_network="tg2cloud-clouddrive2-net",
     requires_fuse=True,
     managed_toggle=True,
     payload_variant="payload_clouddrive2",
+    legacy_install_dirs=("/opt/tg115",),
+    legacy_containers=("tg115-bot", "tg115-clouddrive2"),
+    legacy_networks=("tg115",),
     required_payload=SHARED_PAYLOAD_FILES
     + (
         "payload_clouddrive2/remote_install.sh",
@@ -85,22 +94,25 @@ CLOUDDRIVE2_PRODUCT = ProductProfile(
 OPENLIST_PRODUCT = ProductProfile(
     key="openlist",
     display_name="OpenList",
-    app_title="Telegram → 115 OpenList 部署器",
-    app_version="1.0.0",
-    executable_name="TG115-OpenList-Deployer",
-    install_dir="/opt/tg115-openlist",
-    backup_dir="/opt/tg115-openlist-backups",
-    webdav_url="http://tg115-openlist:5244/dav/",
-    webdav_username="tg115",
-    webdav_target="/115/Telegram",
+    app_title="TG2Cloud · OpenList",
+    app_version=RELEASE_VERSION,
+    executable_name="TG2Cloud-OpenList-Deployer",
+    install_dir="/opt/tg2cloud-openlist",
+    backup_dir="/opt/tg2cloud-openlist-backups",
+    webdav_url="http://tg2cloud-openlist:5244/dav/",
+    webdav_username="tg2cloud",
+    webdav_target="",
     management_port=5244,
-    bot_service="tg115-bot",
-    bot_container="tg115-openlist-bot",
-    storage_container="tg115-openlist",
-    docker_network="tg115-openlist-net",
+    bot_service="tg2cloud-openlist-bot",
+    bot_container="tg2cloud-openlist-bot",
+    storage_container="tg2cloud-openlist",
+    docker_network="tg2cloud-openlist-net",
     requires_fuse=False,
     managed_toggle=False,
     payload_variant="payload_openlist",
+    legacy_install_dirs=("/opt/tg115-openlist",),
+    legacy_containers=("tg115-openlist-bot", "tg115-openlist"),
+    legacy_networks=("tg115-openlist-net",),
     required_payload=SHARED_PAYLOAD_FILES
     + (
         "payload_openlist/remote_install.sh",

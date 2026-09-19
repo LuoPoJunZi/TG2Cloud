@@ -4,7 +4,10 @@ umask 077
 
 SOURCE_DIR="${1:-}"
 CONFIG_FILE="${2:-}"
-INSTALL_DIR="${INSTALL_DIR:-/opt/tg115}"
+INSTALL_DIR="${INSTALL_DIR:-/opt/tg2cloud-clouddrive2}"
+BACKUP_DIR="/opt/tg2cloud-clouddrive2-backups"
+BOT_SERVICE="tg2cloud-clouddrive2-bot"
+BOT_CONTAINER="tg2cloud-clouddrive2-bot"
 BACKUP=""
 DATABASE_BACKUP=""
 RELEASE_STAGE=""
@@ -16,11 +19,11 @@ ROLLBACK_ARMED=false
 
 PROGRAM_PATHS=(
   app .dockerignore backup_retention.sh Dockerfile docker-compose.yml manage.sh remote_install.sh
-  repair_clouddrive_network.sh requirements.txt
+  preserve_runtime_config.sh repair_clouddrive_network.sh requirements.txt
 )
 
 log() {
-  printf '[TG115] %s\n' "$*"
+  printf '[TG2Cloud] %s\n' "$*"
 }
 
 remove_program_files() {
@@ -35,7 +38,7 @@ rollback_install() {
   [[ -n "$BACKUP" && -f "$BACKUP" ]] || return 1
   log "新版本未通过验收，开始恢复升级前的程序、配置和数据库"
   if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
-    (cd "$INSTALL_DIR" && docker compose rm -sf tg115-bot) || true
+    (cd "$INSTALL_DIR" && docker compose rm -sf "$BOT_SERVICE") || true
   fi
   remove_program_files || return 1
   tar -xzf "$BACKUP" -C "$INSTALL_DIR" || return 1
@@ -48,10 +51,10 @@ rollback_install() {
     docker tag "$OLD_IMAGE_ID" "$OLD_IMAGE_TAG" || return 1
   fi
   cd "$INSTALL_DIR" || return 1
-  docker compose up -d --no-deps --force-recreate tg115-bot || return 1
+  docker compose up -d --no-deps --force-recreate "$BOT_SERVICE" || return 1
   local health=""
   for _ in $(seq 1 40); do
-    health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' tg115-bot 2>/dev/null || true)"
+    health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$BOT_CONTAINER" 2>/dev/null || true)"
     [[ "$health" == healthy ]] && return 0
     [[ "$health" != unhealthy && "$health" != exited ]] || break
     sleep 3
@@ -60,7 +63,7 @@ rollback_install() {
 }
 
 cleanup_release_stage() {
-  if [[ -n "$RELEASE_STAGE" && "$RELEASE_STAGE" == /opt/tg115-release-* && -d "$RELEASE_STAGE" ]]; then
+  if [[ -n "$RELEASE_STAGE" && "$RELEASE_STAGE" == /opt/tg2cloud-clouddrive2-release-* && -d "$RELEASE_STAGE" ]]; then
     rm -rf -- "$RELEASE_STAGE"
   fi
   if [[ -n "$CANDIDATE_TAG" ]]; then
@@ -81,8 +84,8 @@ fail() {
       message+=" 自动恢复未完成，请保留备份并人工处理。"
     fi
   fi
-  printf '[TG115][ERROR] %s\n' "$message" >&2
-  printf 'TG115_RESULT=FAILED\n' >&2
+  printf '[TG2Cloud][ERROR] %s\n' "$message" >&2
+  printf 'TG2CLOUD_RESULT=FAILED\n' >&2
   exit 1
 }
 
@@ -99,12 +102,45 @@ trap cleanup_release_stage EXIT
   || fail "安装目录不能包含 . 或 .. 路径段"
 [[ "$(realpath -m -- "$INSTALL_DIR")" == "$INSTALL_DIR" ]] \
   || fail "安装目录不能经过符号链接"
+[[ "$INSTALL_DIR" != /opt/tg115 ]] \
+  || fail "检测到旧 TG115 安装目录 /opt/tg115；TG2Cloud 不会静默覆盖，请先按迁移文档处理"
 SOURCE_DIR="$(realpath -e -- "$SOURCE_DIR")"
 CONFIG_FILE="$(realpath -e -- "$CONFIG_FILE")"
+[[ -f "$SOURCE_DIR/preserve_runtime_config.sh" ]] \
+  || fail "部署包缺少现有配置保护脚本"
+# shellcheck disable=SC1090
+source "$SOURCE_DIR/preserve_runtime_config.sh"
 [[ "$SOURCE_DIR/" != "$INSTALL_DIR/"* && "$INSTALL_DIR/" != "$SOURCE_DIR/"* ]] \
   || fail "部署源目录和安装目录不能重叠"
 [[ "$CONFIG_FILE" != "$INSTALL_DIR/"* ]] || fail "请将输入配置放在安装目录之外"
 export INSTALL_DIR
+
+[[ ! -e /opt/tg115 ]] || log "检测到旧目录 /opt/tg115；保留不动，新安装继续"
+if command -v docker >/dev/null 2>&1; then
+  for legacy_container in tg115-bot tg115-clouddrive2; do
+    if docker container inspect "$legacy_container" >/dev/null 2>&1; then
+      log "检测到旧容器 $legacy_container；保留不动，不参与新部署"
+    fi
+  done
+  if docker network inspect tg115 >/dev/null 2>&1; then
+    log "检测到旧 TG115 Network tg115；新部署不会使用或修改它"
+  fi
+fi
+
+if [[ -d "$INSTALL_DIR" && ! -f "$INSTALL_DIR/docker-compose.yml" ]] \
+  && [[ -n "$(find "$INSTALL_DIR" -mindepth 1 -maxdepth 1 -print -quit)" ]]; then
+  fail "目标安装目录已有非 TG2Cloud 文件：$INSTALL_DIR；不会覆盖，请检查后重新检测"
+fi
+if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
+  grep -Fq "container_name: $BOT_CONTAINER" "$INSTALL_DIR/docker-compose.yml" \
+    && grep -Fq 'container_name: tg2cloud-clouddrive2' "$INSTALL_DIR/docker-compose.yml" \
+    || fail "目标安装目录不是可识别的 TG2Cloud CloudDrive2 部署；不会覆盖，请检查后重新检测"
+fi
+sed -i 's/\r$//' "$CONFIG_FILE"
+if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
+  tg2cloud_prepare_redeploy_config "$CONFIG_FILE" "$INSTALL_DIR/.env" \
+    || fail "无法安全保留现有 TG2Cloud 配置"
+fi
 
 if [[ -r /etc/os-release ]]; then
   # shellcheck disable=SC1091
@@ -173,6 +209,34 @@ if ! docker compose version >/dev/null 2>&1; then
 fi
 docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 不可用"
 
+for target_container in "$BOT_CONTAINER" tg2cloud-clouddrive2; do
+  if docker container inspect "$target_container" >/dev/null 2>&1; then
+    owner="$(docker inspect --format '{{ index .Config.Labels "com.docker.compose.project.working_dir" }}' "$target_container" 2>/dev/null || true)"
+    [[ "$owner" == "$INSTALL_DIR" && -f "$INSTALL_DIR/docker-compose.yml" ]] \
+      || fail "目标容器名 $target_container 已被其他部署使用；不会覆盖，请检查后重新检测"
+  fi
+done
+
+PORT_19798_OWNER="$(docker ps --format '{{.Names}}|{{.Ports}}' \
+  | awk -F'|' '$2 ~ /:19798->/ {print $1; exit}')"
+if [[ "$PORT_19798_OWNER" == tg115-clouddrive2 ]]; then
+  fail "旧 TG115 容器正在占用固定端口 19798；请自行处理占用后重新检测，不会自动停用或改端口"
+fi
+if [[ -n "$PORT_19798_OWNER" && "$PORT_19798_OWNER" != tg2cloud-clouddrive2 ]]; then
+  if ! docker inspect --format '{{.Config.Image}}' "$PORT_19798_OWNER" 2>/dev/null \
+    | grep -Eiq '(^|/)clouddrive2([:@]|$)'; then
+    fail "固定端口 19798 被容器 $PORT_19798_OWNER 占用；请自行处理后重新检测"
+  fi
+fi
+if [[ -z "$PORT_19798_OWNER" ]]; then
+  if command -v ss >/dev/null 2>&1; then
+    [[ -z "$(ss -H -ltn '( sport = :19798 )')" ]] \
+      || fail "固定端口 19798 已被其他进程占用；请自行处理后重新检测"
+  elif timeout 2 bash -c 'echo >/dev/tcp/127.0.0.1/19798' >/dev/null 2>&1; then
+    fail "固定端口 19798 已被其他进程占用；请自行处理后重新检测"
+  fi
+fi
+
 DOCKER_ROOT_DIR="$(docker info --format '{{.DockerRootDir}}')" \
   || fail "无法读取 Docker 数据目录"
 [[ "$DOCKER_ROOT_DIR" == /* && "$DOCKER_ROOT_DIR" != *$'\n'* && "$DOCKER_ROOT_DIR" != *$'\r'* ]] \
@@ -216,10 +280,10 @@ mkdir -p \
   "$INSTALL_DIR/config/rclone" \
   "$INSTALL_DIR/clouddrive/config" \
   "$INSTALL_DIR/clouddrive/mounts"
-install -d -m 700 /opt/tg115-backups
+install -d -m 700 "$BACKUP_DIR"
 
-RELEASE_STAGE="$(mktemp -d /opt/tg115-release-XXXXXXXX)"
-CANDIDATE_TAG="tg115-candidate:$(date +%s)-$$"
+RELEASE_STAGE="$(mktemp -d /opt/tg2cloud-clouddrive2-release-XXXXXXXX)"
+CANDIDATE_TAG="tg2cloud-clouddrive2-candidate:$(date +%s)-$$"
 log "在隔离目录预检新程序和配置"
 cp -a "$SOURCE_DIR/." "$RELEASE_STAGE/"
 install -m 600 "$CONFIG_FILE" "$RELEASE_STAGE/.env"
@@ -232,7 +296,7 @@ docker run --rm --read-only --tmpfs /tmp --entrypoint python \
   -m app.deployment_check --validate-only
 
 if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
-  BACKUP="$(mktemp /opt/tg115-backups/config-XXXXXXXX.tar.gz)"
+  BACKUP="$(mktemp "$BACKUP_DIR/config-XXXXXXXX.tar.gz")"
   log "备份现有程序配置到 $BACKUP"
   tar -czf "$BACKUP" -C "$INSTALL_DIR" \
     --exclude='./data' \
@@ -241,15 +305,15 @@ if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
     --exclude='./clouddrive' \
     . || fail "配置备份失败，尚未替换程序文件；请先检查磁盘和权限"
   tar -tzf "$BACKUP" >/dev/null || fail "配置备份无法读取，停止升级"
-  OLD_IMAGE_ID="$(docker inspect --format '{{.Image}}' tg115-bot 2>/dev/null || true)"
+  OLD_IMAGE_ID="$(docker inspect --format '{{.Image}}' "$BOT_CONTAINER" 2>/dev/null || true)"
   if [[ -n "$OLD_IMAGE_ID" ]]; then
-    OLD_IMAGE_TAG="$(docker inspect --format '{{.Config.Image}}' tg115-bot 2>/dev/null || true)"
+    OLD_IMAGE_TAG="$(docker inspect --format '{{.Config.Image}}' "$BOT_CONTAINER" 2>/dev/null || true)"
     [[ "$OLD_IMAGE_TAG" != "<no value>" ]] || OLD_IMAGE_TAG=""
     ROLLBACK_ARMED=true
-    docker stop --time 30 tg115-bot >/dev/null
+    docker stop --time 30 "$BOT_CONTAINER" >/dev/null
   fi
   if [[ -f "$INSTALL_DIR/data/tg115.db" ]]; then
-    DATABASE_BACKUP_CANDIDATE="$(mktemp /opt/tg115-backups/database-XXXXXXXX.db)"
+    DATABASE_BACKUP_CANDIDATE="$(mktemp "$BACKUP_DIR/database-XXXXXXXX.db")"
     rm -f -- "$DATABASE_BACKUP_CANDIDATE"
     DB_TEMP_NAME=".upgrade-backup-$$.db"
     log "创建并校验升级前数据库一致性快照"
@@ -275,7 +339,7 @@ chmod 700 \
   "$INSTALL_DIR/clouddrive" \
   "$INSTALL_DIR/clouddrive/config" \
   "$INSTALL_DIR/clouddrive/mounts" \
-  /opt/tg115-backups
+  "$BACKUP_DIR"
 chown -R 10001:10001 \
   "$INSTALL_DIR/data" \
   "$INSTALL_DIR/downloads" \
@@ -298,9 +362,10 @@ if [[ "${DEPLOY_CLOUDDRIVE2:-true}" == "true" ]]; then
   mapfile -t CD2_MATCHES < <(
     docker ps --format '{{.Names}}|{{.Image}}|{{.Ports}}' \
       | awk -F'|' '
-          tolower($1) ~ /clouddrive2/ ||
+          (tolower($1) ~ /clouddrive2/ && tolower($1) !~ /^tg115-/) ||
           tolower($2) ~ /(^|\/)clouddrive2([:@]|$)/ ||
           tolower($2) ~ /cloudnas\/clouddrive2([:@]|$)/ {
+            if (tolower($1) ~ /^tg115-/) next
             print $1
           }
         '
@@ -324,15 +389,15 @@ if [[ "${DEPLOY_CLOUDDRIVE2:-true}" == "true" ]]; then
   fi
 fi
 
-log "构建 Telegram → 115 Bot 容器"
-docker compose build tg115-bot
+log "构建 TG2Cloud Bot 容器"
+docker compose build "$BOT_SERVICE"
 bash "$INSTALL_DIR/manage.sh" validate
-docker compose up -d --no-deps tg115-bot
+docker compose up -d --no-deps "$BOT_SERVICE"
 
 log "等待 Bot 基础健康检查"
 BOT_HEALTH=""
 for _ in $(seq 1 40); do
-  BOT_HEALTH="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' tg115-bot 2>/dev/null || true)"
+  BOT_HEALTH="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$BOT_CONTAINER" 2>/dev/null || true)"
   if [[ "$BOT_HEALTH" == "healthy" ]]; then
     break
   fi
@@ -345,7 +410,7 @@ done
 if [[ "$BOT_HEALTH" != "healthy" ]]; then
   log "Bot 当前状态：${BOT_HEALTH:-unknown}"
   docker compose ps || true
-  docker compose logs --tail=120 tg115-bot || true
+  docker compose logs --tail=120 "$BOT_SERVICE" || true
   fail "Bot 未通过基础健康检查，请根据上面的日志修正配置"
 fi
 
@@ -360,7 +425,7 @@ bash "$INSTALL_DIR/manage.sh" ready
 ROLLBACK_ARMED=false
 # shellcheck disable=SC1091
 source "$INSTALL_DIR/backup_retention.sh"
-if BACKUP_INVENTORY="$(tg115_backup_inventory /opt/tg115-backups)"; then
+if BACKUP_INVENTORY="$(tg115_backup_inventory "$BACKUP_DIR")"; then
   BACKUP_COUNT="$(awk -F= '$1=="TOTAL_COUNT" {print $2}' <<< "$BACKUP_INVENTORY")"
   BACKUP_BYTES="$(awk -F= '$1=="TOTAL_BYTES" {print $2}' <<< "$BACKUP_INVENTORY")"
   log "当前保留 ${BACKUP_COUNT:-0} 份升级／配置备份，占用约 $(( ${BACKUP_BYTES:-0} / 1024 / 1024 ))MB"
@@ -372,6 +437,6 @@ else
 fi
 log "部署完成"
 docker compose ps
-printf 'TG115_INSTALL_DIR=%s\n' "$INSTALL_DIR"
-printf 'TG115_BOT_HEALTH=%s\n' "$BOT_HEALTH"
-printf 'TG115_RESULT=SUCCESS\n'
+printf 'TG2CLOUD_INSTALL_DIR=%s\n' "$INSTALL_DIR"
+printf 'TG2CLOUD_BOT_HEALTH=%s\n' "$BOT_HEALTH"
+printf 'TG2CLOUD_RESULT=SUCCESS\n'

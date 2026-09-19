@@ -1,11 +1,31 @@
 # 更新记录
 
-## 未发布：OpenList 产品线
+## TG2Cloud v1.0.0（Release Candidate）
+
+GitHub Pre-release 标签为 `v1.0.0-rc.1`；程序内部版本保持 `1.0.0`。本候选版已完成自动
+测试、Windows 构建和 frozen 资源验收，真实 VPS、WebDAV 与 Telegram 端到端验收仍待完成。
+
+- 新安装按 Edition 使用独立的 `tg2cloud-*` 安装目录、备份目录、容器和 Docker Network；
+  CloudDrive2 与 OpenList 的内网 WebDAV 主机名同步更新。
+- 识别同 Edition 的旧 TG115 安装目录和已停容器后提示并继续；固定端口或目标新资源
+  冲突时明确停止，不自动覆盖或迁移。手动迁移边界见 `docs/MIGRATION_FROM_TG115.md`。
+- 新输出使用 `TG2CLOUD_*` 状态标记，解析器兼容旧 `TG115_*`；保留 SQLite 文件名及
+  必要的兼容环境变量别名。固定 Tunnel 端口和传输核心未改动。
+- 既有 TG2Cloud 重复部署默认在 VPS 内保留完整 `.env`，仅在用户明确勾选时应用本次表单；
+  SQLite、rclone 配置及两种网关的持久化目录继续原位保留。
+- 两版增加只读运行状态区分（运行中、已停、未安装、独立 legacy 提示），`manage.sh update`
+  仅在全部健康核验通过后输出 `TG2CLOUD_UPDATE=OK`；明确 v1.0.0 不新增 Restore/Uninstall。
+- 正式 Windows 版本仅构建两个 PySide6 Edition，统一使用 `assets/brand/` Logo/Icon、固定
+  19798/5244 SSH Tunnel、20GB 任务预算与 8GB 安全空闲线。
+- 坚持无遥测、无第三方统计、无开发者侧凭据收集；部署和诊断日志对密码、Token、API Hash、
+  OpenList 管理员凭据及 URL userinfo 脱敏。
+
+### 双 Edition 与 OpenList
 
 - 在现有 PySide6 部署器上增加独立的 CloudDrive2／OpenList 产品配置与入口；最终构建产物改为
-  `TG115-CloudDrive2-Deployer.exe` 和 `TG115-OpenList-Deployer.exe`，Classic/Tkinter 不再参与
+  `TG2Cloud-CloudDrive2-Deployer.exe` 和 `TG2Cloud-OpenList-Deployer.exe`，Classic/Tkinter 不再参与
   当前构建和 CI。
-- OpenList 使用独立的 `/opt/tg115-openlist`、容器、网络、备份目录和固定 5244 SSH 隧道；
+- OpenList 使用独立的 `/opt/tg2cloud-openlist`、容器、网络、备份目录和固定 5244 SSH 隧道；
   管理端口只绑定 VPS 回环地址。
 - 增加 OpenList 首次管理员与 WebDAV 会话级随机凭据、复制／重新生成交互，并明确已有实例不
   自动重置管理员密码；已有实例可在 VPS 内复用旧 WebDAV 配置，凭据不回传或写入日志；
@@ -28,7 +48,11 @@
 - CloudDrive2 版的导航、配置卡片和文档模块标题统一使用 `CloudDrive2`，不再把 `115` 与产品名
   并列为模块名称；115 挂载、路径、验收和配置示例继续保留，实际部署与 WebDAV 逻辑不变。
 
-## v1.6.2（2026-09-16）
+## 上游 TG115 历史记录（保留用于代码血缘）
+
+以下条目属于 TG115 上游历史，不是 TG2Cloud 的版本号或当前发布说明。
+
+### TG115 v1.6.2（2026-09-16）
 
 - Windows 部署器界面迁移到 PySide6，保留 SSH 主机密钥确认、VPS 资源建议、部署前容量复检、
   固定本机隧道、CloudDrive2 网络修复和 WebDAV 真写验收；新增离线预览、依赖诊断、脱敏日志
@@ -46,7 +70,7 @@
   附带消息下方快捷按钮，队列翻页和带参数任务操作继续使用文字命令；菜单注册失败不阻止服务启动。
 - 系统状态的目的端可访问文案移除“只读检查”和检查时间后缀，后台探测与过期保护逻辑不变。
 
-## v1.6.1（2026-09-15）
+### TG115 v1.6.1（2026-09-15）
 
 - Windows 部署器固定使用本机 `127.0.0.1:19798` 打开 CloudDrive2 管理页；端口被占用时
   明确停止并提示释放，不再生成随机端口；
@@ -58,10 +82,10 @@
   每页 5 项的任务翻页和按状态展示的任务操作。按钮取消采用 5 分钟二次确认，文字命令保持兼容；
   快捷临时巡检仍为只读，远端遗留文件清理继续要求一次性确认码。
 
-## v1.6.0（2026-09-15）
+### TG115 v1.6.0（2026-09-15）
 
 - Windows 部署器新增 VPS CPU、内存、目标文件系统、inode、已有占用和 FUSE 的只读探测，
-  提供“均衡／流式优先”实例建议；源码默认 20/20GB 不变，应用建议必须由用户主动点击；
+  提供“均衡／流式优先”实例建议；Phase 3.1 将源码默认统一为 20GB 任务预算／8GB 安全线，应用建议必须由用户主动点击；
 - 正式部署前重新探测并校验所选预算，空间或运行门槛不足时在上传安装文件前停止；远端安装
   脚本改为检查实际安装目录所在文件系统，不再固定检查根分区；
 - 识别 Docker 实际数据目录；与安装目录分盘时独立检查 Docker 空间和 inode，并在 Docker
@@ -82,7 +106,7 @@
 - 预留媒体来源／目的端协议接口，不引入频道用户会话或新的上传依赖；
 - 增加故障回归、真实本地 WebDAV 集成测试和 Linux Python 3.12 CI 测试。
 
-## v1.5.0
+### TG115 v1.5.0
 
 - 单文件超过本地任务预算时自动切换为带背压的流式传输，不再永久排队；
 - 使用 `rclone rcat --size` 直接从 Telegram 写入 CloudDrive2，并继续执行大小校验和安全改名；
@@ -94,7 +118,7 @@
 - CI 新增 Linux ShellCheck、Compose 校验、Bot 镜像构建、依赖审计和 Windows EXE 自检；
 - 自动化测试增加到 75 项。
 
-## v1.0.0
+### TG115 v1.0.0
 
 首个正式版本。
 

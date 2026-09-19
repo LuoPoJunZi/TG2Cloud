@@ -2,12 +2,12 @@
 set -Eeuo pipefail
 umask 077
 
-INSTALL_DIR="${INSTALL_DIR:-/opt/tg115-openlist}"
-BACKUP_DIR="/opt/tg115-openlist-backups"
-BOT_SERVICE="tg115-bot"
-BOT_CONTAINER="tg115-openlist-bot"
+INSTALL_DIR="${INSTALL_DIR:-/opt/tg2cloud-openlist}"
+BACKUP_DIR="/opt/tg2cloud-openlist-backups"
+BOT_SERVICE="tg2cloud-openlist-bot"
+BOT_CONTAINER="tg2cloud-openlist-bot"
 OPENLIST_SERVICE="openlist"
-OPENLIST_CONTAINER="tg115-openlist"
+OPENLIST_CONTAINER="tg2cloud-openlist"
 
 [[ "$INSTALL_DIR" =~ ^/opt/[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)*$ ]] || exit 2
 [[ "/$INSTALL_DIR/" != *"/../"* && "/$INSTALL_DIR/" != *"/./"* ]] || exit 2
@@ -93,7 +93,7 @@ create_backup() (
       docker compose up -d "$OPENLIST_SERVICE" "$BOT_SERVICE" >/dev/null 2>&1 \
         || true
     fi
-    printf 'TG115_BACKUP=FAILED\n' >&2
+    printf 'TG2CLOUD_BACKUP=FAILED\n' >&2
     exit "$exit_code"
   }
   trap recover_backup_failure ERR INT TERM HUP
@@ -133,12 +133,12 @@ create_backup() (
   services_stopped=false
   trap - ERR INT TERM HUP
 
-  printf 'TG115_BACKUP=OK\n'
-  printf 'TG115_BACKUP_CONFIG=%s\n' "$config_backup"
+  printf 'TG2CLOUD_BACKUP=OK\n'
+  printf 'TG2CLOUD_BACKUP_CONFIG=%s\n' "$config_backup"
   [[ -z "$database_backup" ]] \
-    || printf 'TG115_BACKUP_DATABASE=%s\n' "$database_backup"
+    || printf 'TG2CLOUD_BACKUP_DATABASE=%s\n' "$database_backup"
   [[ -z "$openlist_backup" ]] \
-    || printf 'TG115_BACKUP_OPENLIST=%s\n' "$openlist_backup"
+    || printf 'TG2CLOUD_BACKUP_OPENLIST=%s\n' "$openlist_backup"
 )
 
 apply_config() {
@@ -166,13 +166,13 @@ apply_config() {
     restarted=true
     if docker compose up -d --no-deps "$BOT_SERVICE" && wait_healthy; then
       trap - ERR INT TERM HUP
-      printf 'TG115_APPLY_CONFIG=OK\n配置备份：%s\n' "$backup"
+      printf 'TG2CLOUD_APPLY_CONFIG=OK\n配置备份：%s\n' "$backup"
       return
     fi
   fi
   restore_config
   trap - ERR INT TERM HUP
-  printf 'TG115_APPLY_CONFIG=FAILED\n已恢复旧配置；备份：%s\n' "$backup" >&2
+  printf 'TG2CLOUD_APPLY_CONFIG=FAILED\n已恢复旧配置；备份：%s\n' "$backup" >&2
   return 1
 }
 
@@ -180,15 +180,15 @@ case "${1:-status}" in
   status)
     docker compose ps
     if ! check_openlist; then
-      printf 'TG115_OPENLIST=FAILED\n' >&2
+      printf 'TG2CLOUD_OPENLIST=FAILED\nTG2CLOUD_STATUS=STOPPED\n' >&2
       exit 1
     fi
     bot_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$BOT_CONTAINER" 2>/dev/null || true)"
     if [[ "$bot_health" != healthy ]]; then
-      printf 'TG115_BOT_HEALTH=%s\nTG115_STATUS=FAILED\n' "${bot_health:-unknown}" >&2
+      printf 'TG2CLOUD_BOT_HEALTH=%s\nTG2CLOUD_STATUS=STOPPED\n' "${bot_health:-unknown}" >&2
       exit 1
     fi
-    printf 'TG115_OPENLIST=OK\nTG115_BOT_HEALTH=healthy\nTG115_STATUS=OK\n'
+    printf 'TG2CLOUD_OPENLIST=OK\nTG2CLOUD_BOT_HEALTH=healthy\nTG2CLOUD_STATUS=OK\n'
     ;;
   logs)
     docker compose logs --since=30m --tail=200 -f \
@@ -197,7 +197,7 @@ case "${1:-status}" in
   recent-logs)
     docker compose logs --since=30m --tail=200 \
       "$BOT_SERVICE" "$OPENLIST_SERVICE" | redact_runtime_logs
-    printf 'TG115_LOGS=OK\n'
+    printf 'TG2CLOUD_LOGS=OK\n'
     ;;
   restart)
     docker compose restart "$OPENLIST_SERVICE" "$BOT_SERVICE"
@@ -207,13 +207,13 @@ case "${1:-status}" in
   restart-bot)
     docker compose restart "$BOT_SERVICE"
     wait_healthy
-    printf 'TG115_BOT_RESTART=OK\n'
+    printf 'TG2CLOUD_BOT_RESTART=OK\n'
     ;;
   restart-openlist)
     docker compose restart "$OPENLIST_SERVICE"
     wait_openlist
     wait_healthy
-    printf 'TG115_OPENLIST_RESTART=OK\n'
+    printf 'TG2CLOUD_OPENLIST_RESTART=OK\n'
     ;;
   backup)
     create_backup
@@ -233,6 +233,7 @@ case "${1:-status}" in
     docker compose up -d "$OPENLIST_SERVICE" "$BOT_SERVICE"
     wait_openlist
     wait_healthy
+    printf 'TG2CLOUD_UPDATE=OK\n'
     ;;
   apply-config)
     apply_config "$@"
@@ -258,12 +259,12 @@ case "${1:-status}" in
   verify)
     docker compose ps
     if ! check_openlist; then
-      printf 'TG115_OPENLIST=FAILED\n' >&2
+      printf 'TG2CLOUD_OPENLIST=FAILED\n' >&2
       exit 1
     fi
-    printf 'TG115_OPENLIST=OK\n'
+    printf 'TG2CLOUD_OPENLIST=OK\n'
     bot_health="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$BOT_CONTAINER" 2>/dev/null || true)"
-    printf 'BOT_HEALTH=%s\n' "${bot_health:-unknown}"
+    printf 'TG2CLOUD_BOT_HEALTH=%s\n' "${bot_health:-unknown}"
     [[ "$bot_health" == healthy ]] || exit 1
     docker compose exec -T "$BOT_SERVICE" python -m app.verify_destination
     ;;

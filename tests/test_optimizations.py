@@ -87,6 +87,7 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
         event = SimpleNamespace(reply=AsyncMock())
         await self.service._handle_command(event, "/help")
         text = event.reply.await_args.args[0]
+        self.assertIn("TG2Cloud 使用帮助", text)
         self.assertNotIn("/confirm", text)
         self.assertNotIn("人工确认", text)
 

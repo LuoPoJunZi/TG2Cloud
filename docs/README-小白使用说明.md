@@ -1,6 +1,6 @@
-# Telegram → 115 一键部署器：小白使用说明
+# TG2Cloud v1.0.0：小白使用说明
 
-> CloudDrive2 正式版：1.6.2；OpenList 首版开发中；适用电脑：Windows 10 / Windows 11
+> TG2Cloud v1.0.0；适用电脑：Windows 10 / Windows 11
 > 64 位；适用 VPS：Ubuntu 或 Debian 64 位；推荐 VPS：2 核 CPU、4GB 内存、50GB 硬盘。
 
 ---
@@ -17,7 +17,7 @@
 6. 按所选产品安装并启动 CloudDrive2 或 OpenList 容器；
 7. 构建并启动 Telegram Bot；
 8. 建立 SQLite 持久化任务队列；
-9. 默认配置 20GB 本地任务预算和磁盘安全线，也可由你手动应用 VPS 实例建议；
+9. 默认配置 20GB 本地任务预算和 8GB 磁盘安全线，也可由你手动应用 VPS 实例建议；
 10. 单文件超过预算时自动切换为不完整落盘的流式传输；
 11. 启用 CPU、内存、磁盘、网络和错误率动态调度；
 12. 配置异常自动重启、VPS 开机自动启动和日志轮转；
@@ -26,9 +26,9 @@
 以下两件事必须由你本人完成：
 
 - 登录所选存储服务；
-- 在 CloudDrive2 或 OpenList 中由本人添加 115、创建专用 WebDAV 用户并设置权限。
+- 在 CloudDrive2 或 OpenList 中由本人添加自己的云存储、创建专用 WebDAV 用户并设置权限。
 
-部署器不会要求 Cursor 账号密码，也不会替你登录 115。
+部署器不会要求开发工具账号密码，也不会替你登录任何云存储。
 
 ---
 
@@ -47,7 +47,7 @@
 - VPS 应能稳定访问 Telegram 和 Docker 镜像仓库，端口带宽建议 100Mbps 或以上，并准备
   足够的月流量。实际速度仍受 Telegram、VPS 线路、CloudDrive2 和 115 状态共同影响。
 
-50GB 硬盘配合默认的 20GB 本地任务预算和 20GB 磁盘安全线可以使用，但最终应以部署器对
+50GB 硬盘配合默认的 20GB 本地任务预算和 8GB 磁盘安全线可以使用，但最终应以部署器对
 当前可用空间给出的建议和部署前复检为准。CloudDrive2 可能另外占用缓存。单文件超过本地
 预算时 Bot 自动使用流式模式，不会先完整写入 VPS；经常批量处理大文件时仍应优先选择更大的
 硬盘，因为 CloudDrive2 缓存不受 Bot 额度直接控制。
@@ -61,14 +61,15 @@
 
 ### CloudDrive2
 
-- CloudDrive2 会员账号；当前方案按会员环境设计，并要求 115 挂载和 WebDAV 功能可用；
+- 可正常使用 WebDAV 的 CloudDrive2 环境；具体会员或功能要求以 CloudDrive2 和所选云存储
+  当前规则为准；
 - CloudDrive2 WebDAV 用户名；
 - CloudDrive2 WebDAV 密码；
-- 计划挂载的 115 网盘；
-- 足够的 115 剩余空间；115 会员不是程序代码的硬性要求；
+- 计划由本人挂载的云存储（115 可作为常用示例）；
+- 所选云存储有足够剩余空间；云存储会员资格不是 TG2Cloud 代码本身的要求；
 - WebDAV 根目录后的相对子目录；WebDAV 根目录已经选中目标文件夹时留空。
 
-CloudDrive2 会员和 115 账号由你本人在 CloudDrive2 管理页登录。部署器不需要这些账号的
+CloudDrive2 和云存储账号由你本人在 CloudDrive2 管理页登录。部署器不需要这些账号的
 登录密码，只需要你另外设置的 WebDAV 用户名和密码。
 
 ---
@@ -80,8 +81,8 @@ CloudDrive2 会员和 115 账号由你本人在 CloudDrive2 管理页登录。�
 根据希望使用的中转方式，运行对应的 PySide6 部署器：
 
 ```text
-TG115-CloudDrive2-Deployer.exe
-TG115-OpenList-Deployer.exe
+TG2Cloud-CloudDrive2-Deployer.exe
+TG2Cloud-OpenList-Deployer.exe
 ```
 
 两个程序都使用相同的新版 PySide6 界面，但安装目录、容器、网络和端口彼此隔离。原
@@ -120,7 +121,7 @@ API Hash、Bot Token 都是秘密信息，不要发到群聊或公开网页。
 如果由部署器安装 CloudDrive2，保持默认 WebDAV 地址：
 
 ```text
-http://clouddrive2:19798/dav
+http://tg2cloud-clouddrive2:19798/dav
 ```
 
 填写：
@@ -134,15 +135,15 @@ http://clouddrive2:19798/dav
 `Telegram/115/Telegram` 套娃。
 
 如果勾选“在 VPS 中安装并管理 CloudDrive2”，Bot 会固定使用容器内网地址
-`http://clouddrive2:19798/dav`。不要填写 VPS 公网 IP，也不要把 19798 端口写成
+`http://tg2cloud-clouddrive2:19798/dav`。不要填写 VPS 公网 IP，也不要把 19798 端口写成
 `https://`；该端口本身是 HTTP，管理页面通过 SSH 隧道安全访问。
 
 ### 第 5 步：检测并选择存储方案
 
 ```text
-安装目录：/opt/tg115
+安装目录：/opt/tg2cloud-clouddrive2
 本地任务预算：20GB
-磁盘最少保留：20GB
+磁盘最少保留：8GB
 时区：Asia/Shanghai
 ```
 
@@ -186,15 +187,17 @@ OpenList 版增加“部署 OpenList”和“配置 WebDAV”两个引导区：
 2. 基础部署成功后点击“打开 OpenList 管理页”，浏览器固定访问 `http://127.0.0.1:5244`。
    这个地址通过 SSH 隧道连接 VPS，5244 不开放公网；本机端口被占用时不会随机改端口。
 3. 由本人登录 OpenList，添加 `115 Open` 存储。部署器不会读取或收集 115 Cookie、Token。
-4. 在 OpenList 创建普通用户 `tg115`，复制部署器生成的 28 位 WebDAV 密码，建议基本路径为
-   `/115/Telegram`，并授予目录列表、读取、写入、改名／移动和删除权限。
+4. 在 OpenList 创建普通用户 `tg2cloud`，复制部署器生成的 28 位 WebDAV 密码。目标子目录
+   默认留空，即使用该用户的 WebDAV 根目录；如需子目录可填写 `Telegram` 等相对路径。为用户
+   授予目录列表、读取、写入、改名／移动和删除权限。
 5. 返回部署器执行“WebDAV 验收”。基础部署成功和 WebDAV 验收成功是两个阶段；尚未完成
    115/WebDAV 配置时，看到“等待用户配置”是正常的。
 
-OpenList 默认安装目录为 `/opt/tg115-openlist`，本地任务预算 `20GB`、磁盘最少保留 `8GB`、
+OpenList 默认安装目录为 `/opt/tg2cloud-openlist`，本地任务预算 `20GB`、磁盘最少保留 `8GB`、
 时区 `Asia/Shanghai`。密码只保留在当前界面会话中；只有主动点击“重新生成”才会改变。
-以后重新打开部署器升级已有实例时，勾选“保留 VPS 当前 WebDAV 配置”，可避免新生成的随机
-密码覆盖 Bot 正在使用的旧配置；旧密码只在 VPS 内复用，不会显示或传回电脑。
+以后重新打开部署器升级已有 TG2Cloud 实例时，默认保留 VPS 当前完整 `.env`。只有明确勾选
+“使用本页配置覆盖 VPS 当前 .env”才应用本次表单；显式覆盖时还可选择继续保留 VPS 当前
+WebDAV 与管理员配置。旧密码只在 VPS 内复用，不会显示或传回电脑。
 
 ---
 
@@ -246,7 +249,7 @@ WebDAV 验收（写入测试文件）
 → 删除远端和 VPS 测试文件
 ```
 
-只有输出 `TG115_DESTINATION=OK`，部署器才会显示“验收通过”。这证明文件已经写入
+只有输出 `TG2CLOUD_DESTINATION=OK`，部署器才会显示“验收通过”。这证明文件已经写入
 CloudDrive2 WebDAV，但不能单独证明 115 官方端已经保存完成。最终应在 115 官方客户端
 确认文件大小正常，并能打开或播放。
 
@@ -365,29 +368,29 @@ WebDAV 地址、用户名和密码，不会继续使用旧凭据。
 注意：只在输入框中改值后直接点击“WebDAV 验收”不会更新 VPS；必须先重新执行
 “一键部署基础环境”，看到部署成功后再验收。
 
-如果日志出现 `lookup clouddrive2`，点击“修复 CloudDrive2 网络”。部署器会保留现有
+如果日志出现 `lookup tg2cloud-clouddrive2`，点击“修复 CloudDrive2 网络”。部署器会保留现有
 CloudDrive2 登录、115 挂载和文件，只刷新 Docker 网络别名，并自动执行真实 WebDAV 验收。
 
 更新前，旧程序配置会备份到：
 
 ```text
-/opt/tg115-backups/
+/opt/tg2cloud-clouddrive2-backups/
 ```
 
 部署完成时会统计备份数量和占用，超过 5GB 会提示，但不会自动删除。查看备份统计：
 
 ```bash
-sudo /opt/tg115/manage.sh backups
+sudo /opt/tg2cloud-clouddrive2/manage.sh backups
 ```
 
 确认旧回退点不再需要后，可手动按类型各保留最近 5 份：
 
 ```bash
-sudo /opt/tg115/manage.sh prune-backups 5
+sudo /opt/tg2cloud-clouddrive2/manage.sh prune-backups 5
 ```
 
 参数只能是 1～50。命令只处理该目录下程序生成的 `config-*`、`database-*` 和 `env-*` 文件，
-不会删除下载文件、日志、CloudDrive2 数据或其他文件。旧备份删除后不能通过 TG115 恢复，
+不会删除下载文件、日志、CloudDrive2 数据或其他文件。旧备份删除后不能通过 TG2Cloud 恢复，
 因此第一次升级完成并实际传输验证前不要急于清理。
 
 ---
@@ -444,7 +447,7 @@ CloudDrive2 官方 Docker 挂载方式需要 FUSE。请在 VPS 控制台开启 F
 6. `/status` 中 CloudDrive2 状态是否正常；
 7. VPS 是否还有足够磁盘空间。
 
-如果 Docker 数据目录在另一个文件系统，部署器会分别显示和检查两边空间；不能只看 TG115
+如果 Docker 数据目录在另一个文件系统，部署器会分别显示和检查两边空间；不能只看 TG2Cloud
 安装目录所在磁盘。
 
 ### 单文件超过 20GB 会怎样
@@ -495,32 +498,32 @@ CloudDrive2 官方 Docker 挂载方式需要 FUSE。请在 VPS 控制台开启 F
 通过 SSH 登录 VPS 后执行：
 
 ```bash
-sudo /opt/tg115/manage.sh logs
+sudo /opt/tg2cloud-clouddrive2/manage.sh logs
 ```
 
 只查看状态：
 
 ```bash
-sudo /opt/tg115/manage.sh status
+sudo /opt/tg2cloud-clouddrive2/manage.sh status
 ```
 
 手动执行与部署器相同的 CloudDrive2 WebDAV 写入验收：
 
 ```bash
-sudo /opt/tg115/manage.sh verify
+sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 ```
 
 重启 Bot：
 
 ```bash
-sudo /opt/tg115/manage.sh restart
+sudo /opt/tg2cloud-clouddrive2/manage.sh restart
 ```
 
 `restart` 不应用配置变化。手工部署时，将新配置保存在安装目录之外，然后运行：
 
 ```bash
-sudo /opt/tg115/manage.sh apply-config /absolute/new-config.env
-sudo /opt/tg115/manage.sh check
+sudo /opt/tg2cloud-clouddrive2/manage.sh apply-config /absolute/new-config.env
+sudo /opt/tg2cloud-clouddrive2/manage.sh check
 ```
 
 新配置会先备份和预检，再应用到 Bot，并核对运行环境、代码指纹和基础健康。
@@ -536,8 +539,8 @@ sudo /opt/tg115/manage.sh check
 
 ## 十、当前验证边界
 
-新版测试和检查结果见 [v1.6.2 更新与验收记录](v1.6.2-更新与验收.md)。
-历史 v1.5.0 的 75 项测试和发布验收不能代替当前版本的生产环境验收。
+当前发布边界见 [TG2Cloud v1.0.0 发布检查清单](../TG2Cloud-v1.0.0-RELEASE-CHECKLIST.md)。
+源码测试不能代替真实 VPS 与目标云存储的生产环境验收。
 
 由于没有你的真实 VPS、Telegram 和 CloudDrive2 凭据，交付前无法替你完成真实 VPS 的端到端上传测试。
 第一次使用时，部署器会在你的 VPS 上执行真实安装和健康检查；完成 CloudDrive2 与 115 登录后，

@@ -1,112 +1,88 @@
-# 未发布开发说明
+# TG2Cloud v1.0.0 Release Candidate
 
-OpenList 产品线正在开发和真实 VPS 验收，尚未创建正式 Release。当前工作树的目标发布产物为
-`TG115-CloudDrive2-Deployer.exe` 与 `TG115-OpenList-Deployer.exe`，均使用 PySide6；历史
-Classic/Tkinter 源码及两个 CMD 启动器已从当前项目清理。以下 `v1.6.2` 内容仍是已发布版本的
-原始说明。
+**GitHub Pre-release：`v1.0.0-rc.1`**
 
----
+本次预发布是 TG2Cloud v1.0.0 的 Release Candidate，不是 Stable Release。自动测试、Windows
+双 EXE 构建、frozen 资源、版本元数据和安全静态审计已经完成；真实 VPS、WebDAV、rclone、
+Telegram 端到端和不同文件规模仍待最终人工验收。希望使用稳定版本的用户应等待正式 v1.0.0。
 
-# TG115 v1.6.2
+TG2Cloud 是一个将 Telegram 私聊中提交的文件自动转存到用户自有云存储的自托管工具：
 
-## 下载
+```text
+Telegram → Private Bot → TG2Cloud → rclone
+         → CloudDrive2 / OpenList WebDAV → 用户挂载的云存储
+```
 
-- `TG115-Deployer-Modern-v1.6.2.exe`：推荐使用的 PySide6 图形化部署器；
-- `TG115-Deployer-Classic-v1.6.2.exe`：保留原 Tkinter 界面的轻量兼容版；
-- `TG115-Source-v1.6.2.zip`：与 `v1.6.2` 标签一致的公开源码；
-- `SHA256SUMS.txt`：上述附件的 SHA-256 校验值。
+115 是常用示例和主要测试场景之一，不是唯一目标网盘。最终可用的存储取决于用户本人在
+CloudDrive2 或 OpenList 中实际挂载和授权的云存储。
 
-## 本次更新
+## 下载选择
 
-- Windows 主部署器迁移到 PySide6，并增加离线预览、依赖诊断、脱敏日志导出和 Qt 打包自检；
-- 同时提供 Modern 与 Classic 两个部署器：Modern 是推荐的新界面，Classic 保留原 Tkinter
-  界面作为低体积兼容版；构建和 CI 会分别检查两个成品；
-- 构建过程隔离 DLL 搜索路径，避免开发机其他软件的 ICU 等运行库污染 PyInstaller 成品；
-- Bot 快捷入口迁移到 Telegram 输入框左侧的原生命令菜单，新回复不再附带消息下方按钮；
-- 系统状态移除目的端“只读检查”和检查时间后缀，保留后台探测与过期保护；
-- README、小白教程、构建说明和贡献指南同步双版本部署器的使用与验证方法。
+- `TG2Cloud-CloudDrive2-Deployer.exe`：部署 TG2Cloud Bot 和 CloudDrive2 Edition。
+- `TG2Cloud-OpenList-Deployer.exe`：部署 TG2Cloud Bot 和 OpenList Edition。
+- `SHA256SUMS.txt`：两个正式 EXE 的 SHA-256 校验值。
 
-## 从 v1.6.1 升级
+两个部署器都使用 PySide6 和同一套 TG2Cloud 品牌资源。正式发布不包含 Tkinter、Classic、
+TG115、debug 或 test EXE。
 
-推荐运行本 Release 的 Modern 部署器；需要较小体积或旧界面时可使用 Classic。保持原安装目录
-和配置，重新点击“一键部署基础环境”。
-升级会备份旧程序、配置和 SQLite 数据库快照；任务数据库、下载目录、日志以及 CloudDrive2
-配置和挂载数据会保留，新 Bot 健康检查失败时自动回退。仅执行 `manage.sh update` 不会从
-GitHub 下载新代码。
+## 主要能力
 
-升级前建议发送 `/pause` 并等待当前传输归零；升级和 WebDAV 验收完成后发送 `/start` 检查
-原生命令菜单，再用 `/resume` 恢复调度。首次真实文件传输确认前不要清理升级备份。
+- 私人 Telegram Bot、Allowed User 限制、SQLite 持久队列和重启恢复；
+- rclone WebDAV 上传、目的端大小校验、安全改名和失败清理；
+- 超过本地任务预算时沿用现有流式传输策略；
+- 默认 `LOCAL_TEMP_BUDGET_GB=20`、`MIN_FREE_DISK_GB=8`，也允许用户显式调整；
+- CloudDrive2 固定 `127.0.0.1:19798`、OpenList 固定 `127.0.0.1:5244` SSH Tunnel；
+- WebDAV auth/list/upload/size/rename/recheck/delete/cleanup 分阶段验收；
+- Existing TG2Cloud 重复部署默认在 VPS 内保留完整 `.env`、SQLite、`rclone.conf` 和
+  Storage Gateway 持久化数据；只有用户明确勾选后才使用当前表单覆盖配置；
+- CloudDrive2 网络 Repair、两版 Update/Status、OpenList 脱敏日志和一致性手动备份；
+- 正式机器输出使用 `TG2CLOUD_*`，仅为旧脚本保留必要 `TG115_*` 读取兼容。
 
-## 验证边界
+## 首次安装建议
 
-发布提交前完成 174 项 Python 回归且无跳过，其中包括 4 项真实本地 rclone WebDAV 集成；
-Ruff、Bandit、两份依赖审计，以及 Modern、Classic 两个 Windows EXE 的打包后自检均通过。
-GitHub Actions 会在推送后运行；自动化结果不能替代真实 VPS、Telegram、CloudDrive2 与
-115 官方端的分层验收。
+1. 从本仓库的正式 Release 下载所需 Edition，并核对 `SHA256SUMS.txt`。
+2. 准备本人控制的 Ubuntu/Debian VPS、私人 Telegram Bot 和 CloudDrive2/OpenList WebDAV
+   配置；不要把任何凭据提交到 Issue、聊天记录或截图。
+3. 先在部署器中测试 SSH 和应用合适的 VPS 存储建议，再执行“一键部署基础环境”。
+4. 通过固定 SSH Tunnel 打开 Storage Gateway，由本人登录并挂载测试云存储。
+5. 执行 WebDAV 验收，确认出现 `TG2CLOUD_DESTINATION=OK` 后再发送 Telegram 测试文件。
+6. 最后在所用云存储的官方客户端确认文件大小和可打开性。
 
-详细记录见 [v1.6.2 更新与验收记录](docs/v1.6.2-更新与验收.md)。
+完整步骤见 [README](README.md)；真实 VPS 发布前验收见
+[人工验收清单](docs/MANUAL_ACCEPTANCE.md)。
 
----
+## 旧 TG115 用户
 
-# TG115 v1.6.0
+TG2Cloud v1.0.0 不提供 TG115 原地自动升级。新安装使用独立目录、容器和 Network；旧目录、
+容器和备份不会被自动覆盖、停止、迁移或删除。若旧实例占用固定 19798/5244 端口，TG2Cloud
+会停止并要求用户自行处理，不会自动换端口。详见
+[从 TG115 迁移](docs/MIGRATION_FROM_TG115.md)。
 
-## 下载
+不要让新旧实例长期同时使用同一个 Telegram Bot Token，否则可能争抢 Telegram updates。
 
-- `TG115-Deployer-v1.6.0.exe`：Windows 图形化部署器；
-- `TG115-Source-v1.6.0.zip`：与标签一致的公开源码；
-- `SHA256SUMS.txt`：上述附件的 SHA-256 校验值。
+## 隐私与安全
 
-## 主要变化
+- 无遥测、无埋点、无第三方统计、无开发者侧凭据收集；
+- SSH、Telegram、WebDAV 和 OpenList 敏感字段不会写入普通日志，诊断日志会脱敏；
+- 完整 `.env`、`rclone.conf`、SSH 私钥、Cookie、OAuth/云存储 Token 不进入公开诊断；
+- CloudDrive2/OpenList 管理端默认只绑定 VPS 回环地址，通过 SSH Tunnel 访问；
+- 用户的云存储登录、Cookie、Token 和 OAuth 授权只交给用户自己的 CloudDrive2/OpenList。
 
-本次覆盖监控隔离、持久暂停、诊断／进度、共享并发窗口、合法状态迁移、远端路径恢复、
-批量人工确认、手动流式切换、带二次确认的遗留临时文件清理、命令模块拆分、可恢复程序升级，
-以及安装前 VPS 资源探测和实例级存储建议。
-详细变更、验证结果及升级注意事项见 [优化与验收记录](docs/v1.6.0-优化与验收.md)。
-发布前已完成本地完整回归和 GitHub Actions 验证，但没有自动部署到 VPS，也没有替用户确认
-115 官方端。不得把自动化测试结果当作新版生产验收。
+## Known Limitations
 
-Windows 部署器现在会读取当前 VPS 的 CPU、内存、目标文件系统、inode、已有占用和 FUSE，
-给出“均衡模式／流式优先”两套建议。源码默认仍为 20GB/20GB，只有用户点击才会应用；部署前
-会重新校验。Docker 数据目录位于另一文件系统时会单独检查其空间和 inode。它不会自动分区、
-扩容或格式化磁盘，CPU／内存档位也不会覆盖运行时动态调度。
+- 本版本没有正式自动 Restore 或 Uninstall；
+- CloudDrive2 没有手动 Backup UI，只有重复部署前自动保护和备份盘点/显式 retention；
+- 同 Bot Token 多实例冲突由用户避免，没有分布式锁或跨系统 Token 扫描；
+- TG115 不会自动原地迁移到 TG2Cloud；
+- Windows EXE 未使用商业代码签名，SmartScreen 可能显示“未知发布者”；
+- CloudDrive2/OpenList、云存储和 VPS 组合较多，未完成的真实环境项目以
+  `docs/MANUAL_ACCEPTANCE.md` 和 Release Checklist 为准。
 
-升级备份不再是不可见增长：`manage.sh backups` 可只读统计数量和字节数，超过 5GB 时部署会
-提示；`manage.sh prune-backups 5` 需要用户显式执行，并按类型各保留最近 5 份。部署不会自动
-删除备份。
+## 发布状态
 
----
+当前状态为 **Release Candidate — Manual Acceptance Pending**。自动测试、正式构建、
+frozen 资源和 Windows 本机验证结果记录在 `docs/WORKLOG.md`；真实 VPS、Telegram、WebDAV、
+rclone 和不同文件规模的验收必须按实际结果完成后，才能判定为最终 READY。
 
-# TG115 v1.5.0（历史正式版说明）
-
-这是修复大文件、取消和重启边界后的正式版本。
-
-## 下载
-
-- `TG115-Deployer-v1.5.0.exe`：Windows 图形化部署器；
-- `TG115-Source-v1.5.0.zip`：对应的完整公开源码；
-- `SHA256SUMS.txt`：发布附件的 SHA-256 校验值。
-
-## 使用前注意
-
-1. 仅从本仓库的 GitHub Releases 下载；
-2. 先核对 SHA-256；
-3. 所有 VPS、Telegram 和 WebDAV 凭据只在本机部署器中填写；
-4. 不要把凭据提交到 Issue、日志或截图；
-5. CloudDrive2 和 115 登录必须由用户本人完成。
-
-## 已验证
-
-- Windows 图形界面启动、默认值和空白输入校验；
-- Telegram 到 CloudDrive2 的完整模拟传输；
-- 超过本地预算的单文件流式传输、远端大小校验和安全改名；
-- 100 个混合文件自动分批；
-- 20GB 任务预算和磁盘安全线；
-- 取消时远端清理、断线重试、失败保留和重启恢复；
-- 下载改名崩溃恢复和缺失文件额度回收；
-- 旧任务状态兼容；
-- 115 官方客户端人工确认状态；
-- EXE 包内自检和源码 ZIP 解包复测；
-- 源码、文档、发布附件个人信息与秘密扫描。
-
-流式模式不会在 VPS 保留完整本地副本，因此传输中断后需要从头重试。CloudDrive2 是闭源
-特权容器，其内部缓存和 115 最终入库状态仍需在真实 VPS 与官方客户端中验收。
+TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进而来，继续保留 MIT
+许可证、原作者版权和必要致谢。

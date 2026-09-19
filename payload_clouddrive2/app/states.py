@@ -12,7 +12,7 @@ STATE_LABELS = {
     "finalizing": "正在生成正式文件名",
     "cleanup_pending": "{destination} 已接收，正在清理 VPS 本地文件",
     "completed": "Bot 传输已完成（{destination} 已接收）",
-    "confirmed": "115 官方端已由你确认",
+    "confirmed": "云存储官方端已由你确认",
     "download_failed": "下载失败",
     "upload_failed_retained": "上传失败，本地文件已保留",
     "verification_failed_retained": "校验失败，本地文件已保留",

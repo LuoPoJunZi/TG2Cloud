@@ -291,7 +291,8 @@ class RcloneClient:
 
     async def prepare_destination(self) -> None:
         await self.ensure_config()
-        await self._run("mkdir", self.remote(), timeout=45)
+        if self.settings.cd2_target.strip("/"):
+            await self._run("mkdir", self.remote(), timeout=45)
         await self._run("lsd", self.remote(), "--max-depth", "1", timeout=45)
 
     async def probe(self) -> DestinationProbe:

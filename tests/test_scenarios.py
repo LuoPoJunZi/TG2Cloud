@@ -454,7 +454,7 @@ class EndToEndSimulationTests(unittest.TestCase):
 
             self.assertEqual(db.get(task["id"])["state"], "confirmed")
             reply = event.reply.await_args.args[0]
-            self.assertIn("115 官方端已由你确认", reply)
+            self.assertIn("云存储官方端已由你确认", reply)
             self.assertIn("人工确认", reply)
             db.close()
 

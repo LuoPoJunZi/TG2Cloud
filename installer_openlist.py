@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""OpenList product entry for the shared TG115 PySide6 deployer."""
+"""OpenList product entry for the shared TG2Cloud PySide6 deployer."""
 
 from __future__ import annotations
 
