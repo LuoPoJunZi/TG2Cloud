@@ -1,0 +1,61 @@
+services:
+  openlist:
+    image: openlistteam/openlist@sha256:c555c6e1c8af2aead38ed12ec761ac077fdf046d19cf033414be8e056aec6b64
+    container_name: tg115-openlist
+    user: "1001:1001"
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      UMASK: "022"
+      OPENLIST_ADMIN_PASSWORD: ${OPENLIST_ADMIN_PASSWORD}
+    volumes:
+      - ./openlist/data:/opt/openlist/data
+    ports:
+      - "127.0.0.1:5244:5244"
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+    networks:
+      - tg115-openlist-net
+
+  tg115-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tg115-openlist-bot
+    env_file:
+      - .env
+    environment:
+      DATA_DIR: /data
+      DOWNLOAD_DIR: /downloads
+      LOG_DIR: /logs
+      RCLONE_CONFIG_PATH: /config/rclone/rclone.conf
+      TG115_COMPOSE_SERVICE: tg115-bot
+    user: "10001:10001"
+    volumes:
+      - ./data:/data
+      - ./downloads:/downloads
+      - ./logs:/logs
+      - ./config:/config
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=64m
+    restart: unless-stopped
+    stop_grace_period: 45s
+    healthcheck:
+      test: ["CMD", "python", "-m", "app.healthcheck"]
+      interval: 30s
+      timeout: 8s
+      retries: 3
+      start_period: 45s
+    networks:
+      - tg115-openlist-net
+
+networks:
+  tg115-openlist-net:
+    name: tg115-openlist-net
