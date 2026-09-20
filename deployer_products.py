@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-RELEASE_VERSION = "1.0.1"
+RELEASE_VERSION = "1.0.2"
 
 SHARED_PAYLOAD_FILES = (
     "payload_clouddrive2/backup_retention.sh",

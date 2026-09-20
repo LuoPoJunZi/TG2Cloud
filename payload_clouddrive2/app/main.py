@@ -18,7 +18,7 @@ from .config import Settings
 from .db import TaskDB
 from .interfaces import Destination, DestinationProbe, MediaSource
 from .naming import safe_file_name
-from .rclone_client import RcloneClient
+from .rclone_client import MoveUncertainError, RcloneClient
 from .resources import AdaptiveWindow, ResourceMonitor, ResourceSnapshot
 from .states import FAILED_STATES
 
@@ -563,6 +563,7 @@ class TransferService(CommandMixin):
         local_path: Path | None = None,
     ) -> None:
         final_remote = remote_path
+        move_completed = False
         if remote_path.startswith(".uploading-"):
             async with self._finalize_lock:
                 current = self.db.get(task_id) or task
@@ -579,8 +580,26 @@ class TransferService(CommandMixin):
                     remote_final_path=final_remote,
                 )
                 await self.rclone.move(remote_path, final_remote)
-        final_size = await self.rclone.remote_size(final_remote)
+                move_completed = True
+        try:
+            final_size = await self.rclone.remote_size(final_remote)
+        except Exception as exc:
+            if move_completed and getattr(
+                self.settings, "storage_backend", "clouddrive2"
+            ) == "openlist":
+                raise MoveUncertainError(
+                    "MOVE_UNCERTAIN: OpenList 改名后的目标文件暂时无法复验；"
+                    "已停止自动重试并保留文件供核对。"
+                ) from exc
+            raise
         if final_size != int(task["file_size"]):
+            if move_completed and getattr(
+                self.settings, "storage_backend", "clouddrive2"
+            ) == "openlist":
+                raise MoveUncertainError(
+                    "MOVE_UNCERTAIN: OpenList 改名后的目标文件大小不符；"
+                    "已停止自动重试并保留文件供核对。"
+                )
             await self.rclone.remove(final_remote)
             raise RuntimeError(
                 f"流式改名后远端大小错误：{final_size} != {task['file_size']}"
@@ -588,6 +607,38 @@ class TransferService(CommandMixin):
         await self._complete_cloud_receive(
             task_id, task, local_path, final_remote
         )
+
+    async def _begin_remote_write(
+        self,
+        task_id: int,
+        task: dict[str, Any],
+        safe_name: str,
+        state: str,
+        remote_temp: str,
+        **fields: Any,
+    ) -> str:
+        if getattr(
+            self.settings, "storage_backend", "clouddrive2"
+        ) != "openlist":
+            self.db.transition(
+                task_id, state, remote_path=remote_temp,
+                remote_temp_path=remote_temp, **fields,
+            )
+            return remote_temp
+        async with self._finalize_lock:
+            current = self.db.get(task_id) or task
+            final_remote = str(current.get("remote_final_path") or "")
+            if not final_remote:
+                final_remote = await self._choose_remote_final(safe_name, task_id)
+            elif await self.rclone.exists(final_remote):
+                raise RuntimeError(
+                    "预留的 OpenList 最终路径已经存在；保留文件并等待复核"
+                )
+            self.db.transition(
+                task_id, state, remote_path=final_remote,
+                remote_temp_path=None, remote_final_path=final_remote, **fields,
+            )
+            return final_remote
 
     async def _resume_remote(
         self, task_id: int, task: dict[str, Any], local_path: Path | None,
@@ -605,6 +656,12 @@ class TransferService(CommandMixin):
             await self._complete_cloud_receive(task_id, task, local_path, final)
             return True
         if temp and await self.rclone.exists(temp):
+            if getattr(
+                self.settings, "storage_backend", "clouddrive2"
+            ) == "openlist":
+                raise RuntimeError(
+                    "检测到旧版 OpenList 临时文件；不会自动改名或覆盖，请先人工核对"
+                )
             if await self.rclone.remote_size(temp) == int(task["file_size"]):
                 await self._finalize_stream_remote(task_id, task, temp, safe_name, local_path)
                 return True
@@ -627,13 +684,10 @@ class TransferService(CommandMixin):
                 try:
                     if await self._resume_remote(task_id, task, None, safe_name):
                         return
-                    self.db.transition(
-                        task_id,
-                        "streaming",
+                    remote_write = await self._begin_remote_write(
+                        task_id, task, safe_name, "streaming", remote_temp,
                         transfer_mode="stream",
                         local_path=None,
-                        remote_path=remote_temp,
-                        remote_temp_path=remote_temp,
                         downloaded_bytes=0,
                         uploaded_bytes=0,
                         download_retries=attempt,
@@ -646,7 +700,7 @@ class TransferService(CommandMixin):
                     if not message or not message.media:
                         raise RuntimeError("Telegram 消息或文件已经不可访问")
                     stream = await self.rclone.open_upload_stream(
-                        remote_temp, int(task["file_size"])
+                        remote_write, int(task["file_size"])
                     )
                     last_progress_at = 0.0
 
@@ -675,23 +729,38 @@ class TransferService(CommandMixin):
                         )
                     await stream.finish()
                     self.db.transition(task_id, "verifying")
-                    remote_size = await self.rclone.remote_size(remote_temp)
+                    remote_size = await self.rclone.remote_size(remote_write)
                     if remote_size != int(task["file_size"]):
                         raise RuntimeError(
                             f"流式远端大小错误：{remote_size} "
                             f"!= {task['file_size']}"
                         )
                     await self._finalize_stream_remote(
-                        task_id, task, remote_temp, safe_name
+                        task_id, task, remote_write, safe_name
                     )
                     return
                 except asyncio.CancelledError:
                     raise
+                except MoveUncertainError as exc:
+                    if stream is not None:
+                        await stream.abort()
+                    self.db.transition(
+                        task_id, "download_failed", error=str(exc)[:1000],
+                        wait_reason="OpenList 改名结果未确认；停止自动重试并保留远端现场",
+                    )
+                    await self._notify(
+                        f"❌ OpenList 改名结果未确认，任务 #{task_id} 已停止自动重试。"
+                        "请先核对远端临时文件与目标文件。"
+                    )
+                    return
                 except Exception as exc:  # noqa: BLE001 - retry external I/O
                     if stream is not None:
                         await stream.abort()
                         stream = None
-                    await self.rclone.remove(remote_temp)
+                    if getattr(
+                        self.settings, "storage_backend", "clouddrive2"
+                    ) != "openlist":
+                        await self.rclone.remove(remote_temp)
                     self.recent_download_errors.append(time.time())
                     self.recent_upload_errors.append(time.time())
                     self.log.warning(
@@ -942,11 +1011,8 @@ class TransferService(CommandMixin):
                 try:
                     if await self._resume_remote(task_id, task, local_path, safe_name):
                         return
-                    self.db.transition(
-                        task_id,
-                        "uploading",
-                        remote_path=remote_temp,
-                        remote_temp_path=remote_temp,
+                    remote_write = await self._begin_remote_write(
+                        task_id, task, safe_name, "uploading", remote_temp,
                     )
                     self._record_progress(task_id, "upload", 0, 0)
 
@@ -954,19 +1020,29 @@ class TransferService(CommandMixin):
                         self.db.update(task_id, uploaded_bytes=min(count, int(task["file_size"])))
                         self._record_progress(task_id, "upload", count, speed)
 
-                    await self.rclone.upload(local_path, remote_temp, progress=progress)
+                    await self.rclone.upload(local_path, remote_write, progress=progress)
                     self.db.transition(task_id, "verifying")
-                    remote_size = await self.rclone.remote_size(remote_temp)
+                    remote_size = await self.rclone.remote_size(remote_write)
                     if remote_size != int(task["file_size"]):
                         raise RuntimeError(
                             f"远端大小错误：{remote_size} != {task['file_size']}"
                         )
                     await self._finalize_stream_remote(
-                        task_id, task, remote_temp, safe_name, local_path
+                        task_id, task, remote_write, safe_name, local_path
                     )
                     return
                 except asyncio.CancelledError:
                     raise
+                except MoveUncertainError as exc:
+                    self.db.transition(
+                        task_id, "upload_failed_retained", error=str(exc)[:1000],
+                        wait_reason="OpenList 改名结果未确认；保留本地和远端文件",
+                    )
+                    await self._notify(
+                        f"❌ OpenList 改名结果未确认，任务 #{task_id} 已停止自动重试。"
+                        "本地文件已保留，请先核对远端临时文件与目标文件。"
+                    )
+                    return
                 except Exception as exc:  # noqa: BLE001 - retry external I/O
                     self.recent_upload_errors.append(time.time())
                     self.log.warning(
@@ -979,7 +1055,10 @@ class TransferService(CommandMixin):
                     )
                     if attempt + 1 < self.settings.max_retries:
                         await asyncio.sleep(min(120, 3 ** (attempt + 1)))
-            await self.rclone.remove(remote_temp)
+            if getattr(
+                self.settings, "storage_backend", "clouddrive2"
+            ) != "openlist":
+                await self.rclone.remove(remote_temp)
             self.db.transition(
                 task_id,
                 "upload_failed_retained",

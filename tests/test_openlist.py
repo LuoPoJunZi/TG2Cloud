@@ -78,8 +78,8 @@ class OpenListProductTests(unittest.TestCase):
         )
 
     def test_product_release_identity_is_tg2cloud_v1(self) -> None:
-        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_version, "1.0.1")
-        self.assertEqual(OPENLIST_PRODUCT.app_version, "1.0.1")
+        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_version, "1.0.2")
+        self.assertEqual(OPENLIST_PRODUCT.app_version, "1.0.2")
         self.assertEqual(
             CLOUDDRIVE2_PRODUCT.executable_name,
             "TG2Cloud-CloudDrive2-Deployer",
@@ -161,6 +161,36 @@ class OpenListProductTests(unittest.TestCase):
             window.close()
             app.processEvents()
 
+    @unittest.skipUnless(
+        getattr(installer, "InstallerWindow", None) is not None,
+        "Qt runtime unavailable",
+    )
+    def test_openlist_management_actions_fit_sidebar_viewport(self) -> None:
+        app = make_app()
+        window = installer.InstallerWindow(preview=True, product=OPENLIST_PRODUCT)
+        try:
+            window.resize(1280, 800)
+            window.show()
+            app.processEvents()
+            sidebar = window.action_scroll
+            content = sidebar.widget()
+            self.assertLessEqual(content.minimumSizeHint().width(), sidebar.viewport().width())
+            for operation in (
+                "openlist_status",
+                "openlist_logs",
+                "restart_bot",
+                "restart_openlist",
+                "backup_openlist",
+                "reset_openlist_admin",
+            ):
+                button = window.action_buttons[operation]
+                with self.subTest(operation=operation):
+                    right = button.mapTo(content, button.rect().topRight()).x()
+                    self.assertLessEqual(right, sidebar.viewport().width())
+        finally:
+            window.close()
+            app.processEvents()
+
     def test_verification_markers_become_safe_stage_statuses(self) -> None:
         statuses = dict(
             verification_statuses(
@@ -182,6 +212,11 @@ TG115_WEBDAV_SIZE=FAILED
         current = dict(verification_statuses("TG2CLOUD_BOT_HEALTH=healthy\nTG2CLOUD_WEBDAV_AUTH=OK\nTG115_WEBDAV_AUTH=FAILED\nTG2CLOUD_UPLOAD=OK\n"))
         self.assertEqual(current["Bot 容器"], "通过")
         self.assertEqual(current["WebDAV 认证"], "通过")
+        direct = dict(verification_statuses(
+            "TG2CLOUD_WEBDAV_FINALIZE_MODE=DIRECT\n"
+            "TG2CLOUD_WEBDAV_MOVE=NOT_REQUIRED\n"
+        ))
+        self.assertEqual(direct["最终落盘"], "无需执行")
 
     def test_openlist_verification_uses_manage_script_and_friendly_auth_error(
         self,
@@ -194,6 +229,7 @@ TG115_WEBDAV_SIZE=FAILED
                 1,
                 """TG115_OPENLIST=OK
 BOT_HEALTH=healthy
+older unrelated log: 429 Too Many Requests
 TG115_WEBDAV_AUTH=FAILED
 401 Unauthorized
 """,
@@ -209,6 +245,48 @@ TG115_WEBDAV_AUTH=FAILED
         self.assertEqual(dict(raised.exception.statuses)["WebDAV 认证"], "失败")
         command = session.run.call_args_list[1].args[0]
         self.assertIn("bash ./manage.sh verify", command)
+
+    def test_openlist_webdav_rate_limit_is_not_reported_as_bad_credentials(self) -> None:
+        session = Mock()
+        session.run.side_effect = [
+            (0, "0\n"),
+            (
+                1,
+                (
+                    "TG2CLOUD_OPENLIST=OK\n"
+                    "TG2CLOUD_BOT_HEALTH=healthy\n"
+                    "TG2CLOUD_WEBDAV_AUTH=FAILED\n"
+                    "TG2CLOUD_DESTINATION=FAILED: read metadata failed: 429 Too Many Requests\n"
+                ),
+            ),
+        ]
+        backend = self.backend(session_factory=Mock(return_value=session))
+
+        with self.assertRaises(OperationError) as raised:
+            backend.verify(openlist_values())
+
+        message = str(raised.exception)
+        self.assertIn("429", message)
+        self.assertIn("稍后重试", message)
+        self.assertNotIn("用户名", message)
+        self.assertNotIn("密码", message)
+
+    def test_openlist_unknown_move_is_not_misreported_as_permission_failure(self) -> None:
+        session = Mock()
+        session.run.side_effect = [
+            (0, "0\n"),
+            (1, (
+                "TG2CLOUD_WEBDAV_MOVE=FAILED\n"
+                "TG2CLOUD_DESTINATION=FAILED: MOVE_UNCERTAIN: rename unknown\n"
+            )),
+        ]
+        backend = self.backend(session_factory=Mock(return_value=session))
+        with self.assertRaises(OperationError) as raised:
+            backend.verify(openlist_values())
+        message = str(raised.exception)
+        self.assertIn("状态暂时无法确认", message)
+        self.assertIn("不要重复点击", message)
+        self.assertNotIn("权限", message)
 
     def test_openlist_management_uses_only_fixed_manage_action(self) -> None:
         values = openlist_values()

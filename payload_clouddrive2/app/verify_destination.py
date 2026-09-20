@@ -7,7 +7,7 @@ import uuid
 from collections.abc import Callable
 
 from .config import Settings
-from .rclone_client import RcloneClient
+from .rclone_client import MoveUncertainError, RcloneClient
 
 
 class DestinationVerificationError(RuntimeError):
@@ -27,8 +27,11 @@ async def verify_destination(
     local_path = settings.data_dir / f".tg115-verify-{token}.bin"
     remote_temp = f".tg115-verify-{token}.uploading"
     remote_final = f".tg115-verify-{token}.ok"
+    direct_final = getattr(settings, "storage_backend", "clouddrive2") == "openlist"
+    remote_write = remote_final if direct_final else remote_temp
     payload = os.urandom(256)
     verification_succeeded = False
+    move_uncertain = False
     stage = "AUTH"
 
     def emit(value: str) -> None:
@@ -50,10 +53,10 @@ async def verify_destination(
         emit("TG2CLOUD_WEBDAV_LIST=OK")
         emit("TG2CLOUD_WEBDAV=OK")
         stage = "WRITE"
-        await rclone.upload(local_path, remote_temp)
+        await rclone.upload(local_path, remote_write)
         emit("TG2CLOUD_WEBDAV_WRITE=OK")
         stage = "SIZE"
-        uploaded_size = await rclone.remote_size(remote_temp)
+        uploaded_size = await rclone.remote_size(remote_write)
         if uploaded_size != len(payload):
             raise RuntimeError(
                 f"{destination_label} WebDAV 临时测试文件大小错误："
@@ -61,20 +64,25 @@ async def verify_destination(
             )
         emit("TG2CLOUD_WEBDAV_SIZE=OK")
         emit("TG2CLOUD_UPLOAD=OK")
-        stage = "MOVE"
-        await rclone.move(remote_temp, remote_final)
-        final_size = await rclone.remote_size(remote_final)
-        if final_size != len(payload):
-            raise RuntimeError(
-                f"{destination_label} WebDAV 最终测试文件大小错误："
-                f"{final_size} != {len(payload)}"
-            )
-        if await rclone.exists(remote_temp):
-            raise RuntimeError(
-                f"{destination_label} WebDAV 临时测试文件改名后仍然存在"
-            )
-        emit("TG2CLOUD_WEBDAV_MOVE=OK")
-        emit("TG2CLOUD_RENAME=OK")
+        if direct_final:
+            emit("TG2CLOUD_WEBDAV_FINALIZE_MODE=DIRECT")
+            emit("TG2CLOUD_WEBDAV_MOVE=NOT_REQUIRED")
+            emit("TG2CLOUD_RENAME=NOT_REQUIRED")
+        else:
+            stage = "MOVE"
+            await rclone.move(remote_temp, remote_final)
+            final_size = await rclone.remote_size(remote_final)
+            if final_size != len(payload):
+                raise RuntimeError(
+                    f"{destination_label} WebDAV 最终测试文件大小错误："
+                    f"{final_size} != {len(payload)}"
+                )
+            if await rclone.exists(remote_temp):
+                raise RuntimeError(
+                    f"{destination_label} WebDAV 临时测试文件改名后仍然存在"
+                )
+            emit("TG2CLOUD_WEBDAV_MOVE=OK")
+            emit("TG2CLOUD_RENAME=OK")
         stage = "DELETE"
         await rclone.remove(remote_final)
         if await rclone.exists(remote_final):
@@ -88,14 +96,18 @@ async def verify_destination(
     except DestinationVerificationError:
         raise
     except Exception as exc:
+        move_uncertain = isinstance(exc, MoveUncertainError)
         raise DestinationVerificationError(stage, str(exc)) from exc
     finally:
         try:
             local_path.unlink(missing_ok=True)
         except OSError:
             pass
-        if not verification_succeeded:
-            for remote_path in (remote_temp, remote_final):
+        if not verification_succeeded and not move_uncertain and stage not in {"AUTH", "LIST"}:
+            cleanup_paths = (remote_final,) if direct_final else (
+                remote_temp, remote_final,
+            )
+            for remote_path in cleanup_paths:
                 try:
                     await rclone.remove(remote_path)
                 except Exception as exc:  # noqa: BLE001 - best-effort cleanup

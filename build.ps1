@@ -168,7 +168,7 @@ function Test-Tg2CloudBuild {
         $content = Get-Content -LiteralPath $resultPath -Raw -Encoding utf8
         foreach ($expected in @(
             "product=$($target.Key)",
-            'app_version=1.0.1',
+            'app_version=1.0.2',
             'gui_runtime=OK',
             'backend_import=OK',
             'result=OK'

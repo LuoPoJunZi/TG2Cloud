@@ -14,12 +14,12 @@ VSVersionInfo(
       StringTable('040904B0', [
         StringStruct('CompanyName', 'TG2Cloud Contributors'),
         StringStruct('FileDescription', 'TG2Cloud OpenList Deployer'),
-        StringStruct('FileVersion', '1.0.1'),
+        StringStruct('FileVersion', '1.0.2'),
         StringStruct('InternalName', 'TG2Cloud-OpenList-Deployer'),
         StringStruct('LegalCopyright', 'Copyright (c) 2026 TG115 Contributors'),
         StringStruct('OriginalFilename', 'TG2Cloud-OpenList-Deployer.exe'),
         StringStruct('ProductName', 'TG2Cloud · OpenList'),
-        StringStruct('ProductVersion', '1.0.1')
+        StringStruct('ProductVersion', '1.0.2')
       ])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])

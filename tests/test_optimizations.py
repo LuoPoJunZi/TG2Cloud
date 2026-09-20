@@ -26,6 +26,7 @@ from app.deployment_check import code_fingerprint, mismatched_keys
 from app.healthcheck import healthy
 from app.interfaces import DestinationProbe
 from app.rclone_client import (
+    MoveUncertainError,
     RcloneClient,
     RcloneError,
     _read_progress_tail,
@@ -372,6 +373,107 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.db.get(1)["state"], "completed")
         self.service.rclone.upload.assert_not_awaited()
         self.assertEqual(self.service.rclone.files, {"sample.bin": b"data"})
+
+    async def test_openlist_local_upload_writes_final_name_without_move(self) -> None:
+        task = self.task(local=True)
+        self.service.settings = replace(self.settings, storage_backend="openlist")
+        self.service.rclone.move = AsyncMock(
+            side_effect=AssertionError("OpenList 不应调用 MOVE")
+        )
+
+        await self.service._upload_one(task["id"])
+
+        recorded = self.db.get(task["id"])
+        self.assertEqual(recorded["state"], "completed")
+        self.assertEqual(recorded["remote_path"], "sample.bin")
+        self.assertEqual(recorded["remote_final_path"], "sample.bin")
+        self.assertIsNone(recorded["remote_temp_path"])
+        self.assertEqual(self.service.rclone.files, {"sample.bin": b"data"})
+        self.service.rclone.move.assert_not_awaited()
+
+    async def test_openlist_stream_writes_final_name_without_move(self) -> None:
+        task = self.task()
+        self.db.transition(task["id"], "reserved")
+        self.service.settings = replace(self.settings, storage_backend="openlist")
+
+        async def download(_message, *, file, progress_callback) -> None:
+            await file.write(b"data")
+            progress_callback(4, 4)
+
+        self.service._source = SimpleNamespace(
+            get_messages=AsyncMock(return_value=SimpleNamespace(media=True)),
+            download_media=download,
+        )
+        self.service.rclone.move = AsyncMock(
+            side_effect=AssertionError("OpenList 不应调用 MOVE")
+        )
+
+        await self.service._stream_one(task["id"])
+
+        recorded = self.db.get(task["id"])
+        self.assertEqual(recorded["state"], "completed")
+        self.assertEqual(recorded["remote_path"], "sample.bin")
+        self.assertEqual(recorded["remote_final_path"], "sample.bin")
+        self.assertIsNone(recorded["remote_temp_path"])
+        self.assertEqual(self.service.rclone.files, {"sample.bin": b"data"})
+        self.service.rclone.move.assert_not_awaited()
+
+    async def test_openlist_unknown_move_stops_upload_and_survives_restart(self) -> None:
+        task = self.task(local=True)
+        self.service.rclone.move = AsyncMock(
+            side_effect=MoveUncertainError("MOVE_UNCERTAIN: test")
+        )
+        await self.service._upload_one(task["id"])
+        recorded = self.db.get(task["id"])
+        self.assertEqual(recorded["state"], "upload_failed_retained")
+        self.assertTrue(Path(recorded["local_path"]).is_file())
+        self.assertIn(".uploading-1-sample.bin", self.service.rclone.files)
+        self.service.rclone.move.assert_awaited_once()
+        self.assertEqual(self.db.recover(self.settings.download_dir)["failed"], 1)
+        self.assertEqual(self.db.get(task["id"])["state"], "upload_failed_retained")
+        event = SimpleNamespace(reply=AsyncMock())
+        await self.service._handle_command(event, "/retry all")
+        self.assertEqual(self.db.get(task["id"])["state"], "upload_failed_retained")
+
+    async def test_openlist_direct_final_stat_failure_preserves_final_file(self) -> None:
+        task = self.task(local=True)
+        self.service.settings = replace(self.settings, storage_backend="openlist")
+        original_size = self.service.rclone.remote_size
+        self.service.rclone.move = AsyncMock(
+            side_effect=AssertionError("OpenList 不应调用 MOVE")
+        )
+
+        async def unstable_size(path: str) -> int:
+            if path == "sample.bin":
+                raise RcloneError("object not found")
+            return await original_size(path)
+
+        self.service.rclone.remote_size = unstable_size
+        with patch("app.main.asyncio.sleep", new_callable=AsyncMock):
+            await self.service._upload_one(task["id"])
+        self.assertEqual(self.db.get(task["id"])["state"], "upload_failed_retained")
+        self.assertIn("sample.bin", self.service.rclone.files)
+        self.assertEqual(self.service.rclone.removed, [])
+        self.service.rclone.move.assert_not_awaited()
+
+    async def test_openlist_unknown_move_stops_stream_without_remote_cleanup(self) -> None:
+        task = self.task()
+        self.db.transition(task["id"], "reserved")
+
+        async def download(_message, *, file, progress_callback) -> None:
+            await file.write(b"data")
+
+        self.service._source = SimpleNamespace(
+            get_messages=AsyncMock(return_value=SimpleNamespace(media=True)),
+            download_media=download,
+        )
+        self.service.rclone.move = AsyncMock(
+            side_effect=MoveUncertainError("MOVE_UNCERTAIN: test")
+        )
+        await self.service._stream_one(task["id"])
+        self.assertEqual(self.db.get(task["id"])["state"], "download_failed")
+        self.assertIn(".uploading-1-sample.bin", self.service.rclone.files)
+        self.service.rclone.move.assert_awaited_once()
 
     async def test_failed_cancel_is_not_rescheduled_or_recovered(self) -> None:
         task = self.task(local=True)

@@ -1,5 +1,19 @@
 # 更新记录
 
+## TG2Cloud v1.0.2
+
+GitHub Release 标签和程序内部版本均为 `v1.0.2`。两个 Windows EXE 由 GitHub Actions
+从同一个不可变标签统一测试、构建和自检，并按本次实际产物生成 SHA256。
+
+- 修复部分 OpenList／115 Open 挂载对 WebDAV `MOVE` 返回 201、但目标文件没有实际生成的
+  后端兼容问题；OpenList 改为预留无冲突路径后直接写入最终文件名。
+- 保留远端大小复验、失败现场保护、重启恢复和安全清理；旧版遗留临时文件不会被隐式改名
+  或覆盖。
+- 修复 OpenList 部署工作台窄侧栏裁切，并区分 401 凭据错误与 429 限流提示。
+- 已在真实 VPS、OpenList 与 115 Open 环境通过部署和 WebDAV 最终验收。
+- CloudDrive2 继续使用已经在真实 VPS 验收通过的临时上传、改名与大小复验流程；新增逻辑均
+  由 OpenList 后端门控，并有 CloudDrive2 专项回归测试保护。
+
 ## TG2Cloud v1.0.1
 
 GitHub Release 标签为 `v1.0.1`；程序内部版本为 `1.0.1`。Windows EXE 继续由

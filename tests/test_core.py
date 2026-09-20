@@ -1743,6 +1743,7 @@ class DestinationVerificationTests(unittest.TestCase):
                     verify_destination(settings, client)  # type: ignore[arg-type]
                 )
             self.assertEqual(client.files, {})
+            self.assertTrue(any(path.endswith(".uploading") for path in client.removed))
             self.assertEqual(list(Path(temp).iterdir()), [])
 
     def test_destination_verification_reports_auth_failure_before_listing(
@@ -1765,6 +1766,29 @@ class DestinationVerificationTests(unittest.TestCase):
             self.assertEqual(raised.exception.stage, "AUTH")
             self.assertEqual(report, [])
             self.assertFalse(client.prepared)
+            self.assertEqual(client.removed, [])
+            self.assertEqual(list(Path(temp).iterdir()), [])
+
+    def test_destination_verification_does_not_cleanup_uncreated_remote_files(
+        self,
+    ) -> None:
+        class ListingFailure(self.FakeRclone):
+            async def prepare_destination(self) -> None:
+                raise RcloneError("429 Too Many Requests")
+
+        with tempfile.TemporaryDirectory() as temp:
+            settings = SimpleNamespace(data_dir=Path(temp))
+            client = ListingFailure()
+            report: list[str] = []
+            with self.assertRaises(DestinationVerificationError) as raised:
+                asyncio.run(
+                    verify_destination(  # type: ignore[arg-type]
+                        settings, client, report.append
+                    )
+                )
+            self.assertEqual(raised.exception.stage, "LIST")
+            self.assertEqual(report, ["TG2CLOUD_WEBDAV_AUTH=OK"])
+            self.assertEqual(client.removed, [])
             self.assertEqual(list(Path(temp).iterdir()), [])
 
 
@@ -1974,7 +1998,7 @@ class UploadRecoveryTests(unittest.TestCase):
 
 class PayloadTests(unittest.TestCase):
     def test_windows_and_server_versions_match(self) -> None:
-        self.assertEqual(APP_VERSION, "1.0.1")
+        self.assertEqual(APP_VERSION, "1.0.2")
         self.assertEqual(__version__, APP_VERSION)
 
     def test_required_payload_files_exist(self) -> None:

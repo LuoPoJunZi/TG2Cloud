@@ -14,12 +14,12 @@ VSVersionInfo(
       StringTable('040904B0', [
         StringStruct('CompanyName', 'TG2Cloud Contributors'),
         StringStruct('FileDescription', 'TG2Cloud CloudDrive2 Deployer'),
-        StringStruct('FileVersion', '1.0.1'),
+        StringStruct('FileVersion', '1.0.2'),
         StringStruct('InternalName', 'TG2Cloud-CloudDrive2-Deployer'),
         StringStruct('LegalCopyright', 'Copyright (c) 2026 TG115 Contributors'),
         StringStruct('OriginalFilename', 'TG2Cloud-CloudDrive2-Deployer.exe'),
         StringStruct('ProductName', 'TG2Cloud · CloudDrive2'),
-        StringStruct('ProductVersion', '1.0.1')
+        StringStruct('ProductVersion', '1.0.2')
       ])
     ]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])

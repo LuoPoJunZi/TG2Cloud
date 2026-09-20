@@ -955,9 +955,17 @@ fi
         statuses: list[tuple[str, str]] = [
             ("Bot 容器", "通过" if bot_health == "healthy" else "失败" if bot_health else "未执行")
         ]
+        direct_final = markers.get("WEBDAV_FINALIZE_MODE") == "DIRECT"
         for title, key in _VERIFICATION_STEPS:
+            if key == "WEBDAV_MOVE" and direct_final:
+                title = "最终落盘"
             value = markers.get(key)
-            state = "通过" if value == "OK" else "失败" if value == "FAILED" else "未执行"
+            state = (
+                "通过" if value == "OK"
+                else "无需执行" if value == "NOT_REQUIRED"
+                else "失败" if value == "FAILED"
+                else "未执行"
+            )
             statuses.append((title, state))
         return tuple(statuses)
 
@@ -1851,6 +1859,24 @@ fi
                             "请先点击“重启 OpenList”，成功后再次验收。",
                             statuses,
                         )
+                    destination_failure = next(
+                        (
+                            line.partition("TG2CLOUD_DESTINATION=FAILED:")[2]
+                            for line in output.splitlines()
+                            if "TG2CLOUD_DESTINATION=FAILED:" in line
+                        ),
+                        "",
+                    )
+                    if self.product.is_openlist and re.search(
+                        r"\b429\b|too many requests", destination_failure, re.IGNORECASE
+                    ):
+                        raise OperationError(
+                            "OpenList WebDAV 返回 HTTP 429（请求过多），本次验收无法继续。"
+                            "不能据此判断凭据是否正确，也不表示需要重新部署。"
+                            "请停止重复点击验收，稍后重试；如果持续出现，"
+                            "请检查 OpenList 挂载状态、日志及上游云存储的限流情况。",
+                            statuses,
+                        )
                     if markers.get("WEBDAV_AUTH") == "FAILED":
                         raise OperationError(
                             "无法登录 OpenList WebDAV。请确认已经创建与本页用户名一致的专用用户，"
@@ -1876,6 +1902,13 @@ fi
                             statuses,
                         )
                     if markers.get("WEBDAV_MOVE") == "FAILED":
+                        if "MOVE_UNCERTAIN:" in output:
+                            raise OperationError(
+                                "OpenList 改名请求已发出，但目标文件状态暂时无法确认。"
+                                "已停止自动改名重试并保留验收文件；请先在 OpenList 核对"
+                                "临时文件和目标文件，不要重复点击验收。",
+                                statuses,
+                            )
                         raise OperationError(
                             "测试文件已写入，但远端改名或改名后的复验失败。"
                             "请检查移动／改名权限。",
@@ -1911,10 +1944,11 @@ fi
                         f"{self.product.display_name} WebDAV 写入、校验、改名和清理没有通过",
                         statuses,
                     )
-                self._log("WebDAV 验收通过：测试文件已写入、校验、改名并清理。")
+                action = "直接写入最终文件名、校验并清理" if self.product.is_openlist else "写入、校验、改名并清理"
+                self._log(f"WebDAV 验收通过：测试文件已{action}。")
                 return OperationResult(
                     "验收通过",
-                    f"Bot 容器健康；{self.product.display_name} WebDAV 已通过真实测试文件的写入、大小校验、改名和清理。\n\n注意：这只证明 {self.product.display_name} WebDAV 已接收文件；上游云存储是否完成同步，请以对应官方客户端中的文件大小和可打开状态为准。",
+                    f"Bot 容器健康；{self.product.display_name} WebDAV 已通过真实测试文件的{action}。\n\n注意：这只证明 {self.product.display_name} WebDAV 已接收文件；上游云存储是否完成同步，请以对应官方客户端中的文件大小和可打开状态为准。",
                     statuses=statuses,
                 )
             finally:
@@ -2331,6 +2365,7 @@ if _QT_IMPORT_ERROR is None:
             self.pages.addWidget(self._options_page())
             columns.addWidget(self.pages, 1)
             action_scroll = QScrollArea()
+            self.action_scroll = action_scroll
             action_scroll.setWidgetResizable(True)
             action_scroll.setFixedWidth(316)
             action_scroll.setHorizontalScrollBarPolicy(
@@ -2770,9 +2805,8 @@ if _QT_IMPORT_ERROR is None:
                 layout.addSpacing(4)
                 layout.addWidget(frame("Divider"))
                 layout.addWidget(label("OpenList 日常管理", "FieldLabel"))
-                management = QGridLayout()
-                management.setHorizontalSpacing(7)
-                management.setVerticalSpacing(7)
+                management = QVBoxLayout()
+                management.setSpacing(7)
                 management_definitions = (
                     ("openlist_status", "check", "#6985aa"),
                     ("openlist_logs", "terminal", "#6985aa"),
@@ -2781,9 +2815,7 @@ if _QT_IMPORT_ERROR is None:
                     ("backup_openlist", "folder", "#26896f"),
                     ("reset_openlist_admin", "shield", "#ac7b3e"),
                 )
-                for index, (operation, symbol, color) in enumerate(
-                    management_definitions
-                ):
+                for operation, symbol, color in management_definitions:
                     button = QPushButton(self.ACTION_TITLES[operation])
                     if operation == "reset_openlist_admin":
                         button.setObjectName("Repair")
@@ -2794,7 +2826,7 @@ if _QT_IMPORT_ERROR is None:
                         lambda checked=False, op=operation: self.run_operation(op)
                     )
                     self.action_buttons[operation] = button
-                    management.addWidget(button, index // 2, index % 2)
+                    management.addWidget(button)
                 layout.addLayout(management)
             layout.addStretch(1)
             divider = frame("Divider")

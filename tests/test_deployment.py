@@ -723,7 +723,7 @@ class DeploymentStructureTests(unittest.TestCase):
         ):
             self.assertTrue(version_file.is_file())
             metadata = version_file.read_text(encoding="utf-8")
-            self.assertIn("ProductVersion', '1.0.1'", metadata)
+            self.assertIn("ProductVersion', '1.0.2'", metadata)
             self.assertIn("TG2Cloud", metadata)
         self.assertNotIn("Source = 'installer_classic.py'", script)
         self.assertNotIn("import tkinter", script)
@@ -744,7 +744,7 @@ class DeploymentStructureTests(unittest.TestCase):
         )
         self.assertIn("timeout-minutes: 20", workflow)
         self.assertIn("WaitForExit(120000)", script)
-        self.assertIn("app_version=1.0.1", script)
+        self.assertIn("app_version=1.0.2", script)
         self.assertIn("Compare-Object $expectedArtifacts $actualArtifacts", script)
         self.assertNotIn('foreach ($edition in @("Modern", "Classic"))', workflow)
 

@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - v1.0.1
+      - v1.0.2
 
 permissions:
   actions: read
   contents: write
 
 env:
-  RELEASE_TAG: v1.0.1
-  RELEASE_TITLE: TG2Cloud v1.0.1
-  RELEASE_ARTIFACT: TG2Cloud-v1.0.1-windows
+  RELEASE_TAG: v1.0.2
+  RELEASE_TITLE: TG2Cloud v1.0.2
+  RELEASE_ARTIFACT: TG2Cloud-v1.0.2-windows
 
 concurrency:
-  group: release-v1.0.1
+  group: release-v1.0.2
   cancel-in-progress: false
 
 jobs:

@@ -1,15 +1,17 @@
-# TG2Cloud v1.0.1
+# TG2Cloud v1.0.2
 
-**GitHub Release：`v1.0.1`**
+**GitHub Release：`v1.0.2`**
 
-本次发布的两个 Windows EXE 由 GitHub Actions 从 `v1.0.1` 标签源码构建，附带对本次实际
-构建文件计算的 SHA256。真实 VPS、WebDAV、rclone、Telegram 端到端和不同文件规模仍待用户
-下载 Release 资产后人工验收；自动测试或离线自检不能代替这些实际测试。
+本次发布的两个 Windows EXE 由 GitHub Actions 从 `v1.0.2` 标签源码统一测试、构建和自检，
+并对本次实际生成的文件计算 SHA256。CloudDrive2 v1.0.1 稳定流程和本次 OpenList 修复均已
+在真实 VPS 完成基础部署及 WebDAV 验收；Telegram 与不同文件规模仍应由用户继续实际验证。
 
-本补丁版修复 CloudDrive2 首次部署中 Bot 容器被误判为第二个 CloudDrive2 网关，导致
-“发现多个正在运行的 CloudDrive2 容器”并中止网络修复的问题。多个真实 CloudDrive2 网关
-仍会被拦截；不会自动覆盖旧 TG115 安装。曾在 v1.0.0 遇到此报错的用户，可用 v1.0.1
-部署器重新执行，先核对 VPS 当前状态和完整日志，不要手动删除容器或数据。
+本补丁版修复部分 OpenList／115 Open 挂载对 WebDAV `MOVE` 返回成功但目标文件没有实际
+生成的问题。OpenList 改为预留无冲突路径后直接写入最终文件名，并继续执行远端大小复验、
+失败保留和安全清理。CloudDrive2 保持原有临时文件上传、改名和大小复验流程。
+
+同时修复 OpenList 部署工作台右侧操作区裁切，区分 WebDAV 401 凭据错误与 429 限流，避免
+重复验收加重限流。既有 OpenList 实例重复部署默认保留 `.env` 和持久化数据。
 
 TG2Cloud 是一个将 Telegram 私聊中提交的文件自动转存到用户自有云存储的自托管工具：
 
@@ -33,7 +35,7 @@ TG115、debug 或 test EXE。
 ## 主要能力
 
 - 私人 Telegram Bot、Allowed User 限制、SQLite 持久队列和重启恢复；
-- rclone WebDAV 上传、目的端大小校验、安全改名和失败清理；
+- rclone WebDAV 上传、目的端大小校验、按后端安全落盘和失败清理；
 - 超过本地任务预算时沿用现有流式传输策略；
 - 默认 `LOCAL_TEMP_BUDGET_GB=20`、`MIN_FREE_DISK_GB=8`，也允许用户显式调整；
 - CloudDrive2 固定 `127.0.0.1:19798`、OpenList 固定 `127.0.0.1:5244` SSH Tunnel；
@@ -58,7 +60,7 @@ TG115、debug 或 test EXE。
 
 ## 旧 TG115 用户
 
-TG2Cloud v1.0.1 不提供 TG115 原地自动升级。新安装使用独立目录、容器和 Network；旧目录、
+TG2Cloud v1.0.2 不提供 TG115 原地自动升级。新安装使用独立目录、容器和 Network；旧目录、
 容器和备份不会被自动覆盖、停止、迁移或删除。若旧实例占用固定 19798/5244 端口，TG2Cloud
 会停止并要求用户自行处理，不会自动换端口。详见
 [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md)。
@@ -85,8 +87,9 @@ TG2Cloud v1.0.1 不提供 TG115 原地自动升级。新安装使用独立目录
 
 ## 发布状态
 
-当前版本为 **v1.0.1，真实环境验收待完成**。自动测试和 Windows 构建由 GitHub Actions
-执行；真实 VPS、Telegram、WebDAV、rclone 和不同文件规模的结果以用户实际测试为准。
+当前版本为 **v1.0.2**。CloudDrive2 与 OpenList 已分别完成真实 VPS 基础部署和 WebDAV
+验收；自动测试和 Windows 构建由 GitHub Actions 执行。Telegram 与不同文件规模的结果仍以
+用户实际测试为准。
 
 TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进而来，继续保留 MIT
 许可证、原作者版权和必要致谢。

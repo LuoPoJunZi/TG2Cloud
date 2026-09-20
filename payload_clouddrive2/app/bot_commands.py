@@ -827,6 +827,7 @@ class CommandMixin:
                 self._retry_task(task)
                 for task in tasks
                 if not task.get("cancel_requested")
+                and not str(task.get("error") or "").startswith("MOVE_UNCERTAIN:")
             )
             await event.reply(
                 self._format_operation_result(
