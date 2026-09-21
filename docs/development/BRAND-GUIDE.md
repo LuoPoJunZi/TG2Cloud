@@ -1,4 +1,4 @@
-# TG2Cloud Brand Guide — v1.0.0
+# TG2Cloud Brand Guide
 
 ## 1. 品牌资源状态
 
@@ -300,7 +300,7 @@ assets/brand/README.md
 
 ## 13. 品牌验收
 
-TG2Cloud v1.0.0 发布前确认：
+TG2Cloud 发布前确认：
 
 ```text
 ✅ assets/brand/ 是正式品牌唯一来源
