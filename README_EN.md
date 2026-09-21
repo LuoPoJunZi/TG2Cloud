@@ -1,14 +1,31 @@
 <p align="center">
-  <a href="README.md">简体中文</a> · <strong>English</strong>
+  <img src="assets/brand/tg2cloud-logo.svg" alt="TG2Cloud — From Telegram to Your Cloud" width="520">
 </p>
 
 <p align="center">
-  <img src="assets/brand/tg2cloud-logo.svg" alt="TG2Cloud" width="420">
+  <strong>Telegram file transfer · CloudDrive2 / OpenList · Windows GUI deployment</strong>
 </p>
 
-<h1 align="center">TG2Cloud</h1>
+<p align="center">
+  <a href="https://github.com/LuoPoJunZi/TG2Cloud/releases/latest"><img alt="Latest Release" src="https://img.shields.io/github/v/release/LuoPoJunZi/TG2Cloud?style=flat-square&amp;label=release&amp;color=1677ff"></a>
+  <a href="https://github.com/LuoPoJunZi/TG2Cloud/actions/workflows/tests.yml"><img alt="Tests" src="https://img.shields.io/github/actions/workflow/status/LuoPoJunZi/TG2Cloud/tests.yml?branch=main&amp;style=flat-square&amp;label=tests"></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/LuoPoJunZi/TG2Cloud?style=flat-square&amp;color=22a06b"></a>
+  <img alt="Python 3.12+" src="https://img.shields.io/badge/Python-3.12%2B-3776ab?style=flat-square&amp;logo=python&amp;logoColor=white">
+</p>
 
-<p align="center"><strong>From Telegram to Your Cloud</strong></p>
+<p align="center">
+  <a href="#downloads">Download</a> ·
+  <a href="#windows-gui-deployment">Deployment Guide</a> ·
+  <a href="#bot-commands">Bot Commands</a> ·
+  <a href="#troubleshooting">Troubleshooting</a> ·
+  <a href="RELEASE_NOTES.md">Release Notes</a>
+</p>
+
+<p align="center">
+  <a href="README.md">简体中文</a> · <strong>English</strong>
+</p>
+
+---
 
 TG2Cloud is a self-hosted personal file transfer tool. Send a file to your own Telegram Bot, let a VPS persist and process the task, and write it through rclone and CloudDrive2 or OpenList WebDAV to cloud storage mounted by you.
 
@@ -591,9 +608,26 @@ GitHub forks may require Actions to be enabled manually before workflows run. Th
 
 ## Acknowledgements and Project Origin
 
-Thanks to **whyhhh20** for creating and publishing TG115:
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="https://github.com/LuoPoJunZi">
+        <img src="https://github.com/LuoPoJunZi.png?size=96" width="72" alt="LuoPoJunZi"><br>
+        <strong>LuoPoJunZi</strong>
+      </a><br>
+      <sub>TG2Cloud maintainer</sub>
+    </td>
+    <td align="center" width="50%">
+      <a href="https://github.com/whyhhh20">
+        <img src="https://github.com/whyhhh20.png?size=96" width="72" alt="whyhhh20"><br>
+        <strong>whyhhh20</strong>
+      </a><br>
+      <sub>Original author of upstream TG115</sub>
+    </td>
+  </tr>
+</table>
 
-- Original repository: [whyhhh20/TG115](https://github.com/whyhhh20/TG115)
+Thanks to **whyhhh20** for creating and publishing the upstream [TG115 project](https://github.com/whyhhh20/TG115).
 
 TG2Cloud evolved from that project, retains the MIT license, original copyright, and required attribution, and continues to improve the reliability, deployment safety, and operational experience of the Telegram → rclone → CloudDrive2/OpenList → user-owned-cloud path.
 

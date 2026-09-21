@@ -1,14 +1,31 @@
 <p align="center">
-  <strong>简体中文</strong> · <a href="README_EN.md">English</a>
+  <img src="assets/brand/tg2cloud-logo.svg" alt="TG2Cloud — From Telegram to Your Cloud" width="520">
 </p>
 
 <p align="center">
-  <img src="assets/brand/tg2cloud-logo.svg" alt="TG2Cloud" width="420">
+  <strong>Telegram 文件自动转存 · CloudDrive2 / OpenList · Windows 图形化部署</strong>
 </p>
 
-<h1 align="center">TG2Cloud</h1>
+<p align="center">
+  <a href="https://github.com/LuoPoJunZi/TG2Cloud/releases/latest"><img alt="最新版本" src="https://img.shields.io/github/v/release/LuoPoJunZi/TG2Cloud?style=flat-square&amp;label=release&amp;color=1677ff"></a>
+  <a href="https://github.com/LuoPoJunZi/TG2Cloud/actions/workflows/tests.yml"><img alt="自动测试" src="https://img.shields.io/github/actions/workflow/status/LuoPoJunZi/TG2Cloud/tests.yml?branch=main&amp;style=flat-square&amp;label=tests"></a>
+  <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/LuoPoJunZi/TG2Cloud?style=flat-square&amp;color=22a06b"></a>
+  <img alt="Python 3.12+" src="https://img.shields.io/badge/Python-3.12%2B-3776ab?style=flat-square&amp;logo=python&amp;logoColor=white">
+</p>
 
-<p align="center"><strong>From Telegram to Your Cloud</strong></p>
+<p align="center">
+  <a href="#下载">下载</a> ·
+  <a href="#windows-图形化部署">部署指南</a> ·
+  <a href="#bot-命令">Bot 命令</a> ·
+  <a href="#常见问题">常见问题</a> ·
+  <a href="RELEASE_NOTES.md">发布说明</a>
+</p>
+
+<p align="center">
+  <strong>简体中文</strong> · <a href="README_EN.md">English</a>
+</p>
+
+---
 
 TG2Cloud 是一个自托管的个人文件转存工具：把文件提交给自己的 Telegram Bot，由 VPS 持久排队，再通过 rclone 和 CloudDrive2 或 OpenList WebDAV 写入用户自行挂载的云存储。
 
@@ -609,9 +626,26 @@ CI 还会在 Linux 上运行 ShellCheck、Compose 配置校验、Python 3.12 回
 
 ## 致谢与项目来源
 
-感谢原作者 **whyhhh20** 创建并公开 TG115：
+<table>
+  <tr>
+    <td align="center" width="50%">
+      <a href="https://github.com/LuoPoJunZi">
+        <img src="https://github.com/LuoPoJunZi.png?size=96" width="72" alt="LuoPoJunZi"><br>
+        <strong>LuoPoJunZi</strong>
+      </a><br>
+      <sub>TG2Cloud 项目维护者</sub>
+    </td>
+    <td align="center" width="50%">
+      <a href="https://github.com/whyhhh20">
+        <img src="https://github.com/whyhhh20.png?size=96" width="72" alt="whyhhh20"><br>
+        <strong>whyhhh20</strong>
+      </a><br>
+      <sub>上游 TG115 原作者</sub>
+    </td>
+  </tr>
+</table>
 
-- 原始项目仓库：[whyhhh20/TG115](https://github.com/whyhhh20/TG115)
+感谢 **whyhhh20** 创建并公开上游项目 [TG115](https://github.com/whyhhh20/TG115)。
 
 TG2Cloud 从该项目演进而来，以原项目代码为基础并保留 MIT 许可证、版权和必要致谢；当前在 Telegram → rclone → CloudDrive2/OpenList → 用户云存储链路上继续完善可靠性、部署安全和运维体验。
 
