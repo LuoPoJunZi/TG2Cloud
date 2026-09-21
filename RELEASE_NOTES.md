@@ -1,12 +1,17 @@
-# TG2Cloud v1.0.2
+<!-- 本文件会直接作为 GitHub Release 正文：不要添加一级标题，不要按固定列宽硬换行。 -->
 
-**GitHub Release：`v1.0.2`**
+> [!IMPORTANT]
+> **TG2Cloud v1.0.2** 同时提供 CloudDrive2 与 OpenList 两个 PySide6 Windows 部署器。两个 EXE 均由 GitHub Actions 从同一个不可变标签统一测试、构建和自检，并按实际产物生成 SHA256。
 
-本次发布的两个 Windows EXE 由 GitHub Actions 从 `v1.0.2` 标签源码统一测试、构建和自检，并对本次实际生成的文件计算 SHA256。CloudDrive2 v1.0.1 稳定流程和本次 OpenList 修复均已在真实 VPS 完成基础部署及 WebDAV 验收；Telegram 与不同文件规模仍应由用户继续实际验证。
+## 本次更新
 
-本补丁版修复部分 OpenList／115 Open 挂载对 WebDAV `MOVE` 返回成功但目标文件没有实际生成的问题。OpenList 改为预留无冲突路径后直接写入最终文件名，并继续执行远端大小复验、失败保留和安全清理。CloudDrive2 保持原有临时文件上传、改名和大小复验流程。
+- 修复部分 OpenList／115 Open 挂载对 WebDAV `MOVE` 返回成功、但目标文件没有实际生成的问题。OpenList 改为预留无冲突路径后直接写入最终文件名，并继续执行远端大小复验、失败保留和安全清理。
+- CloudDrive2 保持已经在真实 VPS 验收通过的临时文件上传、安全改名和大小复验流程。
+- 修复 OpenList 部署工作台右侧操作区裁切，区分 WebDAV 401 凭据错误与 429 限流，避免重复验收加重限流。
+- 既有 OpenList 实例重复部署默认保留 `.env` 和持久化数据。
+- CloudDrive2 与 OpenList 均已在真实 VPS 完成基础部署及 WebDAV 验收；Telegram 与不同文件规模仍应由用户继续实际验证。
 
-同时修复 OpenList 部署工作台右侧操作区裁切，区分 WebDAV 401 凭据错误与 429 限流，避免重复验收加重限流。既有 OpenList 实例重复部署默认保留 `.env` 和持久化数据。
+## 项目定位
 
 TG2Cloud 是一个将 Telegram 私聊中提交的文件自动转存到用户自有云存储的自托管工具：
 
