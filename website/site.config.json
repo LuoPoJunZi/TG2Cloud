@@ -1,0 +1,157 @@
+{
+  "name": "TG2Cloud",
+  "version": "1.0.2",
+  "verifiedAt": "2026-09-22",
+  "repo": "https://github.com/LuoPoJunZi/TG2Cloud",
+  "upstreamRepo": "https://github.com/whyhhh20/TG115",
+  "siteUrl": "",
+  "description": "TG2Cloud 中文文档：通过私人 Telegram Bot，将文件自动转存到 CloudDrive2 或 OpenList 中挂载的云存储。",
+  "navigation": [
+    {
+      "title": "开始使用",
+      "items": [
+        {
+          "title": "项目介绍",
+          "slug": "guide/introduction"
+        },
+        {
+          "title": "版本选择",
+          "slug": "guide/editions"
+        },
+        {
+          "title": "部署前准备",
+          "slug": "guide/prerequisites"
+        },
+        {
+          "title": "从零开始部署",
+          "slug": "guide/quick-start"
+        },
+        {
+          "title": "下载与校验",
+          "slug": "download"
+        }
+      ]
+    },
+    {
+      "title": "部署与配置",
+      "items": [
+        {
+          "title": "连接 VPS 与 SSH",
+          "slug": "deploy/ssh"
+        },
+        {
+          "title": "Telegram 配置",
+          "slug": "deploy/telegram"
+        },
+        {
+          "title": "CloudDrive2 部署",
+          "slug": "deploy/clouddrive2"
+        },
+        {
+          "title": "OpenList 部署",
+          "slug": "deploy/openlist"
+        },
+        {
+          "title": "VPS 资源与存储预算",
+          "slug": "deploy/resources"
+        },
+        {
+          "title": "WebDAV 验收",
+          "slug": "deploy/verification"
+        }
+      ]
+    },
+    {
+      "title": "日常使用",
+      "items": [
+        {
+          "title": "第一次文件转存",
+          "slug": "usage/first-transfer"
+        },
+        {
+          "title": "Bot 命令速查",
+          "slug": "usage/commands"
+        },
+        {
+          "title": "任务状态与完成边界",
+          "slug": "usage/status"
+        },
+        {
+          "title": "流式传输与速度",
+          "slug": "usage/streaming"
+        }
+      ]
+    },
+    {
+      "title": "运维与迁移",
+      "items": [
+        {
+          "title": "状态、日志与重启",
+          "slug": "operations/maintenance"
+        },
+        {
+          "title": "升级与修改配置",
+          "slug": "operations/update"
+        },
+        {
+          "title": "备份与恢复边界",
+          "slug": "operations/backup"
+        },
+        {
+          "title": "从 TG115 迁移",
+          "slug": "operations/migration"
+        }
+      ]
+    },
+    {
+      "title": "问题排查",
+      "items": [
+        {
+          "title": "常见问题 FAQ",
+          "slug": "faq"
+        },
+        {
+          "title": "SSH 与管理页问题",
+          "slug": "troubleshooting/ssh"
+        },
+        {
+          "title": "WebDAV 错误排查",
+          "slug": "troubleshooting/webdav"
+        },
+        {
+          "title": "排队、空间与上传失败",
+          "slug": "troubleshooting/transfer"
+        }
+      ]
+    },
+    {
+      "title": "项目参考",
+      "items": [
+        {
+          "title": "配置与路径速查",
+          "slug": "reference/config"
+        },
+        {
+          "title": "安全与隐私",
+          "slug": "reference/security"
+        },
+        {
+          "title": "更新日志",
+          "slug": "changelog"
+        },
+        {
+          "title": "开发与贡献",
+          "slug": "reference/development"
+        },
+        {
+          "title": "项目来源与致谢",
+          "slug": "reference/credits"
+        },
+        {
+          "title": "文档来源与维护",
+          "slug": "reference/sources"
+        }
+      ]
+    }
+  ]
+}

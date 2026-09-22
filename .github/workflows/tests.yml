@@ -7,11 +7,13 @@ on:
       - main
     paths-ignore:
       - "**/*.md"
+      - "website/**"
   pull_request:
     branches:
       - main
     paths-ignore:
       - "**/*.md"
+      - "website/**"
 
 permissions:
   contents: read
