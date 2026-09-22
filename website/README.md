@@ -91,8 +91,12 @@ TG2Cloud-Docs/
 │   │   ├── style.css        # 全站样式、响应式与主题
 │   │   ├── app.js           # 搜索、主题、目录、复制与弹窗
 │   │   ├── theme-init.js    # 首屏主题初始化
-│   │   └── favicon.svg     # 轻量文档站图标
+│   │   ├── tg2cloud-icon.svg      # 正式可缩放网页图标
+│   │   ├── tg2cloud-icon-32.png   # 浏览器 PNG 图标
+│   │   ├── tg2cloud-icon-64.png   # 页头品牌图标
+│   │   └── tg2cloud-icon-256.png  # Apple Touch 图标
 │   ├── _headers            # Cloudflare Pages 响应头
+│   ├── favicon.ico         # 正式 ICO 兼容入口
 │   └── LICENSE.txt
 ├── src/
 │   ├── templates.mjs       # 首页及文章 HTML 模板
@@ -135,7 +139,7 @@ npm test
 
 ## 品牌与截图
 
-使用 TG2Cloud 字标和本次制作的轻量云图标；未擅自提取或冒充官方部署器 Logo。首页流程图是 HTML/CSS 工作原理示意，不是正在运行的任务状态或部署器截图。
+页头与浏览器图标直接复制自主仓库 `assets/brand/`，不重新绘制或修改，确保文档站与部署器使用同一套 TG2Cloud 正式品牌资源。首页流程图是 HTML/CSS 工作原理示意，不是正在运行的任务状态或部署器截图。
 
 没有放置“安全占位截图”，也未嵌入伪造的实机界面。今后加入真实截图，应先移除 IP、SSH 凭据、Bot Token、API Hash、Cookie、网盘 Token、私人文件名等敏感信息，再放进 `public/images/` 并用普通 Markdown 图片语法引用。
 

@@ -3,6 +3,7 @@ import {icon} from './icons.mjs';
 
 const link = (slug) => `/${slug}/`;
 const ext = 'target="_blank" rel="noopener noreferrer"';
+const brandIcon = '<img class="brand-mark" src="/assets/tg2cloud-icon-64.png" width="64" height="64" alt="">';
 export function renderPage({config:c, page, body='', headings=[], previous, next, home=false, notFound=false, hashes}) {
   const fullTitle = home ? 'TG2Cloud · 从 Telegram，到你的云存储' : `${page.title} | TG2Cloud Docs`;
   const slug = page.slug || '';
@@ -10,7 +11,7 @@ export function renderPage({config:c, page, body='', headings=[], previous, next
   const url = c.siteUrl ? c.siteUrl.replace(/\/$/,'') + (home ? '/' : notFound ? '/404.html' : link(slug)) : '';
   const section = c.navigation.find(g=>g.items.some(p=>p.slug===slug))?.title || '文档';
   const navLinks = `<a href="/guide/introduction/" ${slug.startsWith('guide/')?'class="active"':''}>指南</a><a href="/guide/quick-start/">从零部署</a><a href="/faq/" ${slug==='faq'?'class="active"':''}>常见问题</a><a href="/changelog/" ${slug==='changelog'?'class="active"':''}>更新日志</a>`;
-  const brand=`<a href="/" class="brand" aria-label="TG2Cloud 文档首页"><span class="brand-icon">${icon('cloud')}</span><span>TG2Cloud</span><span class="brand-divider"></span><span class="brand-docs">Docs</span></a>`;
+  const brand=`<a href="/" class="brand" aria-label="TG2Cloud 文档首页"><span class="brand-icon">${brandIcon}</span><span>TG2Cloud</span><span class="brand-divider"></span><span class="brand-docs">Docs</span></a>`;
   const sidebar = c.navigation.map(g=>`<div class="sidebar-group"><p class="sidebar-label">${e(g.title)}</p>${g.items.map(p=>`<a href="${link(p.slug)}" ${p.slug===slug?'class="current" aria-current="page"':''}>${e(p.title)}</a>`).join('')}</div>`).join('');
   const versionMenu = `<details class="version-menu"><summary aria-label="版本与发布记录">v${e(c.version)} ${icon('down')}</summary><div class="version-popover"><span class="menu-caption">本文档对应版本</span><a href="/changelog/#${slugify('TG2Cloud v'+c.version)}">v${e(c.version)} <span class="badge">当前</span></a><a href="${c.repo}/releases/latest" ${ext}>GitHub 最新 Release ↗</a><div class="menu-line"></div><span class="menu-caption">历史更新记录 · 非文档快照</span><a href="/changelog/#${slugify('TG2Cloud v1.0.1')}">v1.0.1 更新记录</a><a href="/changelog/#${slugify('TG2Cloud v1.0.0')}">v1.0.0 更新记录</a><a href="${c.repo}/releases" ${ext}>全部 Releases ↗</a></div></details>`;
   const sourcePath= slug==='changelog' ? 'CHANGELOG.md' : slug==='operations/migration'?'docs/MIGRATION_FROM_TG115.md':slug==='reference/config'?'deployer_products.py':slug==='reference/security'?'SECURITY.md':slug==='reference/development'?'CONTRIBUTING.md':'README.md';
@@ -28,7 +29,10 @@ export function renderPage({config:c, page, body='', headings=[], previous, next
 <meta property="og:type" content="website"><meta property="og:title" content="${e(fullTitle)}"><meta property="og:description" content="${e(description)}">
 ${url?`<link rel="canonical" href="${e(url)}"><meta property="og:url" content="${e(url)}">`:''}
 ${notFound?'<meta name="robots" content="noindex">':''}
-<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon.ico" sizes="any">
+<link rel="icon" href="/assets/tg2cloud-icon.svg" type="image/svg+xml">
+<link rel="icon" href="/assets/tg2cloud-icon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="/assets/tg2cloud-icon-256.png">
 <script src="/assets/theme-init.js?v=${hashes.init}"></script>
 <link rel="stylesheet" href="/assets/style.css?v=${hashes.css}">
 <script defer src="/assets/app.js?v=${hashes.js}"></script>
@@ -69,7 +73,7 @@ function homeContent(c) {
 <div class="hero-actions"><a class="button primary" href="/guide/quick-start/">从零开始部署 ${icon('arrow')}</a><a class="button secondary" href="/download/">${icon('download')} 部署器下载</a></div>
 <div class="hero-tags"><span>${icon('code')} 开源自托管</span><span>${icon('shield')} 私人 Bot</span><span>${icon('cloudsmall')} 多云目标</span></div>
 </div><div class="hero-visual">
-<div class="route-card"><div class="route-header"><span class="route-title"><span class="mini-brand">${icon('cloud')}</span> 你的文件，你的路径</span><span class="route-label">工作原理</span></div>
+<div class="route-card"><div class="route-header"><span class="route-title"><span class="mini-brand">${brandIcon}</span> 你的文件，你的路径</span><span class="route-label">工作原理</span></div>
 <div class="route-source"><span class="route-source-icon">${icon('telegram')}</span><div><strong>Telegram</strong><span>转发到自己的私人 Bot</span></div><span class="small-tag">手动选择</span></div>
 <div class="route-connector"><span></span><small>文件与任务</small></div>
 <div class="route-core"><div class="core-top"><span>${icon('server')} TG2Cloud <small>on VPS</small></span><span class="core-chip">自动处理</span></div><div class="core-steps"><span>持久排队</span><b>→</b><span>下载 / 流式</span><b>→</b><span>大小校验</span></div></div>
