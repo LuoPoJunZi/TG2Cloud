@@ -661,12 +661,15 @@ class GeneratedArtifactTests(unittest.TestCase):
             with self.subTest(script=script[:40]):
                 result = subprocess.run(
                     ["bash", "-n"],
-                    input=script,
+                    input=script.encode("utf-8"),
                     capture_output=True,
-                    text=True,
                     check=False,
                 )
-                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertEqual(
+                    result.returncode,
+                    0,
+                    result.stderr.decode("utf-8", errors="replace"),
+                )
 
     @unittest.skipUnless(shutil.which("shellcheck"), "ShellCheck is not installed")
     def test_generated_remote_commands_pass_shellcheck(self) -> None:
@@ -674,12 +677,14 @@ class GeneratedArtifactTests(unittest.TestCase):
             with self.subTest(script=script[:40]):
                 result = subprocess.run(
                     ["shellcheck", "-s", "bash", "-"],
-                    input=script,
+                    input=script.encode("utf-8"),
                     capture_output=True,
-                    text=True,
                     check=False,
                 )
-                self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+                output = (result.stdout + result.stderr).decode(
+                    "utf-8", errors="replace"
+                )
+                self.assertEqual(result.returncode, 0, output)
 
     @unittest.skipUnless(shutil.which("docker"), "Docker CLI is not installed")
     def test_generated_proxy_compose_passes_docker_config(self) -> None:
