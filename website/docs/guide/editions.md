@@ -37,4 +37,4 @@
 
 ## 版本名称不要混用
 
-TG2Cloud 当前文档对应 v1.0.2。TG115 v1.6.2 属于前身项目；不能因为数字更大就认为 TG115 更“新”。当前 TG2Cloud 不再提供 Classic/Tkinter 正式部署器。
+TG2Cloud 当前文档对应 v1.0.3。TG115 v1.6.2 属于前身项目；不能因为数字更大就认为 TG115 更“新”。当前 TG2Cloud 不再提供 Classic/Tkinter 正式部署器。

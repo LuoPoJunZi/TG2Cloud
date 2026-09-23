@@ -1,19 +1,19 @@
 # 下载与 SHA-256 校验
 
-本文档核对的发布版本为 **TG2Cloud v1.0.2**。获取程序请使用项目自己的 GitHub Releases，不使用第三方改包。
+本文档核对的发布版本为 **TG2Cloud v1.0.3**。获取程序请使用项目自己的 GitHub Releases，不使用第三方改包。
 
 ## 下载对应版本
 
 | 版本 | 发布文件 | 教程 |
 | --- | --- | --- |
-| CloudDrive2 Edition | [下载 CloudDrive2 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.0.2/TG2Cloud-CloudDrive2-Deployer.exe) | [CloudDrive2 部署](/deploy/clouddrive2/) |
-| OpenList Edition | [下载 OpenList 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.0.2/TG2Cloud-OpenList-Deployer.exe) | [OpenList 部署](/deploy/openlist/) |
-| 校验清单 | [下载 SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.0.2/SHA256SUMS.txt) | 与下载的 EXE 逐项核对 |
+| CloudDrive2 Edition | [下载 CloudDrive2 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.0.3/TG2Cloud-CloudDrive2-Deployer.exe) | [CloudDrive2 部署](/deploy/clouddrive2/) |
+| OpenList Edition | [下载 OpenList 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.0.3/TG2Cloud-OpenList-Deployer.exe) | [OpenList 部署](/deploy/openlist/) |
+| 校验清单 | [下载 SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.0.3/SHA256SUMS.txt) | 与下载的 EXE 逐项核对 |
 
-[查看 v1.0.2 发布页](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.0.2) · [查看最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[查看 v1.0.3 发布页](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.0.3) · [查看最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 :::info 固定版本与最新版本
-本页直接下载按钮固定到 v1.0.2，确保教程、程序与校验清单对应。“最新 Release”可能在未来指向更新版本，届时应使用那个版本自己的校验文件和发布说明。
+本页直接下载按钮固定到 v1.0.3，确保教程、程序与校验清单对应。“最新 Release”可能在未来指向更新版本，届时应使用那个版本自己的校验文件和发布说明。
 :::
 
 ## 在 Windows 中计算校验值
@@ -31,7 +31,7 @@ Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 
 ## Windows 提示未知发布者
 
-v1.0.2 的 Windows EXE 尚未提供商业代码签名，SmartScreen 可能显示“未知发布者”。这与文件是否来自正确发布源是不同的问题。
+v1.0.3 的 Windows EXE 尚未提供商业代码签名，SmartScreen 可能显示“未知发布者”。这与文件是否来自正确发布源是不同的问题。
 
 核对仓库、Release 标签、文件名和 SHA-256；无法确认来源时不要运行。**不建议关闭 Defender、Windows Security 或全局安全检查。**
 
@@ -42,7 +42,7 @@ v1.0.2 的 Windows EXE 尚未提供商业代码签名，SmartScreen 可能显示
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.0.2
+git checkout v1.0.3
 .\build.ps1 -Edition All
 ```
 

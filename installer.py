@@ -56,6 +56,12 @@ from deployer_products import (
     CLOUDDRIVE2_PRODUCT,
     ProductProfile,
 )
+from domain_proxy import (
+    DomainProxyManager,
+    ProxyReport,
+    validate_domain,
+    validate_email,
+)
 
 # ============================================================================
 # 1. Constants, original configuration fields and payload manifest
@@ -857,6 +863,7 @@ if _BACKEND_IMPORT_ERROR is None:
         secret_field: str = ""
         secret_value: str = field(default="", repr=False, compare=False)
         openlist_state: str = ""
+        proxy_report: ProxyReport | None = None
 
     class OperationError(RuntimeError):
         """An operation failure that can still expose safe structured status."""
@@ -1580,6 +1587,65 @@ fi
                     session.close()
                 raise
 
+        def _proxy_operation(
+            self, values: dict[str, str], operation: str
+        ) -> OperationResult:
+            self._validate_connection(values)
+            domain = values.get("proxy_domain", "")
+            email = values.get("proxy_email", "")
+            if operation in {"detect", "configure"}:
+                domain = validate_domain(domain)
+            if operation == "configure":
+                email = validate_email(email)
+            session = self._new_session(values)
+            try:
+                manager = DomainProxyManager(
+                    session, self.product, values, self._log
+                )
+                manager.prepare()
+                if operation == "detect":
+                    report = manager.detect(domain)
+                    title = "域名环境检测完成"
+                elif operation == "configure":
+                    if not email:
+                        self._log(
+                            "未填写 Let's Encrypt 邮箱：将使用无邮箱注册，无法接收证书到期提醒。"
+                        )
+                    report = manager.configure(domain, email)
+                    title = "HTTPS 配置完成"
+                elif operation == "status":
+                    report = manager.status()
+                    title = "域名访问状态"
+                elif operation == "remove":
+                    report = manager.remove()
+                    title = "域名访问已移除"
+                else:
+                    raise ValueError("未知的域名代理操作")
+                for status_title, status_value in report.statuses:
+                    self._log(f"TG2CLOUD_PROXY_CHECK={status_title}:{status_value}")
+                return OperationResult(
+                    title, report.message, statuses=report.statuses,
+                    proxy_report=report
+                )
+            finally:
+                session.close()
+
+        def proxy_detect(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "detect")
+
+        def proxy_configure(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "configure")
+
+        def proxy_status(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "status")
+
+        def proxy_remove(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "remove")
+
+        def open_domain(self, domain: str) -> None:
+            safe_domain = validate_domain(domain)
+            self._browser_open(f"https://{safe_domain}")
+
         def repair_clouddrive(self, values: dict[str, str]) -> OperationResult:
             if self.product.is_openlist:
                 return self.check_openlist(values)
@@ -2112,6 +2178,9 @@ if _QT_IMPORT_ERROR is None:
     QProgressBar::chunk { background:#4783ed; border-radius:2px; }
     QPlainTextEdit#Console { background:#132137; color:#ced8e8; border:0;
      border-radius:11px; padding:10px; selection-background-color:#3a5375; font-size:12px; }
+    QPlainTextEdit#DomainStatus { background:#f8fafd; color:#647792;
+     border:1px solid #dbe5f1; border-radius:9px; padding:9px 11px;
+     selection-background-color:#c6dbff; font-size:12px; }
     QSplitter::handle { background:transparent; height:9px; }
     QToolTip { background:#243654; color:white; border:0; padding:8px; }
     QDialog { background:#f7f9fd; }
@@ -2192,6 +2261,252 @@ if _QT_IMPORT_ERROR is None:
             except Exception as exc:  # noqa: BLE001 - GUI worker boundary
                 self.failed.emit(self.operation, exc)
 
+    class DomainAccessDialog(QDialog):
+        """Optional shared HTTPS gateway controls; independent from core deploy flow."""
+
+        OPERATION_TITLES: ClassVar[dict[str, str]] = {
+            "proxy_detect": "检测域名环境",
+            "proxy_configure": "配置 HTTPS",
+            "proxy_status": "检查运行状态",
+            "proxy_remove": "移除域名访问",
+        }
+
+        def __init__(self, owner: InstallerWindow) -> None:
+            super().__init__(owner)
+            self.owner = owner
+            self.backend = owner.backend
+            self.worker: OperationThread | None = None
+            self.configured_domain = ""
+            self.setWindowTitle("域名访问 / HTTPS")
+            self.setWindowIcon(brand_icon())
+            self.setModal(True)
+            self.setMinimumSize(600, 630)
+            self.resize(680, 650)
+
+            outer = QVBoxLayout(self)
+            outer.setContentsMargins(24, 22, 24, 20)
+            outer.setSpacing(12)
+            outer.addWidget(label("域名访问 / HTTPS", "SectionTitle"))
+            outer.addWidget(
+                label(
+                    f"可选功能：使用共享 Nginx 与 Let's Encrypt，通过 HTTPS 打开 "
+                    f"{owner.product.display_name} 管理页。原 SSH 安全隧道继续保留。",
+                    "Hint",
+                    True,
+                )
+            )
+            warning = label(
+                "此入口只代理管理界面，不用于 Bot 或 WebDAV 传输；公网 /dav 与 /dav/ "
+                "会被明确拒绝。首次签发证书时，Cloudflare 请使用“仅 DNS”。",
+                "Banner",
+                True,
+            )
+            outer.addWidget(warning)
+
+            outer.addWidget(label("当前状态", "FieldLabel"))
+            self.state_badge = label("未检测", "Status")
+            outer.addWidget(self.state_badge, 0, Qt.AlignmentFlag.AlignLeft)
+
+            outer.addWidget(label("管理页域名", "FieldLabel"))
+            self.domain_edit = QLineEdit()
+            self.domain_edit.setPlaceholderText("例如：cloud.example.com（只填写域名）")
+            self.domain_edit.setAccessibleName("管理页域名")
+            outer.addWidget(self.domain_edit)
+
+            outer.addWidget(label("Let's Encrypt 邮箱（可选）", "FieldLabel"))
+            self.email_edit = QLineEdit()
+            self.email_edit.setPlaceholderText("留空则无邮箱注册，无法接收到期提醒")
+            self.email_edit.setAccessibleName("Let's Encrypt 邮箱")
+            outer.addWidget(self.email_edit)
+
+            self.status_text = QPlainTextEdit()
+            self.status_text.setObjectName("DomainStatus")
+            self.status_text.setAccessibleName("域名访问状态详情")
+            self.status_text.setReadOnly(True)
+            self.status_text.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+            self.status_text.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            )
+            self.status_text.setFixedHeight(112)
+            self.status_text.setPlainText(
+                "先确认域名 A/AAAA 记录全部直接指向当前 VPS，并开放 80/443 入站。"
+            )
+            outer.addWidget(self.status_text)
+
+            action_grid = QGridLayout()
+            action_grid.setSpacing(8)
+            definitions = (
+                ("proxy_detect", "检测环境", "server"),
+                ("proxy_configure", "配置 HTTPS", "shield"),
+                ("proxy_status", "检查状态", "check"),
+                ("open", f"打开 {owner.product.display_name} 域名", "external"),
+                ("proxy_remove", "移除域名访问", "wrench"),
+            )
+            self.buttons: dict[str, QPushButton] = {}
+            for index, (operation, title, symbol) in enumerate(definitions):
+                button = QPushButton(title)
+                button.setIcon(icon(symbol, size=18))
+                if operation == "proxy_configure":
+                    button.setObjectName("Primary")
+                elif operation == "proxy_remove":
+                    button.setObjectName("Repair")
+                if operation == "open":
+                    button.clicked.connect(self._open_domain)
+                else:
+                    button.clicked.connect(
+                        lambda checked=False, op=operation: self._run(op)
+                    )
+                self.buttons[operation] = button
+                action_grid.addWidget(button, index // 2, index % 2)
+            outer.addLayout(action_grid)
+            outer.addStretch(1)
+
+            close_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            close_box.rejected.connect(self.reject)
+            outer.addWidget(close_box)
+            self._set_busy(False)
+            QTimer.singleShot(0, self._load_initial_status)
+
+        def _load_initial_status(self) -> None:
+            """Load the persisted route before allowing an unnoticed domain change."""
+            if self.backend is None or self.owner.preview:
+                return
+            try:
+                self.backend._validate_connection(self.owner.snapshot())
+            except (ValueError, KeyError, TypeError):
+                return
+            self._run("proxy_status")
+
+        def _set_badge(self, text: str, state: str = "") -> None:
+            self.state_badge.setText(text)
+            self.state_badge.setProperty("state", state)
+            self.state_badge.style().unpolish(self.state_badge)
+            self.state_badge.style().polish(self.state_badge)
+
+        def _set_busy(self, busy: bool) -> None:
+            available = self.backend is not None and not self.owner.preview
+            for button in self.buttons.values():
+                button.setEnabled(available and not busy)
+            self.buttons["open"].setEnabled(
+                available and not busy and bool(self.configured_domain)
+            )
+            self.domain_edit.setEnabled(not busy)
+            self.email_edit.setEnabled(not busy)
+
+        def _values(self) -> dict[str, str]:
+            values = self.owner.snapshot()
+            values["proxy_domain"] = self.domain_edit.text()
+            values["proxy_email"] = self.email_edit.text()
+            return values
+
+        def _run(self, operation: str) -> None:
+            if self.worker is not None or self.backend is None:
+                return
+            values = self._values()
+            try:
+                self.backend._validate_connection(values)
+                if operation in {"proxy_detect", "proxy_configure"}:
+                    values["proxy_domain"] = validate_domain(values["proxy_domain"])
+                if operation == "proxy_configure":
+                    values["proxy_email"] = validate_email(values["proxy_email"])
+            except (ValueError, KeyError, TypeError) as exc:
+                QMessageBox.warning(self, "请检查配置", str(exc))
+                return
+            if operation == "proxy_configure" and self.configured_domain:
+                candidate = values["proxy_domain"]
+                if candidate != self.configured_domain:
+                    answer = QMessageBox.question(
+                        self,
+                        "确认更新域名",
+                        f"将把当前域名 {self.configured_domain} 更新为 {candidate}。\n"
+                        "新证书与 HTTPS 自检全部通过前，旧域名配置会保留。是否继续？",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No,
+                    )
+                    if answer != QMessageBox.StandardButton.Yes:
+                        return
+            if operation == "proxy_remove":
+                answer = QMessageBox.question(
+                    self,
+                    "确认移除域名访问",
+                    "只移除当前 Edition 的域名路由；不会卸载核心服务，也不会删除证书文件。\n"
+                    "原 SSH 安全隧道仍可继续使用。是否继续？",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
+                )
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
+            self.owner.redactor.update(values)
+            self.owner.append_log("开始：" + self.OPERATION_TITLES[operation])
+            self._set_badge("正在执行", "running")
+            self.status_text.setPlainText(
+                "请稍候；正在通过 SSH 检查共享代理和当前 Edition。"
+            )
+            self.worker = OperationThread(self.backend, operation, values, self)
+            self.worker.succeeded.connect(
+                self._success, Qt.ConnectionType.QueuedConnection
+            )
+            self.worker.failed.connect(
+                self._failure, Qt.ConnectionType.QueuedConnection
+            )
+            self.worker.finished.connect(
+                self._finished, Qt.ConnectionType.QueuedConnection
+            )
+            self._set_busy(True)
+            self.worker.start()
+
+        @Slot(str, object)
+        def _success(self, operation: str, result: Any) -> None:
+            report = getattr(result, "proxy_report", None)
+            if report is None:
+                raise RuntimeError("域名操作没有返回结构化状态。")
+            if report.domain and report.state in {"healthy", "running_error", "certificate_error"}:
+                self.configured_domain = report.domain
+                self.domain_edit.setText(report.domain)
+            elif report.state == "not_configured":
+                self.configured_domain = ""
+            labels = {
+                "not_configured": ("未配置", ""),
+                "detected": ("环境已检测", "success"),
+                "detected_error": ("环境检查未通过", "error"),
+                "healthy": ("运行正常", "success"),
+                "certificate_error": ("证书异常", "error"),
+                "running_error": ("运行异常", "error"),
+            }
+            badge, state = labels.get(report.state, ("状态未知", "error"))
+            self._set_badge(badge, state)
+            details = [report.message]
+            details.extend(f"{title}：{value}" for title, value in report.statuses)
+            self.status_text.setPlainText("\n".join(details))
+            self.owner.append_log(result.title + "：" + result.message)
+
+        @Slot(str, object)
+        def _failure(self, operation: str, error: Any) -> None:
+            clean = self.owner.redactor.clean(str(error))
+            self._set_badge("操作失败", "error")
+            self.status_text.setPlainText(clean)
+            self.owner.append_log("[失败] " + clean)
+            QMessageBox.critical(self, self.OPERATION_TITLES[operation] + "失败", clean)
+
+        @Slot()
+        def _finished(self) -> None:
+            worker, self.worker = self.worker, None
+            if worker is not None:
+                worker.deleteLater()
+            self._set_busy(False)
+
+        def _open_domain(self) -> None:
+            try:
+                self.backend.open_domain(self.configured_domain)
+            except (ValueError, RuntimeError) as exc:
+                QMessageBox.warning(self, "无法打开域名", str(exc))
+
+        def reject(self) -> None:
+            if self.worker is not None:
+                QMessageBox.information(self, "操作进行中", "请等待当前 HTTPS 操作完成后再关闭。")
+                return
+            super().reject()
+
     class InstallerWindow(QMainWindow):
         PAGE_TITLES = (
             "01   连接 VPS",
@@ -2203,6 +2518,7 @@ if _QT_IMPORT_ERROR is None:
             "test_connection": "测试 SSH",
             "deploy": "一键部署基础环境",
             "open_clouddrive": "打开 CloudDrive2 管理页",
+            "domain_access": "域名访问 / HTTPS",
             "repair_clouddrive": "修复 CloudDrive2 网络",
             "verify": "WebDAV 验收",
             "detect_resources": "检测 VPS 并推荐",
@@ -2771,6 +3087,7 @@ if _QT_IMPORT_ERROR is None:
                     else ()
                 ),
                 ("open_clouddrive", "external", "", "#6985aa"),
+                ("domain_access", "shield", "", "#6985aa"),
                 ("repair_clouddrive", "wrench", "Repair", "#ac7b3e"),
                 ("verify", "check", "Verify", "#26896f"),
             )
@@ -2779,6 +3096,7 @@ if _QT_IMPORT_ERROR is None:
                 "deploy": "部署 Bot、运行环境与选定服务",
                 "runtime_status": "区分当前 TG2Cloud 与旧 TG115 实例",
                 "open_clouddrive": "通过固定 SSH 隧道打开管理页",
+                "domain_access": "可选：使用域名与 HTTPS 打开管理页",
                 "repair_clouddrive": (
                     "检查容器与 VPS 回环管理端口"
                     if self.product.is_openlist
@@ -2794,7 +3112,11 @@ if _QT_IMPORT_ERROR is None:
                 button.setIconSize(QSize(19, 19))
                 button.setMinimumHeight(22)
                 button.clicked.connect(
-                    lambda checked=False, op=operation: self.run_operation(op)
+                    lambda checked=False, op=operation: (
+                        self.show_domain_access()
+                        if op == "domain_access"
+                        else self.run_operation(op)
+                    )
                 )
                 self.action_buttons[operation] = button
                 layout.addWidget(button)
@@ -2834,6 +3156,12 @@ if _QT_IMPORT_ERROR is None:
             self.step_summary = label("下一步：填写配置，测试 SSH", "Hint", True)
             layout.addWidget(self.step_summary)
             return card
+
+        def show_domain_access(self) -> None:
+            if self.preview or self.backend is None or self.busy:
+                return
+            dialog = DomainAccessDialog(self)
+            dialog.exec()
 
         def _log_panel(self) -> QWidget:
             panel = QWidget()
@@ -3469,8 +3797,10 @@ def packaged_self_test(
     """Check local runtime/resources only; no VPS or cloud storage is contacted."""
     result_path = Path(result_path)
     gui_ok = False
+    domain_ui_ok = False
     ui_error = ""
     window = None
+    domain_dialog = None
     try:
         app = make_app()
         window = (
@@ -3480,9 +3810,19 @@ def packaged_self_test(
         )
         app.processEvents()
         gui_ok = set(window.snapshot()) == set(defaults_for(product))
+        domain_dialog = DomainAccessDialog(window)
+        domain_dialog.show()
+        app.processEvents()
+        domain_ui_ok = (
+            domain_dialog.domain_edit.isVisible()
+            and domain_dialog.email_edit.isVisible()
+            and "proxy_configure" in domain_dialog.buttons
+        )
     except Exception as exc:  # noqa: BLE001 - packaged GUI diagnostic boundary
         ui_error = str(exc)
     finally:
+        if domain_dialog is not None:
+            domain_dialog.close()
         if window is not None:
             window.close()
     report = dependency_report(product)
@@ -3493,7 +3833,7 @@ def packaged_self_test(
         backend_ok = True
     except Exception as exc:  # noqa: BLE001 - packaged backend diagnostic boundary
         backend_error = str(exc)
-    succeeded = bool(report["ready"]) and gui_ok and backend_ok
+    succeeded = bool(report["ready"]) and gui_ok and domain_ui_ok and backend_ok
     try:
         import PySide6
 
@@ -3516,6 +3856,7 @@ def packaged_self_test(
         "payload_missing=" + ",".join(report["payload_missing"]),
         "brand_missing=" + ",".join(report["brand_missing"]),
         f"gui_runtime={'OK' if gui_ok else 'FAILED'}",
+        f"domain_ui={'OK' if domain_ui_ok else 'FAILED'}",
         f"backend_import={'OK' if backend_ok else 'FAILED'}",
         f"error={error}",
         "remote_test=NOT_RUN",
@@ -3599,6 +3940,14 @@ def main(
                 if not about.grab().save(str(args.screenshots / "about.png")):
                     raise RuntimeError("Screenshot write failed: about")
                 about.close()
+                domain_dialog = DomainAccessDialog(window)
+                domain_dialog.show()
+                app.processEvents()
+                if not domain_dialog.grab().save(
+                    str(args.screenshots / "domain-https.png")
+                ):
+                    raise RuntimeError("Screenshot write failed: domain-https")
+                domain_dialog.close()
             except Exception as exc:  # noqa: BLE001 - preview capture boundary
                 capture_error.append(str(exc))
                 if sys.stderr is not None:

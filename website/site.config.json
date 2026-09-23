@@ -1,7 +1,7 @@
 {
   "name": "TG2Cloud",
-  "version": "1.0.2",
-  "verifiedAt": "2026-09-22",
+  "version": "1.0.3",
+  "verifiedAt": "2026-09-23",
   "repo": "https://github.com/LuoPoJunZi/TG2Cloud",
   "upstreamRepo": "https://github.com/whyhhh20/TG115",
   "siteUrl": "",
@@ -38,6 +38,10 @@
         {
           "title": "连接 VPS 与 SSH",
           "slug": "deploy/ssh"
+        },
+        {
+          "title": "域名访问与 HTTPS",
+          "slug": "deploy/domain-https"
         },
         {
           "title": "Telegram 配置",

@@ -1,6 +1,6 @@
-# TG2Cloud v1.0.2：小白使用说明
+# TG2Cloud v1.0.3：小白使用说明
 
-> TG2Cloud v1.0.2；适用电脑：Windows 10 / Windows 11 64 位；适用 VPS：Ubuntu 或 Debian 64 位；推荐 VPS：2 核 CPU、4GB 内存、50GB 硬盘。
+> TG2Cloud v1.0.3；适用电脑：Windows 10 / Windows 11 64 位；适用 VPS：Ubuntu 或 Debian 64 位；推荐 VPS：2 核 CPU、4GB 内存、50GB 硬盘。
 
 ---
 
@@ -174,7 +174,26 @@ OpenList 默认安装目录为 `/opt/tg2cloud-openlist`，本地任务预算 `20
 
 ---
 
-## 四、登录 CloudDrive2 并挂载 115
+## 四、可选：配置域名 HTTPS 管理入口
+
+不配置域名也能正常使用 TG2Cloud。原来的“打开 CloudDrive2/OpenList 管理页”会继续通过固定 SSH 安全隧道工作，Bot 和 WebDAV 转存也不依赖公网域名。
+
+如果希望在自己的浏览器中通过 `https://你的域名` 打开管理页，按以下 10 步操作：
+
+1. 先完成当前 Edition 的基础部署，并确认 SSH 隧道管理页能够打开；
+2. 准备一个没有分配给另一个 TG2Cloud Edition 的完整子域名，例如 `cloud.example.com`；
+3. 在 DNS 服务商处把该域名的 A 记录指向当前 VPS 公网 IPv4；如果存在 AAAA，它也必须指向当前 VPS 的公网 IPv6，否则先删除错误 AAAA；
+4. Cloudflare 用户先把记录设为“仅 DNS”（灰色云朵），不要填写或提供 Cloudflare API Token；
+5. 在 VPS 服务商安全组和你自行管理的防火墙中开放 TCP 80 与 443；部署器不会自动修改防火墙；
+6. 在部署工作台点击“域名访问 / HTTPS”，填写纯域名，不要填写 `https://`、端口或路径；Let's Encrypt 邮箱可以留空，但留空后收不到到期提醒；
+7. 点击“检测环境”，确认基础服务、Docker Compose、DNS 和 80/443 全部通过；如果端口属于其他服务，TG2Cloud 会停止且不会改动该服务；
+8. 点击“配置 HTTPS”，等待证书、Nginx 配置、HTTPS、HTTP 跳转、公网 `/dav` 阻断和后端回环监听全部通过；
+9. 点击“检查状态”，再点击“打开域名管理页”；CloudDrive2 与 OpenList 必须使用不同域名，但共用同一套 Nginx/Certbot；
+10. 如不再使用，点击“移除域名访问”。只移除当前 Edition 路由；另一个 Edition 保持工作。最后一个路由移除后共享代理停止，证书文件默认保留。
+
+域名入口只用于管理界面，不能把它填进 Bot 的 WebDAV 地址。公网访问 `/dav` 或 `/dav/` 会得到 403；Bot 仍使用原来的 Docker 内网 WebDAV。更新域名时，旧域名会保留到新证书和全部检查成功；失败时自动回退。无论域名状态如何，原 SSH 隧道入口都不会被删除。
+
+## 五、登录 CloudDrive2 并挂载 115
 
 部署成功后点击：
 
@@ -224,7 +243,7 @@ Bot 每 30 秒自动重新检查 CloudDrive2，不需要重新部署。
 
 ---
 
-## 五、以后怎么使用
+## 六、以后怎么使用
 
 1. 在 Telegram 找到视频或文件；
 2. 在与自己的私人 Bot 的一对一聊天中转发；
@@ -251,7 +270,7 @@ Bot 不再要求或提示逐个执行人工确认。完成传输并通过 WebDAV
 
 ---
 
-## 六、Bot 命令
+## 七、Bot 命令
 
 ```text
 /start
@@ -292,7 +311,7 @@ Bot 启动后，Telegram 输入框左侧会出现原生命令菜单，菜单说�
 
 ---
 
-## 七、重新运行部署器会怎样
+## 八、重新运行部署器会怎样
 
 重新运行“一键部署基础环境”用于：
 
@@ -337,7 +356,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh prune-backups 5
 
 ---
 
-## 八、安全设计
+## 九、安全设计
 
 - VPS 密码、私钥口令和 sudo 密码不会写入本地配置文件；
 - 本地临时配置在部署结束后自动删除；
@@ -364,7 +383,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh prune-backups 5
 
 ---
 
-## 九、常见问题
+## 十、常见问题
 
 ### 提示 VPS 没有 `/dev/fuse`
 
@@ -454,8 +473,8 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh check
 
 ---
 
-## 十、当前验证边界
+## 十一、当前验证边界
 
 当前发布边界见 [发布说明](../RELEASE_NOTES.md) 和 [更新记录](../CHANGELOG.md)。源码测试不能代替真实 VPS 与目标云存储的生产环境验收。
 
-由于没有你的真实 VPS、Telegram 和 CloudDrive2 凭据，交付前无法替你完成真实 VPS 的端到端上传测试。第一次使用时，部署器会在你的 VPS 上执行真实安装和健康检查；完成 CloudDrive2 与 115 登录后，建议先转发一个 5～20MB 的测试文件，确认 115 中出现并收到 Bot 完成通知，再开始批量使用。
+CloudDrive2 与 OpenList 的基础部署和 WebDAV 已分别完成真实 VPS 验收；v1.0.3 的共享域名 HTTPS 功能也已完成验收，适用于两个 Edition。由于不同 Telegram 账号、云存储和 VPS 环境无法由发布者统一代测，第一次使用时仍应先转发一个 5～20MB 的测试文件，在所用云存储的官方客户端确认文件存在、大小正确且可打开，再开始批量使用。

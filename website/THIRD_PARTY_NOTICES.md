@@ -1,6 +1,6 @@
 # 来源、致谢与素材说明
 
-资料核对日期：2026-09-22。对应公开正式版本：TG2Cloud v1.0.2。
+资料核对日期：2026-09-23。对应公开正式版本：TG2Cloud v1.0.3。
 
 ## 主项目与上游
 
@@ -13,7 +13,7 @@ TG2Cloud 的公开 LICENSE 为 MIT，版权行为 `Copyright (c) 2026 TG115 Cont
 
 主要技术资料：
 - README：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md
-- v1.0.2 Release：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.0.2
+- v1.0.3 Release：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.0.3
 - CHANGELOG：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md
 - 产品参数：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/deployer_products.py
 - 迁移说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/MIGRATION_FROM_TG115.md
@@ -29,6 +29,8 @@ README 与 main 分支可能在之后更新。正式 Release 的确定行为应�
 本站 HTML/CSS 模板、轻量云图标、流程示意和交互代码随源码提供。没有加入商业素材、部署器虚构截图或字体文件。字体使用操作系统已有字体。
 
 CloudDrive2、OpenList、Telegram、GitHub、Cloudflare 等名称仅用于描述兼容组件、资料来源与部署平台，不表示这些平台对本网站的背书。
+
+TG2Cloud v1.0.3 的可选域名 HTTPS 功能使用 Nginx 与 Certbot 容器。Nginx 开源版采用 BSD-2-Clause 许可，Certbot 采用 Apache-2.0 许可；具体版本与其他第三方组件说明见主仓库的 `docs/第三方组件说明.md`。
 
 ## 构建实现
 

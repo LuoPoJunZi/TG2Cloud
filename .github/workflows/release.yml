@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - v1.0.2
+      - v1.0.3
 
 permissions:
   actions: read
   contents: write
 
 env:
-  RELEASE_TAG: v1.0.2
-  RELEASE_TITLE: TG2Cloud v1.0.2
-  RELEASE_ARTIFACT: TG2Cloud-v1.0.2-windows
+  RELEASE_TAG: v1.0.3
+  RELEASE_TITLE: TG2Cloud v1.0.3
+  RELEASE_ARTIFACT: TG2Cloud-v1.0.3-windows
 
 concurrency:
-  group: release-v1.0.2
+  group: release-v1.0.3
   cancel-in-progress: false
 
 jobs:
@@ -86,7 +86,7 @@ jobs:
           python -m unittest discover -s tests -v
 
       - name: Ruff
-        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py vps_resources.py payload_clouddrive2/app tests
+        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py vps_resources.py payload_clouddrive2/app tests
 
       - name: Build and self-test Windows EXE once
         timeout-minutes: 20

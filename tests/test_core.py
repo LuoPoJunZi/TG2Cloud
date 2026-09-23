@@ -542,11 +542,18 @@ class InstallerHelpersTests(unittest.TestCase):
             app = Mock()
             window = Mock()
             window.snapshot.return_value = dict(DEFAULTS)
+            domain_dialog = Mock()
+            domain_dialog.domain_edit.isVisible.return_value = True
+            domain_dialog.email_edit.isVisible.return_value = True
+            domain_dialog.buttons = {"proxy_configure": Mock()}
             with (
                 patch("installer.make_app", return_value=app),
                 patch(
                     "installer.InstallerWindow", return_value=window, create=True
                 ) as window_class,
+                patch(
+                    "installer.DomainAccessDialog", return_value=domain_dialog
+                ) as dialog_class,
                 patch(
                     "installer.dependency_report",
                     return_value={
@@ -563,9 +570,12 @@ class InstallerHelpersTests(unittest.TestCase):
             ):
                 self.assertEqual(packaged_self_test(result), 0)
             window_class.assert_called_once_with(preview=True)
-            app.processEvents.assert_called_once()
+            dialog_class.assert_called_once_with(window)
+            self.assertEqual(app.processEvents.call_count, 2)
+            domain_dialog.close.assert_called_once()
             window.close.assert_called_once()
             self.assertIn("result=OK", result.read_text(encoding="utf-8"))
+            self.assertIn("domain_ui=OK", result.read_text(encoding="utf-8"))
             self.assertIn("brand_missing=", result.read_text(encoding="utf-8"))
 
     def test_base64_round_trip(self) -> None:
@@ -1998,7 +2008,7 @@ class UploadRecoveryTests(unittest.TestCase):
 
 class PayloadTests(unittest.TestCase):
     def test_windows_and_server_versions_match(self) -> None:
-        self.assertEqual(APP_VERSION, "1.0.2")
+        self.assertEqual(APP_VERSION, "1.0.3")
         self.assertEqual(__version__, APP_VERSION)
 
     def test_required_payload_files_exist(self) -> None:

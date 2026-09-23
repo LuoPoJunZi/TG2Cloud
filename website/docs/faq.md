@@ -24,7 +24,7 @@
 
 ### Windows 提示未知发布者怎么办？
 
-v1.0.2 未提供商业代码签名。核对正式 Release、文件名和 SHA-256，不要直接关闭全局安全防护。[下载与校验](/download/)。
+v1.0.3 未提供商业代码签名。核对正式 Release、文件名和 SHA-256，不要直接关闭全局安全防护。[下载与校验](/download/)。
 
 ### VPS 重装后 Host key 不匹配？
 
@@ -86,7 +86,7 @@ v1.0.2 未提供商业代码签名。核对正式 Release、文件名和 SHA-256
 
 ### TG115 能一键升级 TG2Cloud 吗？
 
-v1.0.2 不提供原地自动迁移，也没有正式自动 Restore/Uninstall。[迁移说明](/operations/migration/)。
+v1.0.3 不提供原地自动迁移，也没有正式自动 Restore/Uninstall。[迁移说明](/operations/migration/)。
 
 ### CloudDrive2 和 OpenList 可以共用一个 Bot Token 吗？
 

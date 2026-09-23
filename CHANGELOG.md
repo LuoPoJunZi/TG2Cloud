@@ -1,5 +1,16 @@
 # 更新记录
 
+## TG2Cloud v1.0.3
+
+GitHub Release 标签和程序内部版本均为 `v1.0.3`。两个 Windows EXE 继续由 GitHub Actions 从同一个不可变标签统一测试、构建和自检，并按本次实际产物生成 SHA256。
+
+- 新增可选的 Dockerized Domain HTTPS Gateway：两个 Edition 共用一套固定版本 Nginx/Certbot，并保留原 SSH 隧道、Docker 内网 WebDAV 与回环后端绑定。
+- 增加域名与 DNS 检查、80/443 端口归属保护、公开 `/dav` 阻断、未知 Host/SNI 拒绝、证书自动续期、事务提交和按 Edition 回退/移除；不会停止或覆盖用户已有的 Web 服务。
+- 修复已有证书复用、首次签发失败回退、最后路由移除、续期域名筛选、状态脚本初始化与 Bash 条件表达式问题；状态自检使用本机回环解析，避免 VPS 不支持公网 NAT 回环时误报失败。
+- 域名状态结果改为固定高度、可滚动和可复制的小型日志框，避免长检查结果撑高对话框。
+- 共享域名 HTTPS 功能已完成真实 VPS 验收，适用于 CloudDrive2 与 OpenList：证书复用、HTTPS 管理页、HTTP 跳转、公开 `/dav` 阻断、回环监听和证书有效期自检均通过。
+- Telegram、SQLite 队列、rclone、streaming 与既有 WebDAV 落盘流程未重写；CloudDrive2 v1.0.1 与 OpenList v1.0.2 已通过的基础部署及 WebDAV 结果继续作为回归基线。
+
 ## TG2Cloud v1.0.2
 
 GitHub Release 标签和程序内部版本均为 `v1.0.2`。两个 Windows EXE 由 GitHub Actions 从同一个不可变标签统一测试、构建和自检，并按本次实际产物生成 SHA256。

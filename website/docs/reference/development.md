@@ -7,7 +7,7 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.0.2
+git checkout v1.0.3
 ```
 
 对固定版本复现问题时使用对应标签；跟随主分支开发时，记录提交号，避免把未发布修改当成 Release 行为。

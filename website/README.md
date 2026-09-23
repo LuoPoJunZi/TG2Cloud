@@ -1,8 +1,8 @@
 # TG2Cloud Docs
 
-TG2Cloud 中文网页文档。包含品牌首页、29 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
+TG2Cloud 中文网页文档。包含品牌首页、30 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
-**正文基准：TG2Cloud v1.0.2；资料核对日期：2026-09-22。**
+**正文基准：TG2Cloud v1.0.3；资料核对日期：2026-09-23。**
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 
