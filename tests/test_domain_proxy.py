@@ -655,6 +655,9 @@ class GeneratedArtifactTests(unittest.TestCase):
         self.assertIn('install -d -m 700 "$root"', script)
         self.assertNotIn('install -d -m 700 "$root/certbot/www"', script)
 
+    @unittest.skipIf(
+        os.name == "nt", "Linux deployment shell is validated by the Linux CI job"
+    )
     @unittest.skipUnless(shutil.which("bash"), "bash is not installed")
     def test_generated_remote_commands_pass_bash_syntax(self) -> None:
         for script in self._bash_scripts():
@@ -671,6 +674,9 @@ class GeneratedArtifactTests(unittest.TestCase):
                     result.stderr.decode("utf-8", errors="replace"),
                 )
 
+    @unittest.skipIf(
+        os.name == "nt", "Linux deployment shell is validated by the Linux CI job"
+    )
     @unittest.skipUnless(shutil.which("shellcheck"), "ShellCheck is not installed")
     def test_generated_remote_commands_pass_shellcheck(self) -> None:
         for script in self._bash_scripts():
@@ -686,6 +692,9 @@ class GeneratedArtifactTests(unittest.TestCase):
                 )
                 self.assertEqual(result.returncode, 0, output)
 
+    @unittest.skipIf(
+        os.name == "nt", "Linux deployment Compose is validated by the Linux CI job"
+    )
     @unittest.skipUnless(shutil.which("docker"), "Docker CLI is not installed")
     def test_generated_proxy_compose_passes_docker_config(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
@@ -703,6 +712,9 @@ class GeneratedArtifactTests(unittest.TestCase):
             )
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
 
+    @unittest.skipIf(
+        os.name == "nt", "Linux Nginx image is validated by the Linux CI job"
+    )
     @unittest.skipUnless(shutil.which("docker"), "Docker CLI is not installed")
     def test_generated_nginx_config_passes_pinned_image_test(self) -> None:
         docker_info = subprocess.run(
