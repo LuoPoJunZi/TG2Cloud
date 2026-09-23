@@ -552,7 +552,9 @@ class InstallerHelpersTests(unittest.TestCase):
                     "installer.InstallerWindow", return_value=window, create=True
                 ) as window_class,
                 patch(
-                    "installer.DomainAccessDialog", return_value=domain_dialog
+                    "installer.DomainAccessDialog",
+                    return_value=domain_dialog,
+                    create=True,
                 ) as dialog_class,
                 patch(
                     "installer.dependency_report",

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import datetime as dt
-import importlib.util
 import json
 import os
 import shlex
@@ -12,6 +11,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import installer as installer_module
 from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
 from domain_proxy import (
     _CERTIFICATE_CHECK_SCRIPT,
@@ -800,7 +800,10 @@ class RegressionBoundaryTests(unittest.TestCase):
         self.assertNotIn("ops@example.com", rendered)
 
 
-@unittest.skipUnless(importlib.util.find_spec("PySide6"), "PySide6 is not installed")
+@unittest.skipUnless(
+    hasattr(installer_module, "DomainAccessDialog"),
+    "PySide6 Qt runtime is unavailable",
+)
 class QtLayoutTests(unittest.TestCase):
     def test_both_domain_dialogs_fit_at_supported_scale_factors(self) -> None:
         root = Path(__file__).resolve().parents[1]
