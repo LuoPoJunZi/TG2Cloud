@@ -1,6 +1,6 @@
 # 来源、致谢与素材说明
 
-资料核对日期：2026-09-23。对应公开正式版本：TG2Cloud v1.0.3。
+资料核对日期：2026-09-29。对应公开正式版本：TG2Cloud v1.0.4。
 
 ## 主项目与上游
 
@@ -13,7 +13,7 @@ TG2Cloud 的公开 LICENSE 为 MIT，版权行为 `Copyright (c) 2026 TG115 Cont
 
 主要技术资料：
 - README：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md
-- v1.0.3 Release：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.0.3
+- v1.0.4 Release：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.0.4
 - CHANGELOG：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md
 - 产品参数：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/deployer_products.py
 - 迁移说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/MIGRATION_FROM_TG115.md

@@ -43,9 +43,9 @@ Your Cloud
 
 This repository evolved from [whyhhh20/TG115](https://github.com/whyhhh20/TG115). It retains the original attribution and license while adding stronger task recovery, disk protection, streaming transfers, state semantics, rollback, VPS resource guidance, and operational diagnostics.
 
-> Current version: **TG2Cloud v1.0.3**
+> Current version: **TG2Cloud v1.0.4**
 >
-> OpenList has passed real-VPS deployment and WebDAV acceptance testing with OpenList and 115 Open, and CloudDrive2's stable deployment and WebDAV flow has also passed real-VPS acceptance. The shared domain HTTPS feature introduced in v1.0.3 has passed acceptance for both CloudDrive2 and OpenList. Both official EXEs are built by GitHub Actions from the same `v1.0.3` tag.
+> OpenList has passed real-VPS deployment and WebDAV acceptance testing with OpenList and 115 Open, and CloudDrive2's stable deployment and WebDAV flow has also passed real-VPS acceptance. The shared domain HTTPS feature introduced in v1.0.3 has passed acceptance for both CloudDrive2 and OpenList. Both official EXEs are built by GitHub Actions from the same `v1.0.4` tag.
 
 > Only transfer content that you are authorized to save, back up, and use. Follow the laws and terms that apply to Telegram, your cloud provider, CloudDrive2/OpenList, the content source, and your jurisdiction.
 
@@ -68,7 +68,7 @@ Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
 Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 ```
 
-The TG2Cloud v1.0.3 Windows EXEs are not commercially code-signed. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download only from this repository's Releases page, verify SHA-256, and do not disable Microsoft Defender or Windows Security.
+The TG2Cloud v1.0.4 Windows EXEs are not commercially code-signed. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download only from this repository's Releases page, verify SHA-256, and do not disable Microsoft Defender or Windows Security.
 
 ## Contents
 
@@ -137,7 +137,7 @@ TG2Cloud follows a “select manually, process automatically” model. You choos
 
 ## Current Version
 
-TG2Cloud v1.0.3 provides two separate PySide6 editions:
+TG2Cloud v1.0.4 provides two separate PySide6 editions:
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -288,7 +288,7 @@ Click **一键部署基础环境** (Deploy base environment). A normal first dep
 
 While dependencies or container images are being downloaded, wait for an explicit success or failure. Do not repeatedly click deploy, network repair, or WebDAV acceptance.
 
-When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.0.3 does not provide a general-purpose Restore feature.
+When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.0.4 does not provide a general-purpose Restore feature.
 
 ### 7. First-Installation Sequence
 
@@ -490,7 +490,7 @@ CloudDrive2 has no manual backup button. Its redeployment protection includes pr
 
 Backups contain secrets. Directories are mode `700` and files are set to `600` where possible. Never upload them publicly.
 
-CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.0.3 does not provide a general Restore or Uninstall function.
+CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.0.4 does not provide a general Restore or Uninstall function.
 
 ## Troubleshooting
 

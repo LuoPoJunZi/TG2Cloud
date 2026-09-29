@@ -1,11 +1,19 @@
 <!-- 本文件会直接作为 GitHub Release 正文：不要添加一级标题，不要按固定列宽硬换行。 -->
 
 > [!IMPORTANT]
-> **TG2Cloud v1.0.3** 同时提供 CloudDrive2 与 OpenList 两个 PySide6 Windows 部署器。两个 EXE 均由 GitHub Actions 从同一个不可变标签统一测试、构建和自检，并按 Actions 本次实际产物生成 SHA256。
+> **TG2Cloud v1.0.4** 同时提供 CloudDrive2 与 OpenList 两个 PySide6 Windows 部署器。两个 EXE 均由 GitHub Actions 从同一个不可变标签统一测试、构建和自检，并按 Actions 本次实际产物生成 SHA256。
 
 ## 本次更新
 
-- 新增可选的 Dockerized Domain HTTPS Gateway，可通过自有域名和 Let's Encrypt HTTPS 打开 CloudDrive2 或 OpenList 管理界面；原有固定 SSH 安全隧道继续保留。
+- 重新设计 Telegram Bot 状态首页：使用紧凑的任务与实时速度面板，并根据实际部署动态显示 CloudDrive2 或 OpenList。
+- 首页按钮精简为任务、VPS 资源和原地刷新三个 Emoji 按钮；CPU、可用内存、可用磁盘与 TG2Cloud 本地额度移入独立资源页。
+- `/start`、`/status` 与 `/performance` 统一进入新状态首页；按钮刷新通过编辑原消息完成，减少对话中的重复消息。
+- 目的端状态、任务统计、分阶段速度和 VPS 资源采样复用既有探测与 `ResourceMonitor`；旧 `menu:status` 回调继续兼容。
+- Telegram 下载、SQLite 队列、rclone、WebDAV、streaming、Tunnel、verify 和现有部署流程未被重写。
+
+## 继续保留的 HTTPS 能力
+
+- v1.0.3 引入的 Dockerized Domain HTTPS Gateway 继续可用，可通过自有域名和 Let's Encrypt HTTPS 打开 CloudDrive2 或 OpenList 管理界面；原有固定 SSH 安全隧道继续保留。
 - 两个 Edition 共用 VPS 上的一套固定版本 Nginx/Certbot，分别使用独立域名；Bot 与 rclone 继续使用 Docker 内网 WebDAV，不经过公网域名。
 - 域名入口固定拒绝公网 `/dav` 与 `/dav/`，后端仍只监听回环地址；未知 Host/SNI 被拒绝，不向代理容器挂载 Docker Socket。
 - 增加域名格式、A/AAAA、80/443 端口归属、证书、Nginx 配置、HTTPS、HTTP 跳转、`/dav` 阻断和回环监听自检。Cloudflare 首次签发应使用“仅 DNS”，不需要提供 API Token。
@@ -15,6 +23,7 @@
 
 ## 真实环境验证
 
+- v1.0.4 新增的 Bot 状态首页已通过自动回归测试；不同 Telegram 账号、消息客户端与实际任务组合仍应由用户在自己的环境继续验证。
 - 共享域名 HTTPS 功能已在 Debian 13 真实 VPS 上完成验收，适用于 CloudDrive2 与 OpenList：DNS A 直连、已有证书复用、HTTPS 管理页、HTTP 跳转、Nginx/Certbot 健康、当前域名续期配置、公开 `/dav` 阻断、后端回环监听以及证书域名与有效期检查均通过。
 - CloudDrive2 v1.0.1 与 OpenList v1.0.2 已完成的真实 VPS 基础部署及 WebDAV 验收继续作为回归基线。
 - Telegram 与不同文件规模仍应由用户在自己的环境继续验证。
@@ -64,7 +73,7 @@ Telegram → Private Bot → TG2Cloud → rclone
 
 ## 旧 TG115 用户
 
-TG2Cloud v1.0.3 不提供 TG115 原地自动升级。新安装使用独立目录、容器和 Network；旧目录、容器和备份不会被自动覆盖、停止、迁移或删除。若旧实例占用固定 19798/5244 端口，TG2Cloud 会停止并要求用户自行处理，不会自动换端口。详见 [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md)。
+TG2Cloud v1.0.4 不提供 TG115 原地自动升级。新安装使用独立目录、容器和 Network；旧目录、容器和备份不会被自动覆盖、停止、迁移或删除。若旧实例占用固定 19798/5244 端口，TG2Cloud 会停止并要求用户自行处理，不会自动换端口。详见 [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md)。
 
 不要让新旧实例长期同时使用同一个 Telegram Bot Token，否则可能争抢 Telegram updates。
 
@@ -87,6 +96,6 @@ TG2Cloud v1.0.3 不提供 TG115 原地自动升级。新安装使用独立目录
 
 ## 发布状态
 
-当前版本为 **v1.0.3**。自动测试、两个 Windows EXE 构建、自检和 SHA256 生成均由 GitHub Actions 从 `v1.0.3` 标签执行；Release Job 直接发布 Windows Build Job 已验证的同一份 artifact，不重复构建。
+当前版本为 **v1.0.4**。自动测试、两个 Windows EXE 构建、自检和 SHA256 生成均由 GitHub Actions 从 `v1.0.4` 标签执行；Release Job 直接发布 Windows Build Job 已验证的同一份 artifact，不重复构建。
 
 TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进而来，继续保留 MIT 许可证、原作者版权和必要致谢。
