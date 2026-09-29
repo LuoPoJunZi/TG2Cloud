@@ -24,7 +24,7 @@
 
 ### Windows 提示未知发布者怎么办？
 
-v1.0.4 未提供商业代码签名。核对正式 Release、文件名和 SHA-256，不要直接关闭全局安全防护。[下载与校验](/download/)。
+v1.1.0 未提供商业代码签名。核对正式 Release、文件名和 SHA-256，不要直接关闭全局安全防护。[下载与校验](/download/)。
 
 ### VPS 重装后 Host key 不匹配？
 
@@ -40,9 +40,9 @@ v1.0.4 未提供商业代码签名。核对正式 Release、文件名和 SHA-256
 
 ## 管理页与 WebDAV
 
-### 本机管理页打不开？
+### HTTPS 管理页打不开？
 
-检查 SSH 隧道、本机端口占用和 VPS 服务状态。CloudDrive2 固定 19798，OpenList 固定 5244。电脑的本地 URL 必须配合隧道使用。
+在部署器的“HTTPS 管理入口”中点击“检查状态”，核对 DNS、证书、80/443、Nginx、HTTP 跳转和后端回环监听。首次签发时 Cloudflare 使用“仅 DNS”；CloudDrive2 19798 与 OpenList 5244 不应直接暴露公网。
 
 ### 401 与 429 有什么不同？
 
@@ -86,7 +86,7 @@ v1.0.4 未提供商业代码签名。核对正式 Release、文件名和 SHA-256
 
 ### TG115 能一键升级 TG2Cloud 吗？
 
-v1.0.4 不提供原地自动迁移，也没有正式自动 Restore/Uninstall。[迁移说明](/operations/migration/)。
+v1.1.0 不提供原地自动迁移，也没有正式自动 Restore/Uninstall。[迁移说明](/operations/migration/)。
 
 ### CloudDrive2 和 OpenList 可以共用一个 Bot Token 吗？
 

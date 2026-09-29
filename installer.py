@@ -233,7 +233,7 @@ SOURCE_HINTS = {
         "Bot Token 来自 @BotFather；API ID 和 API Hash 来自 my.telegram.org；数字 ID 用于限制只有你本人可以使用。"
     ],
     "_build_cloud_tab": [
-        "部署完成后点击“打开 CloudDrive2 管理页”，登录 CloudDrive2、添加并挂载你的云存储（例如 115），然后开启 WebDAV。如果 WebDAV 根目录已经选中目标 Telegram 文件夹，子目录必须留空；只有根目录在更上层时才填写相对路径。"
+        "基础部署后必须先配置并验收 HTTPS 管理入口，再从域名登录 CloudDrive2、添加并挂载你的云存储（例如 115），然后开启 WebDAV。如果 WebDAV 根目录已经选中目标 Telegram 文件夹，子目录必须留空；只有根目录在更上层时才填写相对路径。"
     ],
     "_build_options_tab": [
         "源码默认仍为 20GB 本地任务预算和 8GB 磁盘安全线。检测只提供当前 VPS 的实例建议，点击应用后才会改输入框；部署前还会重新检测。单文件超过本地预算时自动使用流式模式。"
@@ -864,6 +864,7 @@ if _BACKEND_IMPORT_ERROR is None:
         secret_value: str = field(default="", repr=False, compare=False)
         openlist_state: str = ""
         proxy_report: ProxyReport | None = None
+        https_required: bool = False
 
     class OperationError(RuntimeError):
         """An operation failure that can still expose safe structured status."""
@@ -1504,10 +1505,16 @@ fi
                     openlist_initialized = (
                         result_markers.get("OPENLIST_INITIALIZED") == "NEW"
                     )
+                    https_required = (
+                        self.product.is_openlist
+                        or values.get("deploy_clouddrive2", "true") == "true"
+                    )
                     return OperationResult(
-                        "部署成功",
+                        "基础部署完成",
                         (
-                            "Bot 已经在 VPS 上运行。\n\n下一步：点击“打开 OpenList 管理页”，"
+                            "Bot 和 OpenList 已经在 VPS 上运行。\n\n"
+                            "下一步必须配置并验收 HTTPS 管理入口；通过后再从域名登录 "
+                            "OpenList，"
                             + (
                                 "使用本页生成的管理员信息登录，"
                                 if openlist_initialized
@@ -1516,13 +1523,20 @@ fi
                             + "添加你的云存储（例如 115 Open）并配置 WebDAV 用户；"
                             "然后执行最终 WebDAV 验收。"
                             if self.product.is_openlist
-                            else "Bot 已经在 VPS 上运行。\n\n下一步：点击“打开 CloudDrive2 管理页”，登录 CloudDrive2、挂载你的云存储并开启 WebDAV；然后点击“WebDAV 验收（写入测试文件）”。"
+                            else (
+                                "Bot 和 CloudDrive2 已经在 VPS 上运行。\n\n"
+                                "下一步必须配置并验收 HTTPS 管理入口；通过后再从域名登录 "
+                                "CloudDrive2、挂载云存储并开启 WebDAV，最后执行 WebDAV 验收。"
+                                if https_required
+                                else "Bot 已经在 VPS 上运行，并使用外部 WebDAV。下一步执行 WebDAV 验收。"
+                            )
                         ),
                         openlist_state=(
                             "new" if openlist_initialized else "existing"
                         )
                         if self.product.is_openlist
                         else "",
+                        https_required=https_required,
                     )
                 finally:
                     try:
@@ -1645,6 +1659,27 @@ fi
         def open_domain(self, domain: str) -> None:
             safe_domain = validate_domain(domain)
             self._browser_open(f"https://{safe_domain}")
+
+        def _require_healthy_https(
+            self, session: RemoteSession, values: dict[str, str]
+        ) -> None:
+            required = (
+                self.product.is_openlist
+                or values.get("deploy_clouddrive2", "true") == "true"
+            )
+            if not required:
+                return
+            manager = DomainProxyManager(session, self.product, values, self._log)
+            manager.prepare()
+            report = manager.status()
+            for status_title, status_value in report.statuses:
+                self._log(f"TG2CLOUD_PROXY_CHECK={status_title}:{status_value}")
+            if report.state != "healthy":
+                raise OperationError(
+                    "当前 Edition 必须先完成 HTTPS 管理入口配置和全部自检，"
+                    "才能执行 WebDAV 最终验收。请返回部署工作台点击“配置 HTTPS 管理入口”。"
+                )
+            self._log(f"TG2CLOUD_PROXY_REQUIRED=OK: https://{report.domain}")
 
         def repair_clouddrive(self, values: dict[str, str]) -> OperationResult:
             if self.product.is_openlist:
@@ -1893,6 +1928,7 @@ fi
             validate_install_dir(values["install_dir"])
             session = self._new_session(values)
             try:
+                self._require_healthy_https(session, values)
                 install_dir = values["install_dir"].strip()
                 uid_code, uid_output = session.run("id -u")
                 if uid_code != 0 or not uid_output.strip():
@@ -2130,6 +2166,7 @@ if _QT_IMPORT_ERROR is None:
      background:#eaf0f7; color:#52637c; padding:6px 14px; font-size:12px; }
     QLabel#Status[state="running"] { background:#e8f0ff; color:#2563eb; border-color:#cfe0ff; }
     QLabel#Status[state="success"] { background:#e7f5ef; color:#168063; border-color:#cbe9dc; }
+    QLabel#Status[state="pending"] { background:#fff8e8; color:#9a6518; border-color:#f0d9aa; }
     QLabel#Status[state="error"] { background:#fff0ef; color:#be4f45; border-color:#f6d4ce; }
     QLabel#Status[state="cancelled"] { background:#f3f4f6; color:#596273; border-color:#dfe2e7; }
     QLabel#Banner { border:1px solid #f1dfb8; background:#fff9ed; color:#8a6223;
@@ -2262,7 +2299,7 @@ if _QT_IMPORT_ERROR is None:
                 self.failed.emit(self.operation, exc)
 
     class DomainAccessDialog(QDialog):
-        """Optional shared HTTPS gateway controls; independent from core deploy flow."""
+        """Required HTTPS management entry for TG2Cloud-managed gateways."""
 
         OPERATION_TITLES: ClassVar[dict[str, str]] = {
             "proxy_detect": "检测域名环境",
@@ -2277,7 +2314,8 @@ if _QT_IMPORT_ERROR is None:
             self.backend = owner.backend
             self.worker: OperationThread | None = None
             self.configured_domain = ""
-            self.setWindowTitle("域名访问 / HTTPS")
+            self.configured_state = "not_configured"
+            self.setWindowTitle("HTTPS 管理入口（必需）")
             self.setWindowIcon(brand_icon())
             self.setModal(True)
             self.setMinimumSize(600, 630)
@@ -2286,11 +2324,11 @@ if _QT_IMPORT_ERROR is None:
             outer = QVBoxLayout(self)
             outer.setContentsMargins(24, 22, 24, 20)
             outer.setSpacing(12)
-            outer.addWidget(label("域名访问 / HTTPS", "SectionTitle"))
+            outer.addWidget(label("HTTPS 管理入口（必需）", "SectionTitle"))
             outer.addWidget(
                 label(
-                    f"可选功能：使用共享 Nginx 与 Let's Encrypt，通过 HTTPS 打开 "
-                    f"{owner.product.display_name} 管理页。原 SSH 安全隧道继续保留。",
+                    f"受管部署必须使用共享 Nginx 与 Let's Encrypt，通过 HTTPS 打开 "
+                    f"{owner.product.display_name} 管理页。HTTPS 全部自检通过后，部署才算完成。",
                     "Hint",
                     True,
                 )
@@ -2430,7 +2468,7 @@ if _QT_IMPORT_ERROR is None:
                     self,
                     "确认移除域名访问",
                     "只移除当前 Edition 的域名路由；不会卸载核心服务，也不会删除证书文件。\n"
-                    "原 SSH 安全隧道仍可继续使用。是否继续？",
+                    "移除后当前 Edition 将不再满足部署完成条件，公网管理入口会立即不可用。是否继续？",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No,
                 )
@@ -2474,11 +2512,15 @@ if _QT_IMPORT_ERROR is None:
                 "running_error": ("运行异常", "error"),
             }
             badge, state = labels.get(report.state, ("状态未知", "error"))
+            if operation != "proxy_detect":
+                self.configured_state = report.state
             self._set_badge(badge, state)
             details = [report.message]
             details.extend(f"{title}：{value}" for title, value in report.statuses)
             self.status_text.setPlainText("\n".join(details))
             self.owner.append_log(result.title + "：" + result.message)
+            if operation != "proxy_detect":
+                self.owner._apply_https_report(report)
 
         @Slot(str, object)
         def _failure(self, operation: str, error: Any) -> None:
@@ -2486,6 +2528,8 @@ if _QT_IMPORT_ERROR is None:
             self._set_badge("操作失败", "error")
             self.status_text.setPlainText(clean)
             self.owner.append_log("[失败] " + clean)
+            if operation != "proxy_detect" and self.configured_state != "healthy":
+                self.owner._https_requirement_failed(clean)
             QMessageBox.critical(self, self.OPERATION_TITLES[operation] + "失败", clean)
 
         @Slot()
@@ -2517,8 +2561,7 @@ if _QT_IMPORT_ERROR is None:
         ACTION_TITLES: ClassVar[dict[str, str]] = {
             "test_connection": "测试 SSH",
             "deploy": "一键部署基础环境",
-            "open_clouddrive": "打开 CloudDrive2 管理页",
-            "domain_access": "域名访问 / HTTPS",
+            "domain_access": "配置 HTTPS 管理入口",
             "repair_clouddrive": "修复 CloudDrive2 网络",
             "verify": "WebDAV 验收",
             "detect_resources": "检测 VPS 并推荐",
@@ -2551,9 +2594,6 @@ if _QT_IMPORT_ERROR is None:
             else:
                 self.PAGE_TITLES = type(self).PAGE_TITLES
             self.ACTION_TITLES = dict(type(self).ACTION_TITLES)
-            self.ACTION_TITLES["open_clouddrive"] = (
-                f"打开 {product.display_name} 管理页"
-            )
             self.ACTION_TITLES["repair_clouddrive"] = (
                 "检查 OpenList 服务"
                 if product.is_openlist
@@ -2563,6 +2603,7 @@ if _QT_IMPORT_ERROR is None:
             self.backend: Any = None
             self.backend_error = ""
             self.worker: OperationThread | None = None
+            self._open_required_https_after_worker = False
             self.exit_after_worker = False
             self.resource_update: Any = None
             self.edits: dict[str, QLineEdit] = {}
@@ -2997,7 +3038,8 @@ if _QT_IMPORT_ERROR is None:
             )
             layout.addWidget(
                 self._hint(
-                    "部署后点击“打开 OpenList 管理页”，登录并由你本人添加云存储（例如 115 Open）。"
+                    "基础部署后必须先配置并验收 HTTPS 管理入口，再从域名登录 OpenList，"
+                    "由你本人添加云存储（例如 115 Open）。"
                     "部署器不会读取任何云盘 Cookie、Token、OAuth 凭据或登录信息。",
                     "SoftBox",
                 )
@@ -3086,8 +3128,7 @@ if _QT_IMPORT_ERROR is None:
                     if not self.product.is_openlist
                     else ()
                 ),
-                ("open_clouddrive", "external", "", "#6985aa"),
-                ("domain_access", "shield", "", "#6985aa"),
+                ("domain_access", "shield", "Primary", "#ffffff"),
                 ("repair_clouddrive", "wrench", "Repair", "#ac7b3e"),
                 ("verify", "check", "Verify", "#26896f"),
             )
@@ -3095,8 +3136,7 @@ if _QT_IMPORT_ERROR is None:
                 "test_connection": "连接测试与 VPS 资源预检",
                 "deploy": "部署 Bot、运行环境与选定服务",
                 "runtime_status": "区分当前 TG2Cloud 与旧 TG115 实例",
-                "open_clouddrive": "通过固定 SSH 隧道打开管理页",
-                "domain_access": "可选：使用域名与 HTTPS 打开管理页",
+                "domain_access": "必需：证书和 HTTPS 自检通过后部署才算完成",
                 "repair_clouddrive": (
                     "检查容器与 VPS 回环管理端口"
                     if self.product.is_openlist
@@ -3162,6 +3202,30 @@ if _QT_IMPORT_ERROR is None:
                 return
             dialog = DomainAccessDialog(self)
             dialog.exec()
+
+        def _apply_https_report(self, report: ProxyReport) -> None:
+            if report.state == "healthy":
+                self._status("部署完成", "success")
+                self.footer_state.setText("HTTPS 管理入口：运行正常")
+                self.step_summary.setText(
+                    f"下一步：打开 {self.product.display_name} 域名，完成存储和 WebDAV 配置"
+                )
+                return
+            if report.state in {"certificate_error", "running_error"}:
+                self._status("HTTPS 未通过", "error")
+                self.footer_state.setText("HTTPS 管理入口：需要修复")
+                self.step_summary.setText("请修复 HTTPS 检查失败项；通过前部署尚未完成")
+                return
+            self._status("待配置 HTTPS", "pending")
+            self.footer_state.setText("HTTPS 管理入口：尚未完成")
+            self.step_summary.setText("下一步：配置并验收 HTTPS 管理入口")
+
+        def _https_requirement_failed(self, message: str) -> None:
+            self._status("HTTPS 未通过", "error")
+            self.footer_state.setText("HTTPS 管理入口：操作失败")
+            self.step_summary.setText(
+                "请根据 HTTPS 日志修复 DNS、端口或证书问题后重试"
+            )
 
         def _log_panel(self) -> QWidget:
             panel = QWidget()
@@ -3357,6 +3421,13 @@ if _QT_IMPORT_ERROR is None:
             ready = self.backend is not None and not self.busy and not self.preview
             for button in self.action_buttons.values():
                 button.setEnabled(ready)
+            if (
+                "domain_access" in self.action_buttons
+                and not self.product.is_openlist
+                and hasattr(self, "managed")
+                and not self.managed.isChecked()
+            ):
+                self.action_buttons["domain_access"].setEnabled(False)
             if hasattr(self, "pages"):
                 self.pages.setEnabled(not self.busy)
             for key, button in self.apply_buttons.items():
@@ -3536,12 +3607,7 @@ if _QT_IMPORT_ERROR is None:
             self.footer_state.setText("最近成功：" + self.ACTION_TITLES[operation])
             next_steps = {
                 "test_connection": "下一步：补全配置并部署基础环境",
-                "deploy": (
-                    "下一步：打开 OpenList，添加云存储并配置 WebDAV"
-                    if self.product.is_openlist
-                    else "下一步：打开 CloudDrive2，挂载云存储"
-                ),
-                "open_clouddrive": "下一步：完成存储和 WebDAV 配置后执行验收",
+                "deploy": "下一步：配置并验收 HTTPS 管理入口",
                 "verify": "请在所用云存储的官方客户端确认最终文件",
                 "repair_clouddrive": (
                     "OpenList 基础服务检查通过；WebDAV 仍需单独验收"
@@ -3557,7 +3623,15 @@ if _QT_IMPORT_ERROR is None:
                 "backup_openlist": "备份已保存在 VPS 的受限目录",
                 "reset_openlist_admin": "请复制并妥善保存新的管理员密码",
             }
-            self.step_summary.setText(next_steps[operation])
+            https_required = bool(getattr(result, "https_required", False))
+            if operation == "deploy" and not https_required:
+                self.step_summary.setText("下一步：执行外部 WebDAV 验收")
+            else:
+                self.step_summary.setText(next_steps[operation])
+            if operation == "deploy" and https_required:
+                self._status("待配置 HTTPS", "pending")
+                self.footer_state.setText("基础服务已就绪；HTTPS 尚未完成")
+                self._open_required_https_after_worker = True
             openlist_state = getattr(result, "openlist_state", "")
             if openlist_state:
                 self._set_openlist_instance_state(openlist_state)
@@ -3601,6 +3675,8 @@ if _QT_IMPORT_ERROR is None:
 
         @Slot()
         def _worker_finished(self) -> None:
+            open_required_https = self._open_required_https_after_worker
+            self._open_required_https_after_worker = False
             worker, self.worker = self.worker, None
             self.progress.setRange(0, 1)
             self.progress.setValue(0)
@@ -3609,6 +3685,8 @@ if _QT_IMPORT_ERROR is None:
                 worker.deleteLater()
             if self.exit_after_worker:
                 QTimer.singleShot(0, self.close)
+            elif open_required_https:
+                QTimer.singleShot(0, self.show_domain_access)
 
         def _ask_from_worker(self, challenge: HostKeyChallenge) -> bool:
             question = Confirmation(challenge)

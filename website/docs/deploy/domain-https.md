@@ -1,8 +1,8 @@
 # 域名访问与 HTTPS
 
-TG2Cloud 可以为 CloudDrive2 或 OpenList 管理界面配置可选的公网 HTTPS 域名。它不会替代原有 SSH 安全隧道，也不会改变 Bot 与 WebDAV 的传输路径。
+TG2Cloud 要求受管 CloudDrive2 或 OpenList 使用公网 HTTPS 域名访问管理界面。它不会改变 Bot 与 WebDAV 的 Docker 内网传输路径。
 
-v1.0.3 的共享域名 HTTPS 功能已完成验收，适用于 CloudDrive2 与 OpenList 两个 Edition。
+v1.1.0 已在真实 VPS 完成两个 Edition 的强制 HTTPS 与 WebDAV 全流程验收。
 
 ## 适用边界
 
@@ -11,13 +11,13 @@ v1.0.3 的共享域名 HTTPS 功能已完成验收，适用于 CloudDrive2 与 O
 - CloudDrive2 仍只监听 VPS 的 `127.0.0.1:19798`；
 - OpenList 仍只监听 VPS 的 `127.0.0.1:5244`；
 - Bot 和 rclone 继续使用 Docker 内网 WebDAV；
-- 不配置域名时，固定端口 SSH 隧道照常使用。
+- 未配置或状态异常时，当前受管 Edition 保持“待配置 HTTPS”，WebDAV 最终验收不会继续；底层 SSH 隧道只保留兼容/应急能力，不再作为普通工作台入口。
 
 两个 Edition 共用 `/opt/tg2cloud-proxy` 中的一套 Nginx 与 Certbot 容器，但必须使用不同域名。Nginx 是唯一监听 80/443 的 TG2Cloud 组件。
 
 ## 配置前准备
 
-1. 先完成当前 Edition 的基础部署，并确认 SSH 隧道管理页可打开。
+1. 先执行当前 Edition 的基础部署；容器健康后部署器会自动打开本对话框。
 2. 准备一个完整子域名，例如 `cloud.example.com`。
 3. 把全部 A/AAAA 记录直接指向当前 VPS。错误 AAAA 会阻止配置。
 4. Cloudflare 首次签发证书时使用“仅 DNS”，不需要 API Token。
@@ -46,7 +46,7 @@ Certbot 容器每 12 小时尝试续期，Nginx 容器每 6 小时安全重载�
 
 在同一对话框填写新域名并配置，可以更新当前 Edition。只有新证书和全部自检通过后才提交。
 
-“移除域名访问”只删除当前 Edition 路由。另一个 Edition 继续工作；移除最后一个路由后共享代理容器停止。证书文件默认保留，避免误删和短时间重复签发。原 SSH 隧道始终保留。
+“移除域名访问”只删除当前 Edition 路由。另一个 Edition 继续工作；移除最后一个路由后共享代理容器停止。证书文件默认保留，避免误删和短时间重复签发。被移除路由的 Edition 会立即恢复“待配置 HTTPS”，重新配置并通过全部自检后才能再次显示部署完成。
 
 ## 常见失败
 

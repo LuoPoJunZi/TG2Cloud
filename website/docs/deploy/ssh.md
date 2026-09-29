@@ -44,10 +44,10 @@ sudo ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub -E sha256
 
 旧 TG115 的主机记录不会自动导入。更新指纹后仍提示身份认证失败，需单独检查用户名、密码、私钥和口令。
 
-## SSH 隧道与管理页面
+## SSH 与管理页面
 
-CloudDrive2 固定使用本机 19798，OpenList 固定使用本机 5244。管理页按钮会建立隧道并做 HTTP 检查，再打开浏览器。
+SSH 继续用于部署、状态检查和远程管理。受管 CloudDrive2/OpenList 的普通管理入口从 v1.1.0 起使用强制 HTTPS 域名，工作台不再显示固定端口隧道按钮。
 
-电脑端口被其他程序占用时，部署器会明确停止，不会随机换端口。关闭部署器后，不要假定隧道仍在；需要时重新打开对应管理页。
+CloudDrive2 19798 与 OpenList 5244 仍只监听 VPS 回环地址。底层固定端口 SSH 隧道代码仅保留兼容和故障恢复能力；不要为绕过 HTTPS 配置把这些端口改为公网监听。
 
-更多情况见 [SSH 与管理页问题](/troubleshooting/ssh/)。
+更多情况见 [SSH 与管理页问题](/troubleshooting/ssh/) 和 [域名访问与 HTTPS](/deploy/domain-https/)。

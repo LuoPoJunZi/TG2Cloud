@@ -28,7 +28,7 @@ OpenList：
 http://tg2cloud-openlist:5244/dav/
 ```
 
-这些是 Bot 访问受管网关的地址。管理页浏览器入口使用 Windows 本机 SSH 隧道，不能把两者混用。
+这些是 Bot 访问受管网关的 Docker 内网地址。管理页浏览器入口使用当前 Edition 的 HTTPS 域名，不能把两者混用；公网 `/dav` 与 `/dav/` 会被固定拒绝。
 
 ## 已明确的任务预算变量
 

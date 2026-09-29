@@ -22,6 +22,7 @@ from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
 from installer import (
     InstallerBackend,
     OperationError,
+    OperationResult,
     defaults_for,
     make_app,
     secure_password,
@@ -78,8 +79,8 @@ class OpenListProductTests(unittest.TestCase):
         )
 
     def test_product_release_identity_is_tg2cloud_v1(self) -> None:
-        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_version, "1.0.4")
-        self.assertEqual(OPENLIST_PRODUCT.app_version, "1.0.4")
+        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_version, "1.1.0")
+        self.assertEqual(OPENLIST_PRODUCT.app_version, "1.1.0")
         self.assertEqual(
             CLOUDDRIVE2_PRODUCT.executable_name,
             "TG2Cloud-CloudDrive2-Deployer",
@@ -139,6 +140,9 @@ class OpenListProductTests(unittest.TestCase):
             self.assertFalse(window.windowIcon().isNull())
             self.assertFalse(window.brand_icon_label.pixmap().isNull())
             self.assertTrue(hasattr(window, "verification_summary"))
+            self.assertIn("domain_access", window.action_buttons)
+            self.assertNotIn("open_clouddrive", window.action_buttons)
+            self.assertIn("HTTPS", window.action_buttons["domain_access"].text())
             for operation in (
                 "openlist_status",
                 "openlist_logs",
@@ -191,6 +195,32 @@ class OpenListProductTests(unittest.TestCase):
             window.close()
             app.processEvents()
 
+    @unittest.skipUnless(
+        getattr(installer, "InstallerWindow", None) is not None,
+        "Qt runtime unavailable",
+    )
+    def test_managed_deploy_stays_pending_until_https_is_healthy(self) -> None:
+        app = make_app()
+        window = installer.InstallerWindow(preview=True, product=OPENLIST_PRODUCT)
+        try:
+            result = OperationResult(
+                "基础部署完成",
+                "下一步配置 HTTPS。",
+                https_required=True,
+            )
+            with patch("installer.QMessageBox.information"):
+                window._operation_success("deploy", result)
+
+            self.assertEqual(window.status.text(), "待配置 HTTPS")
+            self.assertTrue(window._open_required_https_after_worker)
+            self.assertIn("HTTPS 尚未完成", window.footer_state.text())
+            window._worker_finished()
+            app.processEvents()
+            self.assertFalse(window._open_required_https_after_worker)
+        finally:
+            window.close()
+            app.processEvents()
+
     def test_verification_markers_become_safe_stage_statuses(self) -> None:
         statuses = dict(
             verification_statuses(
@@ -237,14 +267,32 @@ TG115_WEBDAV_AUTH=FAILED
         ]
         backend = self.backend(session_factory=Mock(return_value=session))
 
-        with self.assertRaises(OperationError) as raised:
-            backend.verify(values)
+        with patch("installer.DomainProxyManager") as proxy_manager:
+            proxy_manager.return_value.status.return_value = Mock(
+                state="healthy", statuses=(), domain="ol.example.com"
+            )
+            with self.assertRaises(OperationError) as raised:
+                backend.verify(values)
 
         self.assertIn("无法登录 OpenList WebDAV", str(raised.exception))
         self.assertNotIn("401", str(raised.exception))
         self.assertEqual(dict(raised.exception.statuses)["WebDAV 认证"], "失败")
         command = session.run.call_args_list[1].args[0]
         self.assertIn("bash ./manage.sh verify", command)
+
+    def test_openlist_verification_requires_healthy_https_first(self) -> None:
+        session = Mock()
+        backend = self.backend(session_factory=Mock(return_value=session))
+
+        with patch("installer.DomainProxyManager") as proxy_manager:
+            proxy_manager.return_value.status.return_value = Mock(
+                state="not_configured", statuses=(), domain=""
+            )
+            with self.assertRaisesRegex(OperationError, "必须先完成 HTTPS"):
+                backend.verify(openlist_values())
+
+        proxy_manager.return_value.prepare.assert_called_once_with()
+        session.run.assert_not_called()
 
     def test_openlist_webdav_rate_limit_is_not_reported_as_bad_credentials(self) -> None:
         session = Mock()
@@ -262,8 +310,12 @@ TG115_WEBDAV_AUTH=FAILED
         ]
         backend = self.backend(session_factory=Mock(return_value=session))
 
-        with self.assertRaises(OperationError) as raised:
-            backend.verify(openlist_values())
+        with patch("installer.DomainProxyManager") as proxy_manager:
+            proxy_manager.return_value.status.return_value = Mock(
+                state="healthy", statuses=(), domain="ol.example.com"
+            )
+            with self.assertRaises(OperationError) as raised:
+                backend.verify(openlist_values())
 
         message = str(raised.exception)
         self.assertIn("429", message)
@@ -281,8 +333,12 @@ TG115_WEBDAV_AUTH=FAILED
             )),
         ]
         backend = self.backend(session_factory=Mock(return_value=session))
-        with self.assertRaises(OperationError) as raised:
-            backend.verify(openlist_values())
+        with patch("installer.DomainProxyManager") as proxy_manager:
+            proxy_manager.return_value.status.return_value = Mock(
+                state="healthy", statuses=(), domain="ol.example.com"
+            )
+            with self.assertRaises(OperationError) as raised:
+                backend.verify(openlist_values())
         message = str(raised.exception)
         self.assertIn("状态暂时无法确认", message)
         self.assertIn("不要重复点击", message)

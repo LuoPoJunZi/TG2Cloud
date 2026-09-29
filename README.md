@@ -43,9 +43,9 @@ Your Cloud
 
 本仓库是在原作者 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 基础上的二次开发版本，重点加强了任务恢复、磁盘保护、流式传输、状态语义、升级回退、VPS 资源建议和日常诊断。
 
-> 当前版本：**TG2Cloud v1.0.4**
+> 当前版本：**TG2Cloud v1.1.0**
 >
-> OpenList 已在真实 VPS、OpenList 与 115 Open 环境通过部署和 WebDAV 验收，CloudDrive2 的稳定部署与 WebDAV 流程也已通过真实 VPS 验收。v1.0.3 新增的共享域名 HTTPS 功能已完成验收，适用于 CloudDrive2 与 OpenList。两个正式 EXE 均由 GitHub Actions 从同一个 `v1.0.4` 标签源码构建。
+> CloudDrive2 与 OpenList 已在真实 VPS 完成基础部署、强制 HTTPS 管理入口和 WebDAV 全流程验收。两个正式 EXE 均由 GitHub Actions 从同一个 `v1.1.0` 标签源码构建。
 
 > 仅转存你有权保存、备份和使用的内容，并遵守 Telegram、所用云存储、CloudDrive2/OpenList、内容来源平台及所在地的法律法规和服务条款。
 
@@ -68,7 +68,7 @@ Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
 Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 ```
 
-TG2Cloud v1.0.4 的 Windows EXE 当前未提供商业代码签名，首次运行时 Windows SmartScreen 可能显示“未知发布者”；请从本仓库 Release 下载并核对 SHA-256，不要关闭 Defender 或 Windows Security。
+TG2Cloud v1.1.0 的 Windows EXE 当前未提供商业代码签名，首次运行时 Windows SmartScreen 可能显示“未知发布者”；请从本仓库 Release 下载并核对 SHA-256，不要关闭 Defender 或 Windows Security。
 
 ## 目录
 
@@ -78,7 +78,7 @@ TG2Cloud v1.0.4 的 Windows EXE 当前未提供商业代码签名，首次运行
 - [重要边界](#重要边界)
 - [部署前准备](#部署前准备)
 - [Windows 图形化部署](#windows-图形化部署)
-- [可选的域名 HTTPS 管理入口](#可选的域名-https-管理入口)
+- [强制 HTTPS 管理入口](#强制-https-管理入口)
 - [CloudDrive2 配置](#clouddrive2-配置)
 - [OpenList 与云存储配置](#openlist-与云存储配置)
 - [真实 WebDAV 验收](#真实-webdav-验收)
@@ -136,7 +136,7 @@ TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑�
 
 ## 当前版本
 
-当前产品版本为 `TG2Cloud v1.0.4`，提供两个独立的 PySide6 Edition：
+当前产品版本为 `TG2Cloud v1.1.0`，提供两个独立的 PySide6 Edition：
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -153,7 +153,7 @@ TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑�
 | 系统 | Ubuntu 22.04/24.04 或 Debian 12 64 位 | 同左 | 支持 x86_64、ARM64 |
 | 权限 | root 或可用 sudo | 同左 | 受管 CloudDrive2 需要 `/dev/fuse` |
 | 网络 | 可访问 Telegram、Docker 镜像仓库和目的端 | 100Mbps 以上并准备足够流量 | 公网测速不能代表到目标云存储的真实速度 |
-| 本地电脑 | Windows 10/11 64 位 | 同左 | 用于运行部署器和 SSH 隧道 |
+| 本地电脑 | Windows 10/11 64 位 | 同左 | 用于运行部署器和 HTTPS 管理页 |
 
 安装脚本会硬检查约 1.8GB 内存和安装文件系统至少 8GB 可用空间；50GB 是推荐值，不是简单的硬门槛。部署器还会结合已有下载、Docker 分区、inode 和最终填写的预算做更严格复检。
 
@@ -285,9 +285,9 @@ http://tg2cloud-clouddrive2:19798/dav
 
 点击“一键部署基础环境”。正常可能需要 5～15 分钟，期间会安装或检查 Docker、构建 Bot 镜像、启动服务并执行健康检查。正式写入前会再次检查资源；条件不安全时会停止，不会强行部署。
 
-日志显示正在下载依赖或构建 Docker 镜像时只需等待，不要重复点击“一键部署基础环境”、“修复 CloudDrive2 网络”或“WebDAV 验收”。必须等到部署器明确提示“部署成功”后再继续。
+日志显示正在下载依赖或构建 Docker 镜像时只需等待，不要重复点击“一键部署基础环境”、“修复 CloudDrive2 网络”或“WebDAV 验收”。基础容器健康后，部署器会自动打开 HTTPS 配置；必须等 HTTPS 全部自检通过并明确显示“部署完成”后再继续。
 
-部署脚本识别到当前 Edition 的既有 TG2Cloud 安装后，重新部署默认保留 VPS 当前 `.env`，并继续保留 SQLite、`rclone.conf`、下载目录、日志以及 CloudDrive2 配置和挂载数据。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”才应用本次表单值；升级前请先备份。升级会先在隔离目录构建候选镜像，并为旧代码、配置和数据库创建回退点；新版本未通过健康核验时只使用原有的有限内部回退逻辑，TG2Cloud v1.0.4 不提供正式自动 Restore。
+部署脚本识别到当前 Edition 的既有 TG2Cloud 安装后，重新部署默认保留 VPS 当前 `.env`，并继续保留 SQLite、`rclone.conf`、下载目录、日志以及 CloudDrive2 配置和挂载数据。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”才应用本次表单值；升级前请先备份。升级会先在隔离目录构建候选镜像，并为旧代码、配置和数据库创建回退点；新版本未通过健康核验时只使用原有的有限内部回退逻辑，TG2Cloud v1.1.0 不提供正式自动 Restore。
 
 ### 7. 完整按钮顺序
 
@@ -297,16 +297,17 @@ http://tg2cloud-clouddrive2:19798/dav
 2. 第 2 页填写 Bot Token、Telegram API ID、API Hash 和本人数字 ID；
 3. 第 3 页填写计划使用的 WebDAV 用户名、密码，按目标目录规则决定是否填写子目录；
 4. 第 4 页确认 CloudDrive2 管理方式，点击“检测 VPS 并推荐”，再主动应用合适的存储建议；
-5. 点击“一键部署基础环境”，等待“部署成功”；
-6. 点击“打开 CloudDrive2 管理页”，由本人登录 CloudDrive2、挂载目标云存储、开启 WebDAV；
-7. 在 CloudDrive2 中创建与第 3 页完全相同的 WebDAV 用户，关闭只读并授予读取、写入、改名和删除权限；
-8. 点击“WebDAV 验收”，等待出现 `TG2CLOUD_DESTINATION=OK`；
-9. 只有验收因容器网络问题失败时，才点击“修复 CloudDrive2 网络”，修复后重新验收；
-10. 在 Telegram 中私聊自己的 Bot，先发送一个小文件验证完整链路。
+5. 点击“一键部署基础环境”；基础容器健康后，部署器会自动打开“HTTPS 管理入口”对话框，此时主界面保持“待配置 HTTPS”；
+6. 为当前 Edition 配置独立域名，等待证书、HTTPS、HTTP 跳转、公开 `/dav` 阻断和后端回环监听全部通过；
+7. 点击“打开 CloudDrive2 域名”，由本人登录 CloudDrive2、挂载目标云存储并开启 WebDAV；
+8. 在 CloudDrive2 中创建与第 3 页完全相同的 WebDAV 用户，关闭只读并授予读取、写入、改名和删除权限；
+9. 点击“WebDAV 验收”，等待出现 `TG2CLOUD_DESTINATION=OK`；
+10. 只有验收因容器网络问题失败时，才点击“修复 CloudDrive2 网络”，修复后重新验收；
+11. 在 Telegram 中私聊自己的 Bot，先发送一个小文件验证完整链路。
 
-## 可选的域名 HTTPS 管理入口
+## 强制 HTTPS 管理入口
 
-基础部署完成后，可以在右侧“部署工作台”打开“域名访问 / HTTPS”，为当前 Edition 增加可选的公网 HTTPS 管理入口。CloudDrive2 与 OpenList 共用 VPS 上的一套 Dockerized Nginx/Certbot，分别使用独立域名；原有固定端口 SSH 隧道保持不变，仍是无需开放 80/443 时的默认安全入口。
+受管 CloudDrive2/OpenList 的基础容器健康后，部署器自动打开“HTTPS 管理入口”对话框。当前 Edition 必须完成域名证书与全部安全自检，主界面才显示“部署完成”，WebDAV 最终验收才会继续。两个 Edition 共用 VPS 上的一套 Dockerized Nginx/Certbot，并分别使用独立域名。底层固定端口 SSH 隧道仅保留兼容和故障恢复能力，不再显示为普通工作台按钮。
 
 使用前必须把域名的全部 A/AAAA 记录直接指向当前 VPS，并在安全组或防火墙中开放 TCP 80/443。首次签发证书时，Cloudflare 用户应先使用“仅 DNS”，不需要向 TG2Cloud 提供 Cloudflare API Token。部署器会拒绝 URL、IP、通配符、错误 AAAA、重复域名，以及被其他 Nginx/Caddy/Apache/Traefik 或进程占用的 80/443；它不会自动停止或修改外部服务。
 
@@ -316,13 +317,13 @@ http://tg2cloud-clouddrive2:19798/dav
 
 ## CloudDrive2 配置
 
-基础部署完成后，点击“打开 CloudDrive2 管理页”。部署器会建立 SSH 隧道并打开类似地址：
+HTTPS 配置通过后，点击“打开 CloudDrive2 域名”，通过当前 Edition 的 HTTPS 管理入口访问：
 
 ```text
-http://127.0.0.1:19798
+https://cloud.example.com
 ```
 
-该地址只通过当前 SSH 隧道访问，CloudDrive2 的 19798 端口默认不会暴露到公网。部署器会先用该隧道完成一次真实 HTTP 请求，确认管理页有响应后才打开浏览器；已有隧道失效时会自动重建。管理入口固定使用本机 `127.0.0.1:19798`，不再生成随机端口；如果本机端口已被其他程序占用，部署器会停止并提示先释放端口。
+示例域名应替换为你自己的域名。CloudDrive2 的 19798 端口仍只绑定 VPS 回环地址，不暴露到公网；共享 Nginx 是唯一监听公网 80/443 的 TG2Cloud 组件，且公网 `/dav` 与 `/dav/` 固定返回 403。不要把管理域名填入 Bot 的 WebDAV 地址。
 
 在 CloudDrive2 中依次完成：
 
@@ -352,8 +353,8 @@ OpenList 版使用独立的 `/opt/tg2cloud-openlist` 安装目录、`tg2cloud-op
 
 1. 填写 VPS 与 Telegram 信息，测试 SSH，并应用适合当前 VPS 的存储建议。OpenList 默认本地任务预算为 `20GB`，磁盘最少保留为 `8GB`。
 2. “部署 OpenList”页会生成首次管理员密码。密码默认遮罩，可显示、复制或在部署前明确重新生成；它只在全新 OpenList 数据目录首次初始化时生效。已有实例会保留原管理员凭据，部署器不会自动重置。部署完成后若检测到已有实例，首次密码区域会自动隐藏，并明确提示使用原凭据。
-3. 点击“一键部署基础环境”。此时只要求 OpenList、Bot 和内部网络健康；尚未添加目标云存储或尚未创建 WebDAV 用户属于正常状态，不会被误报为基础部署失败。
-4. 点击“打开 OpenList 管理页”。部署器固定建立 `127.0.0.1:5244 → VPS 127.0.0.1:5244` 的 SSH 隧道并打开 `http://127.0.0.1:5244`。如果本机 5244 已占用，会明确失败，不会随机换端口。
+3. 点击“一键部署基础环境”。OpenList、Bot 和内部网络健康后会自动打开 HTTPS 配置；尚未添加目标云存储或尚未创建 WebDAV 用户属于正常中间状态，但 HTTPS 未完成前不会显示“部署完成”。
+4. 为 OpenList Edition 配置独立域名并通过全部自检，然后点击“打开 OpenList 域名”。OpenList 的 5244 端口仍只绑定 VPS 回环地址，公网仅由共享 Nginx 提供 80/443 HTTPS 管理入口。
 5. 登录 OpenList，由本人在后台添加并授权目标云存储，例如 `115 Open`。Cookie、Token、OAuth 凭据和登录信息只交给你自己的 OpenList，TG2Cloud 部署器不会读取或收集。
 6. 按“配置 WebDAV”页显示的同一组值创建专用普通用户。用户名、部署器本地生成的 28 位随机密码和建议基本路径均可直接复制；只有点击“重新生成 WebDAV 密码”才会改变当前会话中的密码。
 7. 为该用户授予目录列表、读取、创建／写入和删除权限。当前 OpenList Edition 直接写入预留的最终文件名，不依赖 WebDAV MOVE；不同 OpenList 版本的权限名称可能不同，但必须具备前述实际能力。
@@ -506,7 +507,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 
 CloudDrive2 没有手动“创建备份”UI；重新部署前的内部备份包含程序/`.env`/配置（含现有 `rclone.conf`）和可用时的 SQLite 一致性快照，不包含下载、日志及 CloudDrive2 状态目录。OpenList 的手动安全备份包含程序配置归档（含 `.env`、`rclone.conf`）、可用时的 SQLite 快照，以及已初始化的 OpenList 状态（排除其临时文件和日志）；不包含下载、TG2Cloud 日志或云端文件。备份文件含敏感凭据，目录权限为 `700`、文件尽量为 `600`，不得公开上传。
 
-CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList 升级/手动备份位于 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的 TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.0.4 不提供正式自动 Restore 或 Uninstall。
+CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList 升级/手动备份位于 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的 TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.1.0 不提供正式自动 Restore 或 Uninstall。
 
 ## 常见问题
 
@@ -550,11 +551,11 @@ CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList �
 
 通常表示运行中的 Bot WebDAV 凭据与 CloudDrive2 用户不一致。修改部署器中的值后，必须重新执行基础部署，或者使用 `apply-config`；单纯 `restart` 不会应用新配置。之后运行 `check` 和 `verify`，不要只根据历史日志判断当前状态。
 
-### 管理页显示 `ERR_EMPTY_RESPONSE`
+### HTTPS 管理页打不开
 
-新版部署器会在打开浏览器前验收 SSH 隧道，不再把没有响应的本地地址显示为成功；重复点击时也会先检查旧隧道并在失效后自动重建。如果提示 VPS 禁止 TCP 端口转发，检查 SSH 服务的 `AllowTcpForwarding`，并确认 `PermitOpen` 允许 `127.0.0.1:19798`。修改 sshd 配置前应保留当前 SSH 会话，先执行 `sshd -t` 验证配置，再安全地 reload，避免把自己锁在 VPS 外。
+先在“HTTPS 管理入口”中点击“检查状态”，核对 DNS、证书、Nginx、80/443、HTTP 跳转和后端回环监听。首次签发时 Cloudflare 应使用“仅 DNS”；错误 AAAA、端口被其他 Web 服务占用或安全组未开放 80/443 都会导致失败。TG2Cloud 不会自动停止外部 Nginx、Caddy、Apache 或 Traefik。
 
-管理页隧道错误和 `401 Unauthorized` 是两件事：前者发生在 SSH 转发层，后者表示 CloudDrive2 中的 WebDAV 用户名、密码或权限与 Bot 当前配置不一致。“修复 CloudDrive2 网络”不能修复 401；应先进入管理页完成 WebDAV 配置，再执行“WebDAV 验收”。
+HTTPS 管理页错误和 `401 Unauthorized` 是两件事：前者发生在域名、证书或反向代理层，后者表示 CloudDrive2/OpenList 中的 WebDAV 用户名、密码或权限与 Bot 当前配置不一致。“修复 CloudDrive2 网络”不能修复 401；应先进入管理页完成 WebDAV 配置，再执行“WebDAV 验收”。
 
 ### 日志出现 `lookup tg2cloud-clouddrive2`
 
@@ -582,8 +583,8 @@ Docker 数据目录可能和 `/opt/tg2cloud-clouddrive2` 位于不同文件系�
 - 部署器不保存表单密码，只保存用户确认过的 SSH 主机密钥。
 - Base64 和 rclone obscure 只是编码或混淆，不是加密；VPS root 能读取服务配置。
 - CloudDrive2 为使用 FUSE 需要较高容器权限，建议部署在不承载钱包、数据库等重要业务的独立 VPS 上。
-- CloudDrive2 管理端口默认只绑定 `127.0.0.1`，推荐通过部署器建立的 SSH 隧道访问。
-- OpenList 管理端口同样只绑定 `127.0.0.1:5244`；云存储授权由用户直接在自己的后台完成，部署器没有凭据遥测或第三方回传功能。
+- CloudDrive2 管理端口只绑定 `127.0.0.1`，受管部署通过强制 HTTPS 管理入口访问；不要直接公开 19798。
+- OpenList 管理端口同样只绑定 `127.0.0.1:5244`，通过强制 HTTPS 管理入口访问；云存储授权由用户直接在自己的后台完成，部署器没有凭据遥测或第三方回传功能。
 - Bot 容器使用 UID/GID 10001、只读根文件系统、`no-new-privileges` 并丢弃 capabilities。
 - 发布产物应附 SHA-256；不要运行来源不明或无法核对版本的 EXE、脚本和镜像。
 

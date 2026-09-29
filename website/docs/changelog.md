@@ -2,6 +2,20 @@
 
 TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发布说明的整理，不把历史 TG115 的版本号当成 TG2Cloud 发布版本。
 
+## TG2Cloud v1.1.0
+
+该版本的两个 Windows EXE 从同一不可变标签源码测试、构建和自检，并使用 GitHub Actions 实际产物计算 SHA-256。
+
+**强制 HTTPS 管理入口。** 受管 CloudDrive2/OpenList 基础容器健康后自动进入域名配置；证书、HTTPS、HTTP 跳转、公开 `/dav` 阻断和后端回环监听全部通过后才显示“部署完成”。
+
+**收紧公网边界。** CloudDrive2 19798 与 OpenList 5244 继续只监听 VPS 回环地址，只有共享 Nginx 使用公网 80/443。普通工作台不再显示固定端口 SSH 隧道按钮，底层隧道代码仅保留兼容和故障恢复能力。
+
+**验收门禁。** 受管网关在 WebDAV 最终验收前再次检查当前 Edition 的 HTTPS 状态；外部 WebDAV 模式不要求为不存在的本地管理容器配置域名。
+
+CloudDrive2 与 OpenList 已在真实 VPS 完成受管部署、证书签发/复用、HTTPS 自检和 WebDAV 全流程验收。
+
+[查看正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.0)。
+
 ## TG2Cloud v1.0.4
 
 该版本的两个 Windows EXE 从同一不可变标签源码测试、构建和自检，并使用 GitHub Actions 实际产物计算 SHA-256。
@@ -64,7 +78,7 @@ TG115 v1.6.2 等记录属于代码演进历史，并不是 TG2Cloud 自身的版
 
 本导航中的历史版本条目是更新日志入口，不是各旧版文档的完整快照。下载历史产物前，应自行核对对应 Release 是否存在及其具体资产。
 
-## v1.0.4 仍然存在的限制
+## v1.1.0 仍然存在的限制
 
 没有正式自动 Restore 或 Uninstall；CloudDrive2 没有手动 Backup UI；没有旧 TG115 状态/队列的自动原地迁移；没有跨实例 Token 分布式锁；Windows EXE 未提供商业代码签名。
 

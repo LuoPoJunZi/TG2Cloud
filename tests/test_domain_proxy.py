@@ -10,6 +10,7 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import Mock, patch
 
 import installer as installer_module
 from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
@@ -796,6 +797,32 @@ class RegressionBoundaryTests(unittest.TestCase):
         source = (Path(__file__).resolve().parents[1] / "installer.py").read_text(encoding="utf-8")
         self.assertIn("def open_clouddrive(self, values:", source)
         self.assertIn("self._tunnel_factory(", source)
+
+    def test_normal_workbench_requires_https_and_hides_tunnel_button(self) -> None:
+        source = (Path(__file__).resolve().parents[1] / "installer.py").read_text(
+            encoding="utf-8"
+        )
+        actions = source.split("        def _actions_card(self)", 1)[1].split(
+            "        def show_domain_access(self)", 1
+        )[0]
+        self.assertIn('(\"domain_access\", \"shield\", \"Primary\"', actions)
+        self.assertNotIn('(\"open_clouddrive\",', actions)
+        self.assertIn("必需：证书和 HTTPS 自检通过后部署才算完成", actions)
+
+    def test_external_clouddrive_webdav_does_not_require_local_https(self) -> None:
+        backend = installer_module.InstallerBackend(
+            log=Mock(),
+            confirm_host_key=Mock(return_value=True),
+            publish_resources=Mock(),
+            product=CLOUDDRIVE2_PRODUCT,
+        )
+        values = installer_module.defaults_for(CLOUDDRIVE2_PRODUCT)
+        values["deploy_clouddrive2"] = "false"
+
+        with patch("installer.DomainProxyManager") as proxy_manager:
+            backend._require_healthy_https(Mock(), values)
+
+        proxy_manager.assert_not_called()
 
     def test_internal_webdav_bindings_remain_loopback_only(self) -> None:
         root = Path(__file__).resolve().parents[1]

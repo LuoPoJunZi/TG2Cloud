@@ -43,9 +43,9 @@ Your Cloud
 
 This repository evolved from [whyhhh20/TG115](https://github.com/whyhhh20/TG115). It retains the original attribution and license while adding stronger task recovery, disk protection, streaming transfers, state semantics, rollback, VPS resource guidance, and operational diagnostics.
 
-> Current version: **TG2Cloud v1.0.4**
+> Current version: **TG2Cloud v1.1.0**
 >
-> OpenList has passed real-VPS deployment and WebDAV acceptance testing with OpenList and 115 Open, and CloudDrive2's stable deployment and WebDAV flow has also passed real-VPS acceptance. The shared domain HTTPS feature introduced in v1.0.3 has passed acceptance for both CloudDrive2 and OpenList. Both official EXEs are built by GitHub Actions from the same `v1.0.4` tag.
+> CloudDrive2 and OpenList have passed real-VPS base deployment, mandatory HTTPS management access, and WebDAV end-to-end acceptance. Both official EXEs are built by GitHub Actions from the same `v1.1.0` tag.
 
 > Only transfer content that you are authorized to save, back up, and use. Follow the laws and terms that apply to Telegram, your cloud provider, CloudDrive2/OpenList, the content source, and your jurisdiction.
 
@@ -68,7 +68,7 @@ Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
 Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 ```
 
-The TG2Cloud v1.0.4 Windows EXEs are not commercially code-signed. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download only from this repository's Releases page, verify SHA-256, and do not disable Microsoft Defender or Windows Security.
+The TG2Cloud v1.1.0 Windows EXEs are not commercially code-signed. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download only from this repository's Releases page, verify SHA-256, and do not disable Microsoft Defender or Windows Security.
 
 ## Contents
 
@@ -77,7 +77,7 @@ The TG2Cloud v1.0.4 Windows EXEs are not commercially code-signed. Windows Smart
 - [Important Boundaries](#important-boundaries)
 - [Requirements](#requirements)
 - [Windows GUI Deployment](#windows-gui-deployment)
-- [Optional Domain HTTPS Access](#optional-domain-https-access)
+- [Mandatory Domain HTTPS Access](#mandatory-domain-https-access)
 - [CloudDrive2 Configuration](#clouddrive2-configuration)
 - [OpenList and Cloud Storage Configuration](#openlist-and-cloud-storage-configuration)
 - [Real WebDAV Acceptance Test](#real-webdav-acceptance-test)
@@ -137,7 +137,7 @@ TG2Cloud follows a “select manually, process automatically” model. You choos
 
 ## Current Version
 
-TG2Cloud v1.0.4 provides two separate PySide6 editions:
+TG2Cloud v1.1.0 provides two separate PySide6 editions:
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -154,7 +154,7 @@ They share the stable task core and visual design, while using separate product 
 | OS | Ubuntu 22.04/24.04 or Debian 12, 64-bit | Same | x86_64 and ARM64 |
 | Privileges | root or working sudo | Same | Managed CloudDrive2 requires `/dev/fuse` |
 | Network | Access to Telegram, container registries, and the destination | 100 Mbps or faster with sufficient traffic | Public speed tests do not represent cloud-destination throughput |
-| Local computer | Windows 10/11, 64-bit | Same | Runs the deployer and SSH tunnel |
+| Local computer | Windows 10/11, 64-bit | Same | Runs the deployer and HTTPS management page |
 
 The installer enforces roughly 1.8 GB of RAM and at least 8 GB free on the installation filesystem. The 50 GB figure is a recommendation, not a simple hard threshold. The deployer also considers existing downloads, the Docker filesystem, inode availability, and the configured local budget.
 
@@ -288,7 +288,7 @@ Click **一键部署基础环境** (Deploy base environment). A normal first dep
 
 While dependencies or container images are being downloaded, wait for an explicit success or failure. Do not repeatedly click deploy, network repair, or WebDAV acceptance.
 
-When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.0.4 does not provide a general-purpose Restore feature.
+When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.1.0 does not provide a general-purpose Restore feature.
 
 ### 7. First-Installation Sequence
 
@@ -296,32 +296,33 @@ When an installation for the current edition already exists, redeployment preser
 2. Enter the Bot Token, Telegram API ID, API Hash, and your numeric user ID.
 3. Enter the planned WebDAV username and password, plus an optional relative destination path.
 4. Confirm the CloudDrive2 management mode, probe the VPS, and explicitly apply an appropriate storage profile.
-5. Deploy the base environment and wait for success.
-6. Open the CloudDrive2 management page, log in yourself, mount your cloud storage, and enable WebDAV.
-7. Create a WebDAV user matching the values in step 3, disable read-only mode, and grant read, write, rename, and delete access.
-8. Run **WebDAV 验收** and wait for `TG2CLOUD_DESTINATION=OK`.
-9. Use **修复 CloudDrive2 网络** only when acceptance fails because of a container-network problem, then run acceptance again.
-10. Send a small file to your Bot in a private chat to test the full path.
+5. Deploy the base environment. When the containers become healthy, the deployer automatically opens the HTTPS management-access dialog and keeps the main state at “HTTPS required.”
+6. Configure a dedicated domain for the current edition and wait for certificate, HTTPS, HTTP redirect, public `/dav` denial, and backend loopback checks to pass.
+7. Open the CloudDrive2 domain, log in yourself, mount your cloud storage, and enable WebDAV.
+8. Create a WebDAV user matching the values in step 3, disable read-only mode, and grant read, write, rename, and delete access.
+9. Run **WebDAV 验收** and wait for `TG2CLOUD_DESTINATION=OK`.
+10. Use **修复 CloudDrive2 网络** only when acceptance fails because of a container-network problem, then run acceptance again.
+11. Send a small file to your Bot in a private chat to test the full path.
 
-## Optional Domain HTTPS Access
+## Mandatory Domain HTTPS Access
 
-After the base deployment is healthy, open **Domain Access / HTTPS** from the deployment workbench to add an optional public HTTPS management URL. Both editions share one Dockerized Nginx/Certbot pair under `/opt/tg2cloud-proxy`, while CloudDrive2 and OpenList use separate domains. The existing fixed-port SSH tunnel remains available and unchanged.
+After the managed base containers become healthy, the deployer automatically opens **Domain Access / HTTPS**. The current edition is not marked complete, and final WebDAV acceptance does not continue, until the domain certificate and every security check pass. Both editions share one Dockerized Nginx/Certbot pair under `/opt/tg2cloud-proxy` while using separate domains. Fixed-port SSH tunnel code remains only for compatibility and emergency recovery; it is no longer an ordinary workbench action.
 
 All A and AAAA records must point directly to the current VPS, and inbound TCP 80/443 must be allowed. Cloudflare users should use DNS-only mode for initial certificate issuance; TG2Cloud does not request a Cloudflare API token. The deployer refuses URLs, IP addresses, wildcard names, wrong AAAA records, duplicate domains, and ports owned by another web server or process. It never stops or rewrites an external Nginx, Caddy, Apache, or Traefik installation.
 
 The domain route exposes only the management UI. Public `/dav` and `/dav/` requests return 403, while Bot/rclone WebDAV traffic stays on the existing Docker-internal endpoint. State is committed only after DNS, port ownership, certificate, `nginx -t`, HTTPS, redirect, `/dav` denial, and loopback-binding checks pass. Failed issuance or validation rolls back to the previous route set.
 
-Removing the final route stops the shared proxy containers but keeps certificate files by default. The SSH tunnel continues to work regardless of whether domain access is configured.
+Removing the final route stops the shared proxy containers but keeps certificate files by default. The current edition immediately returns to the “HTTPS required” state until it is configured and validated again.
 
 ## CloudDrive2 Configuration
 
-After base deployment, click **打开 CloudDrive2 管理页**. The deployer creates an SSH tunnel and opens:
+After HTTPS configuration passes, click **打开 CloudDrive2 域名** to open the current edition's management domain:
 
 ```text
-http://127.0.0.1:19798
+https://cloud.example.com
 ```
 
-CloudDrive2's management port is bound only to the VPS loopback interface and is not exposed publicly. The deployer makes a real HTTP request through the tunnel before opening the browser. It automatically replaces a stale tunnel. Local port 19798 is fixed; if another local process owns it, TG2Cloud reports the conflict rather than choosing a random port.
+Replace the example with your own domain. CloudDrive2 port 19798 remains bound only to the VPS loopback interface and is never exposed publicly. The shared Nginx proxy is the only TG2Cloud component listening publicly on 80/443, and public `/dav` and `/dav/` requests are always denied. Do not use the management domain as the Bot's WebDAV URL.
 
 In CloudDrive2:
 
@@ -351,8 +352,8 @@ First-installation sequence:
 
 1. Enter VPS and Telegram details, test SSH, and apply a suitable storage profile. OpenList defaults to a 20 GB local task budget and 8 GB minimum free disk.
 2. The OpenList deployment page generates an initial administrator password. It is masked by default and can be shown, copied, or explicitly regenerated before deployment. It applies only when initializing a brand-new OpenList data directory. Existing instances retain their administrator credentials; the deployer does not reset them automatically.
-3. Deploy the base environment. At this stage only OpenList, the Bot, and their internal network must be healthy. Missing cloud mounts or a not-yet-created WebDAV user do not make base deployment fail.
-4. Open the OpenList management page. The deployer establishes the fixed tunnel `127.0.0.1:5244 → VPS 127.0.0.1:5244` and opens `http://127.0.0.1:5244`. A local port conflict is reported; no random port is selected.
+3. Deploy the base environment. Once OpenList, the Bot, and their internal network are healthy, the deployer automatically opens HTTPS configuration. Missing cloud mounts or a not-yet-created WebDAV user are normal intermediate states, but deployment is not marked complete before HTTPS passes.
+4. Configure a dedicated OpenList domain and pass every check, then click **打开 OpenList 域名**. Port 5244 remains bound only to the VPS loopback interface; the shared Nginx proxy provides the public 80/443 HTTPS management entry.
 5. Log in to OpenList and add/authorize your cloud storage, such as 115 Open. Cookies, tokens, OAuth credentials, and login details go only to your own OpenList instance; TG2Cloud does not read or collect them.
 6. Create a dedicated regular OpenList user using the exact values shown on the **配置 WebDAV** page. The username, locally generated 28-character random password, and suggested base path can be copied. The password changes only when you explicitly regenerate it during the current session.
 7. Grant directory-list, read, create/write, and delete permissions. OpenList permission labels vary by version, but the actual capabilities are required.
@@ -490,7 +491,7 @@ CloudDrive2 has no manual backup button. Its redeployment protection includes pr
 
 Backups contain secrets. Directories are mode `700` and files are set to `600` where possible. Never upload them publicly.
 
-CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.0.4 does not provide a general Restore or Uninstall function.
+CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.1.0 does not provide a general Restore or Uninstall function.
 
 ## Troubleshooting
 
@@ -534,11 +535,11 @@ The running Bot's WebDAV credentials usually do not match the gateway user. Chan
 
 Stop repeated acceptance attempts. A 429 does not prove that credentials are wrong and does not require another deployment. Allow the rate limit to clear, check the OpenList mount and upstream-provider state, then run acceptance once. Repeated clicks and periodic WebDAV probes can prolong the limit.
 
-### Management Page Shows `ERR_EMPTY_RESPONSE`
+### HTTPS Management Page Does Not Open
 
-The deployer validates the SSH tunnel before opening a browser. If SSH TCP forwarding is disabled, review `AllowTcpForwarding` and any `PermitOpen` rule for `127.0.0.1:19798` or `127.0.0.1:5244`. Keep the current SSH session open, run `sshd -t`, and reload safely after any server-side change.
+Use **Check status** in the HTTPS management dialog and review DNS, the certificate, Nginx, ports 80/443, HTTP redirect, and backend loopback binding. Cloudflare should use DNS-only mode for initial issuance. A stale AAAA record, another web server owning the ports, or blocked inbound 80/443 will fail validation. TG2Cloud does not stop an external Nginx, Caddy, Apache, or Traefik service.
 
-A tunnel error and a WebDAV 401 are different. Network repair cannot correct a username/password mismatch.
+An HTTPS management error and a WebDAV 401 are different. Network repair cannot correct a username/password mismatch.
 
 ### `lookup tg2cloud-clouddrive2`
 
@@ -566,8 +567,8 @@ No. After remote size verification, the Bot reports completion without asking fo
 - The deployer does not save form passwords. It stores only SSH host keys that you explicitly confirm.
 - Base64 and `rclone obscure` are encoding/obfuscation, not encryption. VPS root can read service configuration.
 - CloudDrive2 needs elevated container privileges for FUSE. Prefer a dedicated VPS that does not host wallets, databases, or other critical workloads.
-- CloudDrive2 management binds to `127.0.0.1`; access it through the deployer's SSH tunnel.
-- OpenList management also binds to `127.0.0.1:5244`. Cloud authorization occurs directly in your own OpenList; TG2Cloud has no credential telemetry or third-party callback.
+- CloudDrive2 management binds to `127.0.0.1`; managed deployments use the mandatory HTTPS management entry. Never expose port 19798 directly.
+- OpenList management also binds to `127.0.0.1:5244` and uses the mandatory HTTPS management entry. Cloud authorization occurs directly in your own OpenList; TG2Cloud has no credential telemetry or third-party callback.
 - The Bot container uses UID/GID 10001, a read-only root filesystem, `no-new-privileges`, and no Linux capabilities.
 - Official release artifacts include SHA-256. Do not run an EXE, script, or image whose origin and version cannot be verified.
 

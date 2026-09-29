@@ -9,9 +9,11 @@
 | VPS | 2 核 / 4GB 内存 / 50GB SSD | 批量使用可考虑 4 核 / 8GB / 80～100GB |
 | 系统 | Ubuntu 22.04、24.04 或 Debian 12，64 位 | 项目说明支持 x86_64、ARM64 |
 | 登录权限 | root 或可用 sudo | 非免密 sudo 需准备相应密码 |
-| 本地电脑 | Windows 10/11，64 位 | 用于运行部署器和管理页 SSH 隧道 |
+| 本地电脑 | Windows 10/11，64 位 | 用于运行部署器和 HTTPS 管理页 |
 | 网络 | VPS 可达 Telegram、镜像仓库及目的端 | 按实际文件量准备流量 |
 | CloudDrive2 | 受管容器需要 `/dev/fuse` | OpenList Edition 产品配置不要求 FUSE |
+
+受管 CloudDrive2/OpenList 还需要一个指向当前 VPS 的独立域名，并允许公网 TCP 80/443 入站。没有可用 IPv6 时不要配置 AAAA；Cloudflare 首次签发证书时使用“仅 DNS”。
 
 项目安装脚本约以 **1.8GB 内存、安装文件系统至少 8GB 可用空间**作为基础检查之一。50GB 是推荐磁盘容量，不是唯一硬门槛。满足最低检查也不等于可以安全使用默认 20GB 任务预算，最终以部署器实时探测和复检为准。
 

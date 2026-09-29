@@ -9,7 +9,8 @@
 | 部署器文件 | `TG2Cloud-CloudDrive2-Deployer.exe` | `TG2Cloud-OpenList-Deployer.exe` |
 | 存储网关 | CloudDrive2 | OpenList |
 | 默认安装目录 | `/opt/tg2cloud-clouddrive2` | `/opt/tg2cloud-openlist` |
-| 本机管理入口 | `127.0.0.1:19798` | `127.0.0.1:5244` |
+| 后端回环端口 | `127.0.0.1:19798` | `127.0.0.1:5244` |
+| 正式管理入口 | 独立 HTTPS 域名 | 独立 HTTPS 域名 |
 | 受管部署需要 FUSE | 是 | 产品配置不要求 |
 | 最终写入方式 | 临时文件 → 改名 → 复验 | 预留最终文件名 → 直接写入 → 复验 |
 | 手动安全备份界面 | 无 | 有，操作会短暂停止服务 |
@@ -37,4 +38,4 @@
 
 ## 版本名称不要混用
 
-TG2Cloud 当前文档对应 v1.0.4。TG115 v1.6.2 属于前身项目；不能因为数字更大就认为 TG115 更“新”。当前 TG2Cloud 不再提供 Classic/Tkinter 正式部署器。
+TG2Cloud 当前文档对应 v1.1.0。TG115 v1.6.2 属于前身项目；不能因为数字更大就认为 TG115 更“新”。当前 TG2Cloud 不再提供 Classic/Tkinter 正式部署器。
