@@ -64,7 +64,7 @@ v1.0.3 未提供商业代码签名。核对正式 Release、文件名和 SHA-256
 
 ### Bot 一直排队？
 
-先看 `/status` 是否暂停、目的端是否可达、任务额度和磁盘安全线，再用 `/doctor` 诊断。[传输排查](/troubleshooting/transfer/)。
+先看 `/status` 顶部运行状态和排队数量；需要检查 CPU、内存、磁盘与本地额度时，点击首页的 `🖥`。调度暂停状态可用 `/status` 顶部提示和 `/doctor` 进一步确认。[传输排查](/troubleshooting/transfer/)。
 
 ### 为什么暂停后还有传输？
 

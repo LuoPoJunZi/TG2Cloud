@@ -416,9 +416,10 @@ Before batch use, test:
 
 | Command | Purpose |
 | --- | --- |
-| `/start`, `/help` | Show help |
+| `/start` | Open the TG2Cloud status home and quick actions |
+| `/help` | Show help |
 | `/queue [page]` | Show five recent tasks per page |
-| `/status`, `/performance` | Show the same single-page status, performance, and task summary |
+| `/status`, `/performance` | Show the TG2Cloud status home, live rates, and task summary |
 | `/doctor` | Read-only diagnostics; does not create a remote test file |
 | `/task <id>` | Show one task |
 | `/watch <id>` | Edit one message every five seconds with progress; subscribe again after restart |
@@ -444,7 +445,9 @@ At startup, the Bot registers a native command menu. The current UI uses these C
 /help     查看使用帮助
 ```
 
-New responses are text-only and do not attach inline action buttons. Parameter commands can be typed manually, for example `/queue 2`, `/task <id>`, `/retry <id>`, `/stream <id>`, and `/cancel <id>`. Cancellation fails closed: the local copy is removed only after all recorded remote paths are confirmed absent.
+`/start`, `/status`, and `/performance` open the TG2Cloud status home with three inline actions: `📋` opens the existing task list, `🖥` opens VPS resources, and `🔄` refreshes the current home in place. The VPS resource page has `🔄` refresh and `↩️` return actions. These callbacks edit one message instead of adding repeated status messages. Parameter commands can still be typed manually, for example `/queue 2`, `/task <id>`, `/retry <id>`, `/stream <id>`, and `/cancel <id>`. Cancellation fails closed: the local copy is removed only after all recorded remote paths are confirmed absent.
+
+The status home always shows queued, active download, active upload, and failed counts, including zeros. It shows the existing Telegram download, WebDAV upload, and total-network rates on separate mobile-friendly lines. CPU, available memory, available disk, and TG2Cloud local-budget usage are kept on the distinct **VPS Resources** page.
 
 A command-menu registration failure does not stop the Bot; all text commands remain available and the failure is logged.
 

@@ -481,7 +481,7 @@ class EndToEndSimulationTests(unittest.TestCase):
             self.assertIn("还不能确认", event.reply.await_args.args[0])
             db.close()
 
-    def test_status_separates_live_transfers_from_historical_tasks(self) -> None:
+    def test_status_omits_historical_completed_tasks(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             settings = make_settings(Path(temp))
             db = TaskDB(settings.data_dir / "tasks.db")
@@ -508,25 +508,25 @@ class EndToEndSimulationTests(unittest.TestCase):
                 service = make_service(settings, db)
                 service.destination_healthy = True
                 service.destination_scope = "target"
-                service.snapshot = None
+                service.snapshot = ResourceSnapshot(
+                    10,
+                    2 * 1024**3,
+                    0,
+                    60 * 1024**3,
+                    0,
+                    time.time(),
+                )
                 service.download_window = SimpleNamespace(value=3)
                 service.upload_window = SimpleNamespace(value=2)
 
                 text = service._format_status()
 
-                self.assertIn(
-                    "当前传输：下载/流式 0，上传 0",
-                    text,
-                )
-                self.assertIn("并发窗口：下载 3，上传 2", text)
-                self.assertIn("任务统计：Bot 完成 2", text)
+                self.assertIn("⏳ 0　⬇️ 0　⬆️ 0　❌ 0", text)
+                self.assertEqual(text.count("0 B/s"), 3)
+                self.assertNotIn("Bot 完成 2", text)
+                self.assertNotIn("并发窗口", text)
                 self.assertNotIn("/confirm", text)
                 self.assertNotIn("115", text)
-                labelled = [line for line in text.splitlines() if "：" in line]
-                self.assertTrue(labelled)
-                self.assertTrue(
-                    all(len(line.split("：", 1)[0]) == 4 for line in labelled)
-                )
             finally:
                 db.close()
 

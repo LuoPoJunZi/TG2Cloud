@@ -15,6 +15,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
+from telethon.errors import MessageNotModifiedError
 from telethon.tl import functions, types
 
 SOURCE = Path(__file__).resolve().parents[1]
@@ -100,6 +101,180 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
             if "：" in line:
                 self.assertEqual(len(line.split("：", 1)[0]), 4, line)
         self.assertNotIn("buttons", event.reply.await_args.kwargs)
+
+    async def test_start_opens_dashboard_with_three_emoji_buttons(self) -> None:
+        event = SimpleNamespace(reply=AsyncMock())
+        with patch("app.bot_commands.time.strftime", return_value="21:35:08"):
+            await self.service._handle_command(event, "/start")
+
+        text = event.reply.await_args.args[0]
+        buttons = event.reply.await_args.kwargs["buttons"]
+        self.assertIn("☁️ **TG2Cloud**", text)
+        self.assertIn("🟢 正常运行 · CloudDrive2", text)
+        self.assertIn("🕐 更新于 21:35:08", text)
+        self.assertEqual([[button.text for button in row] for row in buttons], [["📋", "🖥", "🔄"]])
+        self.assertEqual(
+            [[button.data for button in row] for row in buttons],
+            [[b"queue:1", b"vps_resources", b"refresh:home"]],
+        )
+
+    async def test_dashboard_uses_live_counts_rates_and_openlist_label(self) -> None:
+        self.service.settings = replace(
+            self.settings,
+            storage_backend="openlist",
+            destination_label="OpenList",
+            rclone_remote_name="openlist",
+        )
+        self.service.db.counts = Mock(
+            return_value={
+                "queued": 1,
+                "reserved": 1,
+                "completed": 99,
+                "upload_failed_retained": 2,
+            }
+        )
+        self.service.download_tasks = {101: asyncio.create_task(asyncio.sleep(30))}
+        self.service.upload_tasks = {102: asyncio.create_task(asyncio.sleep(30))}
+        now = time.monotonic()
+        self.service._progress = {
+            101: {"stage": "download", "speed": 8.25 * 1024**2, "at": now},
+            102: {"stage": "upload", "speed": 3.60 * 1024**2, "at": now},
+        }
+        self.service.snapshot = replace(
+            self.service.snapshot,
+            network_bytes_per_second=11.85 * 1024**2,
+            sampled_at=time.time(),
+        )
+
+        with patch("app.bot_commands.time.strftime", return_value="21:35:08"):
+            text = self.service._format_status()
+
+        self.assertIn("🟢 正常运行 · OpenList", text)
+        self.assertIn("⏳ 1　⬇️ 1　⬆️ 1　❌ 2", text)
+        self.assertIn("⬇️ 8.25 MB/s", text)
+        self.assertIn("⬆️ 3.60 MB/s", text)
+        self.assertIn("🌐 11.85 MB/s", text)
+        self.assertIn("🕐 更新于 21:35:08", text)
+        self.assertNotIn("完成 99", text)
+
+    def test_idle_dashboard_keeps_zero_values_visible(self) -> None:
+        self.service.db.counts = Mock(return_value={})
+        self.service.snapshot = replace(
+            self.service.snapshot,
+            network_bytes_per_second=0,
+            sampled_at=time.time(),
+        )
+
+        text = self.service._format_status()
+
+        self.assertIn("⏳ 0　⬇️ 0　⬆️ 0　❌ 0", text)
+        self.assertEqual(text.count("0 B/s"), 3)
+
+    def test_dashboard_preserves_runtime_health_states(self) -> None:
+        self.service.snapshot = None
+        self.service.destination_last_checked = 0
+        self.assertIn("🟡 状态检查中", self.service._format_status())
+
+        self.service.snapshot = ResourceSnapshot(
+            10, 2 * 1024**3, 0, 60 * 1024**3, 0, time.time() - 100
+        )
+        self.service.destination_last_checked = time.time()
+        self.assertIn("🔴 资源状态异常", self.service._format_status())
+        self.assertIn("🌐 --", self.service._format_status())
+
+        self.service.snapshot = replace(self.service.snapshot, sampled_at=time.time())
+        self.service.destination_healthy = False
+        self.assertIn("🔴 存储连接异常", self.service._format_status())
+
+        self.service.destination_healthy = True
+        self.service.db.set_paused(True)
+        self.assertIn("🟡 调度已暂停", self.service._format_status())
+
+    async def test_dashboard_callbacks_edit_one_message_and_refresh_data(self) -> None:
+        self.service._probe_destination_once = AsyncMock()
+        home = SimpleNamespace(
+            data=b"refresh:home",
+            answer=AsyncMock(),
+            edit=AsyncMock(),
+        )
+        await self.service._handle_callback(home)
+        home.answer.assert_awaited_once_with()
+        self.service._probe_destination_once.assert_awaited_once_with()
+        home.edit.assert_awaited_once()
+        self.assertIn("TG2Cloud", home.edit.await_args.args[0])
+        self.assertEqual(
+            [button.text for button in home.edit.await_args.kwargs["buttons"][0]],
+            ["📋", "🖥", "🔄"],
+        )
+
+        refreshed = replace(
+            self.service.snapshot,
+            cpu_percent=12.5,
+            memory_available=int(1.9 * 1024**3),
+            disk_free=int(35.7 * 1024**3),
+            sampled_at=time.time(),
+        )
+        self.service.monitor = SimpleNamespace(sample=Mock(return_value=refreshed))
+        resources = SimpleNamespace(
+            data=b"vps_resources",
+            answer=AsyncMock(),
+            edit=AsyncMock(),
+        )
+        await self.service._handle_callback(resources)
+        resources.answer.assert_awaited_once_with()
+        self.service.monitor.sample.assert_called_once_with()
+        resource_text = resources.edit.await_args.args[0]
+        self.assertIn("🖥 **VPS 资源**", resource_text)
+        self.assertIn("CPU　12.5%", resource_text)
+        self.assertIn("内存　1.90 GB 可用", resource_text)
+        self.assertIn("磁盘　35.70 GB 可用", resource_text)
+        self.assertIn("本地　0.00 / 20.00 GB", resource_text)
+        self.assertEqual(
+            [button.text for button in resources.edit.await_args.kwargs["buttons"][0]],
+            ["🔄", "↩️"],
+        )
+
+    async def test_resource_refresh_failure_keeps_page_usable(self) -> None:
+        self.service.monitor = SimpleNamespace(
+            sample=Mock(side_effect=RuntimeError("simulated sample failure"))
+        )
+        event = SimpleNamespace(
+            data=b"refresh:vps_resources",
+            answer=AsyncMock(),
+            edit=AsyncMock(),
+        )
+
+        await self.service._handle_callback(event)
+
+        text = event.edit.await_args.args[0]
+        self.assertIn("CPU　--", text)
+        self.assertIn("内存　--", text)
+        self.assertIn("磁盘　--", text)
+        self.assertIn("本地　0.00 / 20.00 GB", text)
+
+    async def test_legacy_status_callback_returns_current_dashboard(self) -> None:
+        self.service._probe_destination_once = AsyncMock()
+        event = SimpleNamespace(
+            data=b"menu:status",
+            answer=AsyncMock(),
+            edit=AsyncMock(),
+        )
+
+        await self.service._handle_callback(event)
+
+        self.service._probe_destination_once.assert_awaited_once_with()
+        self.assertIn("☁️ **TG2Cloud**", event.edit.await_args.args[0])
+
+    async def test_unchanged_dashboard_edit_is_not_user_visible_error(self) -> None:
+        event = SimpleNamespace(
+            edit=AsyncMock(side_effect=MessageNotModifiedError(None))
+        )
+
+        await self.service._edit_callback(
+            event, self.service._format_status(), self.service._home_buttons()
+        )
+
+        event.edit.assert_awaited_once()
 
     async def test_native_menu_uses_equal_length_descriptions(self) -> None:
         requests = []
@@ -333,7 +508,7 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.service.rclone.files, {})
         self.service.destination_scope = "target"
         status = self.service._format_status()
-        self.assertIn("目的状态：目标目录可访问", status)
+        self.assertIn("🟢 正常运行 · CloudDrive2", status)
         self.assertNotIn("只读检查", status)
 
     async def test_cancel_before_move_cleans_both_recorded_paths(self) -> None:

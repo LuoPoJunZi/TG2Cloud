@@ -1,5 +1,11 @@
 # 更新记录
 
+## 开发中
+
+- 重新设计 Telegram Bot 状态首页：使用紧凑的任务与实时速度面板，并根据当前 Edition 动态显示 CloudDrive2 或 OpenList。
+- 首页 Inline Keyboard 精简为任务、VPS 资源和原地刷新三个 Emoji 按钮；VPS CPU、可用内存、可用磁盘与 TG2Cloud 本地额度移入独立资源页。
+- 首页刷新复用现有目的端探测、任务统计和分阶段速度数据；VPS 资源刷新复用现有 `ResourceMonitor`，旧 `menu:status` 回调继续兼容。
+
 ## TG2Cloud v1.0.3
 
 GitHub Release 标签和程序内部版本均为 `v1.0.3`。两个 Windows EXE 继续由 GitHub Actions 从同一个不可变标签统一测试、构建和自检，并按本次实际产物生成 SHA256。

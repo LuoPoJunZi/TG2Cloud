@@ -81,6 +81,7 @@ class TransferService(CommandMixin):
         self._background: list[asyncio.Task[Any]] = []
         self._stop = asyncio.Event()
         self._finalize_lock = asyncio.Lock()
+        self._destination_probe_lock = asyncio.Lock()
         self._orphan_cleanup_plan: dict[str, Any] | None = None
         self._cancel_confirmations: dict[int, dict[str, Any]] = {}
         self._register_handlers()
@@ -285,8 +286,12 @@ class TransferService(CommandMixin):
                 self.log.exception("资源控制循环异常")
             await asyncio.sleep(self.settings.control_interval)
 
-    async def _destination_loop(self) -> None:
-        while not self._stop.is_set():
+    async def _probe_destination_once(self) -> None:
+        lock = getattr(self, "_destination_probe_lock", None)
+        if lock is None:
+            lock = asyncio.Lock()
+            self._destination_probe_lock = lock
+        async with lock:
             try:
                 probe_method = getattr(self.rclone, "probe", None)
                 if callable(probe_method):
@@ -312,6 +317,10 @@ class TransferService(CommandMixin):
                 self.destination_error = "目录探测异常，请查看本机最近日志"
                 self.log.exception("目的端探测异常")
             self.destination_last_checked = time.time()
+
+    async def _destination_loop(self) -> None:
+        while not self._stop.is_set():
+            await self._probe_destination_once()
             await asyncio.sleep(self.settings.remote_health_interval)
 
     async def _watch_loop(self) -> None:
