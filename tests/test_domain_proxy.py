@@ -9,7 +9,9 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import nullcontext
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 import installer as installer_module
@@ -32,6 +34,7 @@ from domain_proxy import (
     parse_certificate_enddate,
     parse_environment,
     parse_markers,
+    proxy_lock_command,
     render_bootstrap_conf,
     render_certbot_loop,
     render_compose,
@@ -357,7 +360,8 @@ TG2CLOUD_PROXY_LOCAL_IPS=203.0.113.10,2001:db8::10
 
 class TransactionManager(DomainProxyManager):
     def __init__(self, product=OPENLIST_PRODUCT) -> None:
-        super().__init__(object(), product, {"vps_host": "203.0.113.10"}, lambda _line: None)
+        session = SimpleNamespace(hold_lock=lambda *_args, **_kwargs: nullcontext())
+        super().__init__(session, product, {"vps_host": "203.0.113.10"}, lambda _line: None)
         self.current = empty_state()
         self.activations: list[tuple[dict, str]] = []
         self.commits: list[dict] = []
@@ -406,6 +410,9 @@ class TransactionManager(DomainProxyManager):
 
     def _install_config(self, state, *, candidate="") -> None:
         self.activations.append((json.loads(json.dumps(state)), candidate))
+
+    def _verify_remaining_routes(self, state) -> None:
+        pass  # Real status/transport behavior is tested separately.
 
     def status(self, state=None) -> ProxyReport:
         current = state or self.current
@@ -646,6 +653,7 @@ class GeneratedArtifactTests(unittest.TestCase):
         )
         return tuple(shlex.split(command)[2] for command in commands) + (
             render_certbot_loop(),
+            shlex.split(proxy_lock_command())[2],
         )
 
     def test_acme_webroot_is_traversable_but_certbot_state_stays_private(self) -> None:

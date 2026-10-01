@@ -1,102 +1,46 @@
 <!-- 本文件会直接作为 GitHub Release 正文：不要添加一级标题，不要按固定列宽硬换行。 -->
 
 > [!IMPORTANT]
-> **TG2Cloud v1.1.0** 同时提供 CloudDrive2 与 OpenList 两个 PySide6 Windows 部署器。两个 EXE 均由 GitHub Actions 从同一个不可变标签统一测试、构建和自检，并按 Actions 本次实际产物生成 SHA256。
+> **TG2Cloud v1.1.1** 是 HTTPS 事务与 OpenList 稳定性补丁。两个 PySide6 Windows EXE 均由 GitHub Actions 从同一不可变标签构建，校验值来自本次 Actions 的实际产物。
 
 ## 本次更新
 
-- 受管 CloudDrive2 与 OpenList 基础容器健康后，部署器自动进入 HTTPS 管理入口配置；证书、HTTPS、HTTP 跳转、公开 `/dav` 阻断与后端回环监听全部通过后，才显示“部署完成”。
-- 普通部署工作台移除“打开 CloudDrive2/OpenList 管理页”SSH 隧道按钮，以“配置 HTTPS 管理入口”和配置后的域名入口作为正式管理流程。
-- WebDAV 最终验收会再次检查当前 Edition 的 HTTPS 状态；未配置或运行异常时在写入测试文件前停止。外部 WebDAV 模式没有受管本地网关，因此不强制配置本地 HTTPS 入口。
-- CloudDrive2 19798 与 OpenList 5244 继续只绑定 VPS 回环地址，不改为 `0.0.0.0`；只有共享 Nginx 占用公网 80/443，公网 `/dav` 与 `/dav/` 固定拒绝访问。
-- 底层固定端口 SSH 隧道代码仅保留为兼容和故障恢复能力，不再作为普通用户界面入口；Telegram 下载、SQLite 队列、rclone、streaming 与现有 WebDAV 传输核心未被重写。
+- 共享 HTTPS 配置与移除增加 VPS 级事务锁；竞争操作明确停止，锁丢失后拒绝后续远程命令。
+- 域名状态通过同目录原子替换提交；提交后的临时清理失败不再误触发旧状态回退。
+- 移除一个 Edition 后同步 Certbot 活动域名，并检查保留 Edition；失败时恢复旧路由和续期配置。
+- OpenList 父目录检查使用完整清单，避免超过 10,000 项时漏判已有同名文件。
+- OpenList 只读健康探测区分 401/429、限制重试并合并刷新；401 冷却 5 分钟，429 从 60 秒逐步退避至最多 15 分钟。显式 WebDAV 写入验收不使用此缓存。
+- Release 增加同标签 Linux 验证门禁，继续复用 Windows Build Job 已生成并自检的 artifact，不重复构建。
+- 文档明确本机 HTTPS 自检与公网验收的区别，并补充共享代理独立备份边界。
 
-## 强制 HTTPS 管理入口
+## 验证范围
 
-- v1.0.3 引入的 Dockerized Domain HTTPS Gateway 现在是受管 CloudDrive2/OpenList 的部署完成条件，通过自有域名和 Let's Encrypt HTTPS 打开管理界面。
-- 两个 Edition 共用 VPS 上的一套固定版本 Nginx/Certbot，分别使用独立域名；Bot 与 rclone 继续使用 Docker 内网 WebDAV，不经过公网域名。
-- 域名入口固定拒绝公网 `/dav` 与 `/dav/`，后端仍只监听回环地址；未知 Host/SNI 被拒绝，不向代理容器挂载 Docker Socket。
-- 增加域名格式、A/AAAA、80/443 端口归属、证书、Nginx 配置、HTTPS、HTTP 跳转、`/dav` 阻断和回环监听自检。Cloudflare 首次签发应使用“仅 DNS”，不需要提供 API Token。
-- 配置采用事务式提交：首次签发失败会清理临时状态，更新失败保留旧路由，为第二个 Edition 配置失败不会破坏第一个 Edition；移除最后一个路由后共享代理停止，证书文件默认保留。
-- 修复已有证书复用、损坏证书重试、最后路由移除后的 Certbot 状态、续期域名筛选、状态脚本初始化与 Bash 端口条件表达式；状态请求固定解析到本机回环地址，避免 VPS 不支持公网 NAT 回环时误报失败。
-- 域名状态结果改为固定高度、可滚动和可复制的小型日志框，长检查结果不再撑高对话框。
+- 双管理网关 HTTPS 共存已在 Debian 13 测试 VPS 检查：两 Edition 各 11 项运行检查通过，外部 HTTP 308、严格 TLS 的 HTTPS 200、公开 `/dav` 与 `/dav/` 各 403。
+- 两个真实 SSH 通道验证事务锁互斥及断锁自动释放；原 CloudDrive2 域名、容器启动/重启记录和已核对配置保持不变。
+- 本地完整 pytest：338 passed、10 skipped、70 subtests passed。定向回归：95 passed、5 skipped、13 subtests passed。缺少 Linux/集成条件的本地跳过项不计为通过，标签发布由 Actions 另行执行 Linux 验证。
+- v1.1.0 两版基础部署、强制 HTTPS 与 WebDAV 验收继续作为历史基线；本轮没有启动新的 OpenList Bot，也没有重新实测 OpenList WebDAV、401/429 恢复、路由移除/失败回退、长期续期及备份恢复。网关通过不等同于转存全链路重新验收。
 
-## 真实环境验证
+## 下载与校验
 
-- v1.0.4 新增的 Bot 状态首页继续通过自动回归测试；不同 Telegram 账号、消息客户端与实际任务组合仍应由用户在自己的环境继续验证。
-- v1.1.0 强制 HTTPS 流程已在真实 VPS 完成受管部署、证书复用/签发、最终自检及 WebDAV 验收；CloudDrive2 与 OpenList 两个 Edition 共用相同安全边界。
-- 共享域名 HTTPS 功能已在 Debian 13 真实 VPS 上完成验收，适用于 CloudDrive2 与 OpenList：DNS A 直连、已有证书复用、HTTPS 管理页、HTTP 跳转、Nginx/Certbot 健康、当前域名续期配置、公开 `/dav` 阻断、后端回环监听以及证书域名与有效期检查均通过。
-- CloudDrive2 v1.0.1 与 OpenList v1.0.2 已完成的真实 VPS 基础部署及 WebDAV 验收继续作为回归基线。
-- Telegram 与不同文件规模仍应由用户在自己的环境继续验证。
+| Edition | Release 文件 |
+| --- | --- |
+| CloudDrive2 | `TG2Cloud-CloudDrive2-Deployer.exe` |
+| OpenList | `TG2Cloud-OpenList-Deployer.exe` |
+| SHA-256 校验 | `SHA256SUMS.txt` |
 
-## 项目定位
+只发布以上三个文件。源码仓库不包含本地 EXE、`build/` 或 `dist/`；Release 校验值不要求与此前本机构建一致。
 
-TG2Cloud 是一个将 Telegram 私聊中提交的文件自动转存到用户自有云存储的自托管工具：
-
-```text
-Telegram → Private Bot → TG2Cloud → rclone
-         → CloudDrive2 / OpenList WebDAV → 用户挂载的云存储
+```powershell
+Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
+Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 ```
 
-115 是常用示例和主要测试场景之一，不是唯一目标网盘。最终可用的存储取决于用户本人在 CloudDrive2 或 OpenList 中实际挂载和授权的云存储。
+## 升级与安全边界
 
-## 下载选择
+先备份再使用对应 Edition 的新版部署器升级；仅下载 EXE 不会自动更新 VPS Bot。既有完整安装默认保留当前 `.env` 与持久化数据，只有明确选择应用本页配置才覆盖。
 
-- `TG2Cloud-CloudDrive2-Deployer.exe`：部署 TG2Cloud Bot 和 CloudDrive2 Edition。
-- `TG2Cloud-OpenList-Deployer.exe`：部署 TG2Cloud Bot 和 OpenList Edition。
-- `SHA256SUMS.txt`：本次 GitHub Actions 实际生成的两个正式 EXE 的 SHA-256 校验值。
+CloudDrive2 上传/改名命令及健康探测策略保持不变，Telegram 下载、SQLite 队列、streaming 和部署脚本未重写。CloudDrive2/OpenList 管理后端继续只监听回环地址，公网只开放共享 Nginx 的 80/443，域名入口不代理 WebDAV。
 
-两个部署器都使用 PySide6 和同一套 TG2Cloud 品牌资源。正式发布不包含 Tkinter、Classic、TG115、debug 或 test EXE。
+两个 Edition 的备份不包含 `/opt/tg2cloud-proxy`；域名状态、代理配置和完整 Let's Encrypt 目录需独立私密备份。没有正式自动 Restore/Uninstall，Windows EXE 未商业代码签名；不要关闭 Defender 或跳过证书校验。
 
-## 主要能力
-
-- 私人 Telegram Bot、Allowed User 限制、SQLite 持久队列和重启恢复；
-- rclone WebDAV 上传、目的端大小校验、按后端安全落盘和失败清理；
-- 超过本地任务预算时沿用现有流式传输策略；
-- 默认 `LOCAL_TEMP_BUDGET_GB=20`、`MIN_FREE_DISK_GB=8`，也允许用户显式调整；
-- CloudDrive2 固定回环监听 `127.0.0.1:19798`、OpenList 固定回环监听 `127.0.0.1:5244`；
-- 受管网关强制域名 HTTPS 管理入口，以及 WebDAV auth/list/upload/size/rename/recheck/delete/cleanup 分阶段验收；
-- Existing TG2Cloud 重复部署默认在 VPS 内保留完整 `.env`、SQLite、`rclone.conf` 和 Storage Gateway 持久化数据；只有用户明确勾选后才使用当前表单覆盖配置；
-- CloudDrive2 网络 Repair、两版 Update/Status、OpenList 脱敏日志和一致性手动备份；
-- 正式机器输出使用 `TG2CLOUD_*`，仅为旧脚本保留必要 `TG115_*` 读取兼容。
-
-## 首次安装建议
-
-1. 从本仓库的正式 Release 下载所需 Edition，并核对 `SHA256SUMS.txt`。
-2. 准备本人控制的 Ubuntu/Debian VPS、私人 Telegram Bot 和 CloudDrive2/OpenList WebDAV 配置；不要把任何凭据提交到 Issue、聊天记录或截图。
-3. 先在部署器中测试 SSH 和应用合适的 VPS 存储建议，再执行“一键部署基础环境”。
-4. 基础容器健康后，按自动打开的对话框为当前 Edition 配置独立域名 HTTPS；首次签发时 Cloudflare 使用“仅 DNS”。
-5. HTTPS 全部自检通过后，通过域名管理页登录 Storage Gateway、挂载测试云存储并创建专用 WebDAV 用户；该域名不能作为 Bot WebDAV 地址。
-6. 执行 WebDAV 验收，确认出现 `TG2CLOUD_DESTINATION=OK` 后再发送 Telegram 测试文件。
-7. 最后在所用云存储的官方客户端确认文件大小和可打开性。
-
-完整安装与验证步骤见 [README](README.md)，域名功能说明见 [域名访问与 HTTPS](website/docs/deploy/domain-https.md)。
-
-## 旧 TG115 用户
-
-TG2Cloud v1.1.0 不提供 TG115 原地自动升级。新安装使用独立目录、容器和 Network；旧目录、容器和备份不会被自动覆盖、停止、迁移或删除。若旧实例占用固定 19798/5244 端口，TG2Cloud 会停止并要求用户自行处理，不会自动换端口。详见 [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md)。
-
-不要让新旧实例长期同时使用同一个 Telegram Bot Token，否则可能争抢 Telegram updates。
-
-## 隐私与安全
-
-- 无遥测、无埋点、无第三方统计、无开发者侧凭据收集；
-- SSH、Telegram、WebDAV、OpenList 和证书签发敏感字段不会写入普通日志，诊断日志会脱敏；
-- 完整 `.env`、`rclone.conf`、SSH 私钥、Cookie、OAuth/云存储 Token 和证书私钥不进入公开诊断；
-- CloudDrive2/OpenList 管理端只绑定 VPS 回环地址；受管部署通过强制 HTTPS 管理入口访问，底层 SSH Tunnel 仅保留兼容/应急能力；
-- 公网 HTTPS 域名不代理 WebDAV，用户的云存储登录、Cookie、Token 和 OAuth 授权只交给用户自己的 CloudDrive2/OpenList。
-
-## Known Limitations
-
-- 本版本没有正式自动 Restore 或 Uninstall；
-- CloudDrive2 没有手动 Backup UI，只有重复部署前自动保护和备份盘点/显式 retention；
-- 同 Bot Token 多实例冲突由用户避免，没有分布式锁或跨系统 Token 扫描；
-- TG115 不会自动原地迁移到 TG2Cloud；
-- Windows EXE 未使用商业代码签名，SmartScreen 可能显示“未知发布者”；
-- 不同云存储、VPS 和网络组合仍以用户实际验收为准。
-
-## 发布状态
-
-当前版本为 **v1.1.0**。自动测试、两个 Windows EXE 构建、自检和 SHA256 生成均由 GitHub Actions 从 `v1.1.0` 标签执行；Release Job 直接发布 Windows Build Job 已验证的同一份 artifact，不重复构建。
-
-TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进而来，继续保留 MIT 许可证、原作者版权和必要致谢。
+完整说明见 [README](README.md)、[从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) 和 [HTTPS 回归清单](docs/development/DOMAIN-HTTPS-ACCEPTANCE.md)。TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留 MIT 许可证、原作者版权及必要致谢。

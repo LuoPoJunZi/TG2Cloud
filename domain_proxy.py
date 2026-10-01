@@ -15,11 +15,12 @@ import shlex
 import tempfile
 import uuid
 from collections.abc import Callable
+from contextlib import AbstractContextManager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from deployer_products import ProductProfile
+from deployer_products import PRODUCTS, ProductProfile
 
 PROXY_ROOT = "/opt/tg2cloud-proxy"
 PROXY_NGINX_CONTAINER = "tg2cloud-proxy-nginx"
@@ -71,6 +72,10 @@ class RemoteLike(Protocol):
     ) -> tuple[int, str]: ...
 
     def sftp(self) -> Any: ...
+
+    def hold_lock(
+        self, command: str, *, sudo: bool = False, timeout: float = 15
+    ) -> AbstractContextManager[None]: ...
 
 
 @dataclass(frozen=True)
@@ -688,6 +693,25 @@ mv "$root/docker-compose.yml.next" "$root/docker-compose.yml"
     return "bash -c " + shlex.quote(script)
 
 
+def proxy_lock_command() -> str:
+    """Hold one VPS-wide flock until the owning SSH channel is released."""
+    return "bash -c " + shlex.quote(f"""
+set -eu
+umask 077
+command -v flock >/dev/null 2>&1 || {{ printf 'TG2CLOUD_REMOTE_LOCK=UNAVAILABLE\\n'; exit 69; }}
+install -d -m 700 {PROXY_ROOT}
+exec 9>{PROXY_ROOT}/transaction.lock
+flock -n 9 || {{ printf 'TG2CLOUD_REMOTE_LOCK=BUSY\\n'; exit 75; }}
+trap 'exit 0' HUP INT TERM
+printf 'TG2CLOUD_REMOTE_LOCK=ACQUIRED\\n'
+# sudo can leave an unused password line on stdin when credentials are cached.
+# Ignore every line except the explicit release marker; never echo input.
+while IFS= read -r line; do
+  [[ "$line" != TG2CLOUD_REMOTE_LOCK_RELEASE ]] || break
+done
+""")
+
+
 class DomainProxyManager:
     """Orchestrate a shared proxy through an already authenticated SSH session."""
 
@@ -906,16 +930,29 @@ fi
     def _commit_state(self, state: dict[str, Any]) -> None:
         content = json.dumps(state, ensure_ascii=True, indent=2, sort_keys=True) + "\n"
         remote = self._upload_files({"domains.json": content})
+        staged = f"{PROXY_ROOT}/state/.domains-{uuid.uuid4().hex}.json"
         try:
             code, _ = self._run(
                 f"install -d -m 700 {PROXY_ROOT} {PROXY_ROOT}/state && "
-                f"install -m 600 {remote}/domains.json {PROXY_ROOT}/state/domains.json",
+                f"install -m 600 {remote}/domains.json {staged} && "
+                f"mv -f -- {staged} {PROXY_ROOT}/state/domains.json",
                 timeout=15,
             )
             if code != 0:
                 raise RuntimeError("共享代理状态文件提交失败；已开始回退。")
         finally:
-            self.session.run(f"rm -rf -- {remote}", timeout=20)
+            # Cleanup must not turn an already committed state into a rollback.
+            # Otherwise domains.json and the restored runtime would disagree.
+            for cleanup, command in (
+                (self._run, f"rm -f -- {staged}"),
+                (self.session.run, f"rm -rf -- {remote}"),
+            ):
+                try:
+                    code, _ = cleanup(command, timeout=20)
+                    if code != 0:
+                        self.log("警告：HTTPS 临时文件清理未完成；请人工核对，状态提交结果保持不变。")
+                except Exception:  # noqa: BLE001 - best-effort cleanup boundary
+                    self.log("警告：HTTPS 临时文件清理未完成；请人工核对，状态提交结果保持不变。")
 
     def _ensure_state_file(self, state: dict[str, Any]) -> None:
         """Mark a newly created proxy as managed before the first mutation."""
@@ -968,7 +1005,8 @@ fi
         return ProxyReport(
             domain,
             "healthy",
-            f"https://{domain} 可用；证书到期日 {expiry}{days_text}。",
+            f"VPS 本机 https://{domain} 自检通过；证书到期日 {expiry}{days_text}。"
+            "公网连通性仍需从你的电脑或外部网络单独验收。",
             statuses,
             tuple(sorted(markers.items())),
         )
@@ -993,6 +1031,10 @@ fi
     def configure(self, domain: str, email: str) -> ProxyReport:
         domain = validate_domain(domain)
         email = validate_email(email)
+        with self.session.hold_lock(proxy_lock_command(), sudo=self.use_sudo):
+            return self._configure_locked(domain, email)
+
+    def _configure_locked(self, domain: str, email: str) -> ProxyReport:
         previous = self.read_state()
         target = state_with_route(previous, self.product, domain)
         environment = self.probe(domain)
@@ -1046,7 +1088,23 @@ fi
                 self.log(f"警告：共享代理自动回退未完全成功：{type(rollback_error).__name__}")
             raise
 
+    def _verify_remaining_routes(self, state: dict[str, Any]) -> None:
+        for edition in state["domains"]:
+            retained = DomainProxyManager(
+                self.session, PRODUCTS[edition], self.values, self.log
+            )
+            retained.use_sudo = self.use_sudo
+            report = retained.status(state)
+            if report.state != "healthy":
+                raise RuntimeError(
+                    f"剩余 {PRODUCTS[edition].display_name} 的 HTTPS 自检未通过；已开始回退。"
+                )
+
     def remove(self) -> ProxyReport:
+        with self.session.hold_lock(proxy_lock_command(), sudo=self.use_sudo):
+            return self._remove_locked()
+
+    def _remove_locked(self) -> ProxyReport:
         previous = self.read_state()
         target = state_without_route(previous, self.product.key)
         if target == previous:
@@ -1055,6 +1113,10 @@ fi
         try:
             if target["domains"]:
                 self._activate(target)
+                code, _ = self._compose("up -d certbot", timeout=180)
+                if code != 0:
+                    raise RuntimeError("剩余域名的证书续期容器更新失败；已开始回退。")
+                self._verify_remaining_routes(target)
                 self._commit_state(target)
             else:
                 self._install_config(target)

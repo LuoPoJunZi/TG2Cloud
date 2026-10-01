@@ -11,6 +11,7 @@ class DestinationProbe:
     accessible: bool
     scope: str
     detail: str
+    failure_kind: str = ""
 
 
 class MediaSource(Protocol):

@@ -4,19 +4,19 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - v1.1.0
+      - v1.1.1
 
 permissions:
   actions: read
   contents: write
 
 env:
-  RELEASE_TAG: v1.1.0
-  RELEASE_TITLE: TG2Cloud v1.1.0
-  RELEASE_ARTIFACT: TG2Cloud-v1.1.0-windows
+  RELEASE_TAG: v1.1.1
+  RELEASE_TITLE: TG2Cloud v1.1.1
+  RELEASE_ARTIFACT: TG2Cloud-v1.1.1-windows
 
 concurrency:
-  group: release-v1.1.0
+  group: release-v1.1.1
   cancel-in-progress: false
 
 jobs:
@@ -145,13 +145,68 @@ jobs:
           compression-level: 0
           retention-days: 30
 
+  linux-validation:
+    needs: prepare
+    if: needs.prepare.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      QT_QPA_PLATFORM: offscreen
+    steps:
+      - name: Checkout the same immutable release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ env.RELEASE_TAG }}
+
+      - name: Set up runtime Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: "3.12"
+
+      - name: Install Linux validation tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck rclone
+          python -m pip install -r requirements-build.txt -r payload_clouddrive2/requirements.txt
+
+      - name: ShellCheck
+        run: |
+          shellcheck -x \
+            payload_clouddrive2/backup_retention.sh \
+            payload_clouddrive2/preserve_runtime_config.sh \
+            payload_clouddrive2/remote_install.sh \
+            payload_clouddrive2/repair_clouddrive_network.sh \
+            payload_clouddrive2/manage.sh \
+            payload_openlist/remote_install.sh \
+            payload_openlist/manage.sh \
+            payload_openlist/openlist_admin.sh \
+            payload_openlist/preserve_webdav_config.sh \
+            tests/manage_harness.sh
+
+      - name: Linux runtime, gateway and real WebDAV regression
+        run: |
+          command -v bash shellcheck rclone docker
+          docker info >/dev/null
+          python -m unittest discover -s tests -v
+
+      - name: Validate edition Compose and build the runtime image
+        run: |
+          touch payload_clouddrive2/.env
+          docker compose -f payload_clouddrive2/docker-compose.yml config --quiet
+          cp payload_clouddrive2/.env payload_openlist/.env
+          OPENLIST_ADMIN_PASSWORD=ci-only-placeholder docker compose -f payload_openlist/docker-compose.yml config --quiet
+          docker build -t tg2cloud-bot:release-test payload_clouddrive2
+
   release:
     needs:
       - prepare
       - windows-build
+      - linux-validation
     if: >-
       needs.prepare.outputs.publish == 'true' &&
-      needs.windows-build.result == 'success'
+      needs.windows-build.result == 'success' &&
+      needs.linux-validation.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout release notes from the immutable tag

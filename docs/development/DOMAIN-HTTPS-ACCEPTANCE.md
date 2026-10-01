@@ -35,6 +35,7 @@ v1.1.0 把 HTTPS 管理入口升级为受管 CloudDrive2/OpenList 的部署完�
 - 两个域名分别打开正确的管理页；
 - VPS 只有一个 `tg2cloud-proxy-nginx` 和一个 `tg2cloud-proxy-certbot`；
 - 两个后端端口仍未公开。
+- 使用两个部署器同时配置时，只有一个操作能持有 VPS 事务锁；另一个应明确提示等待，不得丢失既有路由。断开锁持有者 SSH 后应释放锁，不需要删除锁文件。
 
 ## D. DNS 错误
 
@@ -70,6 +71,7 @@ v1.1.0 把 HTTPS 管理入口升级为受管 CloudDrive2/OpenList 的部署完�
 
 - 双 Edition 状态下删除一个路由；
 - 另一个域名继续可用，共享代理继续运行，证书文件保留。
+- Certbot 运行时活动域名列表应只包含保留的域名；续期更新或剩余域名自检失败时应回退，不能提交半完成的移除。
 
 ## K. 删除最后一个 Edition
 
@@ -87,5 +89,19 @@ v1.1.0 把 HTTPS 管理入口升级为受管 CloudDrive2/OpenList 的部署完�
 - 在已有 TG2Cloud 实例上直接配置域名，无需重新部署核心；
 - Telegram、SQLite 队列、rclone、streaming、WebDAV 验收、OpenList 429 分类和 CloudDrive2 修复流程保持原结果；
 - 域名管理操作不会重建或重启存储网关与 Bot。
+
+## N. 公网连通性与恢复边界
+
+- 本机自检使用回环地址与真实域名/SNI，避免 NAT 回环误报；它不能代替从 Windows 或其他外部网络访问域名。
+- 从外部网络确认两个 Edition 的 HTTPS 管理页、HTTP 跳转、`/dav` 与 `/dav/` 阻断及 IP 加管理端口不可达；不要关闭证书校验来绕过失败。
+- Edition 备份不包含 `/opt/tg2cloud-proxy`，按维护窗口单独私密备份状态、Nginx/Compose 配置和完整 Let's Encrypt 目录；在隔离环境验证恢复，不直接覆盖生产实例。
+
+## v1.1.1 实机回归记录与待测范围
+
+2026-10-01，在 Debian 13 专用测试 VPS 上保留既有 CloudDrive2 域名和 Bot，仅新增 OpenList 管理网关并配置其独立 HTTPS 域名。两个 Edition 各 11 项运行检查通过；从外部网络验证 HTTP 308、严格 TLS 的 HTTPS 200、`/dav` 与 `/dav/` 各 403。原 CloudDrive2 容器标识、启动/重启记录及已核对配置保持不变。
+
+两个真实 SSH 通道验证共享 `flock` 互斥与锁通道关闭自动释放；未同时执行两个完整配置事务或强制中断真实配置。新 OpenList 只启用管理网关，没有启动第二 Bot、复制既有 Telegram 凭据或配置云存储。
+
+尚未重新实机验收：OpenList Bot/WebDAV、401/429 退避恢复、路由移除后的续期同步、失败回退、长期续期、代理备份恢复及独立网络的后端端口不可达检查。上述项目继续按本清单回归，不能把自动测试或旧版验收改写成本版全链路实测。
 
 人工验收记录必须注明 Edition、DNS 模式、VPS 系统、通过/失败项和已脱敏日志；不得粘贴私钥、Token、密码、Cookie、`.env`、`rclone.conf` 或证书私钥。

@@ -82,6 +82,8 @@ class TransferService(CommandMixin):
         self._stop = asyncio.Event()
         self._finalize_lock = asyncio.Lock()
         self._destination_probe_lock = asyncio.Lock()
+        self._destination_next_probe_at = 0.0
+        self._destination_rate_limit_failures = 0
         self._orphan_cleanup_plan: dict[str, Any] | None = None
         self._cancel_confirmations: dict[int, dict[str, Any]] = {}
         self._register_handlers()
@@ -292,6 +294,10 @@ class TransferService(CommandMixin):
             lock = asyncio.Lock()
             self._destination_probe_lock = lock
         async with lock:
+            openlist = getattr(self.settings, "storage_backend", "clouddrive2") == "openlist"
+            if openlist and time.monotonic() < getattr(self, "_destination_next_probe_at", 0):
+                return  # Merge queued refreshes; never bypass a 401/429 cooldown.
+            failure_kind = ""
             try:
                 probe_method = getattr(self.rclone, "probe", None)
                 if callable(probe_method):
@@ -307,6 +313,7 @@ class TransferService(CommandMixin):
                 self.destination_healthy = probe.accessible
                 self.destination_scope = probe.scope
                 self.destination_error = probe.detail
+                failure_kind = getattr(probe, "failure_kind", "")
             except TimeoutError:
                 self.destination_healthy = False
                 self.destination_scope = "unknown"
@@ -317,6 +324,20 @@ class TransferService(CommandMixin):
                 self.destination_error = "目录探测异常，请查看本机最近日志"
                 self.log.exception("目的端探测异常")
             self.destination_last_checked = time.time()
+            if openlist:
+                if failure_kind == "rate_limited":
+                    failures = min(5, getattr(self, "_destination_rate_limit_failures", 0) + 1)
+                    self._destination_rate_limit_failures = failures
+                    cooldown = min(900, 60 * 2 ** (failures - 1))
+                else:
+                    self._destination_rate_limit_failures = 0
+                    if failure_kind == "unauthorized":
+                        cooldown = 300
+                    elif self.destination_healthy:
+                        cooldown = min(10, self.settings.remote_health_interval)
+                    else:
+                        cooldown = self.settings.remote_health_interval
+                self._destination_next_probe_at = time.monotonic() + cooldown
 
     async def _destination_loop(self) -> None:
         while not self._stop.is_set():

@@ -46,7 +46,8 @@ import threading
 import time
 import uuid
 import webbrowser
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar
@@ -606,6 +607,63 @@ if _SSH_IMPORT_ERROR is None:
         def close(self) -> None:
             self.client.close()
 
+        @contextmanager
+        def hold_lock(
+            self, command: str, *, sudo: bool = False, timeout: float = 15
+        ) -> Iterator[None]:
+            """Keep a remote flock holder alive throughout a multi-command transaction."""
+            transport = self.client.get_transport()
+            if transport is None or not transport.is_active():
+                raise RuntimeError("SSH 连接已经断开")
+            if getattr(self, "_transaction_lock_channel", None) is not None:
+                raise RuntimeError("当前 SSH 会话已经持有事务锁")
+            channel = transport.open_session(timeout=15)
+            actual = (
+                f"sudo -S -p '' -- /bin/bash -c {shlex.quote(command)}"
+                if sudo else command
+            )
+            acquired = False
+            try:
+                channel.exec_command(actual)  # nosec B601
+                if sudo:
+                    channel.sendall(
+                        (self.values.get("sudo_password", "") + "\n").encode("utf-8")
+                    )
+                output = bytearray()
+                started = time.monotonic()
+                while True:
+                    if channel.recv_ready():
+                        output.extend(channel.recv(4096))
+                    if channel.recv_stderr_ready():
+                        channel.recv_stderr(4096)  # Do not echo authentication diagnostics.
+                    if b"TG2CLOUD_REMOTE_LOCK=BUSY\n" in output:
+                        raise RuntimeError("另一个部署器正在修改共享 HTTPS 代理，请等待该操作完成后重试。")
+                    if b"TG2CLOUD_REMOTE_LOCK=UNAVAILABLE\n" in output:
+                        raise RuntimeError("VPS 缺少 flock，无法安全锁定共享代理；没有修改域名配置。")
+                    if b"TG2CLOUD_REMOTE_LOCK=ACQUIRED\n" in output:
+                        if channel.exit_status_ready() or channel.closed:
+                            raise RuntimeError("共享代理事务锁已意外释放，操作已停止。")
+                        acquired = True
+                        self._transaction_lock_channel = channel
+                        break
+                    if channel.exit_status_ready() or channel.closed:
+                        raise RuntimeError("无法获取共享代理事务锁，请检查 root/sudo 权限。")
+                    if time.monotonic() - started > timeout:
+                        raise TimeoutError("获取共享代理事务锁超时；没有修改域名配置。")
+                    if len(output) > 8192:
+                        raise RuntimeError("共享代理事务锁响应异常，操作已停止。")
+                    time.sleep(0.03)
+                yield
+            finally:
+                if acquired:
+                    self._transaction_lock_channel = None
+                    try:
+                        channel.sendall(b"TG2CLOUD_REMOTE_LOCK_RELEASE\n")
+                        channel.shutdown_write()
+                    except (OSError, EOFError, paramiko.SSHException):
+                        pass  # SSH EOF also releases the remote flock.
+                channel.close()
+
         def run(
             self,
             command: str,
@@ -617,6 +675,9 @@ if _SSH_IMPORT_ERROR is None:
             transport = self.client.get_transport()
             if transport is None or not transport.is_active():
                 raise RuntimeError("SSH 连接已经断开")
+            held = getattr(self, "_transaction_lock_channel", None)
+            if held is not None and (held.closed or held.exit_status_ready()):
+                raise RuntimeError("共享代理事务锁已丢失，已停止后续远程操作。")
             channel = transport.open_session(timeout=15)
             actual = (
                 f"sudo -S -p '' -- /bin/bash -c {shlex.quote(command)}"

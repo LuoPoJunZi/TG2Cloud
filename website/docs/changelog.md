@@ -2,6 +2,18 @@
 
 TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发布说明的整理，不把历史 TG115 的版本号当成 TG2Cloud 发布版本。
 
+## TG2Cloud v1.1.1
+
+**共享 HTTPS 事务保护。** 配置/移除使用 VPS 级事务锁，状态原子提交；移除路由同步 Certbot 活动域名，并检查保留 Edition，失败回退旧配置。
+
+**OpenList 探测与路径保护。** 大目录检查不再截断至 10,000 项；只读探测区分 401/429，合并短时间刷新并增加冷却与限流退避。CloudDrive2 上传、改名命令与探测策略不变。
+
+**发布门禁。** 同一标签的 Linux 验证和 Windows 构建均成功后，才发布一次构建生成的两个 EXE 与实际 SHA-256。
+
+本轮双网关 HTTPS 共存、外部访问/跳转/公开 WebDAV 阻断及真实 SSH 锁互斥/断锁释放通过。OpenList Bot/WebDAV/限流恢复、路由移除和长期续期尚未重新实测；沿用旧版转存验收基线，不宣称本版全链路重新验收。
+
+[查看正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.1)。
+
 ## TG2Cloud v1.1.0
 
 该版本的两个 Windows EXE 从同一不可变标签源码测试、构建和自检，并使用 GitHub Actions 实际产物计算 SHA-256。
@@ -78,7 +90,7 @@ TG115 v1.6.2 等记录属于代码演进历史，并不是 TG2Cloud 自身的版
 
 本导航中的历史版本条目是更新日志入口，不是各旧版文档的完整快照。下载历史产物前，应自行核对对应 Release 是否存在及其具体资产。
 
-## v1.1.0 仍然存在的限制
+## v1.1.1 仍然存在的限制
 
 没有正式自动 Restore 或 Uninstall；CloudDrive2 没有手动 Backup UI；没有旧 TG115 状态/队列的自动原地迁移；没有跨实例 Token 分布式锁；Windows EXE 未提供商业代码签名。
 

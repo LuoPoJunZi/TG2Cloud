@@ -1,5 +1,17 @@
 # 更新记录
 
+## TG2Cloud v1.1.1
+
+发布日期：2026-10-01。两个正式 EXE 继续由 GitHub Actions 从同一不可变标签构建；Release Job 复用已通过自检的 Windows artifact，不重复构建。
+
+- OpenList 父目录回退查询检查完整文件清单，避免超过 10,000 项时把已有同名文件误判为空闲路径；CloudDrive2 上传和改名命令保持不变。
+- 共享 HTTPS 配置与移除使用 VPS 级事务锁，锁覆盖读状态、安装、自检、提交和回滚；状态文件通过同目录原子替换提交。
+- 移除一个 Edition 后同步更新 Certbot 活动域名，并在提交前检查剩余 Edition；失败时回退旧路由与续期配置。
+- OpenList 健康探测区分 401 与 429，限制探测重试，合并短时间刷新，并为认证失败与限流增加冷却；CloudDrive2 健康探测策略保持不变。
+- Release 必须等待同一不可变标签的 Windows 构建和 Linux 运行、Shell、Docker、真实本地 WebDAV 检查成功，继续发布 Windows Build Job 已生成的 artifact。
+- 明确 VPS 本机 HTTPS 自检不等于公网连通验收，并补充共享代理的独立备份与恢复边界。
+- 本轮已在真实 VPS 验证双管理网关 HTTPS 共存、外部 HTTPS/HTTP 跳转/公开 WebDAV 阻断，以及双 SSH 通道锁互斥与断锁释放；原 CloudDrive2 域名、已核对配置和容器保持不变。OpenList Bot/WebDAV/401/429 恢复、路由移除与长期续期没有重新完成实机验收；既有转存结果继续以 v1.1.0 等历史验收为基线。
+
 ## TG2Cloud v1.1.0
 
 - 受管 CloudDrive2 与 OpenList 基础容器部署后，部署器自动进入 HTTPS 管理入口配置；证书、HTTPS、跳转、公开 `/dav` 阻断及回环监听检查全部通过后，才显示“部署完成”。

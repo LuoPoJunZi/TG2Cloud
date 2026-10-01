@@ -7,7 +7,7 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.1.0
+git checkout v1.1.1
 ```
 
 对固定版本复现问题时使用对应标签；跟随主分支开发时，记录提交号，避免把未发布修改当成 Release 行为。
@@ -38,6 +38,8 @@ uv run --with-requirements requirements-build.txt `
 真实本地 WebDAV 集成测试需要 `rclone` 在 PATH 中；Shell 回归需要 Bash。缺少依赖时的跳过不能写成“所有集成测试均通过”。
 
 仓库说明中 Linux CI 使用 Python 3.12，Windows 使用 Python 3.13；具体以当前 CI 配置为准。
+
+从 v1.1.1 起，Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。Linux 检查包括 Shell、Docker 配置、Bot 镜像和真实本地 WebDAV 集成；正式两个 EXE 仍只在 Windows Build Job 构建一次，发布 Job 仅校验并上传其 artifact。工作流修改不会追溯改变已发布的 v1.1.0 资产。
 
 ## 构建两个部署器
 

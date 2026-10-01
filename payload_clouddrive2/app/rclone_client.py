@@ -303,16 +303,29 @@ class RcloneClient:
     async def probe(self) -> DestinationProbe:
         try:
             await self.ensure_config()
-            code, _, _ = await self._run(
-                "lsd", self.remote(), "--max-depth", "1", timeout=20, check=False,
+            openlist = getattr(self.settings, "storage_backend", "clouddrive2") == "openlist"
+            # Do not amplify an authentication/IP ban with rclone's retries.
+            # Keep CloudDrive2's already-verified command unchanged.
+            probe_options = (
+                ("--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s")
+                if openlist else ()
             )
+            code, out, err = await self._run(
+                "lsd", self.remote(), "--max-depth", "1", *probe_options,
+                timeout=20, check=False,
+            )
+            if openlist and code != 0:
+                failure = self._openlist_probe_failure(out + "\n" + err, "target")
+                if failure is not None:
+                    return failure
             if code in {3, 4} and self.settings.cd2_target:
                 # A not-yet-created target is prepared only by an explicit upload/verify.
-                root_code, _, _ = await self._run(
+                root_code, root_out, root_err = await self._run(
                     "lsd",
                     f"{self.remote_name}:",
                     "--max-depth",
                     "1",
+                    *probe_options,
                     timeout=20,
                     check=False,
                 )
@@ -320,6 +333,10 @@ class RcloneClient:
                     return DestinationProbe(
                         True, "root_fallback", "WebDAV 根目录可访问；配置的目标目录尚未创建，不代表可写",
                     )
+                if openlist:
+                    failure = self._openlist_probe_failure(root_out + "\n" + root_err, "root_fallback")
+                    if failure is not None:
+                        return failure
                 return DestinationProbe(
                     False, "root_fallback", f"WebDAV 根目录访问失败（退出码 {root_code}）"
                 )
@@ -335,6 +352,21 @@ class RcloneClient:
                 exc,
             )
             return DestinationProbe(False, "unknown", "目录探测异常；请查看 VPS 最近日志")
+
+    @staticmethod
+    def _openlist_probe_failure(output: str, scope: str) -> DestinationProbe | None:
+        # Emit only fixed messages: rclone stderr may contain URLs/credentials.
+        if re.search(r"\b429\b|too many requests", output, re.IGNORECASE):
+            return DestinationProbe(
+                False, scope, "OpenList 返回 HTTP 429；健康探测已冷却，请勿反复验收",
+                "rate_limited",
+            )
+        if re.search(r"\b401\b|unauthorized", output, re.IGNORECASE):
+            return DestinationProbe(
+                False, scope, "OpenList 返回 HTTP 401；请核对当前运行的 WebDAV 凭据",
+                "unauthorized",
+            )
+        return None
 
     async def healthy(self) -> bool:
         return (await self.probe()).accessible
@@ -472,7 +504,10 @@ class RcloneClient:
                 payload = json.loads(out)
                 if not isinstance(payload, list):
                     raise TypeError("lsjson result is not a list")
-                for item in payload[:10000]:
+                # This is an existence/size decision, not a display preview.
+                # Truncating the listing can turn an existing name into a free
+                # name and cause a direct-final OpenList upload to overwrite it.
+                for item in payload:
                     if not isinstance(item, dict) or item.get("IsDir"):
                         continue
                     original = requested.get(str(item.get("Name", "")))
