@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""TG115 desktop deployer using a single-file PySide6 interface.
+"""TG2Cloud desktop deployer using a single-file PySide6 interface.
 
 Keep ``vps_resources.py`` and both product payload directories beside this file, install the
 versions pinned in ``requirements-build.txt``, then run ``python installer.py``.
@@ -46,7 +46,8 @@ import threading
 import time
 import uuid
 import webbrowser
-from collections.abc import Callable
+from collections.abc import Callable, Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, ClassVar
@@ -56,6 +57,13 @@ from deployer_products import (
     CLOUDDRIVE2_PRODUCT,
     ProductProfile,
 )
+from domain_proxy import (
+    DomainProxyManager,
+    ProxyReport,
+    validate_domain,
+    validate_email,
+)
+from operation_feedback import STAGES, failure_details, stage_from_log, version_summary
 
 # ============================================================================
 # 1. Constants, original configuration fields and payload manifest
@@ -66,6 +74,13 @@ APP_VERSION = CLOUDDRIVE2_PRODUCT.app_version
 UI_VERSION = "qt-1.0-single"
 MANAGED_CD2_WEBDAV_URL = CLOUDDRIVE2_PRODUCT.webdav_url
 EMPTY_FIELD = ""
+BRAND_ICON_ASSET = "assets/brand/tg2cloud-icon-256.png"
+BRAND_LOGO_ASSET = "assets/brand/tg2cloud-logo.svg"
+REQUIRED_BRAND_ASSETS = (
+    BRAND_ICON_ASSET,
+    BRAND_LOGO_ASSET,
+    "assets/brand/tg2cloud.ico",
+)
 
 def secure_password(length: int = 28) -> str:
     """Return a copy-friendly password from a cryptographic random source."""
@@ -94,10 +109,11 @@ def defaults_for(product: ProductProfile) -> dict[str, str]:
         "cd2_target": product.webdav_target,
         "install_dir": product.install_dir,
         "local_budget_gb": "20",
-        "min_free_disk_gb": "8" if product.is_openlist else "20",
+        "min_free_disk_gb": "8",
         "timezone": "Asia/Shanghai",
         "auth_method": "密码",
         "deploy_clouddrive2": "true",
+        "redeploy_apply_config": "false",
     }
     if product.is_openlist:
         defaults["cd2_password"] = secure_password()
@@ -139,10 +155,16 @@ def dependency_report(
     missing = [
         name for name in product.required_payload if not resource_path(name).is_file()
     ]
+    if not resource_path("proxy_maintenance.py").is_file():
+        missing.append("proxy_maintenance.py")
+    brand_missing = [
+        name for name in REQUIRED_BRAND_ASSETS if not resource_path(name).is_file()
+    ]
     return {
         "modules": modules,
         "payload_missing": missing,
-        "ready": all(modules.values()) and not missing,
+        "brand_missing": brand_missing,
+        "ready": all(modules.values()) and not missing and not brand_missing,
     }
 
 
@@ -215,10 +237,10 @@ SOURCE_HINTS = {
         "Bot Token 来自 @BotFather；API ID 和 API Hash 来自 my.telegram.org；数字 ID 用于限制只有你本人可以使用。"
     ],
     "_build_cloud_tab": [
-        "部署完成后点击“打开 CloudDrive2 管理页”，登录 CloudDrive2、添加并挂载 115，然后开启 WebDAV。如果 WebDAV 根目录已经选中目标 Telegram 文件夹，子目录必须留空；只有根目录在更上层时才填写相对路径。"
+        "基础部署后必须先配置并验收 HTTPS 管理入口，再从域名登录 CloudDrive2、添加并挂载你的云存储（例如 115），然后开启 WebDAV。如果 WebDAV 根目录已经选中目标 Telegram 文件夹，子目录必须留空；只有根目录在更上层时才填写相对路径。"
     ],
     "_build_options_tab": [
-        "源码默认仍为 20GB 本地预算和 20GB 磁盘安全线。检测只提供当前 VPS 的实例建议，点击应用后才会改输入框；部署前还会重新检测。单文件超过本地预算时自动使用流式模式。"
+        "源码默认仍为 20GB 本地任务预算和 8GB 磁盘安全线。检测只提供当前 VPS 的实例建议，点击应用后才会改输入框；部署前还会重新检测。单文件超过本地预算时自动使用流式模式。"
     ],
     "_build_config": [],
 }
@@ -434,7 +456,13 @@ if _SSH_IMPORT_ERROR is None:
             self.host = normalize_ssh_host(values["vps_host"])
             self.port = int(values["vps_port"])
             app_data = Path(os.getenv("APPDATA", Path.home()))
-            self.known_hosts = app_data / "TG115-Deployer" / "known_hosts"
+            self.known_hosts = app_data / "TG2Cloud-Deployer" / "known_hosts"
+            legacy_known_hosts = app_data / "TG115-Deployer" / "known_hosts"
+            if legacy_known_hosts.is_file() and not self.known_hosts.exists():
+                self.log(
+                    "检测到旧 TG115 SSH 主机记录；TG2Cloud 不会自动导入或覆盖，"
+                    "首次连接时请重新核对主机指纹。"
+                )
             self.host_keys = KnownHostsStore(self.known_hosts)
             self.client_factory = client_factory
             self.client = self._new_client()
@@ -582,6 +610,63 @@ if _SSH_IMPORT_ERROR is None:
         def close(self) -> None:
             self.client.close()
 
+        @contextmanager
+        def hold_lock(
+            self, command: str, *, sudo: bool = False, timeout: float = 15
+        ) -> Iterator[None]:
+            """Keep a remote flock holder alive throughout a multi-command transaction."""
+            transport = self.client.get_transport()
+            if transport is None or not transport.is_active():
+                raise RuntimeError("SSH 连接已经断开")
+            if getattr(self, "_transaction_lock_channel", None) is not None:
+                raise RuntimeError("当前 SSH 会话已经持有事务锁")
+            channel = transport.open_session(timeout=15)
+            actual = (
+                f"sudo -S -p '' -- /bin/bash -c {shlex.quote(command)}"
+                if sudo else command
+            )
+            acquired = False
+            try:
+                channel.exec_command(actual)  # nosec B601
+                if sudo:
+                    channel.sendall(
+                        (self.values.get("sudo_password", "") + "\n").encode("utf-8")
+                    )
+                output = bytearray()
+                started = time.monotonic()
+                while True:
+                    if channel.recv_ready():
+                        output.extend(channel.recv(4096))
+                    if channel.recv_stderr_ready():
+                        channel.recv_stderr(4096)  # Do not echo authentication diagnostics.
+                    if b"TG2CLOUD_REMOTE_LOCK=BUSY\n" in output:
+                        raise RuntimeError("另一个部署器正在修改共享 HTTPS 代理，请等待该操作完成后重试。")
+                    if b"TG2CLOUD_REMOTE_LOCK=UNAVAILABLE\n" in output:
+                        raise RuntimeError("VPS 缺少 flock，无法安全锁定共享代理；没有修改域名配置。")
+                    if b"TG2CLOUD_REMOTE_LOCK=ACQUIRED\n" in output:
+                        if channel.exit_status_ready() or channel.closed:
+                            raise RuntimeError("共享代理事务锁已意外释放，操作已停止。")
+                        acquired = True
+                        self._transaction_lock_channel = channel
+                        break
+                    if channel.exit_status_ready() or channel.closed:
+                        raise RuntimeError("无法获取共享代理事务锁，请检查 root/sudo 权限。")
+                    if time.monotonic() - started > timeout:
+                        raise TimeoutError("获取共享代理事务锁超时；没有修改域名配置。")
+                    if len(output) > 8192:
+                        raise RuntimeError("共享代理事务锁响应异常，操作已停止。")
+                    time.sleep(0.03)
+                yield
+            finally:
+                if acquired:
+                    self._transaction_lock_channel = None
+                    try:
+                        channel.sendall(b"TG2CLOUD_REMOTE_LOCK_RELEASE\n")
+                        channel.shutdown_write()
+                    except (OSError, EOFError, paramiko.SSHException):
+                        pass  # SSH EOF also releases the remote flock.
+                channel.close()
+
         def run(
             self,
             command: str,
@@ -593,6 +678,9 @@ if _SSH_IMPORT_ERROR is None:
             transport = self.client.get_transport()
             if transport is None or not transport.is_active():
                 raise RuntimeError("SSH 连接已经断开")
+            held = getattr(self, "_transaction_lock_channel", None)
+            if held is not None and (held.closed or held.exit_status_ready()):
+                raise RuntimeError("共享代理事务锁已丢失，已停止后续远程操作。")
             channel = transport.open_session(timeout=15)
             actual = (
                 f"sudo -S -p '' -- /bin/bash -c {shlex.quote(command)}"
@@ -799,7 +887,7 @@ if _SSH_IMPORT_ERROR is None:
             self.session.close()
 
     def re_safe_remote_stage(path: str) -> bool:
-        prefix = "/tmp/tg115-deploy-"  # nosec B108
+        prefix = "/tmp/tg2cloud-deploy-"  # nosec B108
         suffix = path.removeprefix(prefix)
         return (
             path.startswith(prefix)
@@ -839,6 +927,9 @@ if _BACKEND_IMPORT_ERROR is None:
         secret_field: str = ""
         secret_value: str = field(default="", repr=False, compare=False)
         openlist_state: str = ""
+        proxy_report: ProxyReport | None = None
+        https_required: bool = False
+        backup_data: dict[str, Any] | None = None
 
     class OperationError(RuntimeError):
         """An operation failure that can still expose safe structured status."""
@@ -849,28 +940,109 @@ if _BACKEND_IMPORT_ERROR is None:
             super().__init__(message)
             self.statuses = statuses
 
+    _MACHINE_MARKER = re.compile(r"^(TG2CLOUD|TG115)_([A-Z0-9_]+)=(.*)$")
+
+    def machine_markers(output: str) -> dict[str, str]:
+        """Read current protocol first; TG115 markers are legacy compatibility."""
+        current: dict[str, str] = {}
+        legacy: dict[str, str] = {}
+        for line in output.splitlines():
+            matched = _MACHINE_MARKER.fullmatch(line.strip())
+            if matched is None:
+                continue
+            namespace, key, value = matched.groups()
+            (current if namespace == "TG2CLOUD" else legacy)[key] = value
+        return legacy | current
+
+    def runtime_status_command(product: ProductProfile, install_dir: str) -> str:
+        """Read-only VPS probe; legacy names are detection-only, never targets."""
+        legacy_checks = [
+            f"test -e {shlex.quote(path)}" for path in product.legacy_install_dirs
+        ] + [
+            f"docker container inspect {shlex.quote(name)} >/dev/null 2>&1"
+            for name in product.legacy_containers
+        ]
+        script = f"""
+install_dir={shlex.quote(install_dir)}
+if {' || '.join(legacy_checks)}; then
+  printf 'TG2CLOUD_LEGACY=DETECTED\\n'
+else
+  printf 'TG2CLOUD_LEGACY=NONE\\n'
+fi
+if [[ -L "$install_dir" ]]; then
+  printf 'TG2CLOUD_STATUS=UNKNOWN\\n'
+  exit 2
+fi
+if [[ ! -f "$install_dir/docker-compose.yml" ]]; then
+  printf 'TG2CLOUD_STATUS=NOT_INSTALLED\\n'
+  exit 0
+fi
+if ! grep -Fq {shlex.quote('container_name: ' + product.bot_container)} "$install_dir/docker-compose.yml" \
+  || ! grep -Fq {shlex.quote('container_name: ' + product.storage_container)} "$install_dir/docker-compose.yml"; then
+  printf 'TG2CLOUD_STATUS=UNKNOWN\\n'
+  exit 2
+fi
+bot_health="$(docker inspect --format '{{{{if .State.Health}}}}{{{{.State.Health.Status}}}}{{{{else}}}}{{{{.State.Status}}}}{{{{end}}}}' {shlex.quote(product.bot_container)} 2>/dev/null || true)"
+gateway_running="$(docker inspect --format '{{{{.State.Running}}}}' {shlex.quote(product.storage_container)} 2>/dev/null || true)"
+if docker network inspect {shlex.quote(product.docker_network)} >/dev/null 2>&1; then network=PRESENT; else network=MISSING; fi
+if [[ {shlex.quote(product.key)} == clouddrive2 ]] \
+  && grep -Fxq 'DEPLOY_CLOUDDRIVE2=false' "$install_dir/.env"; then
+  gateway=EXTERNAL
+elif [[ "$gateway_running" == true ]]; then gateway=RUNNING
+else gateway=STOPPED
+fi
+if [[ {shlex.quote(product.key)} == openlist && "$gateway" == RUNNING ]] \
+  && ! curl -fsS --max-time 3 http://127.0.0.1:5244/ >/dev/null 2>&1; then
+  gateway=UNHEALTHY
+fi
+printf 'TG2CLOUD_BOT_HEALTH=%s\\nTG2CLOUD_GATEWAY=%s\\nTG2CLOUD_NETWORK=%s\\n' "${{bot_health:-missing}}" "$gateway" "$network"
+bot_version="$(timeout 5s docker exec {shlex.quote(product.bot_container)} python -c 'from app import __version__; print(__version__)' 2>/dev/null || true)"
+if [[ "$bot_version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
+  printf 'TG2CLOUD_VERSION=%s\\n' "$bot_version"
+fi
+if [[ "$bot_health" == healthy && "$network" == PRESENT ]] \
+  && [[ "$gateway" == RUNNING || "$gateway" == EXTERNAL ]]; then
+  printf 'TG2CLOUD_STATUS=RUNNING\\n'
+else
+  printf 'TG2CLOUD_STATUS=STOPPED\\n'
+fi
+"""
+        return "bash -c " + shlex.quote(script)
+
     _VERIFICATION_STEPS = (
-        ("Bot 容器", "BOT_HEALTH=healthy", "BOT_HEALTH="),
-        ("OpenList 服务", "TG115_OPENLIST=OK", "TG115_OPENLIST=FAILED"),
-        ("WebDAV 认证", "TG115_WEBDAV_AUTH=OK", "TG115_WEBDAV_AUTH=FAILED"),
-        ("目标目录", "TG115_WEBDAV_LIST=OK", "TG115_WEBDAV_LIST=FAILED"),
-        ("测试写入", "TG115_WEBDAV_WRITE=OK", "TG115_WEBDAV_WRITE=FAILED"),
-        ("大小校验", "TG115_WEBDAV_SIZE=OK", "TG115_WEBDAV_SIZE=FAILED"),
-        ("临时改名", "TG115_WEBDAV_MOVE=OK", "TG115_WEBDAV_MOVE=FAILED"),
-        ("测试清理", "TG115_WEBDAV_DELETE=OK", "TG115_WEBDAV_DELETE=FAILED"),
+        ("OpenList 服务", "OPENLIST"),
+        ("WebDAV 认证", "WEBDAV_AUTH"),
+        ("目标目录", "WEBDAV_LIST"),
+        ("测试写入", "WEBDAV_WRITE"),
+        ("大小校验", "WEBDAV_SIZE"),
+        ("临时改名", "WEBDAV_MOVE"),
+        ("测试清理", "WEBDAV_DELETE"),
     )
 
     def verification_statuses(output: str) -> tuple[tuple[str, str], ...]:
-        statuses: list[tuple[str, str]] = []
-        for title, success_marker, failure_marker in _VERIFICATION_STEPS:
-            if success_marker in output:
-                state = "通过"
-            elif failure_marker in output or (
-                title == "Bot 容器" and "BOT_HEALTH=" in output
-            ):
-                state = "失败"
-            else:
-                state = "未执行"
+        markers = machine_markers(output)
+        bot_health = markers.get("BOT_HEALTH")
+        if bot_health is None:
+            # Legacy TG115 compatibility: early verify scripts emitted an unprefixed key.
+            bot_health = next(
+                (line.partition("=")[2] for line in output.splitlines()
+                 if line.startswith("BOT_HEALTH=")),
+                None,
+            )
+        statuses: list[tuple[str, str]] = [
+            ("Bot 容器", "通过" if bot_health == "healthy" else "失败" if bot_health else "未执行")
+        ]
+        direct_final = markers.get("WEBDAV_FINALIZE_MODE") == "DIRECT"
+        for title, key in _VERIFICATION_STEPS:
+            if key == "WEBDAV_MOVE" and direct_final:
+                title = "最终落盘"
+            value = markers.get(key)
+            state = (
+                "通过" if value == "OK"
+                else "无需执行" if value == "NOT_REQUIRED"
+                else "失败" if value == "FAILED"
+                else "未执行"
+            )
             statuses.append((title, state))
         return tuple(statuses)
 
@@ -893,7 +1065,8 @@ if _BACKEND_IMPORT_ERROR is None:
             product: ProductProfile = CLOUDDRIVE2_PRODUCT,
         ):
             self.product = product
-            self._log = log
+            self._log_sink = log
+            self.current_stage = ""
             self._ask_host_key = confirm_host_key
             self._publish_resources = publish_resources
             self._session_factory = session_factory
@@ -904,6 +1077,15 @@ if _BACKEND_IMPORT_ERROR is None:
             self.vps_resources = None
             self.storage_advice = None
             self.storage_probe_basis = None
+
+        def _log(self, text: str) -> None:
+            stage = stage_from_log(text)
+            if stage:
+                self.current_stage = stage
+            self._log_sink(text)
+
+        def _stage(self, stage: str) -> None:
+            self._log(f"TG2CLOUD_STAGE={stage}")
 
         @staticmethod
         def connection_identity(values: dict[str, str]) -> tuple[str, str, str]:
@@ -1046,10 +1228,15 @@ if _BACKEND_IMPORT_ERROR is None:
                     raise ValueError("公网 WebDAV 地址必须使用 HTTPS，避免密码明文传输")
             target = values["cd2_target"].strip()
             if any(ord(char) < 32 for char in target) or "\\" in target:
-                raise ValueError("115 目标路径不能包含控制字符或反斜杠")
+                raise ValueError("WebDAV 目标路径不能包含控制字符或反斜杠")
             if ".." in target.split("/"):
-                raise ValueError("115 目标路径不能包含 ..")
-            validate_install_dir(values["install_dir"])
+                raise ValueError("WebDAV 目标路径不能包含 ..")
+            install_dir = validate_install_dir(values["install_dir"])
+            if install_dir in self.product.legacy_install_dirs:
+                raise ValueError(
+                    f"检测到旧 TG115 安装目录 {install_dir}；TG2Cloud 不会静默覆盖，"
+                    "请改用当前版本的默认目录，或先按迁移文档处理旧部署"
+                )
             if not re.fullmatch("[A-Za-z0-9_+./-]+", values["timezone"]):
                 raise ValueError("时区格式不正确")
             if values["timezone"].startswith("/") or any(
@@ -1144,7 +1331,9 @@ if _BACKEND_IMPORT_ERROR is None:
             if uid_code != 0 or not uid_lines or (not uid_lines[-1].isdigit()):
                 raise RuntimeError("SSH 已连接，但无法确认 VPS 用户权限")
             code, output = session.run(
-                build_probe_command(basis[3]), sudo=uid_lines[-1] != "0", timeout=30
+                build_probe_command(basis[3], self.product.backup_dir),
+                sudo=uid_lines[-1] != "0",
+                timeout=30,
             )
             if code != 0:
                 raise RuntimeError("SSH 已连接，但无法读取 VPS CPU、内存和目标文件系统")
@@ -1181,6 +1370,12 @@ if _BACKEND_IMPORT_ERROR is None:
                 "WEBDAV_TARGET_PATH_B64": b64(
                     values["cd2_target"].strip().strip("/")
                 ),
+                "TG2CLOUD_STORAGE_BACKEND": self.product.key,
+                "TG2CLOUD_DESTINATION_LABEL": self.product.display_name,
+                "TG2CLOUD_RCLONE_REMOTE_NAME": (
+                    "openlist" if self.product.is_openlist else "cd2"
+                ),
+                # Compatibility aliases keep rollback to the proven TG115 core possible.
                 "TG115_STORAGE_BACKEND": self.product.key,
                 "TG115_DESTINATION_LABEL": self.product.display_name,
                 "TG115_RCLONE_REMOTE_NAME": (
@@ -1204,14 +1399,17 @@ if _BACKEND_IMPORT_ERROR is None:
                     if self.product.key == "clouddrive2"
                     else "false"
                 ),
+                "TG2CLOUD_REDEPLOY_APPLY_CONFIG": values.get(
+                    "redeploy_apply_config", "false"
+                ),
             }
             if self.product.is_openlist:
                 pairs["OPENLIST_ADMIN_PASSWORD"] = values[
                     "openlist_admin_password"
                 ]
-                pairs["TG115_PRESERVE_WEBDAV"] = values.get(
-                    "preserve_webdav", "false"
-                )
+                preserve = values.get("preserve_webdav", "false")
+                pairs["TG2CLOUD_PRESERVE_WEBDAV"] = preserve
+                pairs["TG115_PRESERVE_WEBDAV"] = preserve
             return "\n".join((f"{key}={value}" for key, value in pairs.items())) + "\n"
 
         def _add_payload_to_archive(self, archive: tarfile.TarFile) -> None:
@@ -1285,7 +1483,7 @@ if _BACKEND_IMPORT_ERROR is None:
                     f"CloudDrive2 与 Bot 位于同一台 VPS：已自动使用安全的容器内网 WebDAV 地址 {self.product.webdav_url}。"
                 )
             self._log("开始一键部署基础环境。请关注下方运行日志。")
-            with tempfile.TemporaryDirectory(prefix="tg115-deployer-") as temp_name:
+            with tempfile.TemporaryDirectory(prefix="tg2cloud-deployer-") as temp_name:
                 temp = Path(temp_name)
                 archive = temp / "payload.tar.gz"
                 config_file = temp / "config.env"
@@ -1293,9 +1491,11 @@ if _BACKEND_IMPORT_ERROR is None:
                 config_file.write_bytes(self._build_config(values).encode("utf-8"))
                 with tarfile.open(archive, "w:gz") as tar:
                     self._add_payload_to_archive(tar)
+                self._stage("SSH")
                 session = self._new_session(values)
-                remote_stage = f"/tmp/tg115-deploy-{uuid.uuid4().hex}"  # nosec B108
+                remote_stage = f"/tmp/tg2cloud-deploy-{uuid.uuid4().hex}"  # nosec B108
                 try:
+                    self._stage("ENVIRONMENT")
                     self._log("SSH 连接成功，重新核对 VPS 资源和当前存储配置……")
                     resources, advice = self._probe_and_recommend(session, values)
                     if resources.architecture not in {
@@ -1346,6 +1546,7 @@ if _BACKEND_IMPORT_ERROR is None:
                     self._log(
                         f"部署前容量校验通过：预计至少需要 {assessment.required_available_gb:.1f}GB 可用空间。"
                     )
+                    self._stage("UPLOAD")
                     self._log("SSH 连接成功，上传部署包……")
                     code, _ = session.run(f"mkdir -m 700 {remote_stage}")
                     if code != 0:
@@ -1357,6 +1558,7 @@ if _BACKEND_IMPORT_ERROR is None:
                         sftp.chmod(f"{remote_stage}/config.env", 384)
                     finally:
                         sftp.close()
+                    self._stage("INSTALL")
                     self._log("上传完成，开始安装 VPS 运行环境和服务……")
                     extract = (
                         f"tar -xzf {remote_stage}/payload.tar.gz -C {remote_stage}"
@@ -1379,31 +1581,45 @@ if _BACKEND_IMPORT_ERROR is None:
                     code, output = session.run(
                         command, sudo=use_sudo, stream=self._log, timeout=1800
                     )
-                    if code != 0 or "TG115_RESULT=SUCCESS" not in output:
+                    result_markers = machine_markers(output)
+                    if code != 0 or result_markers.get("RESULT") != "SUCCESS":
                         raise RuntimeError("远程基础安装没有通过容器健康检查")
                     self._log("基础部署和容器自检通过。")
                     openlist_initialized = (
-                        "TG115_OPENLIST_INITIALIZED=NEW" in output
+                        result_markers.get("OPENLIST_INITIALIZED") == "NEW"
+                    )
+                    https_required = (
+                        self.product.is_openlist
+                        or values.get("deploy_clouddrive2", "true") == "true"
                     )
                     return OperationResult(
-                        "部署成功",
+                        "基础部署完成",
                         (
-                            "Bot 已经在 VPS 上运行。\n\n下一步：点击“打开 OpenList 管理页”，"
+                            "Bot 和 OpenList 已经在 VPS 上运行。\n\n"
+                            "下一步必须配置并验收 HTTPS 管理入口；通过后再从域名登录 "
+                            "OpenList，"
                             + (
                                 "使用本页生成的管理员信息登录，"
                                 if openlist_initialized
                                 else "当前是已有 OpenList，原管理员凭据保持不变；登录后"
                             )
-                            + "添加 115 Open 存储并配置 WebDAV 用户；"
+                            + "添加你的云存储（例如 115 Open）并配置 WebDAV 用户；"
                             "然后执行最终 WebDAV 验收。"
                             if self.product.is_openlist
-                            else "Bot 已经在 VPS 上运行。\n\n下一步：点击“打开 CloudDrive2 管理页”，登录 CloudDrive2、添加 115 并开启 WebDAV；然后点击“WebDAV 验收（写入测试文件）”。"
+                            else (
+                                "Bot 和 CloudDrive2 已经在 VPS 上运行。\n\n"
+                                "下一步必须配置并验收 HTTPS 管理入口；通过后再从域名登录 "
+                                "CloudDrive2、挂载云存储并开启 WebDAV，最后执行 WebDAV 验收。"
+                                if https_required
+                                else "Bot 已经在 VPS 上运行，并使用外部 WebDAV。下一步执行 WebDAV 验收。"
+                            )
                         ),
                         openlist_state=(
                             "new" if openlist_initialized else "existing"
                         )
                         if self.product.is_openlist
                         else "",
+                        https_required=https_required,
                     )
                 finally:
                     try:
@@ -1468,6 +1684,117 @@ if _BACKEND_IMPORT_ERROR is None:
                     session.close()
                 raise
 
+        def _proxy_operation(
+            self, values: dict[str, str], operation: str
+        ) -> OperationResult:
+            self._validate_connection(values)
+            domain = values.get("proxy_domain", "")
+            email = values.get("proxy_email", "")
+            if operation in {"detect", "configure"}:
+                domain = validate_domain(domain)
+            if operation == "configure":
+                email = validate_email(email)
+            self._stage("SSH")
+            session = self._new_session(values)
+            try:
+                manager = DomainProxyManager(
+                    session, self.product, values, self._log
+                )
+                manager.prepare()
+                if operation == "detect":
+                    report = manager.detect(domain)
+                    title = "域名环境检测完成"
+                elif operation == "configure":
+                    if not email:
+                        self._log(
+                            "未填写 Let's Encrypt 邮箱：将使用无邮箱注册。到期情况请查看 HTTPS 状态；Let's Encrypt 已停止到期提醒邮件。"
+                        )
+                    report = manager.configure(domain, email)
+                    title = "HTTPS 配置完成"
+                elif operation == "status":
+                    report = manager.status()
+                    title = "域名访问状态"
+                elif operation == "remove":
+                    report = manager.remove()
+                    title = "域名访问已移除"
+                elif operation in {"backup", "check", "drill", "renew_dry_run"}:
+                    titles = {
+                        "backup": "共享代理备份", "check": "备份完整性检查",
+                        "drill": "隔离恢复演练", "renew_dry_run": "证书续期演练",
+                    }
+                    return OperationResult(titles[operation], manager.maintenance(operation, archive=values.get("proxy_backup_archive", "")))
+                elif operation in {"list", "prune-preview", "prune"}:
+                    data = manager.manage_backups(operation, keep=int(values.get("proxy_backup_keep", "5")), plan=values.get("proxy_backup_plan", ""))
+                    return OperationResult("代理备份管理", "备份管理操作完成。", backup_data=data)
+                else:
+                    raise ValueError("未知的域名代理操作")
+                for status_title, status_value in report.statuses:
+                    self._log(f"TG2CLOUD_PROXY_CHECK={status_title}:{status_value}")
+                return OperationResult(
+                    title, report.message, statuses=report.statuses,
+                    proxy_report=report
+                )
+            finally:
+                session.close()
+
+        def proxy_detect(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "detect")
+
+        def proxy_configure(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "configure")
+
+        def proxy_status(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "status")
+
+        def proxy_remove(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "remove")
+
+        def proxy_backup(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "backup")
+
+        def proxy_backup_check(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "check")
+
+        def proxy_backup_drill(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "drill")
+
+        def proxy_renew_dry_run(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "renew_dry_run")
+
+        def proxy_backup_list(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "list")
+
+        def proxy_backup_preview(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "prune-preview")
+
+        def proxy_backup_prune(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "prune")
+
+        def open_domain(self, domain: str) -> None:
+            safe_domain = validate_domain(domain)
+            self._browser_open(f"https://{safe_domain}")
+
+        def _require_healthy_https(
+            self, session: RemoteSession, values: dict[str, str]
+        ) -> None:
+            required = (
+                self.product.is_openlist
+                or values.get("deploy_clouddrive2", "true") == "true"
+            )
+            if not required:
+                return
+            manager = DomainProxyManager(session, self.product, values, self._log)
+            manager.prepare()
+            report = manager.status()
+            for status_title, status_value in report.statuses:
+                self._log(f"TG2CLOUD_PROXY_CHECK={status_title}:{status_value}")
+            if report.state != "healthy":
+                raise OperationError(
+                    "当前 Edition 必须先完成 HTTPS 管理入口配置和全部自检，"
+                    "才能执行 WebDAV 最终验收。请返回部署工作台点击“配置 HTTPS 管理入口”。"
+                )
+            self._log(f"TG2CLOUD_PROXY_REQUIRED=OK: https://{report.domain}")
+
         def repair_clouddrive(self, values: dict[str, str]) -> OperationResult:
             if self.product.is_openlist:
                 return self.check_openlist(values)
@@ -1479,7 +1806,7 @@ if _BACKEND_IMPORT_ERROR is None:
             if not repair_script.is_file():
                 raise RuntimeError("部署器内部修复脚本缺失，请重新下载完整安装包")
             session = self._new_session(values)
-            remote_stage = f"/tmp/tg115-deploy-{uuid.uuid4().hex}"  # nosec B108
+            remote_stage = f"/tmp/tg2cloud-deploy-{uuid.uuid4().hex}"  # nosec B108
             try:
                 code, _ = session.run(f"mkdir -m 700 {remote_stage}")
                 if code != 0:
@@ -1505,7 +1832,7 @@ if _BACKEND_IMPORT_ERROR is None:
                 code, output = session.run(
                     command, sudo=use_sudo, stream=self._log, timeout=240
                 )
-                if code != 0 or "TG115_REPAIR=SUCCESS" not in output:
+                if code != 0 or machine_markers(output).get("REPAIR") != "SUCCESS":
                     raise RuntimeError("CloudDrive2 网络修复或 WebDAV 验收没有通过")
                 self._log("CloudDrive2 网络修复和 WebDAV 真实验收均已通过。")
                 return OperationResult(
@@ -1522,12 +1849,63 @@ if _BACKEND_IMPORT_ERROR is None:
 
         def check_openlist(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
-                values, "status", "TG115_STATUS=OK", timeout=120
+                values, "status", "STATUS", timeout=120
             )
+
+        def runtime_status(self, values: dict[str, str]) -> OperationResult:
+            self._validate_connection(values)
+            install_dir = validate_install_dir(values["install_dir"])
+            session = self._new_session(values)
+            try:
+                uid_code, uid_output = session.run("id -u", timeout=10)
+                if uid_code != 0 or not uid_output.strip().splitlines()[-1].isdigit():
+                    raise RuntimeError("无法确认 VPS 用户权限，未完成状态检查")
+                use_sudo = uid_output.strip().splitlines()[-1] != "0"
+                if use_sudo and not values.get("sudo_password"):
+                    sudo_code, _ = session.run("sudo -n true", timeout=10)
+                    if sudo_code != 0:
+                        raise RuntimeError("需要 sudo 权限才能读取 Docker 状态")
+                code, output = session.run(
+                    runtime_status_command(self.product, install_dir),
+                    sudo=use_sudo,
+                    timeout=30,
+                )
+                markers = machine_markers(output)
+                state = markers.get("STATUS", "UNKNOWN")
+                if code != 0 or state not in {"RUNNING", "STOPPED", "NOT_INSTALLED"}:
+                    raise RuntimeError("目标目录不是可识别的 TG2Cloud 安装，无法判定运行状态")
+                labels = {
+                    "RUNNING": "运行中",
+                    "STOPPED": "已安装但未正常运行",
+                    "NOT_INSTALLED": "未安装",
+                }
+                legacy = (
+                    "；另检测到旧 TG115，仅作提示，不参与本次状态判断"
+                    if markers.get("LEGACY") == "DETECTED"
+                    else ""
+                )
+                details = (
+                    f"；Bot={markers.get('BOT_HEALTH', 'unknown')}，"
+                    f"网关={markers.get('GATEWAY', 'unknown')}，"
+                    f"Network={markers.get('NETWORK', 'unknown')}"
+                    if state != "NOT_INSTALLED"
+                    else ""
+                )
+                return OperationResult(
+                    "运行状态",
+                    f"TG2Cloud {self.product.display_name}：{labels[state]}{details}{legacy}。\n\n"
+                    + version_summary(
+                        self.product.app_version, markers.get("VERSION", ""),
+                        installed=state != "NOT_INSTALLED",
+                    )
+                    + "\n\n容器状态不代表 WebDAV 写入验收通过。",
+                )
+            finally:
+                session.close()
             return OperationResult(
                 "检查通过",
                 "OpenList 容器和 Bot 正在运行，VPS 本机 5244 管理端口可以访问。"
-                "这项检查不会读取 115 登录信息，也不代表 WebDAV 已配置完成。",
+                "这项检查不会读取云存储登录信息，也不代表 WebDAV 已配置完成。",
             )
 
         def _run_openlist_manage(
@@ -1569,7 +1947,7 @@ if _BACKEND_IMPORT_ERROR is None:
                 code, output = session.run(
                     command, sudo=use_sudo, stream=self._log, timeout=timeout
                 )
-                if code != 0 or expected_marker not in output:
+                if code != 0 or machine_markers(output).get(expected_marker) != "OK":
                     raise RuntimeError(
                         f"OpenList 管理操作没有通过（{action}）"
                     )
@@ -1578,17 +1956,11 @@ if _BACKEND_IMPORT_ERROR is None:
                 session.close()
 
         def openlist_status(self, values: dict[str, str]) -> OperationResult:
-            self._run_openlist_manage(
-                values, "status", "TG115_STATUS=OK", timeout=120
-            )
-            return OperationResult(
-                "运行状态",
-                "OpenList、Bot 和 VPS 回环管理端口均已通过检查。",
-            )
+            return self.runtime_status(values)
 
         def openlist_logs(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
-                values, "recent-logs", "TG115_LOGS=OK", timeout=120
+                values, "recent-logs", "LOGS", timeout=120
             )
             return OperationResult(
                 "日志已读取",
@@ -1597,17 +1969,17 @@ if _BACKEND_IMPORT_ERROR is None:
 
         def restart_bot(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
-                values, "restart-bot", "TG115_BOT_RESTART=OK", timeout=240
+                values, "restart-bot", "BOT_RESTART", timeout=240
             )
             return OperationResult(
-                "Bot 已重启", "TG115 Bot 已重新启动并通过健康检查。"
+                "Bot 已重启", "TG2Cloud Bot 已重新启动并通过健康检查。"
             )
 
         def restart_openlist(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
                 values,
                 "restart-openlist",
-                "TG115_OPENLIST_RESTART=OK",
+                "OPENLIST_RESTART",
                 timeout=240,
             )
             return OperationResult(
@@ -1617,11 +1989,11 @@ if _BACKEND_IMPORT_ERROR is None:
 
         def backup_openlist(self, values: dict[str, str]) -> OperationResult:
             self._run_openlist_manage(
-                values, "backup", "TG115_BACKUP=OK", timeout=600
+                values, "backup", "BACKUP", timeout=600
             )
             return OperationResult(
                 "备份完成",
-                "程序配置、TG115 数据库和 OpenList 状态已保存到 VPS 的受限备份目录。",
+                "程序配置、TG2Cloud 数据库和 OpenList 状态已保存到 VPS 的受限备份目录。",
             )
 
         def reset_openlist_admin(self, values: dict[str, str]) -> OperationResult:
@@ -1650,20 +2022,13 @@ if _BACKEND_IMPORT_ERROR is None:
                 code, output = session.run(
                     command, sudo=use_sudo, stream=None, timeout=120
                 )
-                values_by_key: dict[str, str] = {}
-                for line in output.splitlines():
-                    key, separator, value = line.partition("=")
-                    if separator and key in {
-                        "TG115_OPENLIST_ADMIN_RESET",
-                        "TG115_OPENLIST_ADMIN_USERNAME",
-                        "TG115_OPENLIST_ADMIN_PASSWORD",
-                    }:
-                        values_by_key[key] = value
-                password = values_by_key.get("TG115_OPENLIST_ADMIN_PASSWORD", "")
+                # Legacy TG115 compatibility is handled by machine_markers().
+                values_by_key = machine_markers(output)
+                password = values_by_key.get("OPENLIST_ADMIN_PASSWORD", "")
                 if (
                     code != 0
-                    or values_by_key.get("TG115_OPENLIST_ADMIN_RESET") != "OK"
-                    or values_by_key.get("TG115_OPENLIST_ADMIN_USERNAME") != "admin"
+                    or values_by_key.get("OPENLIST_ADMIN_RESET") != "OK"
+                    or values_by_key.get("OPENLIST_ADMIN_USERNAME") != "admin"
                     or not 8 <= len(password) <= 256
                     or any(ord(char) < 33 or ord(char) > 126 for char in password)
                 ):
@@ -1683,6 +2048,7 @@ if _BACKEND_IMPORT_ERROR is None:
             validate_install_dir(values["install_dir"])
             session = self._new_session(values)
             try:
+                self._require_healthy_https(session, values)
                 install_dir = values["install_dir"].strip()
                 uid_code, uid_output = session.run("id -u")
                 if uid_code != 0 or not uid_output.strip():
@@ -1702,52 +2068,78 @@ if _BACKEND_IMPORT_ERROR is None:
                         f"docker compose logs --tail=40 {bot_service}"
                     )
                 else:
-                    command = f"cd {shlex.quote(install_dir)} && docker compose ps && docker inspect --format 'BOT_HEALTH={{{{if .State.Health}}}}{{{{.State.Health.Status}}}}{{{{else}}}}{{{{.State.Status}}}}{{{{end}}}}' {bot_container} && docker compose exec -T {bot_service} python -m app.verify_destination && docker compose logs --tail=40 {bot_service}"
+                    command = f"cd {shlex.quote(install_dir)} && docker compose ps && docker inspect --format 'TG2CLOUD_BOT_HEALTH={{{{if .State.Health}}}}{{{{.State.Health.Status}}}}{{{{else}}}}{{{{.State.Status}}}}{{{{end}}}}' {bot_container} && docker compose exec -T {bot_service} python -m app.verify_destination && docker compose logs --tail=40 {bot_service}"
                 code, output = session.run(
                     command, sudo=use_sudo, stream=self._log, timeout=120
                 )
+                markers = machine_markers(output)
                 statuses = verification_statuses(output)
                 if code != 0:
-                    if "TG115_OPENLIST=FAILED" in output:
+                    if markers.get("OPENLIST") == "FAILED":
                         raise OperationError(
                             "OpenList 当前没有正常运行，或 VPS 本机 5244 管理端口没有响应。"
                             "请先点击“重启 OpenList”，成功后再次验收。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_AUTH=FAILED" in output:
+                    destination_failure = next(
+                        (
+                            line.partition("TG2CLOUD_DESTINATION=FAILED:")[2]
+                            for line in output.splitlines()
+                            if "TG2CLOUD_DESTINATION=FAILED:" in line
+                        ),
+                        "",
+                    )
+                    if self.product.is_openlist and re.search(
+                        r"\b429\b|too many requests", destination_failure, re.IGNORECASE
+                    ):
                         raise OperationError(
-                            "无法登录 OpenList WebDAV。请确认已经创建 tg115 用户，"
+                            "OpenList WebDAV 返回 HTTP 429（请求过多），本次验收无法继续。"
+                            "不能据此判断凭据是否正确，也不表示需要重新部署。"
+                            "请停止重复点击验收，稍后重试；如果持续出现，"
+                            "请检查 OpenList 挂载状态、日志及上游云存储的限流情况。",
+                            statuses,
+                        )
+                    if markers.get("WEBDAV_AUTH") == "FAILED":
+                        raise OperationError(
+                            "无法登录 OpenList WebDAV。请确认已经创建与本页用户名一致的专用用户，"
                             "OpenList 中的密码与“配置 WebDAV”页一致，并已授予所需权限。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_LIST=FAILED" in output:
+                    if markers.get("WEBDAV_LIST") == "FAILED":
                         raise OperationError(
-                            "WebDAV 目标目录无法访问。请检查用户基本路径、/115/Telegram "
-                            "目标目录、115 Open 挂载状态和目录权限。",
+                            "WebDAV 目标目录无法访问。请检查用户基本路径、本页配置的目标目录、"
+                            "云存储挂载状态和目录权限。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_WRITE=FAILED" in output:
+                    if markers.get("WEBDAV_WRITE") == "FAILED":
                         raise OperationError(
                             "WebDAV 登录和目录访问成功，但无法写入测试文件。"
-                            "请检查创建／上传权限以及 VPS、115 端可用空间。",
+                            "请检查创建／上传权限以及 VPS、目标云存储端可用空间。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_SIZE=FAILED" in output:
+                    if markers.get("WEBDAV_SIZE") == "FAILED":
                         raise OperationError(
                             "测试文件已写入，但远端大小校验失败。"
-                            "请查看脱敏日志并检查 OpenList 与 115 Open 的上传状态。",
+                            "请查看脱敏日志并检查 OpenList 与目标云存储的上传状态。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_MOVE=FAILED" in output:
+                    if markers.get("WEBDAV_MOVE") == "FAILED":
+                        if "MOVE_UNCERTAIN:" in output:
+                            raise OperationError(
+                                "OpenList 改名请求已发出，但目标文件状态暂时无法确认。"
+                                "已停止自动改名重试并保留验收文件；请先在 OpenList 核对"
+                                "临时文件和目标文件，不要重复点击验收。",
+                                statuses,
+                            )
                         raise OperationError(
                             "测试文件已写入，但远端改名或改名后的复验失败。"
                             "请检查移动／改名权限。",
                             statuses,
                         )
-                    if "TG115_WEBDAV_DELETE=FAILED" in output:
+                    if markers.get("WEBDAV_DELETE") == "FAILED":
                         raise OperationError(
                             "测试文件无法安全清理。请检查删除权限，并在 OpenList 中核对"
-                            "是否残留 .tg115-verify- 开头的测试文件。",
+                            "是否残留 WebDAV 验收测试文件。",
                             statuses,
                         )
                     if "server gave HTTP response to HTTPS client" in output:
@@ -1757,24 +2149,28 @@ if _BACKEND_IMPORT_ERROR is None:
                         )
                     if (
                         self.product.key == "clouddrive2"
-                        and "lookup clouddrive2" in output
+                        and (
+                            "lookup tg2cloud-clouddrive2" in output
+                            or "lookup clouddrive2" in output
+                        )
                     ):
                         raise OperationError(
-                            "Bot 无法解析 CloudDrive2 Docker 服务名。请先点击“修复 CloudDrive2 网络”，成功后再验收。",
+                            "Bot 无法解析 CloudDrive2 Docker 地址。请先点击“修复 CloudDrive2 网络”，成功后再验收。",
                             statuses,
                         )
                     raise OperationError("远程状态检查失败", statuses)
-                if "BOT_HEALTH=healthy" not in output:
+                if dict(statuses)["Bot 容器"] != "通过":
                     raise OperationError("Bot 当前没有通过健康检查", statuses)
-                if "TG115_DESTINATION=OK" not in output:
+                if markers.get("DESTINATION") != "OK":
                     raise OperationError(
                         f"{self.product.display_name} WebDAV 写入、校验、改名和清理没有通过",
                         statuses,
                     )
-                self._log("WebDAV 验收通过：测试文件已写入、校验、改名并清理。")
+                action = "直接写入最终文件名、校验并清理" if self.product.is_openlist else "写入、校验、改名并清理"
+                self._log(f"WebDAV 验收通过：测试文件已{action}。")
                 return OperationResult(
                     "验收通过",
-                    f"Bot 容器健康；{self.product.display_name} WebDAV 已通过真实测试文件的写入、大小校验、改名和清理。\n\n注意：这只证明 {self.product.display_name} WebDAV 已接收文件；115 官方端应以官方客户端中大小正常且可以打开为准。",
+                    f"Bot 容器健康；{self.product.display_name} WebDAV 已通过真实测试文件的{action}。\n\n注意：这只证明 {self.product.display_name} WebDAV 已接收文件；上游云存储是否完成同步，请以对应官方客户端中的文件大小和可打开状态为准。",
                     statuses=statuses,
                 )
             finally:
@@ -1823,6 +2219,7 @@ try:
         QApplication,
         QButtonGroup,
         QCheckBox,
+        QComboBox,
         QDialog,
         QDialogButtonBox,
         QFileDialog,
@@ -1833,11 +2230,13 @@ try:
         QLabel,
         QLineEdit,
         QMainWindow,
+        QMenu,
         QMessageBox,
         QPlainTextEdit,
         QProgressBar,
         QPushButton,
         QScrollArea,
+        QSpinBox,
         QSplitter,
         QStackedWidget,
         QVBoxLayout,
@@ -1857,7 +2256,7 @@ def _require_qt() -> None:
 
 
 if _QT_IMPORT_ERROR is None:
-    # No external fonts, icon files, Node.js, browser runtime, or network assets.
+    # Product branding comes only from assets/brand; utility icons remain embedded.
     ICON_PATHS = {
         "server": '<rect x="4" y="3" width="16" height="7" rx="2"/><rect x="4" y="14" width="16" height="7" rx="2"/><path d="M8 6.5h.01M8 17.5h.01M12 6.5h5M12 17.5h5"/>',
         "plane": '<path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/>',
@@ -1890,6 +2289,7 @@ if _QT_IMPORT_ERROR is None:
      background:#eaf0f7; color:#52637c; padding:6px 14px; font-size:12px; }
     QLabel#Status[state="running"] { background:#e8f0ff; color:#2563eb; border-color:#cfe0ff; }
     QLabel#Status[state="success"] { background:#e7f5ef; color:#168063; border-color:#cbe9dc; }
+    QLabel#Status[state="pending"] { background:#fff8e8; color:#9a6518; border-color:#f0d9aa; }
     QLabel#Status[state="error"] { background:#fff0ef; color:#be4f45; border-color:#f6d4ce; }
     QLabel#Status[state="cancelled"] { background:#f3f4f6; color:#596273; border-color:#dfe2e7; }
     QLabel#Banner { border:1px solid #f1dfb8; background:#fff9ed; color:#8a6223;
@@ -1938,6 +2338,9 @@ if _QT_IMPORT_ERROR is None:
     QProgressBar::chunk { background:#4783ed; border-radius:2px; }
     QPlainTextEdit#Console { background:#132137; color:#ced8e8; border:0;
      border-radius:11px; padding:10px; selection-background-color:#3a5375; font-size:12px; }
+    QPlainTextEdit#DomainStatus { background:#f8fafd; color:#647792;
+     border:1px solid #dbe5f1; border-radius:9px; padding:9px 11px;
+     selection-background-color:#c6dbff; font-size:12px; }
     QSplitter::handle { background:transparent; height:9px; }
     QToolTip { background:#243654; color:white; border:0; padding:8px; }
     QDialog { background:#f7f9fd; }
@@ -1958,6 +2361,22 @@ if _QT_IMPORT_ERROR is None:
         painter.end()
         pixmap.setDevicePixelRatio(2)
         return QIcon(pixmap)
+
+    def brand_icon() -> QIcon:
+        """Load the official TG2Cloud icon from the bundled brand directory."""
+        return QIcon(str(resource_path(BRAND_ICON_ASSET)))
+
+    def brand_pixmap(asset: str, width: int, height: int) -> QPixmap:
+        """Load and scale an official TG2Cloud brand asset without modifying it."""
+        pixmap = QPixmap(str(resource_path(asset)))
+        if pixmap.isNull():
+            return pixmap
+        return pixmap.scaled(
+            width,
+            height,
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
 
     def label(text: str, role: str = "", wrap: bool = False) -> QLabel:
         widget = QLabel(text)
@@ -1996,11 +2415,452 @@ if _QT_IMPORT_ERROR is None:
             self.backend, self.operation, self.values = backend, operation, dict(values)
 
         def run(self) -> None:
+            self.backend.current_stage = ""
             try:
                 result = getattr(self.backend, self.operation)(self.values)
                 self.succeeded.emit(self.operation, result)
             except Exception as exc:  # noqa: BLE001 - GUI worker boundary
                 self.failed.emit(self.operation, exc)
+
+    class ProxyBackupDialog(QDialog):
+        """Select a private VPS archive and confirm an exact retention preview."""
+
+        def __init__(self, owner) -> None:
+            super().__init__(owner)
+            self.owner = owner
+            self.backend = owner.backend
+            self.worker = None
+            self.plan = None
+            self.refresh_pending = False
+            self.setWindowTitle("共享代理备份管理")
+            self.setWindowIcon(brand_icon())
+            self.resize(680, 470)
+            outer = QVBoxLayout(self)
+            outer.addWidget(label("共享代理备份", "SectionTitle"))
+            outer.addWidget(label("备份包含证书私钥，仅保存在 VPS。请选择要核验的备份。", "Hint", True))
+            self.archives = QComboBox()
+            self.archives.setAccessibleName("选择代理备份")
+            outer.addWidget(self.archives)
+            actions = QHBoxLayout()
+            self.buttons = {}
+            for operation, title in (("proxy_backup_list", "刷新清单"), ("proxy_backup_check", "核验备份"), ("proxy_backup_drill", "隔离演练")):
+                button = QPushButton(title)
+                button.clicked.connect(lambda checked=False, op=operation: self._run(op))
+                self.buttons[operation] = button
+                actions.addWidget(button)
+            outer.addLayout(actions)
+            retention = QHBoxLayout()
+            retention.addWidget(label("保留最新备份份数", "FieldLabel"))
+            self.keep = QSpinBox()
+            self.keep.setRange(1, 50)
+            self.keep.setValue(5)
+            self.keep.setAccessibleName("保留备份份数")
+            self.keep.valueChanged.connect(self._invalidate_plan)
+            retention.addWidget(self.keep)
+            for operation, title in (("proxy_backup_preview", "预览清理"), ("proxy_backup_prune", "执行清理")):
+                button = QPushButton(title)
+                button.clicked.connect(lambda checked=False, op=operation: self._run(op))
+                self.buttons[operation] = button
+                retention.addWidget(button)
+            outer.addLayout(retention)
+            self.details = QPlainTextEdit()
+            self.details.setReadOnly(True)
+            self.details.setObjectName("DomainStatus")
+            self.details.setAccessibleName("备份与清理预览详情")
+            outer.addWidget(self.details, 1)
+            close = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            close.rejected.connect(self.reject)
+            outer.addWidget(close)
+            self._set_busy(False)
+            if not owner.owner.preview:
+                QTimer.singleShot(0, lambda: self._run("proxy_backup_list"))
+
+        def _invalidate_plan(self, *_args) -> None:
+            self.plan = None
+            self.buttons["proxy_backup_prune"].setEnabled(False)
+
+        def _set_busy(self, busy: bool) -> None:
+            available = self.backend is not None and not self.owner.owner.preview
+            for button in self.buttons.values():
+                button.setEnabled(available and not busy)
+            for operation in ("proxy_backup_check", "proxy_backup_drill"):
+                self.buttons[operation].setEnabled(available and not busy and self.archives.count() > 0)
+            self.buttons["proxy_backup_prune"].setEnabled(available and not busy and bool(self.plan and self.plan["remove"]))
+            self.archives.setEnabled(not busy)
+            self.keep.setEnabled(not busy)
+
+        def _run(self, operation: str) -> None:
+            if self.worker is not None or self.backend is None or self.owner.owner.preview:
+                return
+            values = self.owner._values()
+            values["proxy_backup_keep"] = str(self.keep.value())
+            if operation in {"proxy_backup_check", "proxy_backup_drill"}:
+                values["proxy_backup_archive"] = self.archives.currentData() or ""
+                if not values["proxy_backup_archive"]:
+                    return
+            if operation == "proxy_backup_prune":
+                if not self.plan or not self.plan["remove"]:
+                    return
+                total = sum(item["size_bytes"] for item in self.plan["remove"])
+                answer = QMessageBox.question(
+                    self, "确认清理代理备份",
+                    f"将永久删除预览中的 {len(self.plan['remove'])} 份旧备份及校验文件，约 {total / 1024 ** 2:.2f} MB。\n"
+                    f"保留 {len(self.plan['retain'])} 份已核验备份。删除后无法撤销。是否继续？",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No,
+                )
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
+                values["proxy_backup_plan"] = self.plan["plan_id"]
+            self.owner.owner.redactor.update(values)
+            self.owner.owner.append_log("开始：代理备份管理 / " + operation.removeprefix("proxy_backup_"))
+            self.worker = OperationThread(self.backend, operation, values, self)
+            self.worker.succeeded.connect(self._success, Qt.ConnectionType.QueuedConnection)
+            self.worker.failed.connect(self._failure, Qt.ConnectionType.QueuedConnection)
+            self.worker.finished.connect(self._finished, Qt.ConnectionType.QueuedConnection)
+            self._set_busy(True)
+            self.worker.start()
+
+        def _success(self, operation: str, result: Any) -> None:
+            if operation == "proxy_backup_list":
+                self._invalidate_plan()
+                self.archives.clear()
+                for item in result.backup_data["items"]:
+                    integrity = "校验通过" if item["integrity"] == "OK" else "校验失败"
+                    self.archives.addItem(f"{item['created_utc']} · {item['size_bytes'] / 1024 ** 2:.2f} MB · {integrity} · {item['name'][-39:-32]}", item["name"])
+                self.details.setPlainText(f"共 {self.archives.count()} 份备份。清理只在全部备份校验通过后允许执行；至少保留一份。")
+            elif operation == "proxy_backup_preview":
+                self.plan = result.backup_data["plan"]
+                removed = self.plan["remove"]
+                lines = [f"保留 {len(self.plan['retain'])} 份；拟删除 {len(removed)} 份，约 {sum(item['size_bytes'] for item in removed) / 1024 ** 2:.2f} MB。", "以下为拟删除文件，尚未执行："]
+                lines.extend(item["name"] for item in removed)
+                self.details.setPlainText("\n".join(lines))
+            elif operation == "proxy_backup_prune":
+                self._invalidate_plan()
+                self.refresh_pending = True
+                self.owner.owner.append_log("代理旧备份已按确认计划永久删除；最新保留备份仍在 VPS。")
+                self.details.setPlainText("清理完成，正在刷新清单。")
+            else:
+                self.details.setPlainText(result.message)
+                self.owner.owner.append_log(result.title + "：" + result.message)
+
+        def _failure(self, _operation: str, error: Any) -> None:
+            self._invalidate_plan()
+            clean = self.owner.owner.redactor.clean(failure_details(error, getattr(self.backend, "current_stage", "")))
+            self.details.setPlainText(clean)
+            self.owner.owner.append_log("[失败] " + clean)
+
+        def _finished(self) -> None:
+            worker, self.worker = self.worker, None
+            if worker is not None:
+                worker.deleteLater()
+            self._set_busy(False)
+            if self.refresh_pending:
+                self.refresh_pending = False
+                self._run("proxy_backup_list")
+
+        def reject(self) -> None:
+            if self.worker is not None:
+                QMessageBox.information(self, "操作进行中", "请等待备份操作结束后再关闭。")
+                return
+            super().reject()
+
+    class DomainAccessDialog(QDialog):
+        """Required HTTPS management entry for TG2Cloud-managed gateways."""
+
+        OPERATION_TITLES: ClassVar[dict[str, str]] = {
+            "proxy_detect": "检测域名环境",
+            "proxy_configure": "配置 HTTPS",
+            "proxy_status": "检查运行状态",
+            "proxy_remove": "移除域名访问",
+            "proxy_backup": "备份共享代理",
+            "proxy_backup_check": "核验最近代理备份",
+            "proxy_backup_drill": "隔离恢复演练",
+            "proxy_renew_dry_run": "续期演练（dry-run）",
+        }
+        MAINTENANCE_OPERATIONS = frozenset({
+            "proxy_backup", "proxy_backup_check", "proxy_backup_drill", "proxy_renew_dry_run",
+        })
+
+        def __init__(self, owner: InstallerWindow) -> None:
+            super().__init__(owner)
+            self.owner = owner
+            self.backend = owner.backend
+            self.worker: OperationThread | None = None
+            self.configured_domain = ""
+            self.configured_state = "not_configured"
+            self.setWindowTitle("HTTPS 管理入口（必需）")
+            self.setWindowIcon(brand_icon())
+            self.setModal(True)
+            self.setMinimumSize(600, 630)
+            self.resize(680, 650)
+
+            outer = QVBoxLayout(self)
+            outer.setContentsMargins(24, 22, 24, 20)
+            outer.setSpacing(12)
+            outer.addWidget(label("HTTPS 管理入口（必需）", "SectionTitle"))
+            outer.addWidget(
+                label(
+                    f"受管部署必须使用共享 Nginx 与 Let's Encrypt，通过 HTTPS 打开 "
+                    f"{owner.product.display_name} 管理页。HTTPS 全部自检通过后，部署才算完成。",
+                    "Hint",
+                    True,
+                )
+            )
+            warning = label(
+                "此入口只代理管理界面，不用于 Bot 或 WebDAV 传输；公网 /dav 与 /dav/ "
+                "会被明确拒绝。首次签发证书时，Cloudflare 请使用“仅 DNS”。",
+                "Banner",
+                True,
+            )
+            outer.addWidget(warning)
+
+            outer.addWidget(label("当前状态", "FieldLabel"))
+            self.state_badge = label("未检测", "Status")
+            outer.addWidget(self.state_badge, 0, Qt.AlignmentFlag.AlignLeft)
+
+            outer.addWidget(label("管理页域名", "FieldLabel"))
+            self.domain_edit = QLineEdit()
+            self.domain_edit.setPlaceholderText("例如：cloud.example.com（只填写域名）")
+            self.domain_edit.setAccessibleName("管理页域名")
+            outer.addWidget(self.domain_edit)
+
+            outer.addWidget(label("Let's Encrypt 邮箱（可选）", "FieldLabel"))
+            self.email_edit = QLineEdit()
+            self.email_edit.setPlaceholderText("可留空；到期情况请查看 HTTPS 状态，不依赖邮件提醒")
+            self.email_edit.setAccessibleName("Let's Encrypt 邮箱")
+            outer.addWidget(self.email_edit)
+
+            self.status_text = QPlainTextEdit()
+            self.status_text.setObjectName("DomainStatus")
+            self.status_text.setAccessibleName("域名访问状态详情")
+            self.status_text.setReadOnly(True)
+            self.status_text.setLineWrapMode(QPlainTextEdit.LineWrapMode.WidgetWidth)
+            self.status_text.setHorizontalScrollBarPolicy(
+                Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+            )
+            self.status_text.setFixedHeight(112)
+            self.status_text.setPlainText(
+                "先确认域名 A/AAAA 记录全部直接指向当前 VPS，并开放 80/443 入站。"
+            )
+            outer.addWidget(self.status_text)
+
+            action_grid = QGridLayout()
+            action_grid.setSpacing(8)
+            definitions = (
+                ("proxy_detect", "检测环境", "server"),
+                ("proxy_configure", "配置 HTTPS", "shield"),
+                ("proxy_status", "检查状态", "check"),
+                ("open", f"打开 {owner.product.display_name} 域名", "external"),
+                ("proxy_remove", "移除域名访问", "wrench"),
+            )
+            self.buttons: dict[str, QPushButton] = {}
+            for index, (operation, title, symbol) in enumerate(definitions):
+                button = QPushButton(title)
+                button.setIcon(icon(symbol, size=18))
+                if operation == "proxy_configure":
+                    button.setObjectName("Primary")
+                elif operation == "proxy_remove":
+                    button.setObjectName("Repair")
+                if operation == "open":
+                    button.clicked.connect(self._open_domain)
+                else:
+                    button.clicked.connect(
+                        lambda checked=False, op=operation: self._run(op)
+                    )
+                self.buttons[operation] = button
+                action_grid.addWidget(button, index // 2, index % 2)
+            outer.addLayout(action_grid)
+            outer.addStretch(1)
+
+            close_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            self.maintenance_button = close_box.addButton("维护工具", QDialogButtonBox.ButtonRole.ActionRole)
+            menu = QMenu(self.maintenance_button)
+            for operation in ("proxy_backup", "proxy_backup_check", "proxy_backup_drill", "proxy_renew_dry_run"):
+                action = menu.addAction(self.OPERATION_TITLES[operation])
+                action.triggered.connect(lambda checked=False, op=operation: self._run(op))
+            self.maintenance_button.setMenu(menu)
+            menu.addSeparator()
+            menu.addAction("管理历史代理备份…", self._manage_backups)
+            close_box.rejected.connect(self.reject)
+            outer.addWidget(close_box)
+            # Real CJK font metrics can exceed the initial resize height. Keep
+            # the existing layout/status height, but do not squeeze button text.
+            self.setMinimumHeight(max(630, outer.minimumSize().height()))
+            self._set_busy(False)
+            QTimer.singleShot(0, self._load_initial_status)
+
+        def _load_initial_status(self) -> None:
+            """Load the persisted route before allowing an unnoticed domain change."""
+            if self.backend is None or self.owner.preview:
+                return
+            try:
+                self.backend._validate_connection(self.owner.snapshot())
+            except (ValueError, KeyError, TypeError):
+                return
+            self._run("proxy_status")
+
+        def _set_badge(self, text: str, state: str = "") -> None:
+            self.state_badge.setText(text)
+            self.state_badge.setProperty("state", state)
+            self.state_badge.style().unpolish(self.state_badge)
+            self.state_badge.style().polish(self.state_badge)
+
+        def _set_busy(self, busy: bool) -> None:
+            available = self.backend is not None and not self.owner.preview
+            self.maintenance_button.setEnabled(available and not busy)
+            for button in self.buttons.values():
+                button.setEnabled(available and not busy)
+            self.buttons["open"].setEnabled(
+                available and not busy and bool(self.configured_domain)
+            )
+            self.domain_edit.setEnabled(not busy)
+            self.email_edit.setEnabled(not busy)
+
+        def _values(self) -> dict[str, str]:
+            values = self.owner.snapshot()
+            values["proxy_domain"] = self.domain_edit.text()
+            values["proxy_email"] = self.email_edit.text()
+            return values
+
+        def _manage_backups(self) -> None:
+            if self.worker is None and self.backend is not None and not self.owner.preview:
+                ProxyBackupDialog(self).exec()
+
+        def _run(self, operation: str) -> None:
+            if self.worker is not None or self.backend is None:
+                return
+            values = self._values()
+            try:
+                self.backend._validate_connection(values)
+                if operation in {"proxy_detect", "proxy_configure"}:
+                    values["proxy_domain"] = validate_domain(values["proxy_domain"])
+                if operation == "proxy_configure":
+                    values["proxy_email"] = validate_email(values["proxy_email"])
+            except (ValueError, KeyError, TypeError) as exc:
+                QMessageBox.warning(self, "请检查配置", str(exc))
+                return
+            if operation == "proxy_configure" and self.configured_domain:
+                candidate = values["proxy_domain"]
+                if candidate != self.configured_domain:
+                    answer = QMessageBox.question(
+                        self,
+                        "确认更新域名",
+                        f"将把当前域名 {self.configured_domain} 更新为 {candidate}。\n"
+                        "新证书与 HTTPS 自检全部通过前，旧域名配置会保留。是否继续？",
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                        QMessageBox.StandardButton.No,
+                    )
+                    if answer != QMessageBox.StandardButton.Yes:
+                        return
+            if operation == "proxy_remove":
+                answer = QMessageBox.question(
+                    self,
+                    "确认移除域名访问",
+                    "只移除当前 Edition 的域名路由；不会卸载核心服务，也不会删除证书文件。\n"
+                    "移除后当前 Edition 将不再满足部署完成条件，公网管理入口会立即不可用。是否继续？",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
+                )
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
+            if operation in {"proxy_backup", "proxy_backup_drill", "proxy_renew_dry_run"}:
+                explanations = {
+                    "proxy_backup": "将备份两 Edition 共用的 HTTPS 配置与证书私钥，仅保存在 VPS 私密目录。\n不停止 Bot，不下载或上传备份。是否继续？",
+                    "proxy_backup_drill": "将最近备份解包到新建私密目录，核对文件后清理该测试目录。\n不会覆盖运行配置、启动服务或替换正式证书。是否继续？",
+                    "proxy_renew_dry_run": "仅对当前 Edition 做 Let's Encrypt 测试续期，可能需要数分钟。\n不会替换正式证书，不启用 deploy hooks；请勿反复点击。是否继续？",
+                }
+                answer = QMessageBox.question(
+                    self, self.OPERATION_TITLES[operation], explanations[operation],
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
+                )
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
+            self.owner.redactor.update(values)
+            self.owner.append_log("开始：" + self.OPERATION_TITLES[operation])
+            self._set_badge("正在执行", "running")
+            self.status_text.setPlainText(
+                "请稍候；正在通过 SSH 检查共享代理和当前 Edition。"
+            )
+            self.worker = OperationThread(self.backend, operation, values, self)
+            self.worker.succeeded.connect(
+                self._success, Qt.ConnectionType.QueuedConnection
+            )
+            self.worker.failed.connect(
+                self._failure, Qt.ConnectionType.QueuedConnection
+            )
+            self.worker.finished.connect(
+                self._finished, Qt.ConnectionType.QueuedConnection
+            )
+            self._set_busy(True)
+            self.worker.start()
+
+        @Slot(str, object)
+        def _success(self, operation: str, result: Any) -> None:
+            if operation in self.MAINTENANCE_OPERATIONS:
+                self.status_text.setPlainText(result.message)
+                self.owner.append_log(result.title + "：" + result.message)
+                self._set_badge("维护完成", "success")
+                return  # Maintenance cannot mark HTTPS as configured/healthy.
+            report = getattr(result, "proxy_report", None)
+            if report is None:
+                raise RuntimeError("域名操作没有返回结构化状态。")
+            if report.domain and report.state in {"healthy", "running_error", "certificate_error"}:
+                self.configured_domain = report.domain
+                self.domain_edit.setText(report.domain)
+            elif report.state == "not_configured":
+                self.configured_domain = ""
+            labels = {
+                "not_configured": ("未配置", ""),
+                "detected": ("环境已检测", "success"),
+                "detected_error": ("环境检查未通过", "error"),
+                "healthy": ("运行正常", "success"),
+                "certificate_error": ("证书异常", "error"),
+                "running_error": ("运行异常", "error"),
+            }
+            badge, state = labels.get(report.state, ("状态未知", "error"))
+            if report.state == "healthy" and report.warnings:
+                badge, state = "HTTPS 可用，续期待检查", "pending"
+            if operation != "proxy_detect":
+                self.configured_state = report.state
+            self._set_badge(badge, state)
+            details = [report.message]
+            details.extend(f"{title}：{value}" for title, value in report.statuses)
+            self.status_text.setPlainText("\n".join(details))
+            self.owner.append_log(result.title + "：" + result.message)
+            if operation != "proxy_detect":
+                self.owner._apply_https_report(report)
+
+        @Slot(str, object)
+        def _failure(self, operation: str, error: Any) -> None:
+            clean = self.owner.redactor.clean(
+                failure_details(error, getattr(self.backend, "current_stage", ""))
+            )
+            self._set_badge("操作失败", "error")
+            self.status_text.setPlainText(clean)
+            self.owner.append_log("[失败] " + clean)
+            if operation not in self.MAINTENANCE_OPERATIONS and operation != "proxy_detect" and self.configured_state != "healthy":
+                self.owner._https_requirement_failed(clean)
+            QMessageBox.critical(self, self.OPERATION_TITLES[operation] + "失败", clean)
+
+        @Slot()
+        def _finished(self) -> None:
+            worker, self.worker = self.worker, None
+            if worker is not None:
+                worker.deleteLater()
+            self._set_busy(False)
+
+        def _open_domain(self) -> None:
+            try:
+                self.backend.open_domain(self.configured_domain)
+            except (ValueError, RuntimeError) as exc:
+                QMessageBox.warning(self, "无法打开域名", str(exc))
+
+        def reject(self) -> None:
+            if self.worker is not None:
+                QMessageBox.information(self, "操作进行中", "请等待当前 HTTPS 操作完成后再关闭。")
+                return
+            super().reject()
 
     class InstallerWindow(QMainWindow):
         PAGE_TITLES = (
@@ -2012,13 +2872,14 @@ if _QT_IMPORT_ERROR is None:
         ACTION_TITLES: ClassVar[dict[str, str]] = {
             "test_connection": "测试 SSH",
             "deploy": "一键部署基础环境",
-            "open_clouddrive": "打开 CloudDrive2 管理页",
+            "domain_access": "配置 HTTPS 管理入口",
             "repair_clouddrive": "修复 CloudDrive2 网络",
             "verify": "WebDAV 验收",
             "detect_resources": "检测 VPS 并推荐",
+            "runtime_status": "查看运行状态",
             "openlist_status": "查看运行状态",
             "openlist_logs": "查看脱敏日志",
-            "restart_bot": "重启 TG115 Bot",
+            "restart_bot": "重启 TG2Cloud Bot",
             "restart_openlist": "重启 OpenList",
             "backup_openlist": "创建安全备份",
             "reset_openlist_admin": "恢复管理员密码",
@@ -2044,9 +2905,6 @@ if _QT_IMPORT_ERROR is None:
             else:
                 self.PAGE_TITLES = type(self).PAGE_TITLES
             self.ACTION_TITLES = dict(type(self).ACTION_TITLES)
-            self.ACTION_TITLES["open_clouddrive"] = (
-                f"打开 {product.display_name} 管理页"
-            )
             self.ACTION_TITLES["repair_clouddrive"] = (
                 "检查 OpenList 服务"
                 if product.is_openlist
@@ -2056,6 +2914,7 @@ if _QT_IMPORT_ERROR is None:
             self.backend: Any = None
             self.backend_error = ""
             self.worker: OperationThread | None = None
+            self._open_required_https_after_worker = False
             self.exit_after_worker = False
             self.resource_update: Any = None
             self.edits: dict[str, QLineEdit] = {}
@@ -2073,7 +2932,7 @@ if _QT_IMPORT_ERROR is None:
             self.setWindowTitle(
                 f"{self.product.app_title}  v{self.product.app_version}  |  Qt"
             )
-            self.setWindowIcon(icon("plane", "#3474ed", 48))
+            self.setWindowIcon(brand_icon())
             self.setMinimumSize(900, 600)
             screen = QApplication.primaryScreen()
             area = screen.availableGeometry() if screen else None
@@ -2097,16 +2956,23 @@ if _QT_IMPORT_ERROR is None:
             outer.setContentsMargins(28, 22, 28, 15)
             outer.setSpacing(15)
             header = QHBoxLayout()
-            logo = label("")
-            logo.setPixmap(icon("plane", "#ffffff", 29).pixmap(29, 29))
-            logo.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            logo.setFixedSize(52, 52)
-            logo.setStyleSheet("background:#3474ed;border-radius:15px;")
-            header.addWidget(logo)
+            self.brand_icon_label = label("")
+            self.brand_icon_label.setObjectName("BrandIcon")
+            self.brand_icon_label.setPixmap(
+                brand_pixmap(BRAND_ICON_ASSET, 56, 56)
+            )
+            self.brand_icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self.brand_icon_label.setFixedSize(60, 60)
+            header.addWidget(self.brand_icon_label)
             brand = QVBoxLayout()
             brand.setSpacing(3)
-            brand.addWidget(label("TG115", "Brand"))
-            brand.addWidget(label("Telegram → 115  ·  让部署更清晰", "Subtitle"))
+            self.brand_name_label = label("TG2Cloud", "Brand")
+            self.brand_subtitle_label = label(
+                f"From Telegram to Your Cloud  ·  {self.product.display_name} Edition",
+                "Subtitle",
+            )
+            brand.addWidget(self.brand_name_label)
+            brand.addWidget(self.brand_subtitle_label)
             header.addSpacing(4)
             header.addLayout(brand)
             header.addStretch()
@@ -2167,6 +3033,7 @@ if _QT_IMPORT_ERROR is None:
             self.pages.addWidget(self._options_page())
             columns.addWidget(self.pages, 1)
             action_scroll = QScrollArea()
+            self.action_scroll = action_scroll
             action_scroll.setWidgetResizable(True)
             action_scroll.setFixedWidth(316)
             action_scroll.setHorizontalScrollBarPolicy(
@@ -2402,18 +3269,19 @@ if _QT_IMPORT_ERROR is None:
                 )
                 layout.addWidget(regenerate)
                 self.preserve_webdav = QCheckBox(
-                    "已有 OpenList：重新部署时保留 VPS 当前 WebDAV 配置"
+                    "明确覆盖全部配置时，仍保留 VPS 当前 WebDAV 与管理员配置"
                 )
                 self.preserve_webdav.setToolTip(
-                    "不会从 VPS 读取或显示密码；安装脚本只在 VPS 内复用现有配置"
+                    "仅与“使用本页配置覆盖 VPS 当前 .env”配合；凭据只在 VPS 内合并"
                 )
+                self.preserve_webdav.setEnabled(False)
                 self.preserve_webdav.toggled.connect(
                     self._update_preserve_webdav
                 )
                 layout.addWidget(self.preserve_webdav)
                 layout.addWidget(
                     self._hint(
-                        "先在 OpenList 添加 115 Open 存储，再创建专用 WebDAV 用户。"
+                        "先在 OpenList 添加你的云存储（例如 115 Open），再创建专用 WebDAV 用户。"
                         "用户名、密码和基本路径按本页建议填写；密码只在当前程序会话中保留。"
                     )
                 )
@@ -2421,7 +3289,7 @@ if _QT_IMPORT_ERROR is None:
                 layout.addWidget(self._hint(SOURCE_HINTS["_build_cloud_tab"][0]))
             layout.addWidget(
                 self._hint(
-                    "WebDAV 验收不等于 115 云端最终可用。请在 115 官方客户端确认文件大小与打开结果。",
+                    "WebDAV 验收只确认网关已接收文件。请在所用云存储的官方客户端确认最终文件大小和可打开状态。",
                     "SoftBox",
                 )
             )
@@ -2481,8 +3349,9 @@ if _QT_IMPORT_ERROR is None:
             )
             layout.addWidget(
                 self._hint(
-                    "部署后点击“打开 OpenList 管理页”，登录并由你本人添加 115 Open 存储。"
-                    "部署器不会读取 115 Cookie、Token 或登录信息。",
+                    "基础部署后必须先配置并验收 HTTPS 管理入口，再从域名登录 OpenList，"
+                    "由你本人添加云存储（例如 115 Open）。"
+                    "部署器不会读取任何云盘 Cookie、Token、OAuth 凭据或登录信息。",
                     "SoftBox",
                 )
             )
@@ -2510,6 +3379,16 @@ if _QT_IMPORT_ERROR is None:
                     self._field("local_budget_gb"), self._field("min_free_disk_gb")
                 )
             )
+            self.redeploy_apply_config = QCheckBox(
+                "已有 TG2Cloud：重新部署时使用本页配置覆盖 VPS 当前 .env"
+            )
+            self.redeploy_apply_config.setToolTip(
+                "默认保留 VPS 上的全部现有配置；仅在确需修改配置且已备份时勾选"
+            )
+            self.redeploy_apply_config.toggled.connect(
+                self._update_redeploy_apply_config
+            )
+            layout.addWidget(self.redeploy_apply_config)
             resources_box = frame("SoftBox")
             resources_layout = QVBoxLayout(resources_box)
             resources_layout.setContentsMargins(14, 13, 14, 13)
@@ -2555,14 +3434,20 @@ if _QT_IMPORT_ERROR is None:
             definitions = (
                 ("test_connection", "server", "", "#6985aa"),
                 ("deploy", "rocket", "Primary", "#ffffff"),
-                ("open_clouddrive", "external", "", "#6985aa"),
+                *(
+                    (("runtime_status", "check", "", "#6985aa"),)
+                    if not self.product.is_openlist
+                    else ()
+                ),
+                ("domain_access", "shield", "Primary", "#ffffff"),
                 ("repair_clouddrive", "wrench", "Repair", "#ac7b3e"),
                 ("verify", "check", "Verify", "#26896f"),
             )
             hints = {
                 "test_connection": "连接测试与 VPS 资源预检",
                 "deploy": "部署 Bot、运行环境与选定服务",
-                "open_clouddrive": "通过固定 SSH 隧道打开管理页",
+                "runtime_status": "区分当前 TG2Cloud 与旧 TG115 实例",
+                "domain_access": "必需：证书和 HTTPS 自检通过后部署才算完成",
                 "repair_clouddrive": (
                     "检查容器与 VPS 回环管理端口"
                     if self.product.is_openlist
@@ -2578,7 +3463,11 @@ if _QT_IMPORT_ERROR is None:
                 button.setIconSize(QSize(19, 19))
                 button.setMinimumHeight(22)
                 button.clicked.connect(
-                    lambda checked=False, op=operation: self.run_operation(op)
+                    lambda checked=False, op=operation: (
+                        self.show_domain_access()
+                        if op == "domain_access"
+                        else self.run_operation(op)
+                    )
                 )
                 self.action_buttons[operation] = button
                 layout.addWidget(button)
@@ -2589,9 +3478,8 @@ if _QT_IMPORT_ERROR is None:
                 layout.addSpacing(4)
                 layout.addWidget(frame("Divider"))
                 layout.addWidget(label("OpenList 日常管理", "FieldLabel"))
-                management = QGridLayout()
-                management.setHorizontalSpacing(7)
-                management.setVerticalSpacing(7)
+                management = QVBoxLayout()
+                management.setSpacing(7)
                 management_definitions = (
                     ("openlist_status", "check", "#6985aa"),
                     ("openlist_logs", "terminal", "#6985aa"),
@@ -2600,9 +3488,7 @@ if _QT_IMPORT_ERROR is None:
                     ("backup_openlist", "folder", "#26896f"),
                     ("reset_openlist_admin", "shield", "#ac7b3e"),
                 )
-                for index, (operation, symbol, color) in enumerate(
-                    management_definitions
-                ):
+                for operation, symbol, color in management_definitions:
                     button = QPushButton(self.ACTION_TITLES[operation])
                     if operation == "reset_openlist_admin":
                         button.setObjectName("Repair")
@@ -2613,7 +3499,7 @@ if _QT_IMPORT_ERROR is None:
                         lambda checked=False, op=operation: self.run_operation(op)
                     )
                     self.action_buttons[operation] = button
-                    management.addWidget(button, index // 2, index % 2)
+                    management.addWidget(button)
                 layout.addLayout(management)
             layout.addStretch(1)
             divider = frame("Divider")
@@ -2621,6 +3507,36 @@ if _QT_IMPORT_ERROR is None:
             self.step_summary = label("下一步：填写配置，测试 SSH", "Hint", True)
             layout.addWidget(self.step_summary)
             return card
+
+        def show_domain_access(self) -> None:
+            if self.preview or self.backend is None or self.busy:
+                return
+            dialog = DomainAccessDialog(self)
+            dialog.exec()
+
+        def _apply_https_report(self, report: ProxyReport) -> None:
+            if report.state == "healthy":
+                self._status("部署完成 · 续期待检查" if report.warnings else "部署完成", "pending" if report.warnings else "success")
+                self.footer_state.setText("HTTPS 管理入口：可用，续期待检查" if report.warnings else "HTTPS 管理入口：运行正常")
+                self.step_summary.setText(
+                    f"下一步：打开 {self.product.display_name} 域名，完成存储和 WebDAV 配置"
+                )
+                return
+            if report.state in {"certificate_error", "running_error"}:
+                self._status("HTTPS 未通过", "error")
+                self.footer_state.setText("HTTPS 管理入口：需要修复")
+                self.step_summary.setText("请修复 HTTPS 检查失败项；通过前部署尚未完成")
+                return
+            self._status("待配置 HTTPS", "pending")
+            self.footer_state.setText("HTTPS 管理入口：尚未完成")
+            self.step_summary.setText("下一步：配置并验收 HTTPS 管理入口")
+
+        def _https_requirement_failed(self, message: str) -> None:
+            self._status("HTTPS 未通过", "error")
+            self.footer_state.setText("HTTPS 管理入口：操作失败")
+            self.step_summary.setText(
+                "请根据 HTTPS 日志修复 DNS、端口或证书问题后重试"
+            )
 
         def _log_panel(self) -> QWidget:
             panel = QWidget()
@@ -2712,6 +3628,9 @@ if _QT_IMPORT_ERROR is None:
                 if (self.product.is_openlist or self.managed.isChecked())
                 else "false"
             )
+            values["redeploy_apply_config"] = (
+                "true" if self.redeploy_apply_config.isChecked() else "false"
+            )
             if self.product.is_openlist:
                 values["preserve_webdav"] = (
                     "true" if self.preserve_webdav.isChecked() else "false"
@@ -2777,6 +3696,13 @@ if _QT_IMPORT_ERROR is None:
                 self.field_boxes[name].setEnabled(not checked)
             self._configuration_changed()
 
+        def _update_redeploy_apply_config(self, checked: bool) -> None:
+            if self.product.is_openlist:
+                self.preserve_webdav.setEnabled(checked)
+                if not checked:
+                    self.preserve_webdav.setChecked(False)
+            self._configuration_changed()
+
         def _set_openlist_instance_state(self, state: str) -> None:
             if not self.product.is_openlist or not hasattr(
                 self, "openlist_instance_notice"
@@ -2806,6 +3732,13 @@ if _QT_IMPORT_ERROR is None:
             ready = self.backend is not None and not self.busy and not self.preview
             for button in self.action_buttons.values():
                 button.setEnabled(ready)
+            if (
+                "domain_access" in self.action_buttons
+                and not self.product.is_openlist
+                and hasattr(self, "managed")
+                and not self.managed.isChecked()
+            ):
+                self.action_buttons["domain_access"].setEnabled(False)
             if hasattr(self, "pages"):
                 self.pages.setEnabled(not self.busy)
             for key, button in self.apply_buttons.items():
@@ -2833,6 +3766,10 @@ if _QT_IMPORT_ERROR is None:
         def append_log(self, text: str) -> None:
             if hasattr(self, "auth_group") and hasattr(self, "managed"):
                 self.redactor.update(self.snapshot())
+            stage = stage_from_log(text)
+            if stage:
+                self.step_summary.setText("当前阶段：" + STAGES[stage][0])
+                text = "阶段：" + STAGES[stage][0]
             clean = self.redactor.clean(text).rstrip()
             bar = self.console.verticalScrollBar()
             at_bottom = bar.value() >= bar.maximum() - 3
@@ -2865,7 +3802,7 @@ if _QT_IMPORT_ERROR is None:
 
         def export_log(self) -> None:
             now = dt.datetime.now(dt.UTC).astimezone()
-            name = f"tg115-{now:%Y%m%d-%H%M%S}.log"
+            name = f"tg2cloud-{now:%Y%m%d-%H%M%S}.log"
             path, _ = QFileDialog.getSaveFileName(
                 self, "导出脱敏日志", name, "Log files (*.log);;Text (*.txt)"
             )
@@ -2930,7 +3867,7 @@ if _QT_IMPORT_ERROR is None:
                     self,
                     "高级操作：恢复管理员密码",
                     "这会立即替换现有 OpenList 管理员密码，旧密码将失效。\n"
-                    "不会修改 WebDAV 用户密码，也不会读取 115 登录信息。\n\n"
+                    "不会修改 WebDAV 用户密码，也不会读取云存储登录信息。\n\n"
                     "确认继续？",
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                     QMessageBox.StandardButton.No,
@@ -2985,27 +3922,31 @@ if _QT_IMPORT_ERROR is None:
             self.footer_state.setText("最近成功：" + self.ACTION_TITLES[operation])
             next_steps = {
                 "test_connection": "下一步：补全配置并部署基础环境",
-                "deploy": (
-                    "下一步：打开 OpenList，添加 115 Open 并配置 WebDAV"
-                    if self.product.is_openlist
-                    else "下一步：打开 CloudDrive2，挂载 115"
-                ),
-                "open_clouddrive": "下一步：完成存储和 WebDAV 配置后执行验收",
-                "verify": "请在 115 官方客户端确认最终文件",
+                "deploy": "下一步：配置并验收 HTTPS 管理入口",
+                "verify": "请在所用云存储的官方客户端确认最终文件",
                 "repair_clouddrive": (
                     "OpenList 基础服务检查通过；WebDAV 仍需单独验收"
                     if self.product.is_openlist
                     else "网络修复已完成，请关注官方端文件状态"
                 ),
                 "detect_resources": "可在部署选项页应用安全建议",
-                "openlist_status": "OpenList 和 Bot 当前运行正常",
+                "runtime_status": "请依据状态检查结果决定是否部署或修复",
+                "openlist_status": "请依据状态检查结果决定是否部署或修复",
                 "openlist_logs": "最近的脱敏日志已显示在下方",
                 "restart_bot": "Bot 已恢复运行，可继续发送任务",
                 "restart_openlist": "OpenList 管理端已恢复响应",
                 "backup_openlist": "备份已保存在 VPS 的受限目录",
                 "reset_openlist_admin": "请复制并妥善保存新的管理员密码",
             }
-            self.step_summary.setText(next_steps[operation])
+            https_required = bool(getattr(result, "https_required", False))
+            if operation == "deploy" and not https_required:
+                self.step_summary.setText("下一步：执行外部 WebDAV 验收")
+            else:
+                self.step_summary.setText(next_steps[operation])
+            if operation == "deploy" and https_required:
+                self._status("待配置 HTTPS", "pending")
+                self.footer_state.setText("基础服务已就绪；HTTPS 尚未完成")
+                self._open_required_https_after_worker = True
             openlist_state = getattr(result, "openlist_state", "")
             if openlist_state:
                 self._set_openlist_instance_state(openlist_state)
@@ -3030,7 +3971,9 @@ if _QT_IMPORT_ERROR is None:
             statuses = getattr(error, "statuses", ())
             if statuses:
                 self._show_verification_statuses(statuses)
-            clean = self.redactor.clean(str(error))
+            clean = self.redactor.clean(
+                failure_details(error, getattr(self.backend, "current_stage", ""))
+            )
             if getattr(error, "user_cancelled", False):
                 self._status("操作已取消", "cancelled")
                 self.footer_state.setText(
@@ -3049,6 +3992,8 @@ if _QT_IMPORT_ERROR is None:
 
         @Slot()
         def _worker_finished(self) -> None:
+            open_required_https = self._open_required_https_after_worker
+            self._open_required_https_after_worker = False
             worker, self.worker = self.worker, None
             self.progress.setRange(0, 1)
             self.progress.setValue(0)
@@ -3057,6 +4002,8 @@ if _QT_IMPORT_ERROR is None:
                 worker.deleteLater()
             if self.exit_after_worker:
                 QTimer.singleShot(0, self.close)
+            elif open_required_https:
+                QTimer.singleShot(0, self.show_domain_access)
 
         def _ask_from_worker(self, challenge: HostKeyChallenge) -> bool:
             question = Confirmation(challenge)
@@ -3127,15 +4074,25 @@ if _QT_IMPORT_ERROR is None:
             except (ValueError, KeyError, TypeError) as exc:
                 QMessageBox.warning(self, "无法应用建议", str(exc))
 
-        def show_diagnostics(self) -> None:
+        def _diagnostics_dialog(self) -> QDialog:
             report = dependency_report(self.product)
             dialog = QDialog(self)
             dialog.setWindowTitle("依赖检查与关于")
+            dialog.setWindowIcon(brand_icon())
             dialog.resize(700, 500)
             layout = QVBoxLayout(dialog)
+            about_logo = label("")
+            about_logo.setObjectName("AboutLogo")
+            about_logo.setPixmap(brand_pixmap(BRAND_LOGO_ASSET, 300, 100))
+            about_logo.setAlignment(Qt.AlignmentFlag.AlignLeft)
+            about_logo.setAccessibleName("TG2Cloud Logo")
+            dialog.brand_logo_label = about_logo
+            layout.addWidget(about_logo)
             layout.addWidget(
                 label(
-                    f"{self.product.app_title}\n产品 v{self.product.app_version}  /  界面 {UI_VERSION}",
+                    f"{self.product.app_title}\n"
+                    "From Telegram to Your Cloud\n"
+                    f"产品 v{self.product.app_version}  /  界面 {UI_VERSION}",
                     "SectionTitle",
                     True,
                 )
@@ -3148,7 +4105,7 @@ if _QT_IMPORT_ERROR is None:
                         **report,
                         "backend_error": self.backend_error,
                         "preview_mode": self.preview,
-                        "note": "单文件界面；继续使用原项目的 vps_resources.py 和产品 payload。",
+                        "note": "TG2Cloud 不收集云存储账号、Token 或 Cookie；网盘配置只在用户自己的 CloudDrive2 或 OpenList 中完成。",
                     },
                     ensure_ascii=False,
                     indent=2,
@@ -3158,6 +4115,10 @@ if _QT_IMPORT_ERROR is None:
             buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
             buttons.rejected.connect(dialog.reject)
             layout.addWidget(buttons)
+            return dialog
+
+        def show_diagnostics(self) -> None:
+            dialog = self._diagnostics_dialog()
             dialog.exec()
 
         def closeEvent(self, event: Any) -> None:
@@ -3196,8 +4157,9 @@ def make_app() -> QApplication:
     ):
         os.environ["QT_QPA_PLATFORM"] = "offscreen"
     app = QApplication.instance() or QApplication([sys.argv[0]])
-    app.setApplicationName("TG115 Deployer")
-    app.setOrganizationName("TG115")
+    app.setApplicationName("TG2Cloud Deployer")
+    app.setOrganizationName("TG2Cloud")
+    app.setWindowIcon(brand_icon())
     app.setStyle("Fusion")
     fonts = QFontDatabase.families()
     family = next(
@@ -3227,11 +4189,15 @@ def packaged_self_test(
     result_path: Path,
     product: ProductProfile = CLOUDDRIVE2_PRODUCT,
 ) -> int:
-    """Check local runtime/resources only. Does not contact a VPS or validate 115."""
+    """Check local runtime/resources only; no VPS or cloud storage is contacted."""
     result_path = Path(result_path)
     gui_ok = False
+    domain_ui_ok = False
+    backup_ui_ok = False
     ui_error = ""
     window = None
+    domain_dialog = None
+    backup_dialog = None
     try:
         app = make_app()
         window = (
@@ -3241,9 +4207,29 @@ def packaged_self_test(
         )
         app.processEvents()
         gui_ok = set(window.snapshot()) == set(defaults_for(product))
+        domain_dialog = DomainAccessDialog(window)
+        domain_dialog.show()
+        app.processEvents()
+        domain_ui_ok = (
+            domain_dialog.domain_edit.isVisible()
+            and domain_dialog.email_edit.isVisible()
+            and "proxy_configure" in domain_dialog.buttons
+        )
+        backup_dialog = ProxyBackupDialog(domain_dialog)
+        backup_dialog.show()
+        app.processEvents()
+        backup_ui_ok = (
+            backup_dialog.archives.isVisible()
+            and backup_dialog.details.isReadOnly()
+            and not backup_dialog.buttons["proxy_backup_prune"].isEnabled()
+        )
     except Exception as exc:  # noqa: BLE001 - packaged GUI diagnostic boundary
         ui_error = str(exc)
     finally:
+        if backup_dialog is not None:
+            backup_dialog.close()
+        if domain_dialog is not None:
+            domain_dialog.close()
         if window is not None:
             window.close()
     report = dependency_report(product)
@@ -3254,7 +4240,7 @@ def packaged_self_test(
         backend_ok = True
     except Exception as exc:  # noqa: BLE001 - packaged backend diagnostic boundary
         backend_error = str(exc)
-    succeeded = bool(report["ready"]) and gui_ok and backend_ok
+    succeeded = bool(report["ready"]) and gui_ok and domain_ui_ok and backup_ui_ok and backend_ok
     try:
         import PySide6
 
@@ -3275,7 +4261,10 @@ def packaged_self_test(
         f"pyside6_version={pyside6_version}",
         f"paramiko_version={paramiko_version}",
         "payload_missing=" + ",".join(report["payload_missing"]),
+        "brand_missing=" + ",".join(report["brand_missing"]),
         f"gui_runtime={'OK' if gui_ok else 'FAILED'}",
+        f"domain_ui={'OK' if domain_ui_ok else 'FAILED'}",
+        f"backup_ui={'OK' if backup_ui_ok else 'FAILED'}",
         f"backend_import={'OK' if backend_ok else 'FAILED'}",
         f"error={error}",
         "remote_test=NOT_RUN",
@@ -3321,7 +4310,7 @@ def main(
     if args.self_test:
         result_path = args.self_test_result
         if result_path is None:
-            result_path = Path(tempfile.gettempdir()) / "tg115-self-test.txt"
+            result_path = Path(tempfile.gettempdir()) / "tg2cloud-self-test.txt"
         return packaged_self_test(result_path, product)
     _require_qt()
     app = make_app()
@@ -3353,6 +4342,20 @@ def main(
                     app.processEvents()
                     if not window.grab().save(str(args.screenshots / f"{name}.png")):
                         raise RuntimeError("Screenshot write failed: " + name)
+                about = window._diagnostics_dialog()
+                about.show()
+                app.processEvents()
+                if not about.grab().save(str(args.screenshots / "about.png")):
+                    raise RuntimeError("Screenshot write failed: about")
+                about.close()
+                domain_dialog = DomainAccessDialog(window)
+                domain_dialog.show()
+                app.processEvents()
+                if not domain_dialog.grab().save(
+                    str(args.screenshots / "domain-https.png")
+                ):
+                    raise RuntimeError("Screenshot write failed: domain-https")
+                domain_dialog.close()
             except Exception as exc:  # noqa: BLE001 - preview capture boundary
                 capture_error.append(str(exc))
                 if sys.stderr is not None:

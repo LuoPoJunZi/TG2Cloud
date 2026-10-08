@@ -65,6 +65,17 @@ class RealWebDAVTests(unittest.IsolatedAsyncioTestCase):
         await verify_destination(self.settings, self.client)
         self.assertEqual(list((self.remote_root / "new-target").iterdir()), [])
 
+    async def test_openlist_move_command_works_against_local_webdav(self) -> None:
+        settings = replace(
+            self.settings,
+            storage_backend="openlist",
+            rclone_remote_name="openlist",
+            rclone_config_path=self.settings.data_dir / "openlist-rclone.conf",
+        )
+        client = RcloneClient(settings)
+        await verify_destination(settings, client)
+        self.assertEqual(list((self.remote_root / "new-target").iterdir()), [])
+
     async def test_real_stream_upload_and_size_verification(self) -> None:
         stream = await self.client.open_upload_stream(".uploading-stream", 4)
         try:

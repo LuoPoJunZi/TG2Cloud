@@ -32,20 +32,26 @@ def main() -> int:
     try:
         Settings.from_env(create_directories=False)
         if not args.validate_only:
-            desired = json.load(sys.stdin)["services"]["tg115-bot"]["environment"]
+            services = json.load(sys.stdin)["services"]
+            # Legacy TG115 compatibility for already-written Compose environment.
+            service_name = os.getenv(
+                "TG2CLOUD_COMPOSE_SERVICE",
+                os.getenv("TG115_COMPOSE_SERVICE", "tg2cloud-clouddrive2-bot"),
+            )
+            desired = services[service_name]["environment"]
             changed = mismatched_keys(desired, dict(os.environ))
             if changed:
-                print("TG115_CONFIG=MISMATCH_KEYS:" + ",".join(changed))
+                print("TG2CLOUD_CONFIG=MISMATCH_KEYS:" + ",".join(changed))
                 return 1
             if not args.expected_code or code_fingerprint() != args.expected_code:
-                print("TG115_CODE=MISMATCH")
+                print("TG2CLOUD_CODE=MISMATCH")
                 return 1
-            print("TG115_CODE=OK")
-        print(f"TG115_VERSION={__version__}")
-        print("TG115_CONFIG=OK")
+            print("TG2CLOUD_CODE=OK")
+        print(f"TG2CLOUD_VERSION={__version__}")
+        print("TG2CLOUD_CONFIG=OK")
         return 0
     except Exception:  # noqa: BLE001 - never expose config values at this CLI boundary
-        print("TG115_CONFIG=FAILED（配置格式或必填项错误；未输出配置值）", file=sys.stderr)
+        print("TG2CLOUD_CONFIG=FAILED（配置格式或必填项错误；未输出配置值）", file=sys.stderr)
         return 1
 
 

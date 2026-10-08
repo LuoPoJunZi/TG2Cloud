@@ -4,6 +4,7 @@ import asyncio
 import json
 import logging
 import os
+import posixpath
 import re
 from collections.abc import Callable
 from pathlib import Path
@@ -14,6 +15,10 @@ from .interfaces import DestinationProbe
 
 class RcloneError(RuntimeError):
     pass
+
+
+class MoveUncertainError(RcloneError):
+    """A MOVE may have happened, but its final state could not be verified."""
 
 
 def parse_progress(line: bytes) -> tuple[int, float] | None:
@@ -291,22 +296,36 @@ class RcloneClient:
 
     async def prepare_destination(self) -> None:
         await self.ensure_config()
-        await self._run("mkdir", self.remote(), timeout=45)
+        if self.settings.cd2_target.strip("/"):
+            await self._run("mkdir", self.remote(), timeout=45)
         await self._run("lsd", self.remote(), "--max-depth", "1", timeout=45)
 
     async def probe(self) -> DestinationProbe:
         try:
             await self.ensure_config()
-            code, _, _ = await self._run(
-                "lsd", self.remote(), "--max-depth", "1", timeout=20, check=False,
+            openlist = getattr(self.settings, "storage_backend", "clouddrive2") == "openlist"
+            # Do not amplify an authentication/IP ban with rclone's retries.
+            # Keep CloudDrive2's already-verified command unchanged.
+            probe_options = (
+                ("--retries", "1", "--low-level-retries", "1", "--contimeout", "5s", "--timeout", "10s")
+                if openlist else ()
             )
+            code, out, err = await self._run(
+                "lsd", self.remote(), "--max-depth", "1", *probe_options,
+                timeout=20, check=False,
+            )
+            if openlist and code != 0:
+                failure = self._openlist_probe_failure(out + "\n" + err, "target")
+                if failure is not None:
+                    return failure
             if code in {3, 4} and self.settings.cd2_target:
                 # A not-yet-created target is prepared only by an explicit upload/verify.
-                root_code, _, _ = await self._run(
+                root_code, root_out, root_err = await self._run(
                     "lsd",
                     f"{self.remote_name}:",
                     "--max-depth",
                     "1",
+                    *probe_options,
                     timeout=20,
                     check=False,
                 )
@@ -314,6 +333,10 @@ class RcloneClient:
                     return DestinationProbe(
                         True, "root_fallback", "WebDAV 根目录可访问；配置的目标目录尚未创建，不代表可写",
                     )
+                if openlist:
+                    failure = self._openlist_probe_failure(root_out + "\n" + root_err, "root_fallback")
+                    if failure is not None:
+                        return failure
                 return DestinationProbe(
                     False, "root_fallback", f"WebDAV 根目录访问失败（退出码 {root_code}）"
                 )
@@ -329,6 +352,21 @@ class RcloneClient:
                 exc,
             )
             return DestinationProbe(False, "unknown", "目录探测异常；请查看 VPS 最近日志")
+
+    @staticmethod
+    def _openlist_probe_failure(output: str, scope: str) -> DestinationProbe | None:
+        # Emit only fixed messages: rclone stderr may contain URLs/credentials.
+        if re.search(r"\b429\b|too many requests", output, re.IGNORECASE):
+            return DestinationProbe(
+                False, scope, "OpenList 返回 HTTP 429；健康探测已冷却，请勿反复验收",
+                "rate_limited",
+            )
+        if re.search(r"\b401\b|unauthorized", output, re.IGNORECASE):
+            return DestinationProbe(
+                False, scope, "OpenList 返回 HTTP 401；请核对当前运行的 WebDAV 凭据",
+                "unauthorized",
+            )
+        return None
 
     async def healthy(self) -> bool:
         return (await self.probe()).accessible
@@ -418,14 +456,66 @@ class RcloneClient:
         return RcloneUploadStream(process)
 
     async def remote_size(self, relative_path: str) -> int:
-        _, out, _ = await self._run(
-            "size", self.remote(relative_path), "--json", timeout=60
-        )
         try:
-            payload = json.loads(out)
-            return int(payload["bytes"])
+            _, out, _ = await self._run(
+                "size", self.remote(relative_path), "--json", timeout=60
+            )
+        except RcloneError:
+            if getattr(self.settings, "storage_backend", "clouddrive2") == "openlist":
+                listed = await self._listed_file_sizes(relative_path)
+                if relative_path in listed:
+                    return listed[relative_path]
+            raise
+        try:
+            size = int(json.loads(out)["bytes"])
         except (ValueError, KeyError, TypeError) as exc:
             raise RcloneError(f"无法解析远端大小：{out!r}") from exc
+        if (
+            size == 0
+            and getattr(self.settings, "storage_backend", "clouddrive2")
+            == "openlist"
+        ):
+            listed = await self._listed_file_sizes(relative_path)
+            return listed.get(relative_path, size)
+        return size
+
+    async def _listed_file_sizes(self, *relative_paths: str) -> dict[str, int]:
+        """Resolve exact files through parent listings without changing remote state."""
+        grouped: dict[str, dict[str, str]] = {}
+        for relative_path in relative_paths:
+            normalized = relative_path.strip("/")
+            parent, name = posixpath.split(normalized)
+            if name:
+                grouped.setdefault(parent, {})[name] = relative_path
+        result: dict[str, int] = {}
+        for parent, requested in grouped.items():
+            code, out, err = await self._run(
+                "lsjson", self.remote(parent), "--files-only", "--max-depth", "1",
+                timeout=60, check=False,
+            )
+            if code in {3, 4}:
+                continue
+            if code != 0:
+                raise RcloneError(
+                    f"无法读取远端父目录（rclone 退出码 {code}）："
+                    f"{err or out or '未知错误'}"
+                )
+            try:
+                payload = json.loads(out)
+                if not isinstance(payload, list):
+                    raise TypeError("lsjson result is not a list")
+                # This is an existence/size decision, not a display preview.
+                # Truncating the listing can turn an existing name into a free
+                # name and cause a direct-final OpenList upload to overwrite it.
+                for item in payload:
+                    if not isinstance(item, dict) or item.get("IsDir"):
+                        continue
+                    original = requested.get(str(item.get("Name", "")))
+                    if original is not None:
+                        result[original] = int(item["Size"])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise RcloneError("无法解析远端父目录文件清单") from exc
+        return result
 
     async def exists(self, relative_path: str) -> bool:
         code, out, err = await self._run(
@@ -438,6 +528,8 @@ class RcloneClient:
         if code == 0:
             return True
         if code in {3, 4}:
+            if getattr(self.settings, "storage_backend", "clouddrive2") == "openlist":
+                return relative_path in await self._listed_file_sizes(relative_path)
             return False
         raise RcloneError(
             f"无法确认远端文件是否存在（rclone 退出码 {code}）："
@@ -445,14 +537,40 @@ class RcloneClient:
         )
 
     async def move(self, source: str, destination: str) -> None:
-        await self._run(
-            "moveto",
-            self.remote(source),
-            self.remote(destination),
-            "--retries",
-            "3",
-            timeout=120,
-        )
+        if getattr(self.settings, "storage_backend", "clouddrive2") != "openlist":
+            await self._run(
+                "moveto", self.remote(source), self.remote(destination),
+                "--retries", "3", timeout=120,
+            )
+            return
+
+        # OpenList can return HTTP 201 for MOVE while an immediate metadata
+        # lookup still reports "object not found". Retrying moveto can issue
+        # another MOVE against a source that has already disappeared.
+        expected_size = await self.remote_size(source)
+        try:
+            await self._run(
+                "moveto", self.remote(source), self.remote(destination),
+                "--retries", "1", "--low-level-retries", "1", timeout=120,
+            )
+            return
+        except RcloneError as exc:
+            original_error = exc
+
+        # Read-only, bounded reconciliation. Never issue another MOVE here.
+        for delay in (0, 2, 5):
+            if delay:
+                await asyncio.sleep(delay)
+            try:
+                listed = await self._listed_file_sizes(source, destination)
+                if listed.get(destination) == expected_size and source not in listed:
+                    return
+            except RcloneError:
+                pass
+        raise MoveUncertainError(
+            "MOVE_UNCERTAIN: OpenList 改名结果无法确认；已停止自动改名重试。"
+            "请先在 OpenList 核对临时文件和目标文件，再决定是否手动重试。"
+        ) from original_error
 
     async def remove(self, relative_path: str) -> None:
         code, out, err = await self._run(

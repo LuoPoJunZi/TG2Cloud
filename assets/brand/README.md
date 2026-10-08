@@ -1,4 +1,4 @@
-# TG2Cloud v1.0.0 品牌资源
+# TG2Cloud 品牌资源
 
 本资源包基于最终选定的 TG2Cloud Logo 制作，目录可直接复制到 TG2Cloud 项目根目录。
 
