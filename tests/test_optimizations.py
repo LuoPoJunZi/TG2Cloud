@@ -36,6 +36,7 @@ from app.rclone_client import (
 from app.resources import AdaptiveWindow, ResourceSnapshot
 from app.states import LEGAL_TRANSITIONS, STATE_LABELS
 from test_scenarios import FakeRclone, make_service, make_settings
+from test_telethon_compat import callback_data
 
 
 class OptimizationTests(unittest.IsolatedAsyncioTestCase):
@@ -114,7 +115,7 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("🕐 更新于 21:35:08", text)
         self.assertEqual([[button.text for button in row] for row in buttons], [["📋", "🖥", "🔄"]])
         self.assertEqual(
-            [[button.data for button in row] for row in buttons],
+            [[callback_data(button) for button in row] for row in buttons],
             [[b"queue:1", b"vps_resources", b"refresh:home"]],
         )
 
@@ -363,7 +364,7 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
         await self.service._on_callback(preview)
         self.assertEqual(self.db.get(task["id"])["state"], "queued")
         self.assertIn("确认取消", preview.edit.await_args.args[0])
-        confirm_data = preview.edit.await_args.kwargs["buttons"][0][0].data
+        confirm_data = callback_data(preview.edit.await_args.kwargs["buttons"][0][0])
 
         confirm = SimpleNamespace(
             sender_id=self.settings.allowed_user_id,
@@ -386,7 +387,7 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
             edit=AsyncMock(),
         )
         await self.service._on_callback(preview)
-        confirm_data = preview.edit.await_args.kwargs["buttons"][0][0].data
+        confirm_data = callback_data(preview.edit.await_args.kwargs["buttons"][0][0])
         self.service._cancel_confirmations[task["id"]]["expires_at"] = 0
         expired = SimpleNamespace(
             sender_id=self.settings.allowed_user_id,
