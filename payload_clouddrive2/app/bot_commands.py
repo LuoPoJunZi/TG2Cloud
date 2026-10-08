@@ -81,6 +81,21 @@ def format_rate(value: float) -> str:
     return "0B/s" if value <= 0 else f"{format_bytes(value)}/s"
 
 
+def format_dashboard_bytes(value: float | None) -> str:
+    if value is None:
+        return "--"
+    size = max(0.0, float(value))
+    for unit in ("B", "KB", "MB", "GB", "TB"):
+        if size < 1024 or unit == "TB":
+            return f"{size:.0f} {unit}" if unit == "B" else f"{size:.2f} {unit}"
+        size /= 1024
+    return f"{size:.2f} TB"
+
+
+def format_dashboard_rate(value: float | None) -> str:
+    return "--" if value is None else f"{format_dashboard_bytes(value)}/s"
+
+
 def truncate_display(text: str, max_width: int = 32) -> str:
     """Truncate a Telegram label by approximate rendered character width."""
     if max_width < 2:
@@ -129,7 +144,7 @@ class CommandMixin:
     @staticmethod
     def _format_help() -> str:
         return (
-            "使用帮助\n\n"
+            "TG2Cloud 使用帮助\n\n"
             "提交文件：直接发送或转发视频、文档等文件\n"
             "状态查看：/status、/queue [页码]\n"
             "任务查看：/task <编号>\n"
@@ -144,20 +159,22 @@ class CommandMixin:
         )
 
     @staticmethod
-    def _main_buttons() -> list[list[Any]]:
+    def _home_buttons() -> list[list[Any]]:
         return [
             [
-                Button.inline("系统状态", data=b"menu:status"),
-                Button.inline("最近任务", data=b"queue:1"),
+                Button.inline("📋", data=b"queue:1"),
+                Button.inline("🖥", data=b"vps_resources"),
+                Button.inline("🔄", data=b"refresh:home"),
             ],
+        ]
+
+    @staticmethod
+    def _vps_resource_buttons() -> list[list[Any]]:
+        return [
             [
-                Button.inline("暂停调度", data=b"control:pause"),
-                Button.inline("恢复调度", data=b"control:resume"),
-            ],
-            [
-                Button.inline("运行诊断", data=b"menu:doctor"),
-                Button.inline("临时巡检", data=b"menu:orphans"),
-            ],
+                Button.inline("🔄", data=b"refresh:vps_resources"),
+                Button.inline("↩️", data=b"menu:home"),
+            ]
         ]
 
     @staticmethod
@@ -287,12 +304,7 @@ class CommandMixin:
             navigation.append(Button.inline("下一页", data=f"queue:{page + 1}".encode()))
         if navigation:
             rows.append(navigation)
-        rows.append(
-            [
-                Button.inline("系统状态", data=b"menu:status"),
-                Button.inline("返回菜单", data=b"menu:home"),
-            ]
-        )
+        rows.append([Button.inline("↩️", data=b"menu:home")])
         return rows
 
     async def _reply_queue(self, event: Any, page: int) -> None:
@@ -356,7 +368,15 @@ class CommandMixin:
         try:
             data = bytes(event.data).decode("ascii")
             parts = data.split(":")
-            if data in {"menu:home", "menu:status", "menu:doctor", "menu:orphans"}:
+            if data in {
+                "menu:home",
+                "menu:status",
+                "menu:doctor",
+                "menu:orphans",
+                "vps_resources",
+                "refresh:home",
+                "refresh:vps_resources",
+            }:
                 action: tuple[str, Any] = (data, None)
             elif len(parts) == 2 and parts[0] == "queue":
                 page = int(parts[1])
@@ -392,10 +412,18 @@ class CommandMixin:
 
         await event.answer()
         name, value = action
-        if name == "menu:home":
-            await self._edit_callback(event, self._format_help(), self._main_buttons())
-        elif name == "menu:status":
-            await self._edit_callback(event, self._format_status(), self._main_buttons())
+        if name in {"menu:home", "menu:status", "refresh:home"}:
+            await self._refresh_destination_for_dashboard()
+            await self._edit_callback(
+                event, self._format_status(), self._home_buttons()
+            )
+        elif name in {"vps_resources", "refresh:vps_resources"}:
+            self._refresh_resource_snapshot()
+            await self._edit_callback(
+                event,
+                self._format_vps_resources(),
+                self._vps_resource_buttons(),
+            )
         elif name == "menu:doctor":
             await self._edit_callback(
                 event,
@@ -421,7 +449,7 @@ class CommandMixin:
                     else "新任务仍需满足目的端与资源安全条件"
                 ),
             )
-            await self._edit_callback(event, text, self._main_buttons())
+            await self._edit_callback(event, text, self._home_buttons())
         elif name == "task:view":
             task = self.db.get(value)
             text = (
@@ -519,7 +547,9 @@ class CommandMixin:
     ) -> None:
         parts = text.split()
         command = parts[0].split("@", 1)[0].lower()
-        if command in {"/start", "/help"}:
+        if command == "/start":
+            await event.reply(self._format_status(), buttons=self._home_buttons())
+        elif command == "/help":
             await event.reply(self._format_help())
         elif command == "/queue":
             page = self._parse_queue_page(parts)
@@ -528,7 +558,7 @@ class CommandMixin:
             else:
                 await self._reply_queue(event, page)
         elif command in {"/status", "/performance"}:
-            await event.reply(self._format_status())
+            await event.reply(self._format_status(), buttons=self._home_buttons())
         elif command == "/task":
             await self._command_task(event, parts)
         elif command == "/watch":
@@ -598,7 +628,7 @@ class CommandMixin:
                 return
             await event.reply(
                 f"✅ 已批量确认 {len(task_ids)} 个任务。\n"
-                "这是你在 115 官方客户端集中核验后的人工记录；"
+                "这是你在所用云存储官方客户端集中核验后的人工记录；"
                 "如果还有更多，可再次发送 /confirm all。"
             )
             return
@@ -606,7 +636,7 @@ class CommandMixin:
         if task_id is None:
             await event.reply(
                 "用法：/confirm <任务编号|all>\n"
-                "只在 115 官方客户端看到文件大小正常、可以打开或播放后使用。"
+                "只在所用云存储官方客户端看到文件大小正常、可以打开或播放后使用。"
             )
             return
         result, task = self.db.confirm_115(task_id)
@@ -619,12 +649,12 @@ class CommandMixin:
         if result == "invalid":
             await event.reply(
                 f"任务当前状态为“{self._state_label(task['state'])}”，还不能确认。\n"
-                "必须先等 Bot 传输完成，并在 115 官方客户端看到完整文件。"
+                "必须先等 Bot 传输完成，并在所用云存储官方客户端看到完整文件。"
             )
             return
         await event.reply(
-            f"✅ 任务 #{task_id} 已标记为“115 官方端已由你确认”。\n"
-            "这是你的人工确认记录；Bot 没有调用 115 官方接口复验文件。"
+            f"✅ 任务 #{task_id} 已标记为“云存储官方端已由你确认”。\n"
+            "这是你的人工确认记录；Bot 没有调用云存储官方接口复验文件。"
         )
 
     async def _command_stream(
@@ -827,6 +857,7 @@ class CommandMixin:
                 self._retry_task(task)
                 for task in tasks
                 if not task.get("cancel_requested")
+                and not str(task.get("error") or "").startswith("MOVE_UNCERTAIN:")
             )
             await event.reply(
                 self._format_operation_result(
@@ -1113,65 +1144,111 @@ class CommandMixin:
                     )
         return text
 
+    @staticmethod
+    def _dashboard_time() -> str:
+        return time.strftime("%H:%M:%S", time.localtime())
+
+    async def _refresh_destination_for_dashboard(self) -> None:
+        refresh = getattr(self, "_probe_destination_once", None)
+        if callable(refresh):
+            await refresh()
+
+    def _refresh_resource_snapshot(self) -> None:
+        try:
+            self._dashboard_resource_snapshot = self.monitor.sample()
+        except Exception:
+            self._dashboard_resource_snapshot = None
+            self.log.exception("手动刷新 VPS 资源失败")
+
+    def _runtime_status_line(self) -> str:
+        destination = getattr(self.settings, "destination_label", "CloudDrive2")
+        if self.snapshot is None or not self.destination_last_checked:
+            return f"🟡 状态检查中 · {destination}"
+        if not self._sample_fresh():
+            return f"🔴 资源状态异常 · {destination}"
+        if not self._destination_ready():
+            return f"🔴 存储连接异常 · {destination}"
+        if self.db.is_paused():
+            return f"🟡 调度已暂停 · {destination}"
+        return f"🟢 正常运行 · {destination}"
+
     def _format_status(self) -> str:
         counts = self.db.counts()
-        counts_text = format_status_counts(
-            counts, getattr(self.settings, "destination_label", "CloudDrive2")
-        )
-        used = self.db.used_local_bytes()
         snapshot = self.snapshot
-        disk_text = "等待资源采样"
-        resource_text = "等待资源采样"
-        network_text = "等待资源采样"
-        if snapshot:
-            disk_text = format_bytes(snapshot.disk_free)
-            resource_text = (
-                f"CPU {snapshot.cpu_percent:.1f}%，"
-                f"内存 {format_bytes(snapshot.memory_available)}"
-            )
-            network_text = f"{format_bytes(snapshot.network_bytes_per_second)}/s"
-        checked_age = (
-            f"{int(max(0, time.time() - self.destination_last_checked))} 秒前"
-            if self.destination_last_checked
-            else "尚未检查"
+        queued = counts.get("queued", 0)
+        downloading = len(self.download_tasks)
+        uploading = len(self.upload_tasks) + self._stream_count()
+        failed = sum(counts.get(state, 0) for state in FAILED_STATES)
+        stream_rate = self._stage_rate("stream")
+        download_rate = self._stage_rate("download") + stream_rate
+        upload_rate = self._stage_rate("upload") + stream_rate
+        network_rate = (
+            snapshot.network_bytes_per_second if self._sample_fresh() else None
         )
-        if self._destination_ready():
-            scope = getattr(self, "destination_scope", "unknown")
-            if scope == "target":
-                destination_text = "目标目录可访问"
-            elif scope == "root_fallback":
-                destination_text = "根目录可访问，目标目录未创建"
-            elif scope == "root":
-                destination_text = "WebDAV 根目录可访问"
-            else:
-                destination_text = "目录可访问，范围未知"
-        else:
-            destination_text = f"不可用、检查过期或配置未完成（{checked_age}）"
         return (
-            "系统状态\n\n"
-            f"目的状态：{destination_text}\n"
-            f"队列调度：{'已暂停' if self.db.is_paused() else '运行中'}\n"
-            f"当前传输：下载/流式 {len(self.download_tasks)}，上传 {len(self.upload_tasks)}\n"
-            f"并发窗口：下载 {self.download_window.value}，上传 {self.upload_window.value}\n"
-            f"本地额度：已用 {format_bytes(used)} / {format_bytes(self.settings.local_budget_bytes)}\n"
-            f"磁盘可用：{disk_text}\n"
-            f"资源使用：{resource_text}\n"
-            f"网络总速：{network_text}\n"
-            f"来源下载：Telegram {format_rate(self._stage_rate('download'))}\n"
-            f"远端上传：WebDAV {format_rate(self._stage_rate('upload'))}\n"
-            f"流式送入：{format_rate(self._stage_rate('stream'))}\n"
-            f"任务统计：{counts_text}"
+            "☁️ **TG2Cloud**\n"
+            f"{self._runtime_status_line()}\n\n"
+            "📋 **任务**\n"
+            f"⏳ {queued}　⬇️ {downloading}　⬆️ {uploading}　❌ {failed}\n\n"
+            "📊 **实时状态**\n"
+            f"⬇️ {format_dashboard_rate(download_rate)}\n"
+            f"⬆️ {format_dashboard_rate(upload_rate)}\n"
+            f"🌐 {format_dashboard_rate(network_rate)}\n\n"
+            f"🕐 更新于 {self._dashboard_time()}"
+        )
+
+    def _format_vps_resources(self) -> str:
+        snapshot = getattr(self, "_dashboard_resource_snapshot", self.snapshot)
+        cpu = f"{snapshot.cpu_percent:.1f}%" if snapshot else "--"
+        memory = (
+            f"{format_dashboard_bytes(snapshot.memory_available)} 可用"
+            if snapshot
+            else "--"
+        )
+        disk = (
+            f"{format_dashboard_bytes(snapshot.disk_free)} 可用"
+            if snapshot
+            else "--"
+        )
+        try:
+            used = self.db.used_local_bytes() / 1024**3
+            budget = self.settings.local_budget_bytes / 1024**3
+            local = f"{used:.2f} / {budget:.2f} GB"
+        except Exception:
+            local = "--"
+            self.log.exception("读取 TG2Cloud 本地额度失败")
+        return (
+            "🖥 **VPS 资源**\n\n"
+            f"CPU　{cpu}\n"
+            f"内存　{memory}\n"
+            f"磁盘　{disk}\n"
+            f"本地　{local}\n\n"
+            f"🕐 更新于 {self._dashboard_time()}"
         )
 
     def _format_doctor(self) -> str:
         checked = self.destination_last_checked
         age = f"{max(0, int(time.time() - checked))} 秒前" if checked else "尚未完成"
+        probe_details = ""
+        if getattr(self.settings, "storage_backend", "clouddrive2") == "openlist":
+            kind = getattr(self, "destination_failure_kind", "")
+            label = {"rate_limited": "限流等待（HTTP 429）", "unauthorized": "凭据需核对（HTTP 401）"}.get(
+                kind, "只读探测通过" if self._destination_ready() else "未就绪"
+            )
+            remaining = max(0, int(getattr(self, "_destination_next_probe_at", 0) - time.monotonic() + 0.999))
+            timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(checked)) if checked else "尚未完成"
+            probe_details = (
+                f"OpenList 探测：{label}\n最近实际探测：{timestamp}（VPS 本地时间）\n"
+                + (f"下次允许探测：约 {remaining} 秒后；刷新不会绕过冷却\n" if remaining else "下次允许探测：可执行；等待后台检查或主动刷新\n")
+                + ("冷却结束不代表服务端已经解除限流。\n" if kind == "rate_limited" else "")
+            )
         return (
             "运行诊断\n\n"
             f"资源采样：{'正常' if self._sample_fresh() else '过期或未就绪，停止放行'}\n"
             f"检查时间：{age}\n"
             f"目的目录：{'可以访问（只读检查）' if self._destination_ready() else '未就绪或检查已过期'}\n"
             f"检查说明：{self.destination_error or '目录探测通过，不代表可写'}\n"
+            f"{probe_details}"
             f"并发窗口：下载 {self.download_window.value}，上传 {self.upload_window.value}\n"
             "写入验收：请主动执行 manage.sh verify\n"
             "敏感信息：不会在诊断结果中显示"

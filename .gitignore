@@ -6,8 +6,16 @@
 *.key
 *.p12
 *.pfx
+*.csr
+*.crt
 *.session
 rclone.conf
+letsencrypt/
+**/certbot/www/
+**/certbot/letsencrypt/
+**/certbot/lib/
+**/certbot/log/
+acme-challenge/
 
 # Runtime data
 data/
@@ -32,6 +40,7 @@ venv/
 # Build output
 build/
 dist/
+*.exe
 *.spec
 
 # Editor and OS files

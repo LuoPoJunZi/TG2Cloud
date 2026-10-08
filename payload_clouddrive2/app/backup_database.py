@@ -36,16 +36,16 @@ def backup_database(source: Path, destination: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="创建 TG115 SQLite 一致性备份")
+    parser = argparse.ArgumentParser(description="创建 TG2Cloud SQLite 一致性备份")
     parser.add_argument("source", type=Path)
     parser.add_argument("destination", type=Path)
     args = parser.parse_args()
     try:
         backup_database(args.source, args.destination)
     except Exception:  # noqa: BLE001 - CLI boundary must not reveal paths or row data
-        print("TG115_DATABASE_BACKUP=FAILED")
+        print("TG2CLOUD_DATABASE_BACKUP=FAILED")
         return 1
-    print("TG115_DATABASE_BACKUP=OK")
+    print("TG2CLOUD_DATABASE_BACKUP=OK")
     return 0
 
 

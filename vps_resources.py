@@ -6,8 +6,11 @@ import shlex
 from dataclasses import dataclass, replace
 
 GIB = 1024**3
-PROBE_BEGIN = "TG115_VPS_PROBE_BEGIN"
-PROBE_END = "TG115_VPS_PROBE_END"
+PROBE_BEGIN = "TG2CLOUD_VPS_PROBE_BEGIN"
+PROBE_END = "TG2CLOUD_VPS_PROBE_END"
+# Legacy TG115 compatibility for output from an older remote probe.
+LEGACY_PROBE_BEGIN = "TG115_VPS_PROBE_BEGIN"
+LEGACY_PROBE_END = "TG115_VPS_PROBE_END"
 SAFE_INSTALL_DIR = re.compile(r"/opt/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*")
 SUPPORTED_ARCHITECTURES = {"x86_64", "amd64", "aarch64", "arm64"}
 
@@ -80,13 +83,15 @@ def validate_install_dir(install_dir: str) -> str:
     return value
 
 
-def build_probe_command(install_dir: str) -> str:
-    """Build a fixed read-only probe command for the validated install path."""
+def build_probe_command(install_dir: str, backup_dir: str) -> str:
+    """Build a fixed read-only probe command for validated product paths."""
     install_dir = validate_install_dir(install_dir)
+    backup_dir = validate_install_dir(backup_dir)
     script = r'''
 set -uo pipefail
 export LC_ALL=C
 install_dir="$1"
+backup_dir="$2"
 
 nearest_existing() {
   local candidate="$1" parent
@@ -149,7 +154,7 @@ install_present=0
 fuse_available=0
 [[ -c /dev/fuse ]] && fuse_available=1
 
-printf '%s\n' 'TG115_VPS_PROBE_BEGIN'
+printf '%s\n' 'TG2CLOUD_VPS_PROBE_BEGIN'
 printf 'PROBE_VERSION=2\n'
 printf 'ARCHITECTURE=%s\n' "$(uname -m)"
 printf 'CPU_CORES=%s\n' "$cpu_cores"
@@ -164,7 +169,7 @@ printf 'INODES_AVAILABLE=%s\n' "$inodes_available"
 printf 'INSTALL_PRESENT=%s\n' "$install_present"
 printf 'INSTALL_USED_KIB=%s\n' "$(directory_kib "$install_dir")"
 printf 'DOWNLOADS_USED_KIB=%s\n' "$(directory_kib "$install_dir/downloads")"
-printf 'BACKUPS_USED_KIB=%s\n' "$(directory_kib /opt/tg115-backups)"
+printf 'BACKUPS_USED_KIB=%s\n' "$(directory_kib "$backup_dir")"
 printf 'DOCKER_SAME_FILESYSTEM=%s\n' "$docker_same_filesystem"
 printf 'DOCKER_ROOT_DETECTED=%s\n' "$docker_root_detected"
 printf 'DOCKER_STORAGE_TOTAL_BYTES=%s\n' "$docker_storage_total_bytes"
@@ -172,9 +177,12 @@ printf 'DOCKER_STORAGE_AVAILABLE_BYTES=%s\n' "$docker_storage_available_bytes"
 printf 'DOCKER_INODES_TOTAL=%s\n' "$docker_inodes_total"
 printf 'DOCKER_INODES_AVAILABLE=%s\n' "$docker_inodes_available"
 printf 'FUSE_AVAILABLE=%s\n' "$fuse_available"
-printf '%s\n' 'TG115_VPS_PROBE_END'
+printf '%s\n' 'TG2CLOUD_VPS_PROBE_END'
 '''.strip()
-    return f"bash -lc {shlex.quote(script)} -- {shlex.quote(install_dir)}"
+    return (
+        f"bash -lc {shlex.quote(script)} -- "
+        f"{shlex.quote(install_dir)} {shlex.quote(backup_dir)}"
+    )
 
 
 def _parse_non_negative(name: str, values: dict[str, str]) -> int:
@@ -185,9 +193,13 @@ def _parse_non_negative(name: str, values: dict[str, str]) -> int:
 
 
 def parse_probe_output(output: str) -> VpsResources:
-    if PROBE_BEGIN not in output or PROBE_END not in output:
+    if PROBE_BEGIN in output and PROBE_END in output:
+        begin, end = PROBE_BEGIN, PROBE_END
+    elif LEGACY_PROBE_BEGIN in output and LEGACY_PROBE_END in output:
+        begin, end = LEGACY_PROBE_BEGIN, LEGACY_PROBE_END
+    else:
         raise ValueError("VPS 资源探测结果缺少完整边界")
-    block = output.rsplit(PROBE_BEGIN, 1)[1].split(PROBE_END, 1)[0]
+    block = output.rsplit(begin, 1)[1].split(end, 1)[0]
     values: dict[str, str] = {}
     for raw_line in block.splitlines():
         line = raw_line.strip().strip("\r")

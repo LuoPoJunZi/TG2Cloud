@@ -599,6 +599,10 @@ class TaskDB:
             for row in rows:
                 if row["cancel_requested"]:
                     continue
+                if str(row["error"] or "").startswith("MOVE_UNCERTAIN:"):
+                    # A restart must not retry a MOVE whose result is unknown.
+                    recovered["failed"] += 1
+                    continue
                 task_id = int(row["id"])
                 local_path = Path(row["local_path"]) if row["local_path"] else None
                 if row["transfer_mode"] == "stream":

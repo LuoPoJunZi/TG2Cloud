@@ -1,112 +1,49 @@
-# 未发布开发说明
+<!-- 本文件会直接作为 GitHub Release 正文：不要添加一级标题，不要按固定列宽硬换行。 -->
 
-OpenList 产品线正在开发和真实 VPS 验收，尚未创建正式 Release。当前工作树的目标发布产物为
-`TG115-CloudDrive2-Deployer.exe` 与 `TG115-OpenList-Deployer.exe`，均使用 PySide6；历史
-Classic/Tkinter 源码及两个 CMD 启动器已从当前项目清理。以下 `v1.6.2` 内容仍是已发布版本的
-原始说明。
-
----
-
-# TG115 v1.6.2
-
-## 下载
-
-- `TG115-Deployer-Modern-v1.6.2.exe`：推荐使用的 PySide6 图形化部署器；
-- `TG115-Deployer-Classic-v1.6.2.exe`：保留原 Tkinter 界面的轻量兼容版；
-- `TG115-Source-v1.6.2.zip`：与 `v1.6.2` 标签一致的公开源码；
-- `SHA256SUMS.txt`：上述附件的 SHA-256 校验值。
+> [!IMPORTANT]
+> **TG2Cloud v1.1.2** 是运行状态、故障提示与 HTTPS 维护更新。两个 PySide6 Windows EXE 由 GitHub Actions 从同一不可变标签测试、构建和自检，SHA256 来自本次 Actions 实际产物；Release 复用 Windows Build Job 的包，不上传本机 EXE、不重复构建。
 
 ## 本次更新
 
-- Windows 主部署器迁移到 PySide6，并增加离线预览、依赖诊断、脱敏日志导出和 Qt 打包自检；
-- 同时提供 Modern 与 Classic 两个部署器：Modern 是推荐的新界面，Classic 保留原 Tkinter
-  界面作为低体积兼容版；构建和 CI 会分别检查两个成品；
-- 构建过程隔离 DLL 搜索路径，避免开发机其他软件的 ICU 等运行库污染 PyInstaller 成品；
-- Bot 快捷入口迁移到 Telegram 输入框左侧的原生命令菜单，新回复不再附带消息下方按钮；
-- 系统状态移除目的端“只读检查”和检查时间后缀，保留后台探测与过期保护；
-- README、小白教程、构建说明和贡献指南同步双版本部署器的使用与验证方法。
+- 查看运行状态分别显示部署器版本与 VPS Bot 实际版本；未知版本不冒充最新版，不自动升级或降级。
+- 复用现有进度、运行日志和错误弹窗，显示实际部署/HTTPS 阶段及核对建议，不虚构百分比或根因。
+- HTTPS 维护菜单新增共享代理私密备份、完整性检查、隔离解包及当前域名续期 dry-run；不提供在线覆盖恢复。
+- 历史备份可按时间、大小和校验结果选择；旧备份清理须先预览再确认，默认取消、至少保留一份，清单变化或校验失败拒绝执行。
+- 续期记录区分检查成功与证书实际变更。续期失败、已有记录超过 26 小时未更新或证书临近到期时显示黄色警告；当前 HTTPS 自检通过时仍保持入口可用。
+- 一次性续期与备份操作增加远端执行时限和精确清理；SSH/Docker 不可达时明确提示清理尚未确认，不停止共享代理或 Bot。
+- OpenList `/doctor` 显示真实探测时间、401/429 分类和剩余冷却；既有退避与转存逻辑不变。
+- 统一部署器/Bot 版本源及 Windows 资源校验；修复 PyInstaller 备份助手相对路径问题，增加备份对话框打包自检。
+- Release 校验 Tag、源码、Windows 资源和发布文档一致性；同标签 Windows/Linux 成功后发布同一次构建的 artifact，拒绝替换已有 Release。
 
-## 从 v1.6.1 升级
+## 验证范围
 
-推荐运行本 Release 的 Modern 部署器；需要较小体积或旧界面时可使用 Classic。保持原安装目录
-和配置，重新点击“一键部署基础环境”。
-升级会备份旧程序、配置和 SQLite 数据库快照；任务数据库、下载目录、日志以及 CloudDrive2
-配置和挂载数据会保留，新 Bot 健康检查失败时自动回退。仅执行 `manage.sh update` 不会从
-GitHub 下载新代码。
+- 本地完整 pytest：367 passed、11 skipped、93 subtests passed；unittest：378 tests，OK（11 skipped）。Ruff、Bandit、compileall、Bash 语法及 diff 检查通过；本地缺少的 Linux/Docker/rclone 集成由 GitHub Actions 再行验证，不将跳过项计为通过。
+- 本地两 Edition 测试 EXE 构建/自检通过，100%/125%/150% 中文离屏预览及 125%/150% EXE 隐藏自检通过；不代替真实 Windows 桌面交互验收。
+- 专用 Debian 13 VPS：共享代理备份/核验/隔离解包、OpenList 路由移除后恢复、续期 dry-run 与一次性维护容器清理通过；恢复后两 Edition 各 11 项 HTTPS 检查通过。历史备份清理只预览，没有删除真实备份。
+- CloudDrive2 的业务配置、容器、域名及受保护文件与实测前一致；稳定下载/上传/流式/恢复核心未重写。
+- 真实 Bot/网盘转存、401/429 实际恢复、长期自动续期、完整灾难恢复及独立网络后端端口隔离仍待验收。VPS 本机 HTTPS 自检不等于公网隔离或转存全链路通过。
 
-升级前建议发送 `/pause` 并等待当前传输归零；升级和 WebDAV 验收完成后发送 `/start` 检查
-原生命令菜单，再用 `/resume` 恢复调度。首次真实文件传输确认前不要清理升级备份。
+## 下载与校验
 
-## 验证边界
+| Edition | Release 文件 |
+| --- | --- |
+| CloudDrive2 | `TG2Cloud-CloudDrive2-Deployer.exe` |
+| OpenList | `TG2Cloud-OpenList-Deployer.exe` |
+| SHA-256 校验 | `SHA256SUMS.txt` |
 
-发布提交前完成 174 项 Python 回归且无跳过，其中包括 4 项真实本地 rclone WebDAV 集成；
-Ruff、Bandit、两份依赖审计，以及 Modern、Classic 两个 Windows EXE 的打包后自检均通过。
-GitHub Actions 会在推送后运行；自动化结果不能替代真实 VPS、Telegram、CloudDrive2 与
-115 官方端的分层验收。
+只发布以上三个文件。源码仓库不包含本地 EXE、`build/` 或 `dist/`；本地测试包的 SHA256 不作为本次 Release 校验值。
 
-详细记录见 [v1.6.2 更新与验收记录](docs/v1.6.2-更新与验收.md)。
+```powershell
+Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
+Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
+```
 
----
+## 升级与安全边界
 
-# TG115 v1.6.0
+先备份再使用对应 Edition 的新版部署器升级；仅下载 EXE 不会更新 VPS Bot。既有完整安装默认保留 `.env` 和持久化数据，只有明确选择应用本页配置才覆盖。已有 HTTPS 实例需要通过新版部署器重新配置同一域名，才能更新续期容器及记录能力；不要卸载重装或随意切换正常域名。
 
-## 下载
+CloudDrive2 上传/改名与健康探测策略保持不变。两个管理后端仍只监听回环地址，共享 Nginx 提供公网 80/443，公开 `/dav` 被拒绝；域名入口不代理 WebDAV 转存。没有遥测、账号系统或开发者侧凭据收集。
 
-- `TG115-Deployer-v1.6.0.exe`：Windows 图形化部署器；
-- `TG115-Source-v1.6.0.zip`：与标签一致的公开源码；
-- `SHA256SUMS.txt`：上述附件的 SHA-256 校验值。
+共享代理备份包含证书私钥和 ACME 账户数据，只存 VPS 私密目录，不要上传 GitHub、公开网盘或工单；备份清理不可撤销，不提供在线覆盖 Restore。Let's Encrypt 已停止到期提醒邮件，填写邮箱不能代替续期监测。Windows EXE 未商业代码签名；不要关闭 Defender 或跳过 TLS 校验。
 
-## 主要变化
-
-本次覆盖监控隔离、持久暂停、诊断／进度、共享并发窗口、合法状态迁移、远端路径恢复、
-批量人工确认、手动流式切换、带二次确认的遗留临时文件清理、命令模块拆分、可恢复程序升级，
-以及安装前 VPS 资源探测和实例级存储建议。
-详细变更、验证结果及升级注意事项见 [优化与验收记录](docs/v1.6.0-优化与验收.md)。
-发布前已完成本地完整回归和 GitHub Actions 验证，但没有自动部署到 VPS，也没有替用户确认
-115 官方端。不得把自动化测试结果当作新版生产验收。
-
-Windows 部署器现在会读取当前 VPS 的 CPU、内存、目标文件系统、inode、已有占用和 FUSE，
-给出“均衡模式／流式优先”两套建议。源码默认仍为 20GB/20GB，只有用户点击才会应用；部署前
-会重新校验。Docker 数据目录位于另一文件系统时会单独检查其空间和 inode。它不会自动分区、
-扩容或格式化磁盘，CPU／内存档位也不会覆盖运行时动态调度。
-
-升级备份不再是不可见增长：`manage.sh backups` 可只读统计数量和字节数，超过 5GB 时部署会
-提示；`manage.sh prune-backups 5` 需要用户显式执行，并按类型各保留最近 5 份。部署不会自动
-删除备份。
-
----
-
-# TG115 v1.5.0（历史正式版说明）
-
-这是修复大文件、取消和重启边界后的正式版本。
-
-## 下载
-
-- `TG115-Deployer-v1.5.0.exe`：Windows 图形化部署器；
-- `TG115-Source-v1.5.0.zip`：对应的完整公开源码；
-- `SHA256SUMS.txt`：发布附件的 SHA-256 校验值。
-
-## 使用前注意
-
-1. 仅从本仓库的 GitHub Releases 下载；
-2. 先核对 SHA-256；
-3. 所有 VPS、Telegram 和 WebDAV 凭据只在本机部署器中填写；
-4. 不要把凭据提交到 Issue、日志或截图；
-5. CloudDrive2 和 115 登录必须由用户本人完成。
-
-## 已验证
-
-- Windows 图形界面启动、默认值和空白输入校验；
-- Telegram 到 CloudDrive2 的完整模拟传输；
-- 超过本地预算的单文件流式传输、远端大小校验和安全改名；
-- 100 个混合文件自动分批；
-- 20GB 任务预算和磁盘安全线；
-- 取消时远端清理、断线重试、失败保留和重启恢复；
-- 下载改名崩溃恢复和缺失文件额度回收；
-- 旧任务状态兼容；
-- 115 官方客户端人工确认状态；
-- EXE 包内自检和源码 ZIP 解包复测；
-- 源码、文档、发布附件个人信息与秘密扫描。
-
-流式模式不会在 VPS 保留完整本地副本，因此传输中断后需要从头重试。CloudDrive2 是闭源
-特权容器，其内部缓存和 115 最终入库状态仍需在真实 VPS 与官方客户端中验收。
+完整说明见 [README](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.2/README.md)、[运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.2/docs/OPERATIONS.md) 和 [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.2/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md)。TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留 MIT 许可证、版权及必要致谢。
