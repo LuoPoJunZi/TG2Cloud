@@ -24,7 +24,7 @@
 
 ### Windows 提示未知发布者怎么办？
 
-v1.1.1 未提供商业代码签名。核对正式 Release、文件名和 SHA-256，不要直接关闭全局安全防护。[下载与校验](/download/)。
+v1.1.2 未提供商业代码签名。核对正式 Release、文件名和 SHA-256，不要直接关闭全局安全防护。[下载与校验](/download/)。
 
 ### VPS 重装后 Host key 不匹配？
 
@@ -44,9 +44,19 @@ v1.1.1 未提供商业代码签名。核对正式 Release、文件名和 SHA-256
 
 在部署器的“HTTPS 管理入口”中点击“检查状态”，核对 DNS、证书、80/443、Nginx、HTTP 跳转和后端回环监听。首次签发时 Cloudflare 使用“仅 DNS”；CloudDrive2 19798 与 OpenList 5244 不应直接暴露公网。
 
+### HTTPS 能用，为什么显示黄色续期警告？
+
+最近续期失败、已有记录超过 26 小时未更新、临近到期或时钟异常都可能触发提醒；当前严格 HTTPS 自检通过时，入口仍可用。检查续期记录、VPS 时间和 Certbot，不必因此重装 Bot。完全没有记录的旧实例只显示“尚无记录”，需用新版部署器重新配置同一域名更新记录能力。[HTTPS 维护说明](/deploy/domain-https/)。
+
+### 填了 Let's Encrypt 邮箱就会收到到期提醒吗？
+
+不会。其到期提醒邮件服务已停止，填写邮箱不能替代续期监测。续期检查成功也可能表示证书无需更新，不能当作已续签。
+
 ### 401 与 429 有什么不同？
 
 401 优先检查运行配置中的 WebDAV 用户名、密码；429 属于限流，避免连续重试加重压力。两者不能用同一种方案处理。[WebDAV 排查](/troubleshooting/webdav/)。
+
+v1.1.2 的 OpenList Bot `/doctor` 会显示实际探测时间与剩余冷却；刷新诊断不会绕过退避，也不会把消息刷新时间冒充新探测结果。
 
 ### 修改部署器密码后还是 401？
 
@@ -80,13 +90,21 @@ v1.1.1 未提供商业代码签名。核对正式 Release、文件名和 SHA-256
 
 ## 升级与迁移
 
+### 下载 v1.1.2 EXE 后，Bot 还是旧版？
+
+下载只更新你电脑上的部署器，不会自动安装 VPS payload。通过“查看运行状态”核对实际 Bot 版本，再使用新版部署器保留配置重新部署；未获取版本不代表已更新，较新版本也不会被自动降级。[升级说明](/operations/update/)。
+
 ### `manage.sh update` 会下载 GitHub 最新源码吗？
 
 不会。它主要用已安装 payload 重建；安装新版应使用新版部署器，详见 [升级](/operations/update/)。
 
 ### TG115 能一键升级 TG2Cloud 吗？
 
-v1.1.1 不提供原地自动迁移，也没有正式自动 Restore/Uninstall。[迁移说明](/operations/migration/)。
+v1.1.2 不提供原地自动迁移，也没有正式自动 Restore/Uninstall。[迁移说明](/operations/migration/)。
+
+### CloudDrive2 现在能备份了吗？
+
+两版都有“HTTPS 管理入口 → 维护工具”的共享代理备份，但不包含 Bot 业务数据或网关状态。CloudDrive2 仍没有手动业务安全备份 UI；OpenList 日常管理的业务备份与代理备份也须分别保存。[备份范围](/operations/backup/)。
 
 ### CloudDrive2 和 OpenList 可以共用一个 Bot Token 吗？
 

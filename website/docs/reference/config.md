@@ -14,6 +14,18 @@
 | 本机管理端口 | `19798` | `5244` |
 | FUSE 要求 | 受管安装需要 | 产品配置不要求 |
 
+## 共享 HTTPS 代理资源
+
+| 项目 | 两个 Edition 共用 |
+| --- | --- |
+| 代理运行目录 | `/opt/tg2cloud-proxy` |
+| 代理私密备份目录 | `/opt/tg2cloud-proxy-backups` |
+| Nginx 容器 | `tg2cloud-proxy-nginx` |
+| Certbot 容器 | `tg2cloud-proxy-certbot` |
+| 公网入口 | TCP 80/443，两个 Edition 使用不同域名 |
+
+Edition 业务备份不包含此目录。代理归档含证书私钥与 ACME 账户，目录权限 700、文件权限 600；维护和历史清理使用 [HTTPS 工具](/deploy/domain-https/)，不是业务 `manage.sh prune-backups`。[备份边界](/operations/backup/)。
+
 ## 容器内 WebDAV 地址
 
 CloudDrive2：

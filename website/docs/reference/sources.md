@@ -1,20 +1,22 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 1 日**，对应 TG2Cloud **v1.1.1**。网站不会通过后台自动证明新的软件版本已经发布或测试完成。
+本次内容核对日期为 **2026 年 10 月 8 日**，对应 TG2Cloud **v1.1.2**。网站不会通过后台自动证明新的软件版本已经发布或测试完成。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
-| [v1.1.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.1) | 当前发布行为、资产名称和已知限制 |
+| [v1.1.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.2) | 当前发布行为、资产名称和已知限制 |
+| [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.2/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
+| [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.2/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
 | [CHANGELOG](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) | TG2Cloud 更新与上游历史边界 |
 | [产品定义](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/deployer_products.py) | 两版默认路径、容器、端口及 FUSE 要求 |
 | [迁移说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/MIGRATION_FROM_TG115.md) | TG115 到 TG2Cloud 的操作与未验证范围 |
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CONTRIBUTING.md) | 测试和构建入口 |
 
-README 中部分日常状态文字沿用 CloudDrive2 描述时，本网站以 v1.1.1 Release 和产品定义区分两个后端，不把旧段落机械套到 OpenList。
+README 中部分日常状态文字沿用 CloudDrive2 描述时，本网站以 v1.1.2 Release 和产品定义区分两个后端，不把旧段落机械套到 OpenList。版本源为 `payload_clouddrive2/app/version.py`；历史验收按其原版本和日期理解，不作为当前全链路通过的承诺。
 
 ## 文档与软件版本分别维护
 

@@ -2,7 +2,7 @@
 
 TG2Cloud 中文网页文档。包含品牌首页、30 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
-**正文基准：TG2Cloud v1.1.1；资料核对日期：2026-10-01。**
+**正文基准：TG2Cloud v1.1.2；资料核对日期：2026-10-08。**
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 
@@ -73,7 +73,7 @@ npm run dev
 | 分类 | 内容 |
 | --- | --- |
 | 开始使用（5 篇） | 项目介绍、版本选择、部署前准备、从零部署、下载与校验 |
-| 部署与配置（6 篇） | SSH、Telegram 配置、CloudDrive2、OpenList、资源预算、WebDAV 验收 |
+| 部署与配置（7 篇） | SSH、域名 HTTPS、Telegram 配置、CloudDrive2、OpenList、资源预算、WebDAV 验收 |
 | 日常使用（4 篇） | 第一次转存、Bot 命令、任务状态、流式传输与速度 |
 | 运维与迁移（4 篇） | 状态与日志、升级与配置、备份边界、TG115 迁移 |
 | 问题排查（4 篇） | FAQ、SSH 与管理页、WebDAV、队列/空间/上传失败 |
@@ -85,7 +85,7 @@ npm run dev
 
 ```text
 TG2Cloud-Docs/
-├── docs/                    # 29 篇中文 Markdown 正文
+├── docs/                    # 30 篇中文 Markdown 正文
 ├── public/
 │   ├── assets/
 │   │   ├── style.css        # 全站样式、响应式与主题
@@ -102,7 +102,7 @@ TG2Cloud-Docs/
 │   ├── templates.mjs       # 首页及文章 HTML 模板
 │   └── icons.mjs           # 内联 SVG 界面图标
 ├── scripts/                # 构建、预览、开发监听、链接检查
-├── tests/                  # Markdown 渲染测试
+├── tests/                  # Markdown 渲染与版本内容一致性测试
 ├── site.config.json        # 版本、导航、项目地址与站点地址
 ├── DEPLOY.md               # Pages 部署说明
 └── package.json

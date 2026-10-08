@@ -7,7 +7,7 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.1.1
+git checkout v1.1.2
 ```
 
 对固定版本复现问题时使用对应标签；跟随主分支开发时，记录提交号，避免把未发布修改当成 Release 行为。
@@ -19,7 +19,10 @@ git checkout v1.1.1
 | `installer.py` | 共享部署器界面与逻辑 |
 | `installer_clouddrive2.py` | CloudDrive2 产品入口 |
 | `installer_openlist.py` | OpenList 产品入口 |
-| `deployer_products.py` | 两版产品名、版本、路径和资源定义 |
+| `deployer_products.py` | 两版产品名、路径和资源定义，复用共享版本源 |
+| `payload_clouddrive2/app/version.py` | 部署器与 Bot 共用的唯一版本源 |
+| `domain_proxy.py`、`proxy_maintenance.py` | 共享 HTTPS 网关与私密维护助手 |
+| `operation_feedback.py` | 真实操作阶段、错误建议与版本摘要 |
 | `payload_clouddrive2/` | CloudDrive2 部署脚本与共享核心文件来源 |
 | `payload_openlist/` | OpenList 部署脚本 |
 | `tests/` | 自动化回归 |
@@ -40,6 +43,8 @@ uv run --with-requirements requirements-build.txt `
 仓库说明中 Linux CI 使用 Python 3.12，Windows 使用 Python 3.13；具体以当前 CI 配置为准。
 
 从 v1.1.1 起，Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。Linux 检查包括 Shell、Docker 配置、Bot 镜像和真实本地 WebDAV 集成；正式两个 EXE 仍只在 Windows Build Job 构建一次，发布 Job 仅校验并上传其 artifact。工作流修改不会追溯改变已发布的 v1.1.0 资产。
+
+v1.1.2 进一步核对 Tag、共享版本源、Windows 版本资源、CHANGELOG 和 Release Notes 的一致性；维护助手与备份对话框纳入打包自检。已有 Release 不会被新运行覆盖，本地 EXE 的校验值不作为 Actions 产物校验值。
 
 ## 构建两个部署器
 
