@@ -18,7 +18,7 @@ sys.path.insert(0, str(PAYLOAD))
 from app.config import Settings
 
 import installer
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
+from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT, RELEASE_VERSION
 from installer import (
     InstallerBackend,
     OperationError,
@@ -79,8 +79,8 @@ class OpenListProductTests(unittest.TestCase):
         )
 
     def test_product_release_identity_is_tg2cloud_v1(self) -> None:
-        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_version, "1.1.1")
-        self.assertEqual(OPENLIST_PRODUCT.app_version, "1.1.1")
+        self.assertEqual(CLOUDDRIVE2_PRODUCT.app_version, RELEASE_VERSION)
+        self.assertEqual(OPENLIST_PRODUCT.app_version, RELEASE_VERSION)
         self.assertEqual(
             CLOUDDRIVE2_PRODUCT.executable_name,
             "TG2Cloud-CloudDrive2-Deployer",

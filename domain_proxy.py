@@ -12,6 +12,7 @@ import ipaddress
 import json
 import re
 import shlex
+import sys
 import tempfile
 import uuid
 from collections.abc import Callable
@@ -107,6 +108,7 @@ class ProxyReport:
     message: str
     statuses: tuple[tuple[str, str], ...]
     markers: tuple[tuple[str, str], ...] = ()
+    warnings: tuple[str, ...] = ()
 
 
 def validate_domain(value: str) -> str:
@@ -232,9 +234,20 @@ def routes_from_state(state: dict[str, Any]) -> tuple[DomainRoute, ...]:
 
 def render_certbot_loop() -> str:
     return (
-        "trap 'exit 0' TERM INT; while :; do "
-        'for cert in $TG2CLOUD_CERT_NAMES; do certbot renew --cert-name "$cert" '
-        "--webroot -w /var/www/certbot --quiet || true; done; "
+        "umask 077; trap 'exit 0' TERM INT; while :; do "
+        'for cert in $TG2CLOUD_CERT_NAMES; do '
+        'attempt=$(date -u +%s); '
+        'before=$(sha256sum "/etc/letsencrypt/live/$cert/fullchain.pem" 2>/dev/null | cut -d" " -f1); '
+        'if certbot renew --cert-name "$cert" '
+        "--webroot -w /var/www/certbot --quiet >/var/log/letsencrypt/renew-console.log 2>&1; "
+        'then result=OK; printf "%s\\n" "$attempt" >"/status/$cert.success"; '
+        'after=$(sha256sum "/etc/letsencrypt/live/$cert/fullchain.pem" 2>/dev/null | cut -d" " -f1); '
+        'if [ -n "$before" ] && [ -n "$after" ] && [ "$before" != "$after" ]; then '
+        'printf "%s\\n" "$attempt" >"/status/$cert.renewed"; fi; '
+        'else result=FAILED; fi; '
+        'printf "ATTEMPT=%s\\nRESULT=%s\\nNEXT=%s\\n" "$attempt" "$result" "$((attempt + 43200))" '
+        '>"/status/$cert.check.next"; mv "/status/$cert.check.next" "/status/$cert.check"; '
+        "done; "
         "sleep 43200 & wait $!; done"
     )
 
@@ -296,6 +309,7 @@ def render_compose(active_domains: tuple[str, ...] = ()) -> str:
       - ./certbot/letsencrypt:/etc/letsencrypt
       - ./certbot/lib:/var/lib/letsencrypt
       - ./certbot/log:/var/log/letsencrypt
+      - ./certbot/status:/status
     entrypoint: /bin/sh
     command:
       - -c
@@ -631,9 +645,100 @@ printf 'TG2CLOUD_PROXY_CORE=%s\\nTG2CLOUD_PROXY_PORTS=%s\\n' "$core" "$ports"
 printf 'TG2CLOUD_PROXY_NGINX=%s\\nTG2CLOUD_PROXY_CERTBOT=%s\\nTG2CLOUD_PROXY_RENEWAL=%s\\nTG2CLOUD_PROXY_NGINX_TEST=%s\\n' "$nginx" "$certbot" "$renewal" "$syntax"
 printf 'TG2CLOUD_PROXY_HTTPS=%s\\nTG2CLOUD_PROXY_REDIRECT=%s\\nTG2CLOUD_PROXY_DAV_BLOCK=%s\\n' "$https_state" "$redirect" "$dav_state"
 printf 'TG2CLOUD_PROXY_BACKEND_LOCAL=%s\\nTG2CLOUD_PROXY_CERT=%s\\nTG2CLOUD_PROXY_CERT_END=%s\\n' "$backend" "$cert" "$cert_end"
+for field in ATTEMPT RESULT NEXT; do
+  value="$(awk -F= -v key="$field" '$1 == key {{print $2; exit}}' "$root/certbot/status/{domain}.check" 2>/dev/null || true)"
+  if [[ "$value" =~ ^[0-9]{{1,12}}$ || "$value" == OK || "$value" == FAILED ]]; then
+    printf 'TG2CLOUD_PROXY_RENEW_%s=%s\\n' "$field" "$value"
+  fi
+done
+for field in success renewed; do
+  value="$(cat "$root/certbot/status/{domain}.$field" 2>/dev/null || true)"
+  if [[ "$value" =~ ^[0-9]{{1,12}}$ ]]; then
+    printf 'TG2CLOUD_PROXY_RENEW_%s=%s\\n' "${{field^^}}" "$value"
+  fi
+done
 printf 'TG2CLOUD_PROXY_STATUS=OK\\n'
 """
     )
+
+
+def renewal_summary(markers: dict[str, str]) -> str:
+    def stamp(key: str) -> str:
+        value = markers.get("PROXY_RENEW_" + key, "")
+        try:
+            if not re.fullmatch(r"[0-9]{1,12}", value):
+                return "尚无记录"
+            return dt.datetime.fromtimestamp(int(value), dt.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+        except (ValueError, OverflowError, OSError):
+            return "记录无法识别"
+
+    result = {"OK": "通过", "FAILED": "失败，需查看 VPS 的 Certbot 日志"}.get(
+        markers.get("PROXY_RENEW_RESULT", ""), "尚无记录"
+    )
+    return (
+        f"\n最近续期检查：{stamp('ATTEMPT')}（{result}）"
+        f"\n最近检查成功：{stamp('SUCCESS')}；最近证书变更：{stamp('RENEWED')}"
+        f"\n预计下次检查：{stamp('NEXT')}。检查成功不代表本次发生续签。"
+    )
+
+
+def renewal_warnings(markers: dict[str, str], now: dt.datetime | None = None) -> tuple[str, ...]:
+    warnings = []
+    if markers.get("PROXY_RENEW_RESULT") == "FAILED":
+        warnings.append("最近自动续期检查失败，请查看 Certbot 日志并执行续期演练。")
+    value = markers.get("PROXY_RENEW_ATTEMPT", "")
+    if value:
+        try:
+            checked = int(value) if re.fullmatch(r"[0-9]{1,12}", value) else 0
+            age = (now or dt.datetime.now(dt.UTC)).timestamp() - checked
+            if checked <= 0 or age < -300:
+                warnings.append("续期记录时间异常，请核对 VPS 时钟和检查记录。")
+            elif age > 26 * 3600:  # Two 12h cycles plus scheduling grace.
+                warnings.append("超过 26 小时没有新的续期检查记录，请检查续期容器。")
+        except (ValueError, OverflowError):
+            warnings.append("续期记录无法识别，请检查续期容器。")
+    return tuple(warnings)
+
+
+def dry_run_cleanup_script(task_id: str) -> str:
+    if not re.fullmatch(r"[0-9a-f]{32}", task_id):
+        raise ValueError("invalid maintenance task id")
+    name = "tg2cloud-proxy-dry-run-" + task_id
+    return f"""
+name={shlex.quote(name)}
+if timeout 10s docker container inspect "$name" >/dev/null 2>&1; then
+  owner="$(timeout 10s docker inspect --format '{{{{index .Config.Labels "com.tg2cloud.task"}}}}' "$name" 2>/dev/null)"
+  role="$(timeout 10s docker inspect --format '{{{{index .Config.Labels "com.tg2cloud.role"}}}}' "$name" 2>/dev/null)"
+  if [[ "$owner" != {task_id} || "$role" != maintenance-dry-run ]]; then
+    printf 'TG2CLOUD_PROXY_TASK_CLEANUP=REFUSED\\n'; return 1
+  fi
+  timeout 10s docker rm -f "$name" >/dev/null 2>&1 || {{ printf 'TG2CLOUD_PROXY_TASK_CLEANUP=FAILED\\n'; return 1; }}
+else
+  timeout 10s docker info >/dev/null 2>&1 || {{ printf 'TG2CLOUD_PROXY_TASK_CLEANUP=UNKNOWN\\n'; return 1; }}
+fi
+printf 'TG2CLOUD_PROXY_TASK_CLEANUP=OK\\n'
+"""
+
+
+def renewal_dry_run_command(domain: str, task_id: str, seconds: int = 540) -> str:
+    domain = validate_domain(domain)
+    cleanup = dry_run_cleanup_script(task_id)
+    if type(seconds) is not int or not 1 <= seconds <= 540:
+        raise ValueError("invalid task deadline")
+    script = f"""
+cleanup() {{ {cleanup} }}
+finish() {{ local result="$?"; trap - EXIT HUP INT TERM; cleanup || result=1; exit "$result"; }}
+trap finish EXIT
+trap 'exit 143' HUP TERM
+trap 'exit 130' INT
+timeout --signal=TERM --kill-after=15s {seconds}s docker compose \
+  -f {PROXY_ROOT}/docker-compose.yml run --rm --no-deps \
+  --name tg2cloud-proxy-dry-run-{task_id} \
+  --label com.tg2cloud.task={task_id} --label com.tg2cloud.role=maintenance-dry-run \
+  --entrypoint certbot certbot renew --dry-run --cert-name {shlex.quote(domain)} \
+  --webroot -w /var/www/certbot --non-interactive --no-random-sleep-on-renew --no-directory-hooks
+"""
+    return "bash -c " + shlex.quote(script)
 
 
 def verification_statuses(markers: dict[str, str]) -> tuple[tuple[str, str], ...]:
@@ -663,7 +768,7 @@ def install_config_command(remote: str) -> str:
     script = f"""
 set -e
 root={shlex.quote(PROXY_ROOT)}
-install -d -m 700 "$root" "$root/state" "$root/nginx" "$root/nginx/conf.d" "$root/certbot" "$root/certbot/letsencrypt" "$root/certbot/lib" "$root/certbot/log"
+install -d -m 700 "$root" "$root/state" "$root/nginx" "$root/nginx/conf.d" "$root/certbot" "$root/certbot/letsencrypt" "$root/certbot/lib" "$root/certbot/log" "$root/certbot/status"
 # Nginx workers run without root. Only the public ACME challenge webroot is
 # traversable; account data, private keys and Certbot state remain mode 0700.
 install -d -m 755 "$root/certbot/www"
@@ -999,16 +1104,21 @@ fi
             )
         expiry = ""
         days_text = ""
+        warnings = list(renewal_warnings(markers))
         if markers.get("PROXY_CERT_END"):
             expiry, days = parse_certificate_enddate(markers["PROXY_CERT_END"])
             days_text = f"，剩余约 {days} 天"
+            if days <= 21:
+                warnings.append("证书剩余不足 22 天，请检查自动续期是否成功。")
         return ProxyReport(
             domain,
             "healthy",
             f"VPS 本机 https://{domain} 自检通过；证书到期日 {expiry}{days_text}。"
-            "公网连通性仍需从你的电脑或外部网络单独验收。",
+            "公网连通性仍需从你的电脑或外部网络单独验收。"
+            + "".join("\n提醒：" + text for text in warnings) + renewal_summary(markers),
             statuses,
             tuple(sorted(markers.items())),
+            tuple(warnings),
         )
 
     def detect(self, domain: str) -> ProxyReport:
@@ -1035,6 +1145,7 @@ fi
             return self._configure_locked(domain, email)
 
     def _configure_locked(self, domain: str, email: str) -> ProxyReport:
+        self.log("TG2CLOUD_STAGE=HTTPS_ENV")
         previous = self.read_state()
         target = state_with_route(previous, self.product, domain)
         environment = self.probe(domain)
@@ -1053,12 +1164,15 @@ fi
             self.log("现有域名的证书或续期配置不可用；将使用安全 ACME 引导模式修复。")
         self.log("环境检查通过；正在启用仅用于 ACME 的安全 HTTP 引导配置。")
         try:
+            self.log("TG2CLOUD_STAGE=ACME")
             self._activate(bootstrap_state, candidate=domain)
+            self.log("TG2CLOUD_STAGE=CERTIFICATE")
             self._obtain_certificate(domain, email)
             self._activate(target)
             code, _ = self._compose("up -d certbot", timeout=180)
             if code != 0:
                 raise RuntimeError("证书续期容器启动失败。")
+            self.log("TG2CLOUD_STAGE=HTTPS_VERIFY")
             report = self.status(target)
             if report.state != "healthy":
                 failed = [title for title, value in report.statuses if value != "通过"]
@@ -1099,6 +1213,116 @@ fi
                 raise RuntimeError(
                     f"剩余 {PRODUCTS[edition].display_name} 的 HTTPS 自检未通过；已开始回退。"
                 )
+
+    def _backup_helper(self, action: str, *, archive: str = "", keep: int = 5, plan: str = "") -> dict[str, str]:
+        if action not in {"backup", "check", "drill", "list", "prune-preview", "prune"}:
+            raise ValueError("未知备份操作。")
+        if archive and not re.fullmatch(r"proxy-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{32}\.tar\.gz", archive):
+            raise ValueError("备份文件名无效。")
+        if type(keep) is not int or not 1 <= keep <= 50:
+            raise ValueError("保留份数必须为 1～50。")
+        if action == "prune" and not re.fullmatch(r"[0-9a-f]{64}", plan):
+            raise ValueError("请先预览并确认清理计划。")
+        self.log("TG2CLOUD_STAGE=PROXY_BACKUP")
+        directory = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+        source = (directory / "proxy_maintenance.py").read_text(encoding="utf-8")
+        remote = self._upload_files({"proxy_maintenance.py": source})
+        arguments = [action, "--keep", str(keep)]
+        if archive:
+            arguments += ["--archive", archive]
+        if plan:
+            arguments += ["--plan", plan]
+        try:
+            code, output = self._run(
+                "timeout --signal=TERM --kill-after=15s 150s python3 "
+                + shlex.quote(remote + "/proxy_maintenance.py") + " " + shlex.join(arguments), timeout=190
+            )
+            markers = parse_markers(output)
+            if code != 0 or markers.get("PROXY_BACKUP") != action.upper().replace("-", "_") + "_OK":
+                raise RuntimeError("共享代理备份操作未通过：请核对完整性、磁盘空间及清理计划。源文件或备份清单变化时需重新预览；清理可能部分完成，请刷新清单核对。")
+            return markers
+        finally:
+            try:
+                code, _ = self.session.run(f"rm -rf -- {shlex.quote(remote)}", timeout=30)
+                if code != 0:
+                    self.log("警告：维护临时脚本清理未完成，请恢复连接后检查。")
+            except Exception:  # noqa: BLE001 - cleanup must not mask original failure
+                self.log("警告：维护连接中断；远端备份操作设有执行时限，请恢复连接后检查。")
+
+    @staticmethod
+    def _backup_items(value: object) -> list[dict]:
+        if not isinstance(value, list) or len(value) > 500:
+            raise RuntimeError("备份清单无法识别。")
+        for item in value:
+            if (not isinstance(item, dict) or set(item) != {"name", "created_utc", "size_bytes", "integrity"}
+                    or not isinstance(item["name"], str)
+                    or not re.fullmatch(r"proxy-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{32}\.tar\.gz", item["name"])
+                    or not isinstance(item["created_utc"], str)
+                    or not re.fullmatch(r"[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}:[0-9]{2}:[0-9]{2} UTC", item["created_utc"])
+                    or type(item["size_bytes"]) is not int or not 0 <= item["size_bytes"] <= 1024 ** 3
+                    or item["integrity"] not in {"OK", "FAILED"}):
+                raise RuntimeError("备份清单包含无法识别的数据。")
+        return value
+
+    def manage_backups(self, action: str, *, keep: int = 5, plan: str = "") -> dict:
+        if action not in {"list", "prune-preview", "prune"}:
+            raise ValueError("未知备份管理操作。")
+        with self.session.hold_lock(proxy_lock_command(), sudo=self.use_sudo):
+            markers = self._backup_helper(action, keep=keep, plan=plan)
+            try:
+                if action == "list":
+                    return {"items": self._backup_items(json.loads(markers["PROXY_BACKUP_ITEMS"]))}
+                result = json.loads(markers["PROXY_BACKUP_PLAN"])
+                if (not isinstance(result, dict) or set(result) != {"keep", "retain", "remove", "plan_id"}
+                        or type(result["keep"]) is not int or result["keep"] != keep or not isinstance(result["plan_id"], str)
+                        or not re.fullmatch(r"[0-9a-f]{64}", result["plan_id"])
+                        or not isinstance(result["retain"], list) or len(result["retain"]) > keep
+                        or any(not isinstance(name, str) or not re.fullmatch(r"proxy-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{32}\.tar\.gz", name) for name in result["retain"])):
+                    raise RuntimeError("清理计划无法识别。")
+                self._backup_items(result["remove"])
+                names = [item["name"] for item in result["remove"]] + result["retain"]
+                if len(names) != len(set(names)) or (result["remove"] and not result["retain"]):
+                    raise RuntimeError("清理计划必须保留有效备份，且不能包含重复文件。")
+                return {"plan": result}
+            except (ValueError, KeyError, TypeError) as exc:
+                raise RuntimeError("备份管理输出无法识别。") from exc
+
+    def maintenance(self, action: str, *, archive: str = "") -> str:
+        """Explicit local-only maintenance; never restore over running services."""
+        if action not in {"backup", "check", "drill", "renew_dry_run"}:
+            raise ValueError("未知的共享代理维护操作。")
+        with self.session.hold_lock(proxy_lock_command(), sudo=self.use_sudo):
+            state = self.read_state()
+            if action == "renew_dry_run":
+                item = state["domains"].get(self.product.key)
+                if not item:
+                    raise RuntimeError("当前 Edition 尚未配置域名，不能演练续期。")
+                domain = validate_domain(item["domain"])
+                self.log("TG2CLOUD_STAGE=RENEW_DRY_RUN")
+                task_id = uuid.uuid4().hex
+                try:
+                    code, output = self._run(renewal_dry_run_command(domain, task_id), timeout=600)
+                except Exception:
+                    try:
+                        cleanup = "cleanup() { " + dry_run_cleanup_script(task_id) + " }; cleanup"
+                        cleanup_code, cleanup_output = self._run("bash -c " + shlex.quote(cleanup), timeout=55)
+                        if cleanup_code != 0 or parse_markers(cleanup_output).get("PROXY_TASK_CLEANUP") != "OK":
+                            self.log("警告：本次维护任务清理未确认，请检查一次性续期容器。")
+                    except Exception:  # noqa: BLE001 - disconnected SSH cannot confirm cleanup
+                        self.log("警告：连接中断，暂时无法确认维护任务清理；远端任务设有 9 分钟执行时限，请恢复连接后检查。")
+                    raise
+                if parse_markers(output).get("PROXY_TASK_CLEANUP") != "OK":
+                    raise RuntimeError("维护任务清理未确认，请检查本次一次性续期容器；不要重复演练。")
+                if code != 0:
+                    self.log("续期演练详情（已脱敏）：\n" + command_failure_summary(output))
+                    raise RuntimeError("续期 dry-run 未通过；请检查 ACME 公网连通与 Certbot 日志。")
+                return "续期 dry-run 通过；没有替换正式证书，也不代表长期自动续期已经验收。"
+            markers = self._backup_helper(action, archive=archive)
+            path = markers.get("PROXY_BACKUP_PATH", "")
+            if not re.fullmatch(r"/opt/tg2cloud-proxy-backups/proxy-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{32}\.tar\.gz", path):
+                raise RuntimeError("备份输出路径无法识别。")
+            title = {"backup": "私密备份及完整性检查通过", "check": "所选/最近备份完整性检查通过", "drill": "所选/最近备份隔离解包与文件校验通过"}[action]
+            return f"{title}。\n备份仅保存在 VPS：{path}\n含证书私钥，不要上传至 GitHub。"
 
     def remove(self) -> ProxyReport:
         with self.session.hold_lock(proxy_lock_command(), sudo=self.use_sudo):

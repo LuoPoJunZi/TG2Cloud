@@ -186,7 +186,7 @@ OpenList 默认安装目录为 `/opt/tg2cloud-openlist`，本地任务预算 `20
 3. 在 DNS 服务商处把该域名的 A 记录指向当前 VPS 公网 IPv4；如果存在 AAAA，它也必须指向当前 VPS 的公网 IPv6，否则先删除错误 AAAA；
 4. Cloudflare 用户先把记录设为“仅 DNS”（灰色云朵），不要填写或提供 Cloudflare API Token；
 5. 在 VPS 服务商安全组和你自行管理的防火墙中开放 TCP 80 与 443；部署器不会自动修改防火墙；
-6. 在部署工作台点击“域名访问 / HTTPS”，填写纯域名，不要填写 `https://`、端口或路径；Let's Encrypt 邮箱可以留空，但留空后收不到到期提醒；
+6. 在部署工作台点击“配置 HTTPS 管理入口”，填写纯域名，不要填写 `https://`、端口或路径；Let's Encrypt 邮箱可以留空，到期情况请查看 HTTPS 状态，不依赖邮件提醒；
 7. 点击“检测环境”，确认基础服务、Docker Compose、DNS 和 80/443 全部通过；如果端口属于其他服务，TG2Cloud 会停止且不会改动该服务；
 8. 点击“配置 HTTPS”，等待证书、Nginx 配置、HTTPS、HTTP 跳转、公网 `/dav` 阻断和后端回环监听全部通过；
 9. 点击“检查状态”，再点击“打开域名管理页”；CloudDrive2 与 OpenList 必须使用不同域名，但共用同一套 Nginx/Certbot；

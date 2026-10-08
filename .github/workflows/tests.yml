@@ -41,10 +41,13 @@ jobs:
           python -m unittest discover -s tests -v
 
       - name: Ruff
-        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py vps_resources.py payload_clouddrive2/app tests
+        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py operation_feedback.py proxy_maintenance.py .github/scripts/release_metadata.py vps_resources.py payload_clouddrive2/app tests
 
       - name: Bandit
-        run: uv run --with bandit==1.9.4 bandit -q -r payload_clouddrive2/app installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py vps_resources.py
+        run: uv run --with bandit==1.9.4 bandit -q -r payload_clouddrive2/app installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py operation_feedback.py proxy_maintenance.py .github/scripts/release_metadata.py vps_resources.py
+
+      - name: Validate single version source and Windows resources
+        run: python .github/scripts/release_metadata.py
 
       - name: Dependency audit
         run: |
@@ -90,7 +93,8 @@ jobs:
             payload_openlist/manage.sh \
             payload_openlist/openlist_admin.sh \
             payload_openlist/preserve_webdav_config.sh \
-            tests/manage_harness.sh
+            tests/manage_harness.sh \
+            tests/maintenance_docker_stub.sh
 
       - name: Set up runtime Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7

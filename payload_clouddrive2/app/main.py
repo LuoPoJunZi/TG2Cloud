@@ -72,6 +72,7 @@ class TransferService(CommandMixin):
         self.destination_last_checked = 0.0
         self.destination_scope = "unknown"
         self.destination_error = "尚未检查"
+        self.destination_failure_kind = ""
         self._progress: dict[int, dict[str, Any]] = {}
         self._watch_messages: dict[int, Any] = {}
         self.download_tasks: dict[int, asyncio.Task[None]] = {}
@@ -324,6 +325,7 @@ class TransferService(CommandMixin):
                 self.destination_error = "目录探测异常，请查看本机最近日志"
                 self.log.exception("目的端探测异常")
             self.destination_last_checked = time.time()
+            self.destination_failure_kind = failure_kind
             if openlist:
                 if failure_kind == "rate_limited":
                     failures = min(5, getattr(self, "_destination_rate_limit_failures", 0) + 1)

@@ -63,6 +63,7 @@ from domain_proxy import (
     validate_domain,
     validate_email,
 )
+from operation_feedback import STAGES, failure_details, stage_from_log, version_summary
 
 # ============================================================================
 # 1. Constants, original configuration fields and payload manifest
@@ -154,6 +155,8 @@ def dependency_report(
     missing = [
         name for name in product.required_payload if not resource_path(name).is_file()
     ]
+    if not resource_path("proxy_maintenance.py").is_file():
+        missing.append("proxy_maintenance.py")
     brand_missing = [
         name for name in REQUIRED_BRAND_ASSETS if not resource_path(name).is_file()
     ]
@@ -926,6 +929,7 @@ if _BACKEND_IMPORT_ERROR is None:
         openlist_state: str = ""
         proxy_report: ProxyReport | None = None
         https_required: bool = False
+        backup_data: dict[str, Any] | None = None
 
     class OperationError(RuntimeError):
         """An operation failure that can still expose safe structured status."""
@@ -992,6 +996,10 @@ if [[ {shlex.quote(product.key)} == openlist && "$gateway" == RUNNING ]] \
   gateway=UNHEALTHY
 fi
 printf 'TG2CLOUD_BOT_HEALTH=%s\\nTG2CLOUD_GATEWAY=%s\\nTG2CLOUD_NETWORK=%s\\n' "${{bot_health:-missing}}" "$gateway" "$network"
+bot_version="$(timeout 5s docker exec {shlex.quote(product.bot_container)} python -c 'from app import __version__; print(__version__)' 2>/dev/null || true)"
+if [[ "$bot_version" =~ ^[0-9]+[.][0-9]+[.][0-9]+$ ]]; then
+  printf 'TG2CLOUD_VERSION=%s\\n' "$bot_version"
+fi
 if [[ "$bot_health" == healthy && "$network" == PRESENT ]] \
   && [[ "$gateway" == RUNNING || "$gateway" == EXTERNAL ]]; then
   printf 'TG2CLOUD_STATUS=RUNNING\\n'
@@ -1057,7 +1065,8 @@ fi
             product: ProductProfile = CLOUDDRIVE2_PRODUCT,
         ):
             self.product = product
-            self._log = log
+            self._log_sink = log
+            self.current_stage = ""
             self._ask_host_key = confirm_host_key
             self._publish_resources = publish_resources
             self._session_factory = session_factory
@@ -1068,6 +1077,15 @@ fi
             self.vps_resources = None
             self.storage_advice = None
             self.storage_probe_basis = None
+
+        def _log(self, text: str) -> None:
+            stage = stage_from_log(text)
+            if stage:
+                self.current_stage = stage
+            self._log_sink(text)
+
+        def _stage(self, stage: str) -> None:
+            self._log(f"TG2CLOUD_STAGE={stage}")
 
         @staticmethod
         def connection_identity(values: dict[str, str]) -> tuple[str, str, str]:
@@ -1473,9 +1491,11 @@ fi
                 config_file.write_bytes(self._build_config(values).encode("utf-8"))
                 with tarfile.open(archive, "w:gz") as tar:
                     self._add_payload_to_archive(tar)
+                self._stage("SSH")
                 session = self._new_session(values)
                 remote_stage = f"/tmp/tg2cloud-deploy-{uuid.uuid4().hex}"  # nosec B108
                 try:
+                    self._stage("ENVIRONMENT")
                     self._log("SSH 连接成功，重新核对 VPS 资源和当前存储配置……")
                     resources, advice = self._probe_and_recommend(session, values)
                     if resources.architecture not in {
@@ -1526,6 +1546,7 @@ fi
                     self._log(
                         f"部署前容量校验通过：预计至少需要 {assessment.required_available_gb:.1f}GB 可用空间。"
                     )
+                    self._stage("UPLOAD")
                     self._log("SSH 连接成功，上传部署包……")
                     code, _ = session.run(f"mkdir -m 700 {remote_stage}")
                     if code != 0:
@@ -1537,6 +1558,7 @@ fi
                         sftp.chmod(f"{remote_stage}/config.env", 384)
                     finally:
                         sftp.close()
+                    self._stage("INSTALL")
                     self._log("上传完成，开始安装 VPS 运行环境和服务……")
                     extract = (
                         f"tar -xzf {remote_stage}/payload.tar.gz -C {remote_stage}"
@@ -1672,6 +1694,7 @@ fi
                 domain = validate_domain(domain)
             if operation == "configure":
                 email = validate_email(email)
+            self._stage("SSH")
             session = self._new_session(values)
             try:
                 manager = DomainProxyManager(
@@ -1684,7 +1707,7 @@ fi
                 elif operation == "configure":
                     if not email:
                         self._log(
-                            "未填写 Let's Encrypt 邮箱：将使用无邮箱注册，无法接收证书到期提醒。"
+                            "未填写 Let's Encrypt 邮箱：将使用无邮箱注册。到期情况请查看 HTTPS 状态；Let's Encrypt 已停止到期提醒邮件。"
                         )
                     report = manager.configure(domain, email)
                     title = "HTTPS 配置完成"
@@ -1694,6 +1717,15 @@ fi
                 elif operation == "remove":
                     report = manager.remove()
                     title = "域名访问已移除"
+                elif operation in {"backup", "check", "drill", "renew_dry_run"}:
+                    titles = {
+                        "backup": "共享代理备份", "check": "备份完整性检查",
+                        "drill": "隔离恢复演练", "renew_dry_run": "证书续期演练",
+                    }
+                    return OperationResult(titles[operation], manager.maintenance(operation, archive=values.get("proxy_backup_archive", "")))
+                elif operation in {"list", "prune-preview", "prune"}:
+                    data = manager.manage_backups(operation, keep=int(values.get("proxy_backup_keep", "5")), plan=values.get("proxy_backup_plan", ""))
+                    return OperationResult("代理备份管理", "备份管理操作完成。", backup_data=data)
                 else:
                     raise ValueError("未知的域名代理操作")
                 for status_title, status_value in report.statuses:
@@ -1716,6 +1748,27 @@ fi
 
         def proxy_remove(self, values: dict[str, str]) -> OperationResult:
             return self._proxy_operation(values, "remove")
+
+        def proxy_backup(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "backup")
+
+        def proxy_backup_check(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "check")
+
+        def proxy_backup_drill(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "drill")
+
+        def proxy_renew_dry_run(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "renew_dry_run")
+
+        def proxy_backup_list(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "list")
+
+        def proxy_backup_preview(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "prune-preview")
+
+        def proxy_backup_prune(self, values: dict[str, str]) -> OperationResult:
+            return self._proxy_operation(values, "prune")
 
         def open_domain(self, domain: str) -> None:
             safe_domain = validate_domain(domain)
@@ -1839,7 +1892,13 @@ fi
                     else ""
                 )
                 return OperationResult(
-                    "运行状态", f"TG2Cloud {self.product.display_name}：{labels[state]}{details}{legacy}。"
+                    "运行状态",
+                    f"TG2Cloud {self.product.display_name}：{labels[state]}{details}{legacy}。\n\n"
+                    + version_summary(
+                        self.product.app_version, markers.get("VERSION", ""),
+                        installed=state != "NOT_INSTALLED",
+                    )
+                    + "\n\n容器状态不代表 WebDAV 写入验收通过。",
                 )
             finally:
                 session.close()
@@ -2160,6 +2219,7 @@ try:
         QApplication,
         QButtonGroup,
         QCheckBox,
+        QComboBox,
         QDialog,
         QDialogButtonBox,
         QFileDialog,
@@ -2170,11 +2230,13 @@ try:
         QLabel,
         QLineEdit,
         QMainWindow,
+        QMenu,
         QMessageBox,
         QPlainTextEdit,
         QProgressBar,
         QPushButton,
         QScrollArea,
+        QSpinBox,
         QSplitter,
         QStackedWidget,
         QVBoxLayout,
@@ -2353,11 +2415,154 @@ if _QT_IMPORT_ERROR is None:
             self.backend, self.operation, self.values = backend, operation, dict(values)
 
         def run(self) -> None:
+            self.backend.current_stage = ""
             try:
                 result = getattr(self.backend, self.operation)(self.values)
                 self.succeeded.emit(self.operation, result)
             except Exception as exc:  # noqa: BLE001 - GUI worker boundary
                 self.failed.emit(self.operation, exc)
+
+    class ProxyBackupDialog(QDialog):
+        """Select a private VPS archive and confirm an exact retention preview."""
+
+        def __init__(self, owner) -> None:
+            super().__init__(owner)
+            self.owner = owner
+            self.backend = owner.backend
+            self.worker = None
+            self.plan = None
+            self.refresh_pending = False
+            self.setWindowTitle("共享代理备份管理")
+            self.setWindowIcon(brand_icon())
+            self.resize(680, 470)
+            outer = QVBoxLayout(self)
+            outer.addWidget(label("共享代理备份", "SectionTitle"))
+            outer.addWidget(label("备份包含证书私钥，仅保存在 VPS。请选择要核验的备份。", "Hint", True))
+            self.archives = QComboBox()
+            self.archives.setAccessibleName("选择代理备份")
+            outer.addWidget(self.archives)
+            actions = QHBoxLayout()
+            self.buttons = {}
+            for operation, title in (("proxy_backup_list", "刷新清单"), ("proxy_backup_check", "核验备份"), ("proxy_backup_drill", "隔离演练")):
+                button = QPushButton(title)
+                button.clicked.connect(lambda checked=False, op=operation: self._run(op))
+                self.buttons[operation] = button
+                actions.addWidget(button)
+            outer.addLayout(actions)
+            retention = QHBoxLayout()
+            retention.addWidget(label("保留最新备份份数", "FieldLabel"))
+            self.keep = QSpinBox()
+            self.keep.setRange(1, 50)
+            self.keep.setValue(5)
+            self.keep.setAccessibleName("保留备份份数")
+            self.keep.valueChanged.connect(self._invalidate_plan)
+            retention.addWidget(self.keep)
+            for operation, title in (("proxy_backup_preview", "预览清理"), ("proxy_backup_prune", "执行清理")):
+                button = QPushButton(title)
+                button.clicked.connect(lambda checked=False, op=operation: self._run(op))
+                self.buttons[operation] = button
+                retention.addWidget(button)
+            outer.addLayout(retention)
+            self.details = QPlainTextEdit()
+            self.details.setReadOnly(True)
+            self.details.setObjectName("DomainStatus")
+            self.details.setAccessibleName("备份与清理预览详情")
+            outer.addWidget(self.details, 1)
+            close = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            close.rejected.connect(self.reject)
+            outer.addWidget(close)
+            self._set_busy(False)
+            if not owner.owner.preview:
+                QTimer.singleShot(0, lambda: self._run("proxy_backup_list"))
+
+        def _invalidate_plan(self, *_args) -> None:
+            self.plan = None
+            self.buttons["proxy_backup_prune"].setEnabled(False)
+
+        def _set_busy(self, busy: bool) -> None:
+            available = self.backend is not None and not self.owner.owner.preview
+            for button in self.buttons.values():
+                button.setEnabled(available and not busy)
+            for operation in ("proxy_backup_check", "proxy_backup_drill"):
+                self.buttons[operation].setEnabled(available and not busy and self.archives.count() > 0)
+            self.buttons["proxy_backup_prune"].setEnabled(available and not busy and bool(self.plan and self.plan["remove"]))
+            self.archives.setEnabled(not busy)
+            self.keep.setEnabled(not busy)
+
+        def _run(self, operation: str) -> None:
+            if self.worker is not None or self.backend is None or self.owner.owner.preview:
+                return
+            values = self.owner._values()
+            values["proxy_backup_keep"] = str(self.keep.value())
+            if operation in {"proxy_backup_check", "proxy_backup_drill"}:
+                values["proxy_backup_archive"] = self.archives.currentData() or ""
+                if not values["proxy_backup_archive"]:
+                    return
+            if operation == "proxy_backup_prune":
+                if not self.plan or not self.plan["remove"]:
+                    return
+                total = sum(item["size_bytes"] for item in self.plan["remove"])
+                answer = QMessageBox.question(
+                    self, "确认清理代理备份",
+                    f"将永久删除预览中的 {len(self.plan['remove'])} 份旧备份及校验文件，约 {total / 1024 ** 2:.2f} MB。\n"
+                    f"保留 {len(self.plan['retain'])} 份已核验备份。删除后无法撤销。是否继续？",
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No,
+                )
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
+                values["proxy_backup_plan"] = self.plan["plan_id"]
+            self.owner.owner.redactor.update(values)
+            self.owner.owner.append_log("开始：代理备份管理 / " + operation.removeprefix("proxy_backup_"))
+            self.worker = OperationThread(self.backend, operation, values, self)
+            self.worker.succeeded.connect(self._success, Qt.ConnectionType.QueuedConnection)
+            self.worker.failed.connect(self._failure, Qt.ConnectionType.QueuedConnection)
+            self.worker.finished.connect(self._finished, Qt.ConnectionType.QueuedConnection)
+            self._set_busy(True)
+            self.worker.start()
+
+        def _success(self, operation: str, result: Any) -> None:
+            if operation == "proxy_backup_list":
+                self._invalidate_plan()
+                self.archives.clear()
+                for item in result.backup_data["items"]:
+                    integrity = "校验通过" if item["integrity"] == "OK" else "校验失败"
+                    self.archives.addItem(f"{item['created_utc']} · {item['size_bytes'] / 1024 ** 2:.2f} MB · {integrity} · {item['name'][-39:-32]}", item["name"])
+                self.details.setPlainText(f"共 {self.archives.count()} 份备份。清理只在全部备份校验通过后允许执行；至少保留一份。")
+            elif operation == "proxy_backup_preview":
+                self.plan = result.backup_data["plan"]
+                removed = self.plan["remove"]
+                lines = [f"保留 {len(self.plan['retain'])} 份；拟删除 {len(removed)} 份，约 {sum(item['size_bytes'] for item in removed) / 1024 ** 2:.2f} MB。", "以下为拟删除文件，尚未执行："]
+                lines.extend(item["name"] for item in removed)
+                self.details.setPlainText("\n".join(lines))
+            elif operation == "proxy_backup_prune":
+                self._invalidate_plan()
+                self.refresh_pending = True
+                self.owner.owner.append_log("代理旧备份已按确认计划永久删除；最新保留备份仍在 VPS。")
+                self.details.setPlainText("清理完成，正在刷新清单。")
+            else:
+                self.details.setPlainText(result.message)
+                self.owner.owner.append_log(result.title + "：" + result.message)
+
+        def _failure(self, _operation: str, error: Any) -> None:
+            self._invalidate_plan()
+            clean = self.owner.owner.redactor.clean(failure_details(error, getattr(self.backend, "current_stage", "")))
+            self.details.setPlainText(clean)
+            self.owner.owner.append_log("[失败] " + clean)
+
+        def _finished(self) -> None:
+            worker, self.worker = self.worker, None
+            if worker is not None:
+                worker.deleteLater()
+            self._set_busy(False)
+            if self.refresh_pending:
+                self.refresh_pending = False
+                self._run("proxy_backup_list")
+
+        def reject(self) -> None:
+            if self.worker is not None:
+                QMessageBox.information(self, "操作进行中", "请等待备份操作结束后再关闭。")
+                return
+            super().reject()
 
     class DomainAccessDialog(QDialog):
         """Required HTTPS management entry for TG2Cloud-managed gateways."""
@@ -2367,7 +2572,14 @@ if _QT_IMPORT_ERROR is None:
             "proxy_configure": "配置 HTTPS",
             "proxy_status": "检查运行状态",
             "proxy_remove": "移除域名访问",
+            "proxy_backup": "备份共享代理",
+            "proxy_backup_check": "核验最近代理备份",
+            "proxy_backup_drill": "隔离恢复演练",
+            "proxy_renew_dry_run": "续期演练（dry-run）",
         }
+        MAINTENANCE_OPERATIONS = frozenset({
+            "proxy_backup", "proxy_backup_check", "proxy_backup_drill", "proxy_renew_dry_run",
+        })
 
         def __init__(self, owner: InstallerWindow) -> None:
             super().__init__(owner)
@@ -2414,7 +2626,7 @@ if _QT_IMPORT_ERROR is None:
 
             outer.addWidget(label("Let's Encrypt 邮箱（可选）", "FieldLabel"))
             self.email_edit = QLineEdit()
-            self.email_edit.setPlaceholderText("留空则无邮箱注册，无法接收到期提醒")
+            self.email_edit.setPlaceholderText("可留空；到期情况请查看 HTTPS 状态，不依赖邮件提醒")
             self.email_edit.setAccessibleName("Let's Encrypt 邮箱")
             outer.addWidget(self.email_edit)
 
@@ -2461,8 +2673,19 @@ if _QT_IMPORT_ERROR is None:
             outer.addStretch(1)
 
             close_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+            self.maintenance_button = close_box.addButton("维护工具", QDialogButtonBox.ButtonRole.ActionRole)
+            menu = QMenu(self.maintenance_button)
+            for operation in ("proxy_backup", "proxy_backup_check", "proxy_backup_drill", "proxy_renew_dry_run"):
+                action = menu.addAction(self.OPERATION_TITLES[operation])
+                action.triggered.connect(lambda checked=False, op=operation: self._run(op))
+            self.maintenance_button.setMenu(menu)
+            menu.addSeparator()
+            menu.addAction("管理历史代理备份…", self._manage_backups)
             close_box.rejected.connect(self.reject)
             outer.addWidget(close_box)
+            # Real CJK font metrics can exceed the initial resize height. Keep
+            # the existing layout/status height, but do not squeeze button text.
+            self.setMinimumHeight(max(630, outer.minimumSize().height()))
             self._set_busy(False)
             QTimer.singleShot(0, self._load_initial_status)
 
@@ -2484,6 +2707,7 @@ if _QT_IMPORT_ERROR is None:
 
         def _set_busy(self, busy: bool) -> None:
             available = self.backend is not None and not self.owner.preview
+            self.maintenance_button.setEnabled(available and not busy)
             for button in self.buttons.values():
                 button.setEnabled(available and not busy)
             self.buttons["open"].setEnabled(
@@ -2497,6 +2721,10 @@ if _QT_IMPORT_ERROR is None:
             values["proxy_domain"] = self.domain_edit.text()
             values["proxy_email"] = self.email_edit.text()
             return values
+
+        def _manage_backups(self) -> None:
+            if self.worker is None and self.backend is not None and not self.owner.preview:
+                ProxyBackupDialog(self).exec()
 
         def _run(self, operation: str) -> None:
             if self.worker is not None or self.backend is None:
@@ -2535,6 +2763,19 @@ if _QT_IMPORT_ERROR is None:
                 )
                 if answer != QMessageBox.StandardButton.Yes:
                     return
+            if operation in {"proxy_backup", "proxy_backup_drill", "proxy_renew_dry_run"}:
+                explanations = {
+                    "proxy_backup": "将备份两 Edition 共用的 HTTPS 配置与证书私钥，仅保存在 VPS 私密目录。\n不停止 Bot，不下载或上传备份。是否继续？",
+                    "proxy_backup_drill": "将最近备份解包到新建私密目录，核对文件后清理该测试目录。\n不会覆盖运行配置、启动服务或替换正式证书。是否继续？",
+                    "proxy_renew_dry_run": "仅对当前 Edition 做 Let's Encrypt 测试续期，可能需要数分钟。\n不会替换正式证书，不启用 deploy hooks；请勿反复点击。是否继续？",
+                }
+                answer = QMessageBox.question(
+                    self, self.OPERATION_TITLES[operation], explanations[operation],
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                    QMessageBox.StandardButton.No,
+                )
+                if answer != QMessageBox.StandardButton.Yes:
+                    return
             self.owner.redactor.update(values)
             self.owner.append_log("开始：" + self.OPERATION_TITLES[operation])
             self._set_badge("正在执行", "running")
@@ -2556,6 +2797,11 @@ if _QT_IMPORT_ERROR is None:
 
         @Slot(str, object)
         def _success(self, operation: str, result: Any) -> None:
+            if operation in self.MAINTENANCE_OPERATIONS:
+                self.status_text.setPlainText(result.message)
+                self.owner.append_log(result.title + "：" + result.message)
+                self._set_badge("维护完成", "success")
+                return  # Maintenance cannot mark HTTPS as configured/healthy.
             report = getattr(result, "proxy_report", None)
             if report is None:
                 raise RuntimeError("域名操作没有返回结构化状态。")
@@ -2573,6 +2819,8 @@ if _QT_IMPORT_ERROR is None:
                 "running_error": ("运行异常", "error"),
             }
             badge, state = labels.get(report.state, ("状态未知", "error"))
+            if report.state == "healthy" and report.warnings:
+                badge, state = "HTTPS 可用，续期待检查", "pending"
             if operation != "proxy_detect":
                 self.configured_state = report.state
             self._set_badge(badge, state)
@@ -2585,11 +2833,13 @@ if _QT_IMPORT_ERROR is None:
 
         @Slot(str, object)
         def _failure(self, operation: str, error: Any) -> None:
-            clean = self.owner.redactor.clean(str(error))
+            clean = self.owner.redactor.clean(
+                failure_details(error, getattr(self.backend, "current_stage", ""))
+            )
             self._set_badge("操作失败", "error")
             self.status_text.setPlainText(clean)
             self.owner.append_log("[失败] " + clean)
-            if operation != "proxy_detect" and self.configured_state != "healthy":
+            if operation not in self.MAINTENANCE_OPERATIONS and operation != "proxy_detect" and self.configured_state != "healthy":
                 self.owner._https_requirement_failed(clean)
             QMessageBox.critical(self, self.OPERATION_TITLES[operation] + "失败", clean)
 
@@ -3266,8 +3516,8 @@ if _QT_IMPORT_ERROR is None:
 
         def _apply_https_report(self, report: ProxyReport) -> None:
             if report.state == "healthy":
-                self._status("部署完成", "success")
-                self.footer_state.setText("HTTPS 管理入口：运行正常")
+                self._status("部署完成 · 续期待检查" if report.warnings else "部署完成", "pending" if report.warnings else "success")
+                self.footer_state.setText("HTTPS 管理入口：可用，续期待检查" if report.warnings else "HTTPS 管理入口：运行正常")
                 self.step_summary.setText(
                     f"下一步：打开 {self.product.display_name} 域名，完成存储和 WebDAV 配置"
                 )
@@ -3516,6 +3766,10 @@ if _QT_IMPORT_ERROR is None:
         def append_log(self, text: str) -> None:
             if hasattr(self, "auth_group") and hasattr(self, "managed"):
                 self.redactor.update(self.snapshot())
+            stage = stage_from_log(text)
+            if stage:
+                self.step_summary.setText("当前阶段：" + STAGES[stage][0])
+                text = "阶段：" + STAGES[stage][0]
             clean = self.redactor.clean(text).rstrip()
             bar = self.console.verticalScrollBar()
             at_bottom = bar.value() >= bar.maximum() - 3
@@ -3717,7 +3971,9 @@ if _QT_IMPORT_ERROR is None:
             statuses = getattr(error, "statuses", ())
             if statuses:
                 self._show_verification_statuses(statuses)
-            clean = self.redactor.clean(str(error))
+            clean = self.redactor.clean(
+                failure_details(error, getattr(self.backend, "current_stage", ""))
+            )
             if getattr(error, "user_cancelled", False):
                 self._status("操作已取消", "cancelled")
                 self.footer_state.setText(
@@ -3937,9 +4193,11 @@ def packaged_self_test(
     result_path = Path(result_path)
     gui_ok = False
     domain_ui_ok = False
+    backup_ui_ok = False
     ui_error = ""
     window = None
     domain_dialog = None
+    backup_dialog = None
     try:
         app = make_app()
         window = (
@@ -3957,9 +4215,19 @@ def packaged_self_test(
             and domain_dialog.email_edit.isVisible()
             and "proxy_configure" in domain_dialog.buttons
         )
+        backup_dialog = ProxyBackupDialog(domain_dialog)
+        backup_dialog.show()
+        app.processEvents()
+        backup_ui_ok = (
+            backup_dialog.archives.isVisible()
+            and backup_dialog.details.isReadOnly()
+            and not backup_dialog.buttons["proxy_backup_prune"].isEnabled()
+        )
     except Exception as exc:  # noqa: BLE001 - packaged GUI diagnostic boundary
         ui_error = str(exc)
     finally:
+        if backup_dialog is not None:
+            backup_dialog.close()
         if domain_dialog is not None:
             domain_dialog.close()
         if window is not None:
@@ -3972,7 +4240,7 @@ def packaged_self_test(
         backend_ok = True
     except Exception as exc:  # noqa: BLE001 - packaged backend diagnostic boundary
         backend_error = str(exc)
-    succeeded = bool(report["ready"]) and gui_ok and domain_ui_ok and backend_ok
+    succeeded = bool(report["ready"]) and gui_ok and domain_ui_ok and backup_ui_ok and backend_ok
     try:
         import PySide6
 
@@ -3996,6 +4264,7 @@ def packaged_self_test(
         "brand_missing=" + ",".join(report["brand_missing"]),
         f"gui_runtime={'OK' if gui_ok else 'FAILED'}",
         f"domain_ui={'OK' if domain_ui_ok else 'FAILED'}",
+        f"backup_ui={'OK' if backup_ui_ok else 'FAILED'}",
         f"backend_import={'OK' if backend_ok else 'FAILED'}",
         f"error={error}",
         "remote_test=NOT_RUN",

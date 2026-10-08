@@ -9,7 +9,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
+from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT, RELEASE_VERSION
 from installer import runtime_status_command
 
 SOURCE = Path(__file__).resolve().parents[1]
@@ -723,7 +723,7 @@ class DeploymentStructureTests(unittest.TestCase):
         ):
             self.assertTrue(version_file.is_file())
             metadata = version_file.read_text(encoding="utf-8")
-            self.assertIn("ProductVersion', '1.1.1'", metadata)
+            self.assertIn(f"ProductVersion', '{RELEASE_VERSION}'", metadata)
             self.assertIn("TG2Cloud", metadata)
         self.assertNotIn("Source = 'installer_classic.py'", script)
         self.assertNotIn("import tkinter", script)
@@ -744,7 +744,10 @@ class DeploymentStructureTests(unittest.TestCase):
         )
         self.assertIn("timeout-minutes: 20", workflow)
         self.assertIn("WaitForExit(120000)", script)
-        self.assertIn("app_version=1.1.1", script)
+        self.assertIn("app_version=$ReleaseVersion", script)
+        self.assertIn("payload_clouddrive2/app/version.py", script)
+        self.assertIn("$ProxyMaintenance = Join-Path $SourceDir 'proxy_maintenance.py'", script)
+        self.assertIn("'--add-data', \"$ProxyMaintenance;.\"", script)
         self.assertIn("Compare-Object $expectedArtifacts $actualArtifacts", script)
         self.assertNotIn('foreach ($edition in @("Modern", "Classic"))', workflow)
 

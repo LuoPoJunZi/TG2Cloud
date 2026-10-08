@@ -4,19 +4,14 @@ on:
   workflow_dispatch:
   push:
     tags:
-      - v1.1.1
+      - 'v*'
 
 permissions:
   actions: read
   contents: write
 
-env:
-  RELEASE_TAG: v1.1.1
-  RELEASE_TITLE: TG2Cloud v1.1.1
-  RELEASE_ARTIFACT: TG2Cloud-v1.1.1-windows
-
 concurrency:
-  group: release-v1.1.1
+  group: release-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -24,11 +19,32 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       publish: ${{ steps.preflight.outputs.publish }}
+      release_tag: ${{ steps.metadata.outputs.release_tag }}
+      release_title: ${{ steps.metadata.outputs.release_title }}
+      release_artifact: ${{ steps.metadata.outputs.release_artifact }}
+      is_prerelease: ${{ steps.metadata.outputs.is_prerelease }}
     steps:
+      - name: Require a version tag (including manual dispatch)
+        run: |
+          set -euo pipefail
+          test "${GITHUB_REF_TYPE}" = tag
+          [[ "${GITHUB_REF_NAME}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-(alpha|beta|rc)\.[1-9][0-9]*)?$ ]]
+
+      - name: Checkout immutable release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.ref_name }}
+          fetch-depth: 0
+
+      - name: Validate tag, single version source, Windows resources and release documents
+        id: metadata
+        run: python3 .github/scripts/release_metadata.py --tag "${GITHUB_REF_NAME}" --github-output "${GITHUB_OUTPUT}"
+
       - name: Check immutable tag and release state
         id: preflight
         env:
           GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.metadata.outputs.release_tag }}
         run: |
           set -euo pipefail
           gh api "repos/${GITHUB_REPOSITORY}/git/ref/tags/${RELEASE_TAG}" --silent
@@ -39,13 +55,6 @@ jobs:
             echo "publish=true" >> "${GITHUB_OUTPUT}"
           fi
 
-      - name: Checkout immutable release tag
-        if: steps.preflight.outputs.publish == 'true'
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ env.RELEASE_TAG }}
-          fetch-depth: 0
-
       - name: Validate GitHub Release notes layout
         if: steps.preflight.outputs.publish == 'true'
         run: python3 .github/scripts/validate_release_notes.py RELEASE_NOTES.md
@@ -54,6 +63,9 @@ jobs:
     needs: prepare
     if: needs.prepare.outputs.publish == 'true'
     runs-on: windows-latest
+    env:
+      RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+      RELEASE_ARTIFACT: ${{ needs.prepare.outputs.release_artifact }}
     steps:
       - name: Checkout immutable release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -64,9 +76,9 @@ jobs:
       - name: Verify checked-out tag
         shell: pwsh
         run: |
-          $tag = (git describe --tags --exact-match HEAD).Trim()
-          if ($tag -ne $env:RELEASE_TAG) {
-            throw "Checked out $tag instead of $env:RELEASE_TAG"
+          $tagCommit = (git rev-parse "$($env:RELEASE_TAG)^{commit}").Trim()
+          if ($LASTEXITCODE -ne 0 -or $tagCommit -ne (git rev-parse HEAD).Trim()) {
+            throw "Checked out commit does not match $env:RELEASE_TAG"
           }
           Write-Output "Release commit: $((git rev-parse HEAD).Trim())"
 
@@ -86,7 +98,7 @@ jobs:
           python -m unittest discover -s tests -v
 
       - name: Ruff
-        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py vps_resources.py payload_clouddrive2/app tests
+        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py operation_feedback.py proxy_maintenance.py .github/scripts/release_metadata.py vps_resources.py payload_clouddrive2/app tests
 
       - name: Build and self-test Windows EXE once
         timeout-minutes: 20
@@ -153,6 +165,7 @@ jobs:
       contents: read
     env:
       QT_QPA_PLATFORM: offscreen
+      RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
     steps:
       - name: Checkout the same immutable release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -182,7 +195,8 @@ jobs:
             payload_openlist/manage.sh \
             payload_openlist/openlist_admin.sh \
             payload_openlist/preserve_webdav_config.sh \
-            tests/manage_harness.sh
+            tests/manage_harness.sh \
+            tests/maintenance_docker_stub.sh
 
       - name: Linux runtime, gateway and real WebDAV regression
         run: |
@@ -208,6 +222,11 @@ jobs:
       needs.windows-build.result == 'success' &&
       needs.linux-validation.result == 'success'
     runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+      RELEASE_TITLE: ${{ needs.prepare.outputs.release_title }}
+      RELEASE_ARTIFACT: ${{ needs.prepare.outputs.release_artifact }}
+      RELEASE_PRERELEASE: ${{ needs.prepare.outputs.is_prerelease }}
     steps:
       - name: Checkout release notes from the immutable tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -244,6 +263,10 @@ jobs:
             echo "Release ${RELEASE_TAG} appeared after preflight; refusing to replace it." >&2
             exit 1
           fi
+          prerelease_args=()
+          if [[ "${RELEASE_PRERELEASE}" == true ]]; then
+            prerelease_args+=(--prerelease)
+          fi
           gh release create "${RELEASE_TAG}" \
             release-assets/TG2Cloud-CloudDrive2-Deployer.exe \
             release-assets/TG2Cloud-OpenList-Deployer.exe \
@@ -251,7 +274,7 @@ jobs:
             --repo "${GITHUB_REPOSITORY}" \
             --verify-tag \
             --title "${RELEASE_TITLE}" \
-            --notes-file RELEASE_NOTES.md
+            --notes-file RELEASE_NOTES.md "${prerelease_args[@]}"
 
       - name: Verify published release and exact asset set
         env:
@@ -261,7 +284,7 @@ jobs:
           test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json tagName --jq .tagName)" = "${RELEASE_TAG}"
           test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json name --jq .name)" = "${RELEASE_TITLE}"
           test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isDraft --jq .isDraft)" = false
-          test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isPrerelease --jq .isPrerelease)" = false
+          test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isPrerelease --jq .isPrerelease)" = "${RELEASE_PRERELEASE}"
           expected=(
             SHA256SUMS.txt
             TG2Cloud-CloudDrive2-Deployer.exe

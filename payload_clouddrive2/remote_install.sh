@@ -385,17 +385,20 @@ if [[ "${DEPLOY_CLOUDDRIVE2:-true}" == "true" ]]; then
   if [[ -n "$EXISTING_CD2" ]]; then
     log "发现现有 CloudDrive2 容器 $EXISTING_CD2；保留登录和挂载数据"
   else
+    printf 'TG2CLOUD_STAGE=GATEWAY\n'
     log "拉取并启动 CloudDrive2"
     docker compose pull clouddrive2
     docker compose up -d clouddrive2
   fi
 fi
 
+printf 'TG2CLOUD_STAGE=BOT\n'
 log "构建 TG2Cloud Bot 容器"
 docker compose build "$BOT_SERVICE"
 bash "$INSTALL_DIR/manage.sh" validate
 docker compose up -d --no-deps "$BOT_SERVICE"
 
+printf 'TG2CLOUD_STAGE=HEALTH\n'
 log "等待 Bot 基础健康检查"
 BOT_HEALTH=""
 for _ in $(seq 1 40); do

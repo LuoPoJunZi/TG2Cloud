@@ -354,6 +354,7 @@ chmod +x "$INSTALL_DIR/remote_install.sh" "$INSTALL_DIR/manage.sh" \
 
 cd "$INSTALL_DIR"
 docker compose config --quiet
+printf 'TG2CLOUD_STAGE=GATEWAY\n'
 log "启动仅监听 VPS 回环地址的 OpenList"
 docker compose up -d "$OPENLIST_SERVICE"
 if ! wait_openlist_http; then
@@ -365,10 +366,12 @@ if ! wait_openlist_http; then
   fail "OpenList 没有在 VPS 本机 127.0.0.1:5244 正常响应"
 fi
 
+printf 'TG2CLOUD_STAGE=BOT\n'
 log "构建并启动 TG2Cloud Bot"
 docker compose build "$BOT_SERVICE"
 bash "$INSTALL_DIR/manage.sh" validate
 docker compose up -d --no-deps "$BOT_SERVICE"
+printf 'TG2CLOUD_STAGE=HEALTH\n'
 if ! wait_container_healthy; then
   docker compose ps || true
   docker compose logs --tail=120 "$BOT_SERVICE" || true

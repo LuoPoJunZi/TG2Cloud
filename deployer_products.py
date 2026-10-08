@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-RELEASE_VERSION = "1.1.1"
+from payload_clouddrive2.app.version import VERSION as RELEASE_VERSION
 
 SHARED_PAYLOAD_FILES = (
     "payload_clouddrive2/backup_retention.sh",
@@ -13,6 +13,7 @@ SHARED_PAYLOAD_FILES = (
     "payload_clouddrive2/Dockerfile",
     "payload_clouddrive2/requirements.txt",
     "payload_clouddrive2/app/__init__.py",
+    "payload_clouddrive2/app/version.py",
     "payload_clouddrive2/app/config.py",
     "payload_clouddrive2/app/main.py",
     "payload_clouddrive2/app/bot_commands.py",

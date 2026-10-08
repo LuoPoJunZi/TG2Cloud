@@ -7,7 +7,12 @@ param(
 $ErrorActionPreference = 'Stop'
 
 $SourceDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$VersionSource = Get-Content -LiteralPath (Join-Path $SourceDir 'payload_clouddrive2/app/version.py') -Raw
+$VersionMatch = [regex]::Match($VersionSource, '(?m)^VERSION = "([0-9]+\.[0-9]+\.[0-9]+)"\r?$')
+if (-not $VersionMatch.Success) { throw '无法读取唯一版本源' }
+$ReleaseVersion = $VersionMatch.Groups[1].Value
 $BrandIcon = Join-Path $SourceDir 'assets/brand/tg2cloud.ico'
+$ProxyMaintenance = Join-Path $SourceDir 'proxy_maintenance.py'
 $PyInstallerArgs = @(
     '--noconfirm'
     '--clean'
@@ -17,6 +22,7 @@ $PyInstallerArgs = @(
     '--icon', $BrandIcon
     '--specpath', 'build/spec'
     '--distpath', 'dist'
+    '--add-data', "$ProxyMaintenance;."
 )
 
 $BuildTargets = @()
@@ -74,6 +80,8 @@ function Invoke-Tg2CloudPythonBuild {
 
     $originalPath = $env:Path
     try {
+        & $PythonExecutable (Join-Path $SourceDir '.github/scripts/release_metadata.py')
+        if ($LASTEXITCODE -ne 0) { throw '版本与 Windows 构建资源不一致，停止构建' }
         $env:Path = Get-Tg2CloudIsolatedPath -ToolPath $PythonExecutable
         foreach ($target in $BuildTargets) {
             Write-Host "Building $($target.Name) with PySide6..."
@@ -112,6 +120,8 @@ function Invoke-Tg2CloudUvBuild {
 
     $originalPath = $env:Path
     try {
+        & $UvExecutable run python (Join-Path $SourceDir '.github/scripts/release_metadata.py')
+        if ($LASTEXITCODE -ne 0) { throw '版本与 Windows 构建资源不一致，停止构建' }
         $env:Path = Get-Tg2CloudIsolatedPath -ToolPath $UvExecutable
         foreach ($target in $BuildTargets) {
             Write-Host "Building $($target.Name) with PySide6..."
@@ -168,8 +178,9 @@ function Test-Tg2CloudBuild {
         $content = Get-Content -LiteralPath $resultPath -Raw -Encoding utf8
         foreach ($expected in @(
             "product=$($target.Key)",
-            'app_version=1.1.1',
+            "app_version=$ReleaseVersion",
             'gui_runtime=OK',
+            'backup_ui=OK',
             'backend_import=OK',
             'result=OK'
         )) {
@@ -184,7 +195,7 @@ function Test-Tg2CloudBuild {
 Push-Location $SourceDir
 try {
     New-Item -ItemType Directory -Force -Path 'build/spec' | Out-Null
-    foreach ($required in @($BrandIcon) + @(
+    foreach ($required in @($BrandIcon, $ProxyMaintenance) + @(
         $BuildTargets | ForEach-Object { Join-Path $SourceDir $_.VersionFile }
     )) {
         if (-not (Test-Path -LiteralPath $required -PathType Leaf)) {
