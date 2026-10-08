@@ -1,7 +1,7 @@
 services:
   openlist:
     image: openlistteam/openlist@sha256:c555c6e1c8af2aead38ed12ec761ac077fdf046d19cf033414be8e056aec6b64
-    container_name: tg115-openlist
+    container_name: tg2cloud-openlist
     user: "1001:1001"
     environment:
       TZ: ${TZ:-Asia/Shanghai}
@@ -17,13 +17,13 @@ services:
       - no-new-privileges:true
     restart: unless-stopped
     networks:
-      - tg115-openlist-net
+      - tg2cloud-openlist-net
 
-  tg115-bot:
+  tg2cloud-openlist-bot:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: tg115-openlist-bot
+    container_name: tg2cloud-openlist-bot
     env_file:
       - .env
     environment:
@@ -31,7 +31,8 @@ services:
       DOWNLOAD_DIR: /downloads
       LOG_DIR: /logs
       RCLONE_CONFIG_PATH: /config/rclone/rclone.conf
-      TG115_COMPOSE_SERVICE: tg115-bot
+      TG2CLOUD_COMPOSE_SERVICE: tg2cloud-openlist-bot
+      TG115_COMPOSE_SERVICE: tg2cloud-openlist-bot
     user: "10001:10001"
     volumes:
       - ./data:/data
@@ -54,8 +55,8 @@ services:
       retries: 3
       start_period: 45s
     networks:
-      - tg115-openlist-net
+      - tg2cloud-openlist-net
 
 networks:
-  tg115-openlist-net:
-    name: tg115-openlist-net
+  tg2cloud-openlist-net:
+    name: tg2cloud-openlist-net
