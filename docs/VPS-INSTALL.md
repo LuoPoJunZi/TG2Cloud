@@ -31,6 +31,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 不带参数时先选择 Edition，随后识别全新安装或已有实例。脚本不会在收集信息、预检及最终确认之前安装软件或修改实例。当前仍建议先在专用测试 VPS 使用。
 
+HTTPS 预检还需要宿主机的 `ss`、`ip`（`iproute2`）、`getent`、`flock` 和 `timeout`。缺少工具时会列出名称及对应安装命令，不会当作 DNS 错误，也不会在预检阶段自动安装软件。确认执行后的基础安装依赖包含 `iproute2` 和 `python3`；共享代理备份兼容宿主 Python 3.10。
+
 只检查 CloudDrive2，不安装／升级：
 
 ```bash
@@ -160,7 +162,18 @@ bash ./install.sh --edition openlist --verify
 
 `--configure-https` 是明确的配置/修复授权，执行前仍需要确认。有已保存域名时只能沿用它，不提供隐式切换。已是最新版本时只续做 HTTPS，不重建 Bot。没有保存域名时才收集新域名。
 
-首次 HTTPS 失败前生成的秘密已经由安装器保存到 VPS `.env`。若尚未显示，请仅在自己控制的 root 私有终端查阅对应配置，或使用部署器维护；不要把完整 `.env` 贴进日志、聊天或 Issue。
+首次 HTTPS 失败前生成的秘密已经由安装器保存到 VPS `.env`。修复版向导在 HTTPS 续做成功后再次提供逐项确认显示；也可在本地源码入口单独查看已有凭据，不安装、不升级、不修复 HTTPS、不重置密码：
+
+```bash
+bash ./install.sh --edition openlist --show-credentials
+bash ./install.sh --edition clouddrive2 --show-credentials
+```
+
+每项默认不显示，仅在确认后写入当前私有终端，不进入普通日志。OpenList 显示的是保存的初始化管理员密码；如果后来在管理页改过密码，这不是当前密码。请避免旁观或录屏，不要把完整 `.env` 贴进日志、聊天或 Issue。该参数不能与 `--check`、`--configure-https` 或 `--verify` 组合。
+
+这些修复先在当前源码中提供。公开单行命令仍使用前文记录的不可变向导 pin，只有维护者完成 CI 后更新 pin 才会生效；旧入口不会自动获得新参数。
+
+HTTPS 配置收到 Ctrl+C、TERM 或 HUP 时会尝试恢复原代理配置；状态提交与回退期间的重复信号会延后处理，保留原有命令超时。请等待退出后核对状态，不用强制杀进程加速；断网、断电、SIGKILL 或回退命令失败时仍可能需要人工恢复。已提交的新路由不会仅因提交结束时收到取消信号而恢复成旧运行配置。
 
 `--verify` 仍需第二次确认，只有 HTTPS 自检健康才执行现有 `manage.sh verify`。返回 401、429 或业务错误不会触发自动改密、重装或循环验收。
 

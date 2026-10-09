@@ -555,6 +555,33 @@ class Terminal:
     def reveal(self, label: str, value: str) -> None:
         if self.confirm("是否仅在当前终端显示" + label + "？请确保没有旁观/录屏"):
             self.output.write(label + ": " + value + "\n")
+            self.output.flush()
+
+
+def show_credentials(ui: Terminal, product: ProductProfile, config: dict[str, str], log: SafeLog) -> None:
+    """Read saved setup values only; never query/reset a gateway password."""
+    log(product.display_name + "：逐项确认后仅向当前私有终端显示已保存凭据；默认不显示。")
+    for key, label in (("USERNAME", "WebDAV 用户名"), ("PASSWORD", "WebDAV 密码")):
+        # Older CloudDrive2 installations may only have the compatibility keys.
+        encoded_value = config.get("WEBDAV_" + key + "_B64")
+        if encoded_value is None:
+            encoded_value = config.get("CD2_WEBDAV_" + key + "_B64", "")
+        try:
+            value = plain(base64.b64decode(encoded_value, validate=True).decode("utf-8"))
+        except (ValueError, UnicodeError):
+            log(label + "未保存或格式无法安全显示；请在私有终端核对，不会重置。")
+            continue
+        ui.reveal(label, value)
+    if product.is_openlist:
+        log("OpenList 仅保存初始化管理员密码；若已在管理页更改，它不代表当前密码。")
+        try:
+            value = plain(config.get("OPENLIST_ADMIN_PASSWORD", ""))
+        except ValueError:
+            value = ""
+        if value:
+            ui.reveal("OpenList 初始化管理员密码（可能已更改）", value)
+        else:
+            log("未保存可显示的 OpenList 初始化管理员密码；不会重置。")
 
 
 def collect_config(ui: Terminal, product: ProductProfile) -> dict[str, str]:
@@ -799,12 +826,9 @@ def execute_plan(
         if report.state != "healthy":
             raise RuntimeError("基础服务可能已安装，但 HTTPS 尚未通过；用 --configure-https 显式续做，不要重装/删除数据")
         log("TG2CLOUD_CLI_BASE_HTTPS=OK；公网访问仍需外部网络检查")
-        if plan.action == "install":
+        if plan.action == "install" or plan.configure_https:
             log("请在 https://" + report.domain + " 配置自己的云存储，再建立专用 WebDAV 用户。")
-            ui.reveal("WebDAV 用户名", base64.b64decode(plan.config["WEBDAV_USERNAME_B64"]).decode())
-            ui.reveal("WebDAV 密码", base64.b64decode(plan.config["WEBDAV_PASSWORD_B64"]).decode())
-            if instance.product.is_openlist:
-                ui.reveal("首次 OpenList 管理员密码", plan.config["OPENLIST_ADMIN_PASSWORD"])
+            show_credentials(ui, instance.product, plan.config, log)
         if verify or plan.action == "install":
             verify_destination(plan, session, log, ui)
 
@@ -816,6 +840,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--check", action="store_true", help="只读实例/版本/HTTPS检查；不收集秘密，不执行安装")
     result.add_argument("--configure-https", action="store_true", help="显式续做/修复 HTTPS；已有域名不切换")
     result.add_argument("--verify", action="store_true", help="另行确认 WebDAV 写入验收；默认不会在升级中运行")
+    result.add_argument("--show-credentials", action="store_true", help="仅经确认在私有终端显示已有凭据；不安装、升级或改密")
     return result
 
 
@@ -824,6 +849,10 @@ def main(argv: list[str] | None = None) -> int:
     log = SafeLog()
     ui = None
     try:
+        if args.show_credentials and (args.check or args.configure_https or args.verify):
+            raise ValueError("--show-credentials 必须单独使用，不能与检查、HTTPS 修复或验收组合")
+        if args.show_credentials and not args.edition:
+            raise ValueError("查看凭据请显式指定 --edition，不进入安装/升级选择向导")
         validate_host()
         if args.install_dir and (not args.edition or args.edition == "both"):
             raise ValueError("--install-dir 必须搭配单个 --edition")
@@ -846,6 +875,15 @@ def main(argv: list[str] | None = None) -> int:
         instances = [discover(PRODUCTS[key], inventory, session, log, install_dir=args.install_dir) for key in keys]
         if args.edition == "both" and not all(item.present for item in instances):
             raise ValueError("both 只升级两套已有完整实例；首次安装请分别选择 Edition")
+        if args.show_credentials:
+            if not all(item.present for item in instances):
+                raise ValueError("尚无完整实例，不生成凭据、不启动安装")
+            if ui is None:
+                ui = Terminal()
+            for instance in instances:
+                show_credentials(ui, instance.product, instance.config, log)
+            log("TG2CLOUD_CLI_RESULT=NO_CHANGE；凭据查看结束，未修改实例或配置")
+            return 0
         client = ReleaseClient()
         bootstrap = Path(__file__).resolve().parent.parent / ".bootstrap-release.json"
         pinned = json.loads(regular_private(bootstrap)) if bootstrap.exists() else None

@@ -12,11 +12,13 @@ import ipaddress
 import json
 import re
 import shlex
+import signal
 import sys
 import tempfile
+import threading
 import uuid
 from collections.abc import Callable
-from contextlib import AbstractContextManager
+from contextlib import AbstractContextManager, contextmanager
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
@@ -31,6 +33,67 @@ CERTBOT_IMAGE = "certbot/certbot:v5.8.0"
 STATE_VERSION = 1
 SUPPORTED_EDITIONS = ("clouddrive2", "openlist")
 EDITION_BACKEND_PORTS = {"clouddrive2": 19798, "openlist": 5244}
+HOST_TOOL_PACKAGES = {
+    "ss": "iproute2", "ip": "iproute2", "curl": "curl",
+    "getent": "libc-bin", "python3": "python3", "timeout": "coreutils",
+    "flock": "util-linux",
+}
+
+
+@contextmanager
+def defer_interruptions():
+    """Finish bounded commit/rollback commands before honoring CLI cancellation.
+
+    Qt workers never install signal handlers. SIGKILL and lost connections are
+    not recoverable here; ordinary INT/TERM/HUP must not split a state commit.
+    """
+    previous = {}
+    pending = False
+
+    def defer(_signum, _frame):
+        nonlocal pending
+        pending = True
+
+    try:
+        if threading.current_thread() is threading.main_thread():
+            for name in ("SIGINT", "SIGTERM", "SIGHUP"):
+                number = getattr(signal, name, None)
+                if number is not None and signal.getsignal(number) != signal.SIG_IGN:
+                    previous[number] = signal.signal(number, defer)
+        yield
+    finally:
+        for number, handler in previous.items():
+            signal.signal(number, handler)
+        if pending and sys.exc_info()[0] is None:
+            raise KeyboardInterrupt
+
+
+def host_tools_check_script(tools: tuple[str, ...]) -> str:
+    if not tools or any(tool not in HOST_TOOL_PACKAGES for tool in tools):
+        raise ValueError("未知宿主依赖。")
+    return f"""
+missing_tools=""
+for tool in {shlex.join(tools)}; do
+  if ! command -v "$tool" >/dev/null 2>&1; then missing_tools="$missing_tools $tool"; fi
+done
+if [[ -n "$missing_tools" ]]; then
+  printf 'TG2CLOUD_PROXY_MISSING_TOOLS=%s\\n' "${{missing_tools# }}"
+  exit 3
+fi
+"""
+
+
+def raise_missing_host_tools(output: str) -> None:
+    missing = parse_markers(output).get("PROXY_MISSING_TOOLS", "").split()
+    if missing:
+        tools = [tool for tool in missing if tool in HOST_TOOL_PACKAGES]
+        packages = sorted({HOST_TOOL_PACKAGES[tool] for tool in tools})
+        raise RuntimeError(
+            "VPS 缺少宿主依赖：" + ", ".join(tools or ["未知工具"])
+            + "。尚未执行 HTTPS 变更；这不是 DNS 或端口冲突。"
+            + ("请以 root 手动执行 apt-get update && apt-get install -y "
+               + " ".join(packages) + "，然后重新检测。" if packages else "请核对系统依赖。")
+        )
 
 _FQDN_RE = re.compile(
     r"(?=^.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
@@ -525,10 +588,10 @@ def parse_certificate_enddate(value: str, *, now: dt.datetime | None = None) -> 
         if raw.endswith("Z"):
             expires = dt.datetime.fromisoformat(raw[:-1] + "+00:00")
         else:
-            expires = dt.datetime.strptime(raw, "%b %d %H:%M:%S %Y %Z").replace(tzinfo=dt.UTC)
+            expires = dt.datetime.strptime(raw, "%b %d %H:%M:%S %Y %Z").replace(tzinfo=dt.timezone.utc)
     except ValueError as exc:
         raise ValueError("无法解析 HTTPS 证书到期时间。") from exc
-    current = now or dt.datetime.now(dt.UTC)
+    current = now or dt.datetime.now(dt.timezone.utc)
     days = max(-1, int((expires - current).total_seconds() // 86400))
     return expires.date().isoformat(), days
 
@@ -538,6 +601,7 @@ def environment_probe_command(product: ProductProfile, domain: str) -> str:
     return "bash -c " + shlex.quote(
         f"""
 set -u
+{host_tools_check_script(tuple(HOST_TOOL_PACKAGES))}
 if docker inspect {shlex.quote(product.storage_container)} >/dev/null 2>&1 \
   && curl -fsS --max-time 5 http://127.0.0.1:{product.management_port}/ >/dev/null 2>&1; then
   printf 'TG2CLOUD_PROXY_CORE=OK\\n'
@@ -668,7 +732,7 @@ def renewal_summary(markers: dict[str, str]) -> str:
         try:
             if not re.fullmatch(r"[0-9]{1,12}", value):
                 return "尚无记录"
-            return dt.datetime.fromtimestamp(int(value), dt.UTC).strftime("%Y-%m-%d %H:%M:%S UTC")
+            return dt.datetime.fromtimestamp(int(value), dt.timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC")
         except (ValueError, OverflowError, OSError):
             return "记录无法识别"
 
@@ -690,7 +754,7 @@ def renewal_warnings(markers: dict[str, str], now: dt.datetime | None = None) ->
     if value:
         try:
             checked = int(value) if re.fullmatch(r"[0-9]{1,12}", value) else 0
-            age = (now or dt.datetime.now(dt.UTC)).timestamp() - checked
+            age = (now or dt.datetime.now(dt.timezone.utc)).timestamp() - checked
             if checked <= 0 or age < -300:
                 warnings.append("续期记录时间异常，请核对 VPS 时钟和检查记录。")
             elif age > 26 * 3600:  # Two 12h cycles plus scheduling grace.
@@ -869,6 +933,7 @@ fi
 
     def probe(self, domain: str) -> ProxyEnvironment:
         code, output = self._run(environment_probe_command(self.product, domain), timeout=30)
+        raise_missing_host_tools(output)
         if code != 0:
             raise RuntimeError("无法完成域名、Docker 与端口环境检测。")
         return parse_environment(output)
@@ -1163,6 +1228,7 @@ fi
             repairing_existing_certificate = True
             self.log("现有域名的证书或续期配置不可用；将使用安全 ACME 引导模式修复。")
         self.log("环境检查通过；正在启用仅用于 ACME 的安全 HTTP 引导配置。")
+        committed = False
         try:
             self.log("TG2CLOUD_STAGE=ACME")
             self._activate(bootstrap_state, candidate=domain)
@@ -1183,22 +1249,31 @@ fi
                     + "、".join(failed or ["状态输出不完整"])
                     + "。详细结果已写入运行日志；域名配置未提交。"
                 )
-            self._commit_state(target)
+            with defer_interruptions():
+                self._commit_state(target)
+                committed = True
             return report
-        except Exception:
+        except (Exception, KeyboardInterrupt):
+            if committed:
+                # Cancellation after the atomic commit must not restore an old
+                # runtime while domains.json already describes the new route.
+                raise
             try:
-                if previous["domains"]:
-                    try:
-                        self._activate(previous)
-                    except Exception:
-                        if not repairing_existing_certificate:
-                            raise
-                        self._activate(bootstrap_state, candidate=domain)
-                    self._compose("up -d certbot", timeout=120)
-                else:
-                    self._install_config(previous)
-                    self._compose("stop nginx certbot", timeout=60)
-            except Exception as rollback_error:  # noqa: BLE001 - rollback boundary
+                with defer_interruptions():
+                    if previous["domains"]:
+                        try:
+                            self._activate(previous)
+                        except Exception:
+                            if not repairing_existing_certificate:
+                                raise
+                            self._activate(bootstrap_state, candidate=domain)
+                        code, _ = self._compose("up -d certbot", timeout=120)
+                    else:
+                        self._install_config(previous)
+                        code, _ = self._compose("stop nginx certbot", timeout=60)
+                    if code:
+                        raise RuntimeError("代理回退容器操作失败")
+            except (Exception, KeyboardInterrupt) as rollback_error:  # noqa: BLE001 - rollback boundary
                 self.log(f"警告：共享代理自动回退未完全成功：{type(rollback_error).__name__}")
             raise
 
@@ -1223,6 +1298,12 @@ fi
             raise ValueError("保留份数必须为 1～50。")
         if action == "prune" and not re.fullmatch(r"[0-9a-f]{64}", plan):
             raise ValueError("请先预览并确认清理计划。")
+        code, output = self._run(
+            "bash -c " + shlex.quote(host_tools_check_script(("python3", "timeout"))), timeout=15
+        )
+        raise_missing_host_tools(output)
+        if code:
+            raise RuntimeError("无法完成共享代理维护的宿主依赖检查。")
         self.log("TG2CLOUD_STAGE=PROXY_BACKUP")
         directory = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
         source = (directory / "proxy_maintenance.py").read_text(encoding="utf-8")

@@ -20,6 +20,7 @@ import tempfile
 import time
 import uuid
 from pathlib import Path, PurePosixPath
+from typing import BinaryIO
 
 PROXY_ROOT = Path("/opt/tg2cloud-proxy")
 BACKUP_ROOT = Path("/opt/tg2cloud-proxy-backups")
@@ -29,9 +30,17 @@ MAX_BYTES = 512 * 1024 * 1024
 MAX_ENTRIES = 20000
 
 
+def stream_digest(handle: BinaryIO) -> str:
+    """Bounded-memory SHA256 for host Python 3.10 as well as newer runtimes."""
+    checksum = hashlib.sha256()
+    while chunk := handle.read(1024 * 1024):
+        checksum.update(chunk)
+    return checksum.hexdigest()
+
+
 def digest(path: Path) -> str:
     with path.open("rb") as handle:
-        return hashlib.file_digest(handle, "sha256").hexdigest()
+        return stream_digest(handle)
 
 
 def private_directory(path: Path) -> None:
@@ -130,7 +139,7 @@ def verify_backup(archive: Path) -> dict[str, dict]:
                             raise ValueError("invalid manifest")
                         manifest = json.load(handle)
                         continue
-                    content_hash = hashlib.file_digest(handle, "sha256").hexdigest()
+                    content_hash = stream_digest(handle)
                 record.update(kind="file", size=member.size, sha256=content_hash)
             elif member.isdir():
                 record.update(kind="directory")

@@ -216,7 +216,7 @@ export DEBIAN_FRONTEND=noninteractive
 log "安装基础软件"
 apt-get -o DPkg::Lock::Timeout=120 update -y
 apt-get -o DPkg::Lock::Timeout=120 install -y --no-install-recommends \
-  ca-certificates curl gnupg tar gzip openssh-client
+  ca-certificates curl gnupg tar gzip openssh-client iproute2 python3
 
 configure_docker_repository() {
   install -m 0755 -d /etc/apt/keyrings

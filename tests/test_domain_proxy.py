@@ -5,6 +5,7 @@ import json
 import os
 import shlex
 import shutil
+import signal
 import subprocess
 import sys
 import tempfile
@@ -529,6 +530,73 @@ class CertificateTests(unittest.TestCase):
 
 
 class TransactionTests(unittest.TestCase):
+    def test_interrupt_restores_runtime_and_preserves_other_edition(self) -> None:
+        for product in (OPENLIST_PRODUCT, CLOUDDRIVE2_PRODUCT):
+            other = CLOUDDRIVE2_PRODUCT if product.is_openlist else OPENLIST_PRODUCT
+            for scenario in ("fresh", "repair", "switch"):
+                with self.subTest(edition=product.key, scenario=scenario):
+                    manager = TransactionManager(product)
+                    previous = state_with_route(empty_state(), other, "other.example.com")
+                    if scenario != "fresh":
+                        previous = state_with_route(previous, product, "old.example.com")
+                    manager.current = previous
+                    manager.valid_certificate = scenario != "repair"
+                    domain = "old.example.com" if scenario == "repair" else "new.example.com"
+                    with patch.object(manager, "_obtain_certificate", side_effect=KeyboardInterrupt), self.assertRaises(KeyboardInterrupt):
+                        manager.configure(domain, "")
+                    self.assertFalse(manager.commits)
+                    self.assertEqual(manager.current, previous)
+                    self.assertEqual(manager.activations[-1], (previous, ""))
+                    self.assertIn("up -d certbot", manager.compose_calls)
+                    self.assertFalse(manager.stop_called)
+
+    def test_interrupt_on_first_route_stops_only_proxy(self) -> None:
+        manager = TransactionManager()
+        with patch.object(manager, "_obtain_certificate", side_effect=KeyboardInterrupt), self.assertRaises(KeyboardInterrupt):
+            manager.configure("ol.example.com", "")
+        self.assertEqual(manager.current, empty_state())
+        self.assertEqual(manager.activations[-1], (empty_state(), ""))
+        self.assertEqual(manager.compose_calls, ["stop nginx certbot"])
+
+    def test_signal_during_commit_keeps_committed_state_and_runtime(self) -> None:
+        for name in ("SIGINT", "SIGTERM", "SIGHUP"):
+            number = getattr(signal, name, None)
+            if number is None or signal.getsignal(number) == signal.SIG_IGN:
+                continue
+            with self.subTest(signal=name):
+                manager = TransactionManager()
+                commit = manager._commit_state
+                original_handler = signal.getsignal(number)
+
+                def commit_then_interrupt(state, commit=commit, number=number):
+                    commit(state)
+                    signal.getsignal(number)(number, None)
+
+                with patch.object(manager, "_commit_state", side_effect=commit_then_interrupt), self.assertRaises(KeyboardInterrupt):
+                    manager.configure("ol.example.com", "")
+                self.assertEqual(len(manager.commits), 1)
+                self.assertEqual(manager.activations[-1], (manager.current, ""))
+                self.assertFalse(manager.stop_called)
+                self.assertEqual(signal.getsignal(number), original_handler)
+
+    def test_repeated_signal_during_rollback_does_not_abort_recovery(self) -> None:
+        manager = TransactionManager()
+        manager.fail_certificate = True
+        manager.current = state_with_route(empty_state(), OPENLIST_PRODUCT, "old.example.com")
+        activate = manager._activate
+        original_handler = signal.getsignal(signal.SIGINT)
+
+        def interrupted_rollback(state, *, candidate=""):
+            if not candidate:
+                signal.getsignal(signal.SIGINT)(signal.SIGINT, None)
+            activate(state, candidate=candidate)
+
+        with patch.object(manager, "_activate", side_effect=interrupted_rollback), self.assertRaisesRegex(RuntimeError, "certbot"):
+            manager.configure("new.example.com", "")
+        self.assertEqual(manager.activations[-1], (manager.current, ""))
+        self.assertIn("up -d certbot", manager.compose_calls)
+        self.assertEqual(signal.getsignal(signal.SIGINT), original_handler)
+
     def test_existing_runtime_without_state_is_not_overwritten(self) -> None:
         class MissingStateSession:
             def run(self, command, **_kwargs):

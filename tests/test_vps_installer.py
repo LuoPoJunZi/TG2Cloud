@@ -114,6 +114,47 @@ class TerminalTests(unittest.TestCase):
         ui.close()
         self.assertTrue(all(stream.closed for stream in streams))
 
+    def test_saved_credentials_require_each_confirmation_and_never_use_log(self):
+        for answer in ("\n", "y\n"):
+            with self.subTest(confirmed=answer == "y\n"):
+                _, _, output, _ = self.fixture(answer * 3)
+                ui = cli.Terminal()
+                logs = []
+                config = cli.new_config(PRODUCTS["openlist"], VALUES)
+                cli.show_credentials(ui, PRODUCTS["openlist"], config, SafeLog(logs.append))
+                ui.close()
+                terminal = output.getvalue().decode("utf-8")
+                for secret in (VALUES["webdav_password"], VALUES["admin_password"]):
+                    self.assertEqual(secret in terminal, answer == "y\n")
+                    self.assertNotIn(secret, "\n".join(logs))
+                self.assertNotIn(VALUES["bot_token"], terminal)
+                self.assertNotIn(VALUES["api_hash"], terminal)
+                self.assertIn("不代表当前密码", "\n".join(logs))
+
+    def test_malformed_saved_credentials_are_not_echoed_or_reset(self):
+        ui = Mock()
+        logs = []
+        config = {
+            "WEBDAV_USERNAME_B64": "!invalid-private-fixture!",
+            "WEBDAV_PASSWORD_B64": cli.encoded("secret\x1b[31m"),
+            "OPENLIST_ADMIN_PASSWORD": "secret\nunsafe",
+        }
+        cli.show_credentials(ui, PRODUCTS["openlist"], config, SafeLog(logs.append))
+        ui.reveal.assert_not_called()
+        for value in config.values():
+            self.assertNotIn(value, "\n".join(logs))
+
+    def test_clouddrive_legacy_saved_keys_do_not_reveal_openlist_password(self):
+        ui = Mock()
+        config = {
+            "CD2_WEBDAV_USERNAME_B64": cli.encoded("tg2cloud"),
+            "CD2_WEBDAV_PASSWORD_B64": cli.encoded(VALUES["webdav_password"]),
+            "OPENLIST_ADMIN_PASSWORD": VALUES["admin_password"],
+        }
+        cli.show_credentials(ui, PRODUCTS["clouddrive2"], config, SafeLog(lambda _line: None))
+        self.assertEqual(ui.reveal.call_count, 2)
+        self.assertEqual(ui.reveal.call_args.args, ("WebDAV 密码", VALUES["webdav_password"]))
+
     def test_prompt_is_flushed_before_read_and_does_not_use_stdin(self):
         _, streams, output, _ = self.fixture("answer\n")
         ui = cli.Terminal()
@@ -849,6 +890,81 @@ class InstanceTests(unittest.TestCase):
         with patch.object(cli, "edition_lock", return_value=nullcontext()), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "apply_base"), patch.object(cli, "verify_destination") as verify, self.assertRaisesRegex(RuntimeError, "HTTPS"):
             cli.execute_plan(cli.Plan(self.instance, "upgrade", manager), RELEASE, ROOT, ROOT, Mock(), self.log, Mock(), verify=True)
         verify.assert_not_called()
+
+    def test_https_resume_offers_saved_credentials_without_reinstall(self):
+        manager, ui, session = Mock(), Mock(), Mock()
+        manager.status.return_value = report()
+        plan = cli.Plan(self.instance, "current", manager, self.instance.config,
+                        "files.example.test", configure_https=True)
+        with patch.object(cli, "edition_lock", return_value=nullcontext()), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "verify_destination") as verify:
+            cli.execute_plan(plan, RELEASE, ROOT, ROOT, session, self.log, ui)
+        manager.configure.assert_called_once_with("files.example.test", "")
+        session.run.assert_not_called()
+        verify.assert_not_called()
+        self.assertEqual(ui.reveal.call_count, 3)
+        self.assertEqual(ui.reveal.call_args_list[1].args, ("WebDAV 密码", VALUES["webdav_password"]))
+        self.assertIn("可能已更改", ui.reveal.call_args_list[2].args[0])
+        self.assertEqual((self.directory / ".env").read_bytes(), self.raw)
+
+    def test_failed_https_resume_never_prompts_for_credentials(self):
+        manager, ui = Mock(), Mock()
+        manager.configure.side_effect = RuntimeError("fixture HTTPS failure")
+        plan = cli.Plan(self.instance, "current", manager, self.instance.config,
+                        "files.example.test", configure_https=True)
+        with patch.object(cli, "edition_lock", return_value=nullcontext()), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), self.assertRaisesRegex(RuntimeError, "HTTPS failure"):
+            cli.execute_plan(plan, RELEASE, ROOT, ROOT, Mock(), self.log, ui)
+        ui.reveal.assert_not_called()
+
+    def test_explicit_credential_view_never_resolves_release_or_executes_plan(self):
+        ui = Mock()
+        with patch.object(cli, "validate_host"), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "Terminal", return_value=ui), patch.object(cli, "ReleaseClient") as release, patch.object(cli, "execute_plan") as execute, patch.object(cli, "SafeLog", return_value=self.log):
+            self.assertEqual(cli.main(["--edition", "openlist", "--show-credentials"]), 0)
+        release.assert_not_called()
+        execute.assert_not_called()
+        self.assertEqual(ui.reveal.call_count, 3)
+        self.assertEqual((self.directory / ".env").read_bytes(), self.raw)
+
+    def test_credential_view_rejects_check_and_mutating_flags(self):
+        for option in ("--check", "--configure-https", "--verify"):
+            with self.subTest(option=option), patch.object(cli, "validate_host") as validate, patch.object(cli, "Terminal") as terminal, patch.object(cli, "SafeLog", return_value=self.log):
+                self.assertEqual(cli.main(["--edition", "openlist", "--show-credentials", option]), 1)
+            validate.assert_not_called()
+            terminal.assert_not_called()
+
+    def test_credential_view_requires_explicit_edition(self):
+        with patch.object(cli, "validate_host") as validate, patch.object(cli, "Terminal") as terminal, patch.object(cli, "SafeLog", return_value=self.log):
+            self.assertEqual(cli.main(["--show-credentials"]), 1)
+        validate.assert_not_called()
+        terminal.assert_not_called()
+
+    def test_ordinary_upgrade_does_not_offer_or_reset_credentials(self):
+        manager, ui = Mock(), Mock()
+        manager.status.return_value = report()
+        plan = cli.Plan(self.instance, "upgrade", manager, self.instance.config)
+        with patch.object(cli, "edition_lock", return_value=nullcontext()), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "apply_base"), patch.object(cli, "verify_destination") as verify:
+            cli.execute_plan(plan, RELEASE, ROOT, ROOT, Mock(), self.log, ui)
+        ui.reveal.assert_not_called()
+        manager.configure.assert_not_called()
+        verify.assert_not_called()
+
+    def test_credential_view_does_not_install_when_instance_absent(self):
+        absent = cli.Instance(self.product, self.directory, False)
+        with patch.object(cli, "validate_host"), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=absent), patch.object(cli, "Terminal") as terminal, patch.object(cli, "ReleaseClient") as release, patch.object(cli, "SafeLog", return_value=self.log):
+            self.assertEqual(cli.main(["--edition", "openlist", "--show-credentials"]), 1)
+        terminal.assert_not_called()
+        release.assert_not_called()
+
+    def test_fresh_plan_missing_host_tools_stops_before_collecting_secrets(self):
+        absent = cli.Instance(self.product, self.directory, False)
+        manager, ui = Mock(), Mock()
+        manager.read_state.return_value = {"domains": {}}
+        manager.status.return_value = report("not_configured", "")
+        manager.probe.side_effect = RuntimeError("VPS 缺少宿主依赖：ss, ip；安装 iproute2")
+        ui.ask.side_effect = ["files.example.test", ""]
+        with patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "DomainProxyManager", return_value=manager), patch.object(cli, "collect_config") as collect, patch.object(cli, "resource_check") as resources, self.assertRaisesRegex(RuntimeError, "iproute2"):
+            cli.make_plan(absent, RELEASE, ROOT, None, Mock(), self.log, ui)
+        collect.assert_not_called()
+        resources.assert_not_called()
 
     def test_main_cancelled_and_readonly_never_mutate(self):
         plan = cli.Plan(self.instance, "upgrade", Mock())
