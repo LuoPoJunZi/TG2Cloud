@@ -136,7 +136,7 @@ class ArchiveTests(unittest.TestCase):
 class VersionSourceTests(unittest.TestCase):
     def read_version(self, legacy, current=None):
         with tempfile.TemporaryDirectory() as private:
-            root = Path(private)
+            root = Path(private).resolve()
             (root / "app").mkdir()
             (root / "app/__init__.py").write_text(legacy, encoding="utf-8")
             if current is not None:
@@ -162,7 +162,7 @@ class VersionSourceTests(unittest.TestCase):
 
     def test_legacy_baseline_still_requires_exact_official_payload(self):
         with tempfile.TemporaryDirectory() as private:
-            root = Path(private)
+            root = Path(private).resolve()
             source = root / "official"
             shutil.copytree(ROOT / "payload_clouddrive2", source / "payload_clouddrive2",
                             ignore=shutil.ignore_patterns("__pycache__"))
@@ -267,7 +267,9 @@ class InstanceTests(unittest.TestCase):
     def setUp(self):
         self.private = tempfile.TemporaryDirectory()
         self.addCleanup(self.private.cleanup)
-        self.directory = Path(self.private.name) / "install"
+        # Windows hosted runners may expose TEMP through an 8.3 alias or a
+        # junction. Canonicalize fixtures, not the production fail-closed checks.
+        self.directory = Path(self.private.name).resolve() / "install"
         self.product = PRODUCTS["openlist"]
         cli.build_payload(ROOT, self.product, self.directory)
         for name in ("data", "config", "downloads", "logs", "openlist/data"):
@@ -448,7 +450,7 @@ class InstanceTests(unittest.TestCase):
             client = Mock()
             client.resolve.side_effect = [RELEASE, cli.Release("v" + self.instance.version, "b" * 40)]
             client.download.return_value = ROOT
-            with self.subTest(args=args), patch.object(cli, "validate_host"), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "ReleaseClient", return_value=client), patch.object(cli, "Terminal", return_value=ui), patch.object(cli, "make_plan", return_value=plan), patch.object(cli, "execute_plan") as execute, patch("builtins.print"):
+            with self.subTest(args=args), patch.object(cli, "validate_host"), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "ReleaseClient", return_value=client), patch.object(cli, "Terminal", return_value=ui), patch.object(cli, "make_plan", return_value=plan), patch.object(cli, "execute_plan") as execute, patch.object(cli, "SafeLog", return_value=self.log):
                 self.assertEqual(cli.main(args), 0)
             execute.assert_not_called()
 
@@ -459,7 +461,7 @@ class InstanceTests(unittest.TestCase):
         client = Mock()
         client.resolve.side_effect = [RELEASE, cli.Release("v" + self.instance.version, "b" * 40)]
         client.download.return_value = ROOT
-        with patch.object(cli, "validate_host"), patch.object(cli, "docker_inventory", return_value={self.product.bot_container, self.product.storage_container}), patch.object(cli, "discover", return_value=self.instance) as discover, patch.object(cli, "ReleaseClient", return_value=client), patch.object(cli, "Terminal", return_value=ui), patch.object(cli, "make_plan", return_value=cli.Plan(self.instance, "upgrade", Mock())), patch.object(cli, "execute_plan") as execute, patch("builtins.print"):
+        with patch.object(cli, "validate_host"), patch.object(cli, "docker_inventory", return_value={self.product.bot_container, self.product.storage_container}), patch.object(cli, "discover", return_value=self.instance) as discover, patch.object(cli, "ReleaseClient", return_value=client), patch.object(cli, "Terminal", return_value=ui), patch.object(cli, "make_plan", return_value=cli.Plan(self.instance, "upgrade", Mock())), patch.object(cli, "execute_plan") as execute, patch.object(cli, "SafeLog", return_value=self.log):
             self.assertEqual(cli.main([]), 0)
         self.assertEqual(ui.ask.call_args.kwargs["default"], "2")
         self.assertEqual(discover.call_args.args[0].key, "openlist")
