@@ -4,7 +4,7 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 ## TG2Cloud v1.1.4
 
-内容核对日期：2026-10-09。当前待发布，正式下载暂保留仍存在的 v1.1.2；v1.1.3 Tag/Release 已移除。新版本发布后再切换下载，不把源码版本当作发布成功。
+发布日期与内容核对日期：2026-10-09。两个 Windows EXE 已由 GitHub Actions 从同一 v1.1.4 Tag 测试、构建和自检，Release 复用该次 Windows artifact；实际 SHA256SUMS 与资产摘要已核对。
 
 - 修复 `/dev/tty` 输入流打开失败，以及 CLI 私有源码导致非 root 候选镜像无法读取 `app/__init__.py` 的问题；两 Edition 共用修复。
 - 公开构建文件为 0644、子目录为 0755，私有外层目录与秘密仍分别保持 0700/0600，秘密不进入 Docker 上下文。
@@ -14,7 +14,7 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 真实首次安装、跨版本升级、回退和 Telegram/云盘转存仍待修复后的实机验收，OpenList 脚本实机验收暂缓。
 
-[查看源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) · [当前正式下载 v1.1.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.2) · [下载与 VPS 单行入口](/download/)。
+[查看源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.4/CHANGELOG.md) · [查看正式 Release v1.1.4](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.4) · [下载与 VPS 单行入口](/download/)。
 
 ## TG2Cloud v1.1.3
 

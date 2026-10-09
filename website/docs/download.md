@@ -1,19 +1,19 @@
 # 下载与 SHA-256 校验
 
-本文档对应 **TG2Cloud v1.1.4** 源码，当前待发布。v1.1.3 Tag/Release 已移除，以下下载暂保留仍存在的 v1.1.2；新版本 Actions 发布完成并核对资产后再同步。获取程序请使用项目自己的 GitHub Releases，不使用第三方改包。
+本文档对应 **TG2Cloud v1.1.4** 正式版本。两个 EXE 和 SHA256SUMS 已由 GitHub Actions 从同一不可变 Tag 构建、自检并发布，校验清单与实际资产摘要已核对；获取程序请使用项目自己的 GitHub Releases，不使用第三方改包。
 
 ## 下载已发布版本
 
 | 版本 | 发布文件 | 教程 |
 | --- | --- | --- |
-| CloudDrive2 Edition | [下载 CloudDrive2 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.1.2/TG2Cloud-CloudDrive2-Deployer.exe) | [CloudDrive2 部署](/deploy/clouddrive2/) |
-| OpenList Edition | [下载 OpenList 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.1.2/TG2Cloud-OpenList-Deployer.exe) | [OpenList 部署](/deploy/openlist/) |
-| 校验清单 | [下载 SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.1.2/SHA256SUMS.txt) | 与下载的 EXE 逐项核对 |
+| CloudDrive2 Edition | [下载 CloudDrive2 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.1.4/TG2Cloud-CloudDrive2-Deployer.exe) | [CloudDrive2 部署](/deploy/clouddrive2/) |
+| OpenList Edition | [下载 OpenList 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.1.4/TG2Cloud-OpenList-Deployer.exe) | [OpenList 部署](/deploy/openlist/) |
+| 校验清单 | [下载 SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.1.4/SHA256SUMS.txt) | 与下载的 EXE 逐项核对 |
 
-[查看 v1.1.2 发布页](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.2) · [查看最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[查看 v1.1.4 发布页](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.4) · [查看最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 :::info 固定版本与最新版本
-本页下载按钮暂固定到已发布 v1.1.2，两个 EXE 与 SHA256SUMS 来自同一次 Actions 构建，不使用旧版本的摘要。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
+本页下载按钮固定到已发布 v1.1.4，两个 EXE 与 SHA256SUMS 来自同一次 Actions 构建，不使用旧版本的摘要。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
 :::
 
 两个正式 EXE 由 GitHub Actions 的 Windows Runner 从同一标签构建并自检，Release 复用该次构建产物。校验值来自这次 Actions 实际生成的文件，不要求与本机旧构建一致。
@@ -63,12 +63,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 从源码构建部署器
 
-这部分用于从 main 中的 v1.1.4 待发布源码构建主项目，不是下载已发布 EXE，也不是构建本文档站。请记录实际 commit；正式 Release 资产仍以 Actions 本次产物为准，本机构建的 SHA256 不要求相同。
+这部分用于从正式 v1.1.4 标签构建主项目，不是下载已发布 EXE，也不是构建本文档站。正式 Release 资产仍以 Actions 本次产物为准，本机构建的 SHA256 不要求相同。
 
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.1.4
 git rev-parse HEAD
 .\build.ps1 -Edition All
 ```
