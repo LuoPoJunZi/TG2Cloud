@@ -44,9 +44,9 @@ Your Cloud
 
 本仓库是在原作者 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 基础上的二次开发版本，重点加强了任务恢复、磁盘保护、流式传输、状态语义、升级回退、VPS 资源建议和日常诊断。
 
-> 当前源码版本：**TG2Cloud v1.1.3（待发布）**
+> 当前版本：**TG2Cloud v1.1.3**
 >
-> 本版新增可选 VPS 单行安装／保留配置升级入口，两个 PySide6 部署器仍是主力，稳定传输核心未改动。当前已发布的 Windows EXE 为 v1.1.2；推送源码不会创建 v1.1.3 Release。正式新版本仍需由 GitHub Actions 从对应 Tag 构建并发布。变更与待验收范围见 [发布说明](RELEASE_NOTES.md)。
+> 本版包含 Telethon 1.45.0、PyInstaller 6.22.3 及 CI 工具升级，并新增可选 VPS 单行安装／保留配置升级入口。两个 PySide6 部署器仍是主力，稳定业务代码未重写。正式 Windows EXE 由 GitHub Actions 从对应 Tag 重新测试、构建并自检，Release 复用本次产物及实际 SHA256。变更与待验收范围见 [发布说明](RELEASE_NOTES.md)。
 
 > 仅转存你有权保存、备份和使用的内容，并遵守 Telegram、所用云存储、CloudDrive2/OpenList、内容来源平台及所在地的法律法规和服务条款。
 
@@ -146,7 +146,7 @@ TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑�
 
 ## 当前版本
 
-当前源码产品版本为 `TG2Cloud v1.1.3`（待发布），提供两个独立的 PySide6 Edition：
+当前产品版本为 `TG2Cloud v1.1.3`，提供两个独立的 PySide6 Edition：
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -334,7 +334,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 全新 VPS 先收集配置、预检和确认再安装；完整已有实例复用配置，目标源码固定到 GitHub 最新正式稳定 Release 的 commit。已是最新版不重建、不重启。旧 TG115、部分容器、手改程序、冲突目录及网关镜像迁移均停止，不自动覆盖。`manage.sh update` 仍只重建本机已有 payload，与此入口不同。
 
-本次源码、Bot、两个部署器的版本源及 Windows 构建资源统一为 **v1.1.3**，已发布 EXE 仍为 v1.1.2；本次不创建 Tag/Release 或上传本机构建。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。正式 v1.1.3 Release 发布前，单行脚本仍只安装当前已发布的稳定 payload，不会因为 main 的版本号提高就安装未发布代码。首次安装、跨版本升级与回退仍需单独实机验收，OpenList 脚本实机验收暂缓。
+源码、Bot、两个部署器的版本源及 Windows 构建资源统一为 **v1.1.3**；正式 EXE 由 Actions 构建，不上传本机构建。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。首次安装、跨版本升级与回退仍需单独实机验收，OpenList 脚本实机验收暂缓。
 
 CloudDrive2 已通过真实 VPS 的 `--check`：识别官方旧版、核对运行指纹、容量和现有 HTTPS，生成稳定版升级计划；没有升级或重启。此结果不等同于实际安装、跨版本升级或云盘转存验收。
 

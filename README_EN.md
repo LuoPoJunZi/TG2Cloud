@@ -44,9 +44,9 @@ Your Cloud
 
 This repository evolved from [whyhhh20/TG115](https://github.com/whyhhh20/TG115). It retains the original attribution and license while adding stronger task recovery, disk protection, streaming transfers, state semantics, rollback, VPS resource guidance, and operational diagnostics.
 
-> Current source version: **TG2Cloud v1.1.3 (not yet released)**
+> Current version: **TG2Cloud v1.1.3**
 >
-> This update adds an optional single-command VPS installation/configuration-preserving upgrade wizard. Both PySide6 deployers remain the primary installers; the stable transfer core is unchanged. Published Windows EXEs remain v1.1.2. Pushing source does not create a v1.1.3 Release; official binaries must still be built and published by GitHub Actions from a matching tag. See the [release notes](RELEASE_NOTES.md) for changes and pending acceptance.
+> This version includes Telethon 1.45.0, PyInstaller 6.22.3 and CI tool upgrades, plus an optional single-command VPS installation/configuration-preserving upgrade wizard. Both PySide6 deployers remain the primary installers; the stable application workflows have not been rewritten. GitHub Actions retests, builds and self-tests the official Windows EXEs from the matching tag; the Release reuses those artifacts and their actual SHA256 values. See the [release notes](RELEASE_NOTES.md) for changes and pending acceptance.
 
 > Only transfer content that you are authorized to save, back up, and use. Follow the laws and terms that apply to Telegram, your cloud provider, CloudDrive2/OpenList, the content source, and your jurisdiction.
 
@@ -147,7 +147,7 @@ TG2Cloud follows a “select manually, process automatically” model. You choos
 
 ## Current Version
 
-The current source version, TG2Cloud v1.1.3 (not yet released), provides two separate PySide6 editions:
+The current version, TG2Cloud v1.1.3, provides two separate PySide6 editions:
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -333,7 +333,7 @@ The entry is downloaded from `main`, but the wizard modules are pinned to a veri
 
 A fresh installation collects configuration, checks the environment and asks for confirmation before applying changes. A complete existing installation retains its configuration and targets the latest official stable Release, pinned to its immutable commit. An up-to-date instance is not rebuilt or restarted. Legacy TG115, partial instances, custom code, conflicting directories and gateway image migrations fail closed. Unlike this entry, `manage.sh update` only rebuilds the payload already installed on the VPS.
 
-The shared source version for the Bot, both deployers and Windows build resources is now **v1.1.3**; published EXEs remain v1.1.2. This source push does not create a tag/Release or upload local binaries. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. Until an official v1.1.3 Release exists, the wizard installs only the currently published stable payload, never unpublished code merely because main has a higher version. Fresh installation, cross-version upgrade and rollback still require separate VPS acceptance; OpenList script acceptance is deferred.
+The shared source version for the Bot, both deployers and Windows build resources is **v1.1.3**. Official EXEs are built by Actions, not uploaded from a local machine. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. The wizard installs only the latest officially released stable payload, never unpublished code merely because main has a higher version. Fresh installation, cross-version upgrade and rollback still require separate VPS acceptance; OpenList script acceptance is deferred.
 
 CloudDrive2 passed `--check` on a real VPS: official legacy-source identity, runtime fingerprints, capacity and existing HTTPS were checked, producing a stable-version upgrade plan without upgrading or restarting. This is not acceptance of an actual installation, cross-version upgrade or cloud transfer.
 

@@ -58,3 +58,11 @@ class ExeBuildInputTests(unittest.TestCase):
         self.assertIn("if: steps.exe-inputs.outputs.build == 'true'", workflow)
         release = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertNotIn("exe-inputs", release)
+
+    def test_windows_branch_and_release_use_same_utf8_output(self):
+        for filename, job in (("tests.yml", "windows"), ("release.yml", "windows-build")):
+            with self.subTest(workflow=filename):
+                workflow = (ROOT / ".github/workflows" / filename).read_text(encoding="utf-8")
+                section = workflow.split(f"  {job}:\n", 1)[1].split("    steps:\n", 1)[0]
+                self.assertIn("    env:\n", section)
+                self.assertIn("      PYTHONIOENCODING: utf-8\n", section)

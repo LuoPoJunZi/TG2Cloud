@@ -64,6 +64,7 @@ jobs:
     if: needs.prepare.outputs.publish == 'true'
     runs-on: windows-latest
     env:
+      PYTHONIOENCODING: utf-8
       RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
       RELEASE_ARTIFACT: ${{ needs.prepare.outputs.release_artifact }}
     steps:

@@ -35,7 +35,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 - 离线测试覆盖稳定 Release/不可变 commit、单行引导、下载与版本失败、Tag 漂移、路径/归档安全、配置保留、确认取消、HTTPS 和 WebDAV 结果边界。
 - CloudDrive2 专用 VPS 的脚本 `--check` 已通过：识别官方旧版、核对运行指纹、配置/挂载、容量与现有 HTTPS，并生成升级计划；没有安装、升级、重启或切换域名。
 - 单文件入口的真实公开下载与本地进程替换 `--help` 验证通过；不等于在 Linux VPS 完成部署。
-- 发布前本地回归为 436 passed、15 skipped、177 subtests passed；文档站构建、13 项测试及本地链接检查通过。分支 CI 的 Windows 构建自检与 Linux/POSIX 检查通过；正式发布另外从同一 Tag 重新测试、构建并校验，跳过项不计为通过。
+- 发布前本地回归为 437 passed、15 skipped、179 subtests passed；文档站构建、13 项测试及本地链接检查通过。分支 CI 的 Windows 构建自检与 Linux/POSIX 检查通过；正式发布另外从同一 Tag 重新测试、构建并校验，跳过项不计为通过。
 - 脚本首次安装、实际跨版本升级、中断/回退、真实云盘和 Telegram 转存仍待实机验收；OpenList 脚本实机验收暂缓。既有 EXE 的历史验收不作为新脚本全流程通过的证据。
 
 ## Windows 构建与校验
