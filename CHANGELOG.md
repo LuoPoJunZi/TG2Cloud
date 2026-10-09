@@ -1,5 +1,17 @@
 # 更新记录
 
+## TG2Cloud v1.1.5
+
+版本日期：2026-10-09。修复共享 HTTPS 的取消回退、宿主 Python 3.10 兼容、VPS 向导续做凭据展示和精简系统依赖提示。两 Edition 正式 EXE 继续由 Actions 从不可变 Tag 构建一次，Release 复用已自检的 Windows artifact 与本次 SHA256。
+
+- HTTPS 配置收到 Ctrl+C、TERM 或 HUP 时进入有限回退；状态提交和回退阶段延后处理重复信号，避免状态文件与实际路由不一致。已提交状态不会因随后收到取消信号而恢复成旧运行配置，另一 Edition 的路由继续保留。
+- 共享代理备份改用分块 SHA256，证书及续期日期使用兼容的 UTC 接口，支持宿主 Python 3.10；备份核验和隔离恢复流程保持原范围。
+- 首次安装基础服务成功但 HTTPS 失败后，续做成功再次提供已有凭据的逐项确认展示；新增独立 `--show-credentials`，仅在当前私有终端经确认显示，不安装、升级或改密。OpenList 初始化管理员密码明确提示可能已更改。
+- HTTPS 预检明确列出缺少的宿主工具和 Debian/Ubuntu 安装命令；备份先检查宿主依赖，两 Edition 的已有 APT 清单补齐 `iproute2`、`python3`。
+- 新增中断、提交一致性、备份兼容和凭据隐私回归；独立 Linux CI 的 Python 3.10/3.13 矩阵增加标准库维护测试。
+- 同步源码、Bot、两 EXE Windows 资源及中英文文档版本。Telegram、SQLite、队列、rclone、WebDAV、streaming 和持久化兼容标识未改。
+- 本地完整回归 470 passed、18 skipped、211 subtests passed；真实 VPS 的新中断/续做流程和 OpenList 脚本写入验收仍待完成。
+
 ## TG2Cloud v1.1.4
 
 版本日期：2026-10-09。修复可选 VPS 向导的交互终端及候选镜像源码权限问题，并统一两 Edition 共用 Bot 镜像的有效内部名称。正式发布由 Actions 从新不可变 Tag 构建两个 EXE，Release 复用该次 Windows artifact 及实际 SHA256。

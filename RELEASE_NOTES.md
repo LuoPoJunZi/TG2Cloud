@@ -1,17 +1,16 @@
 <!-- 本文件会直接作为 GitHub Release 正文：不要添加一级标题，不要按固定列宽硬换行。 -->
 
 > [!IMPORTANT]
-> **TG2Cloud v1.1.4** 修复 VPS 向导的交互终端与候选镜像源码读取权限，并统一两 Edition 共用 Bot 镜像的 TG2Cloud 内部名称。两个 PySide6 部署器仍是主力；正式 EXE 由 GitHub Actions 从 `v1.1.4` 不可变 Tag 测试、构建、自检，SHA256 来自该次实际产物。自动测试不等于真实 VPS 或文件转存已验收。
+> **TG2Cloud v1.1.5** 修复共享 HTTPS 中断回退、宿主 Python 3.10 维护兼容、VPS 向导续做凭据展示及精简系统依赖提示。两个 PySide6 部署器仍是主力；正式 EXE 由 GitHub Actions 从 `v1.1.5` 不可变 Tag 测试、构建、自检，SHA256 来自该次实际产物。
 
 ## 本次修复
 
-- **终端输入：** 修复 `File or stream is not seekable`，分开打开 `/dev/tty` 读取/写入流，及时刷新提示；隐藏秘密输入，中断恢复回显，兼容 Python 3.10。
-- **候选镜像权限：** 修复 `Permission denied: /opt/tg115/app/__init__.py`。只给公开 Docker 构建文件设置 `0644`、子目录设置 `0755`；外层私有目录仍为 `0700`，候选秘密配置仍为 `0600` 且位于构建上下文之外。
-- **镜像读取保障：** Dockerfile 确保公开 `app/` 可被非 root Bot 用户读取，源码继续归 root 所有；不改为 root 运行、不使用 `777`。
-- **TG2Cloud 命名：** 两版 Bot 镜像内程序目录/PYTHONPATH 改为 `/opt/tg2cloud`，用户/组和 logger 改为 `tg2cloud`，新日志为 `tg2cloud.log`。
-- **保留已有数据：** UID/GID 仍为 `10001:10001`；保留 `tg115.db`、`bot.session`、旧日志、挂载、环境兼容变量、verify 前缀及旧实例检测。这些兼容标识不表示仍是 TG115 产品，也不会自动导入旧项目数据。
-- **回归门槛：** 增加源码权限、秘密边界、日志及持久化路径检查；Linux 分支和 Release Job 实际以非 root 启动两 Edition 候选镜像，分别覆盖正常构建上下文和私有权限源码。
-- 同步共享版本源、两个 EXE 的 Windows 版本资源、中英文 README、脚本指南、迁移说明和文档站；没有改写 Telegram、SQLite 队列、rclone、WebDAV、streaming 或 HTTPS 业务流程。
+- **HTTPS 回退：** Ctrl+C、TERM 和 HUP 会触发有限回退；提交和回退期间延后处理重复信号，避免状态文件与实际路由不一致。已提交状态保留，另一 Edition 的路由不被移除；回退失败会告警。
+- **Python 3.10：** 共享代理备份改用分块 SHA256，证书及续期日期使用兼容的 UTC 接口。备份校验、损坏归档拒绝和隔离恢复检查纳入最低版本 CI。
+- **续做凭据：** 首次基础安装成功但 HTTPS 失败后，续做成功再次提供逐项确认展示；新增单独 `--show-credentials`，仅在当前私有终端显示已有 WebDAV 信息和保存的 OpenList 初始化管理员密码，不安装、升级或改密。
+- **依赖提示：** HTTPS 预检明确列出缺少的工具及安装命令；备份运行前检查宿主依赖，两 Edition 的 APT 清单补齐 `iproute2`、`python3`。预检阶段不自动安装软件。
+- **回归覆盖：** 新增两 Edition 的中断回退、提交一致性、重复取消、备份兼容和凭据隐私测试；独立 Linux CI 在 Python 3.10/3.13 运行标准库维护测试。
+- Telegram、SQLite、队列、rclone、WebDAV、streaming、UID/GID、数据库和 Session 等持久化兼容标识保持原有行为。
 
 ## 安装与升级
 
@@ -29,15 +28,24 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2
 ```
 
+OpenList 对应入口：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --check
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist
+```
+
+仅查看已有凭据时使用 `--edition clouddrive2 --show-credentials` 或 `--edition openlist --show-credentials`。每项默认不显示，不能与 `--check`、`--configure-https` 或 `--verify` 组合；保存的 OpenList 初始化管理员密码可能已在管理页更改。
+
 入口固定到通过 CI 的向导 commit，实际 payload 只来自最新正式稳定 Release，不安装 main/RC 未发布业务代码。已有实例核对官方源码、运行指纹与挂载后保留配置升级；不接管 TG115、部分实例、手改代码或冲突目录，不隐式切换域名，不重启未选中的 Bot。WebDAV 写入验收另行确认。
 
-命令会执行仓库提供的代码，只应在信任本仓库时使用；可先下载检查。完整范围见 [VPS 安装与升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.4/docs/VPS-INSTALL.md)。原版本 Tag 已删除或官方源码无法核对时安全停止，不重建同名 Tag 来冒充旧版本基线。
+命令会执行仓库提供的代码，只应在信任本仓库时使用；可先下载检查。完整范围见 [VPS 安装与升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.5/docs/VPS-INSTALL.md)。原版本 Tag 已删除或官方源码无法核对时安全停止，不重建同名 Tag 来冒充旧版本基线。
 
 ## 验证范围
 
-- 本地完整回归：448 passed、18 skipped、189 subtests passed；独立 CLI unittest：72 tests、6 skipped。Ruff、Bandit、compileall、Bash、ShellCheck 和版本/格式检查通过。
-- 新权限回归使用旧实现时，两 Edition 均复现失败，修复实现通过。Linux/POSIX 权限与真实 Docker 启动检查由 Actions 执行，发布等待同一 Tag 的 Windows/Linux 检查全部成功；本地跳过项不计为通过。
-- CloudDrive2 脚本已完成真实 VPS 只读预检；本轮权限修复后的首次安装、跨版本升级、回退及 Telegram/云盘转存仍待实机验收，OpenList 脚本实机验收暂缓。
+- 本地完整回归：470 passed、18 skipped、211 subtests passed；标准库独立检查：CLI 83 tests、6 skipped，宿主维护兼容 7 tests 通过。Ruff、Bandit、compileall、Bash 和版本/格式检查通过。
+- 本地使用旧 API 模拟验证 Python 3.10 兼容；独立 Linux CI 另行运行真实 Python 3.10/3.13。发布等待同一 Tag 的 Windows/Linux 检查成功；本地跳过项不计为通过。
+- CloudDrive2 脚本此前完成真实 VPS 只读预检；本轮的真实 HTTPS 中断/续做、首次安装、跨版本升级、回退及 Telegram/云盘转存仍待实机验收，OpenList 脚本实机验收暂缓。
 - VPS 本机 HTTPS 自检或 WebDAV 接收/大小校验不等于公网访问、云盘官方最终完成或哈希验收。
 
 ## Windows 构建与校验
@@ -50,8 +58,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 | OpenList | `TG2Cloud-OpenList-Deployer.exe` |
 | SHA-256 校验 | `SHA256SUMS.txt` |
 
-Release Job 校验并上传已通过自检的 Windows artifact，不重复构建，不上传或提交本机 EXE、`build/`、`dist/`。请用同一 v1.1.4 Release 的 `SHA256SUMS.txt` 核对完整摘要，不使用旧版本或本机旧构建的摘要。
+Release Job 校验并上传已通过自检的 Windows artifact，不重复构建，不上传或提交本机 EXE、`build/`、`dist/`。请用同一 v1.1.5 Release 的 `SHA256SUMS.txt` 核对完整摘要，不使用旧版本或本机旧构建的摘要。
 
 管理后端仍仅回环监听，共享 Nginx 提供公网 80/443，公开 `/dav` 拒绝访问；域名不代理 Bot WebDAV 传输。云账号、Cookie、OAuth 和 Token 只在自己的 CloudDrive2/OpenList 配置；没有遥测或开发者侧凭据收集。有限内部回退不是通用 Restore/Uninstall；Windows EXE 未商业代码签名，不要关闭 Defender 或忽略 TLS 校验。
 
-更多说明：[README](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.4/README.md) · [运行维护](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.4/docs/OPERATIONS.md) · [迁移与保留标识](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.4/docs/MIGRATION_FROM_TG115.md)。TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留 MIT 许可证、版权及必要致谢。
+更多说明：[README](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.5/README.md) · [运行维护](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.5/docs/OPERATIONS.md) · [迁移与保留标识](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.5/docs/MIGRATION_FROM_TG115.md)。TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留 MIT 许可证、版权及必要致谢。
