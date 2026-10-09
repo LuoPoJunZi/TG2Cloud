@@ -11,8 +11,10 @@ import os
 import shlex
 import shutil
 import subprocess
+import sys
 import tarfile
 import tempfile
+import time
 import unittest
 from contextlib import nullcontext
 from pathlib import Path
@@ -38,6 +40,228 @@ VALUES = {
 
 def report(state="healthy", domain="files.example.test"):
     return ProxyReport(domain, state, "local test report", ())
+
+
+class NonSeekableTty(io.RawIOBase):
+    """Exercise real Python buffering without needing a Windows /dev/tty."""
+
+    def __init__(self, mode, source, output, *, terminal=True):
+        self.mode = mode
+        self.source = source
+        self.output = output
+        self.terminal = terminal
+
+    def readable(self):
+        return "r" in self.mode or "+" in self.mode
+
+    def writable(self):
+        return "w" in self.mode or "+" in self.mode
+
+    def isatty(self):
+        return self.terminal
+
+    def fileno(self):
+        return 42
+
+    def readinto(self, target):
+        return self.source.readinto(target)
+
+    def write(self, data):
+        return self.output.write(data)
+
+
+class TerminalTests(unittest.TestCase):
+    def fixture(self, text="", *, terminal=True):
+        source, output = io.BytesIO(text.encode()), io.BytesIO()
+        streams = []
+
+        def open_tty(path, mode, *, encoding, buffering):
+            self.assertEqual(path, "/dev/tty")
+            self.assertEqual(encoding, "utf-8")
+            self.assertEqual(buffering, 1)
+            raw = NonSeekableTty(mode, source, output, terminal=terminal)
+            self.assertFalse(raw.seekable())
+            # The old r+ implementation raises UnsupportedOperation here, just
+            # as open('/dev/tty', 'r+') does on Linux. No permissive Mock stream.
+            if "+" in mode:
+                buffer = io.BufferedRandom(raw)
+            elif mode == "r":
+                buffer = io.BufferedReader(raw)
+            else:
+                self.assertEqual(mode, "w")
+                buffer = io.BufferedWriter(raw)
+            stream = io.TextIOWrapper(buffer, encoding=encoding, line_buffering=True)
+            streams.append(stream)
+            return stream
+
+        self.addCleanup(lambda: [stream.close() for stream in streams])
+        termios = SimpleNamespace(ECHO=8, TCSANOW=0, tcgetattr=Mock(return_value=[0, 0, 0, 8]), tcsetattr=Mock())
+        self.enterContext(patch.dict("sys.modules", {"termios": termios}))
+        opened = self.enterContext(patch.object(cli, "open", side_effect=open_tty, create=True))
+        return opened, streams, output, termios
+
+    def test_nonseekable_terminal_confirmation_defaults_to_cancel_and_accepts_y(self):
+        opened, streams, output, _ = self.fixture("\ny\n")
+        ui = cli.Terminal()
+        self.assertFalse(ui.confirm("CONFIRM"))
+        self.assertTrue(ui.confirm("CONFIRM"))
+        self.assertEqual([call.args[1] for call in opened.call_args_list], ["r", "w"])
+        self.assertIn(b"CONFIRM [y/N] [n]: ", output.getvalue())
+        ui.close()
+        self.assertTrue(all(stream.closed for stream in streams))
+
+    def test_prompt_is_flushed_before_read_and_does_not_use_stdin(self):
+        _, streams, output, _ = self.fixture("answer\n")
+        ui = cli.Terminal()
+        reader = streams[0].readline
+
+        def read_after_prompt():
+            self.assertIn(b"PROMPT: ", output.getvalue())
+            return reader()
+
+        with patch.object(streams[0], "readline", side_effect=read_after_prompt), patch("sys.stdin", Mock(readline=Mock(side_effect=AssertionError("must not read stdin")))):
+            self.assertEqual(ui.ask("PROMPT"), "answer")
+        ui.close()
+
+    def test_secret_input_never_written_and_echo_restored(self):
+        _, streams, output, termios = self.fixture("FAKE_SECRET\n")
+        ui = cli.Terminal()
+        write = streams[1].write
+
+        def inspect_prompt(text):
+            if text.startswith("PASSWORD"):
+                self.assertEqual(termios.tcsetattr.call_args.args[2][3] & termios.ECHO, 0)
+            return write(text)
+
+        with patch.object(streams[1], "write", side_effect=inspect_prompt):
+            self.assertEqual(ui.ask("PASSWORD", secret=True, default="FAKE_DEFAULT_SECRET"), "FAKE_SECRET")
+        self.assertNotIn(b"FAKE_SECRET", output.getvalue())
+        self.assertNotIn(b"FAKE_DEFAULT_SECRET", output.getvalue())
+        self.assertEqual(termios.tcsetattr.call_args_list[0].args[2][3] & termios.ECHO, 0)
+        self.assertEqual(termios.tcsetattr.call_args_list[-1].args[2][3] & termios.ECHO, termios.ECHO)
+        ui.close()
+
+    def test_interrupted_secret_input_restores_echo(self):
+        _, streams, output, termios = self.fixture()
+        ui = cli.Terminal()
+        with patch.object(streams[0], "readline", side_effect=KeyboardInterrupt), self.assertRaises(KeyboardInterrupt):
+            ui.ask("PASSWORD", secret=True)
+        self.assertEqual(termios.tcsetattr.call_args_list[-1].args[2][3] & termios.ECHO, termios.ECHO)
+        self.assertIn(b"PASSWORD: \n", output.getvalue().replace(b"\r\n", b"\n"))
+        ui.close()
+
+    def test_eof_and_invalid_input_do_not_echo_values(self):
+        _, _, output, _ = self.fixture("DO_NOT_LOG_INVALID_VALUE\ny\n")
+        ui = cli.Terminal()
+
+        def only_y(value):
+            if value != "y":
+                raise ValueError("invalid")
+            return value
+
+        self.assertEqual(ui.ask("VALIDATE", validate=only_y), "y")
+        self.assertNotIn(b"DO_NOT_LOG_INVALID_VALUE", output.getvalue())
+        with self.assertRaises(EOFError):
+            ui.confirm("CONFIRM")
+        ui.close()
+
+    def test_non_terminal_and_partial_open_close_streams(self):
+        opened, streams, _, _ = self.fixture(terminal=False)
+        with self.assertRaisesRegex(RuntimeError, "交互终端"):
+            cli.Terminal()
+        self.assertTrue(all(stream.closed for stream in streams))
+        reader = io.StringIO()
+        opened.side_effect = [reader, OSError("fixture: output unavailable")]
+        with self.assertRaises(OSError):
+            cli.Terminal()
+        self.assertTrue(reader.closed)
+
+    def test_main_requires_actual_terminal_confirmation_for_both_editions(self):
+        for product in PRODUCTS.values():
+            for check, answer in ((True, ""), (False, "\n"), (False, "y\n"), (False, "")):
+                with self.subTest(edition=product.key, check=check, answer=answer):
+                    opened, streams, _, _ = self.fixture(answer)
+                    instance = cli.Instance(product, ROOT, True, version=product.app_version)
+                    plan = cli.Plan(instance, "upgrade", Mock())
+                    client = Mock()
+                    client.resolve.side_effect = [RELEASE, cli.Release("v" + instance.version, "b" * 40)]
+                    client.download.return_value = ROOT
+                    messages = []
+                    args = ["--edition", product.key] + (["--check"] if check else [])
+                    with patch.object(cli, "validate_host"), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=instance), patch.object(cli, "ReleaseClient", return_value=client), patch.object(cli, "make_plan", return_value=plan), patch.object(cli, "execute_plan") as execute, patch.object(cli, "SafeLog", return_value=SafeLog(messages.append)):
+                        self.assertEqual(cli.main(args), 1 if not check and not answer else 0)
+                    if check:
+                        opened.assert_not_called()
+                        self.assertIn("TG2CLOUD_CLI_CHECK=OK", "".join(messages))
+                    elif answer == "\n":
+                        self.assertIn("TG2CLOUD_CLI_RESULT=CANCELLED", "".join(messages))
+                    if answer == "y\n":
+                        execute.assert_called_once()
+                    else:
+                        execute.assert_not_called()
+                    self.assertTrue(all(stream.closed for stream in streams))
+
+    @unittest.skipUnless(sys.platform.startswith("linux"), "Real Linux controlling PTY; no VPS or Docker calls")
+    def test_real_linux_tty_confirmation_secret_and_interrupt(self):
+        import pty
+        import select
+
+        code = r'''
+import fcntl, os, termios
+os.setsid()
+fcntl.ioctl(0, termios.TIOCSCTTY, 0)
+from scripts.vps_installer import Terminal
+ui = Terminal()
+try:
+    assert not ui.confirm("CONFIRM_DEFAULT")
+    assert ui.confirm("CONFIRM_YES")
+    before = termios.tcgetattr(0)
+    assert ui.ask("PASSWORD", secret=True) == "FAKE_PTY_SECRET"
+    assert termios.tcgetattr(0) == before
+    print("SECRET_OK", flush=True)
+    try:
+        ui.ask("INTERRUPT", secret=True)
+    except KeyboardInterrupt:
+        pass
+    else:
+        raise AssertionError("Ctrl-C must interrupt the prompt")
+    assert termios.tcgetattr(0) == before
+    print("PTY_OK", flush=True)
+finally:
+    ui.close()
+'''
+        master, slave = pty.openpty()
+        process = None
+        transcript = bytearray()
+        try:
+            process = subprocess.Popen([sys.executable, "-B", "-c", code], stdin=slave, stdout=slave, stderr=slave, cwd=ROOT)
+
+            def read_until(marker):
+                deadline = time.monotonic() + 10
+                while marker not in transcript:
+                    remaining = deadline - time.monotonic()
+                    self.assertGreater(remaining, 0, "PTY prompt timed out: " + repr(bytes(transcript)))
+                    ready, _, _ = select.select([master], [], [], remaining)
+                    self.assertTrue(ready, "PTY prompt timed out: " + repr(bytes(transcript)))
+                    transcript.extend(os.read(master, 4096))
+
+            read_until(b"CONFIRM_DEFAULT [y/N] [n]: ")
+            os.write(master, b"\n")
+            read_until(b"CONFIRM_YES [y/N] [n]: ")
+            os.write(master, b"y\n")
+            read_until(b"PASSWORD: ")
+            os.write(master, b"FAKE_PTY_SECRET\n")
+            read_until(b"INTERRUPT: ")
+            os.write(master, b"\x03")
+            read_until(b"PTY_OK")
+            self.assertEqual(process.wait(timeout=10), 0, bytes(transcript))
+            self.assertNotIn(b"FAKE_PTY_SECRET", transcript)
+        finally:
+            if process is not None and process.poll() is None:
+                process.kill()
+                process.wait(timeout=10)
+            os.close(master)
+            os.close(slave)
 
 
 class StandaloneBootstrapTests(unittest.TestCase):

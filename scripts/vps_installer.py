@@ -20,6 +20,7 @@ import tempfile
 import urllib.error
 import urllib.parse
 import urllib.request
+from contextlib import ExitStack
 from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
@@ -501,19 +502,22 @@ def plain(value: str) -> str:
 
 class Terminal:
     def __init__(self) -> None:
-        self.tty = open("/dev/tty", "r+", encoding="utf-8", buffering=1)  # noqa: SIM115 - closed by main finally
-        if not self.tty.isatty():
-            self.tty.close()
-            raise RuntimeError("需要交互终端；不从管道/历史记录读取密码")
+        # A terminal is not seekable: buffered r+ (BufferedRandom) fails before
+        # the first prompt. Separate streams still use only the controlling TTY.
+        with ExitStack() as streams:
+            self.tty = streams.enter_context(open("/dev/tty", "r", encoding="utf-8", buffering=1))
+            self.output = streams.enter_context(open("/dev/tty", "w", encoding="utf-8", buffering=1))
+            if not self.tty.isatty() or not self.output.isatty():
+                raise RuntimeError("需要交互终端；不从管道/历史记录读取密码")
+            self._streams = streams.pop_all()
 
     def close(self) -> None:
-        self.tty.close()
+        self._streams.close()
 
     def ask(self, prompt: str, *, default: str = "", secret: bool = False, validate=plain) -> str:
         import termios
 
         while True:
-            self.tty.write(prompt + (f" [{default}]" if default and not secret else "") + ": ")
             previous = None
             try:
                 if secret:
@@ -521,25 +525,27 @@ class Terminal:
                     hidden = previous.copy()
                     hidden[3] &= ~termios.ECHO
                     termios.tcsetattr(self.tty.fileno(), termios.TCSANOW, hidden)
+                self.output.write(prompt + (f" [{default}]" if default and not secret else "") + ": ")
+                self.output.flush()
                 line = self.tty.readline()
             finally:
                 if previous is not None:
                     termios.tcsetattr(self.tty.fileno(), termios.TCSANOW, previous)
-                    self.tty.write("\n")
+                    self.output.write("\n")
             if not line:
                 raise EOFError("输入已中断")
             value = line.rstrip("\r\n") or default
             try:
                 return validate(value)
             except (ValueError, ZoneInfoNotFoundError):
-                self.tty.write("输入格式不正确，请重新填写（不显示输入值）。\n")
+                self.output.write("输入格式不正确，请重新填写（不显示输入值）。\n")
 
     def confirm(self, prompt: str) -> bool:
         return self.ask(prompt + " [y/N]", default="n", validate=lambda text: text.lower()) == "y"
 
     def reveal(self, label: str, value: str) -> None:
         if self.confirm("是否仅在当前终端显示" + label + "？请确保没有旁观/录屏"):
-            self.tty.write(label + ": " + value + "\n")
+            self.output.write(label + ": " + value + "\n")
 
 
 def collect_config(ui: Terminal, product: ProductProfile) -> dict[str, str]:
