@@ -94,7 +94,7 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 ## 入口与稳定部署版本
 
-单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到已通过 CI 的不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `d5faded99b9c319985790d011fee4590de84c862`，模块版本源为 `1.1.3`，已包含交互终端打开方式修复。维护者只在新向导模块完成审查与 CI 后更新 pin。
+单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到已通过 CI 的不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `3049e0e470f62dc65ed09bbe0e0ffc493ef44ca3`，模块版本源为 `1.1.4`，包含交互终端与候选镜像源码权限修复，Linux 两 Edition 的真实非 root 镜像预检已通过。维护者只在新向导模块完成审查与 CI 后更新 pin。
 
 这是向导源码身份，不是要部署的 Bot 版本。独立脚本另行通过 GitHub `/releases/latest` 排除草稿及预发布，解析正式 Tag 到不可变 commit；所有实际安装的 payload 来自这个正式 commit。向导会核对 Tag、commit 和 payload 版本。Release Tag 在引导后变化、API 限流、辅助模块缺失或版本不匹配时停止；不会退回 `main` 或 RC 的业务代码。
 

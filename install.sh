@@ -55,8 +55,8 @@ root = Path(sys.argv[1])
 api = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 # Update this pin only after the helper revision passes its CI and review.
 # It is independent of the target Release, which need not contain the CLI.
-installer_commit = "d5faded99b9c319985790d011fee4590de84c862"
-installer_version = "1.1.3"
+installer_commit = "3049e0e470f62dc65ed09bbe0e0ffc493ef44ca3"
+installer_version = "1.1.4"
 
 def validate_url(url):
     parsed = urllib.parse.urlsplit(url)
