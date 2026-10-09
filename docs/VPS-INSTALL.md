@@ -43,6 +43,20 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2
 ```
 
+只检查 OpenList，不安装／升级：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --check
+```
+
+检查通过后，再运行 OpenList 安装／升级向导：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist
+```
+
+两套命令只操作所选 Edition；全新 VPS 收集信息后安装，完整已有实例保留配置升级。OpenList 脚本实机验收仍暂缓，请先在专用测试 VPS 验证；`--check` 通过不等于安装或升级成功。
+
 进程替换 `<(...)` 不占用交互标准输入；向导仍通过 `/dev/tty` 隐藏读取秘密。不支持用 `curl | bash`、无人值守管道或命令行参数传入密码。
 
 这类命令会立即执行从仓库下载的代码，只有信任仓库和维护者时才使用。不希望直接运行远程代码时，可先下载、检查，再运行：

@@ -55,6 +55,18 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
 ```
 
+OpenList 先只读检查，不安装／升级：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --check
+```
+
+检查通过后，运行 OpenList 安装／升级向导；写入前仍需预检与最终确认：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist
+```
+
 轻量入口来自主分支；Python 向导模块固定到审查并通过 CI 的源码 commit，实际部署 payload 只取正式稳定 Release 的不可变 commit，不取 main、RC 或草稿。出现下载错误应停止，不要把命令退出当作安装成功。
 
 :::warning 验收范围

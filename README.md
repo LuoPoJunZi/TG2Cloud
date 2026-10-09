@@ -330,6 +330,18 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2
 ```
 
+OpenList 先只读检查，不安装／升级：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --check
+```
+
+检查通过后，再运行 OpenList 安装／升级向导；写入前仍需预检与最终确认：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist
+```
+
 入口从 `main` 下载，但必要的向导模块固定到已验证的不可变 commit；安装目标仍只取最新正式稳定 Release，不安装 `main` 或 RC 的未发布业务代码。下载失败会停止。此命令会执行仓库提供的代码，只应在信任本仓库时使用；如需先检查脚本或从本地源码运行，见完整指南。不要使用 `curl | bash`，秘密输入通过当前终端读取。
 
 全新 VPS 先收集配置、预检和确认再安装；完整已有实例复用配置，目标源码固定到 GitHub 最新正式稳定 Release 的 commit。已是最新版不重建、不重启。旧 TG115、部分容器、手改程序、冲突目录及网关镜像迁移均停止，不自动覆盖。`manage.sh update` 仍只重建本机已有 payload，与此入口不同。

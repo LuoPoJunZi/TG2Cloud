@@ -39,7 +39,7 @@ OpenList 对应脚本还会拉取当前 Compose 已固定的 OpenList 镜像并�
 
 ## 没有 Windows：保留配置升级
 
-v1.1.3 源码新增可选 VPS 向导。先做只读预检：
+v1.1.3 源码新增可选 VPS 向导。CloudDrive2 先做只读预检：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
@@ -49,6 +49,18 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2
+```
+
+OpenList 先做只读预检，不安装／升级：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --check
+```
+
+检查通过并核对备份和维护窗口后，运行 OpenList 安装／升级向导：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist
 ```
 
 它只获取正式稳定 Release 的源码，并核验已有实例的官方基线与运行指纹。已有完整受管实例保留 `.env`、rclone、SQLite 和持久化数据；仅重启或本机源码升级不等于 VPS 更新。不自动降级，不静默覆盖旧 TG115、部分安装或自定义配置，也不隐式切换 HTTPS 域名。

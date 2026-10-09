@@ -329,6 +329,18 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2
 ```
 
+For OpenList, run a read-only check without installing or upgrading:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --check
+```
+
+After the check passes, start the OpenList installation/upgrade wizard. Changes still require preflight checks and final confirmation:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist
+```
+
 The entry is downloaded from `main`, but the wizard modules are pinned to a verified, immutable commit. The installed payload still comes only from the latest official stable Release, never unpublished `main` or RC business code. Download failures stop the wizard. This command executes repository-provided code, so use it only if you trust this repository; see the full guide for downloading and inspecting the script or using a local checkout. Do not use `curl | bash`; secrets are read from the current terminal.
 
 A fresh installation collects configuration, checks the environment and asks for confirmation before applying changes. A complete existing installation retains its configuration and targets the latest official stable Release, pinned to its immutable commit. An up-to-date instance is not rebuilt or restarted. Legacy TG115, partial instances, custom code, conflicting directories and gateway image migrations fail closed. Unlike this entry, `manage.sh update` only rebuilds the payload already installed on the VPS.
