@@ -6,6 +6,8 @@
 使用 CloudDrive2 的用户跟随 [CloudDrive2 专页](/deploy/clouddrive2/)；使用 OpenList 的用户跟随 [OpenList 专页](/deploy/openlist/)。下面先给出两版共用的完整路线。
 :::
 
+没有 Windows 电脑时，可选用 [VPS 单行入口](/download/)。它先收集信息、确认计划，再复用 Docker 部署资源；脚本的实机验收范围与 EXE 不同，执行前阅读完整指南。下文仍以两个主力 EXE 为例。
+
 ## 第一步：下载并检查文件
 
 进入 [下载与校验](/download/)，选择对应 Edition 的 EXE，同时下载同一 Release 中的 `SHA256SUMS.txt`。在 Windows PowerShell 计算 EXE 的 SHA-256，与清单中的相应条目逐字符比较。

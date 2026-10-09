@@ -16,6 +16,7 @@
 <p align="center">
   <a href="#downloads">Download</a> ·
   <a href="#windows-gui-deployment">Deployment Guide</a> ·
+  <a href="#optional-vps-installer">VPS Installer</a> ·
   <a href="#bot-commands">Bot Commands</a> ·
   <a href="#troubleshooting">Troubleshooting</a> ·
   <a href="RELEASE_NOTES.md">Release Notes</a>
@@ -43,9 +44,9 @@ Your Cloud
 
 This repository evolved from [whyhhh20/TG115](https://github.com/whyhhh20/TG115). It retains the original attribution and license while adding stronger task recovery, disk protection, streaming transfers, state semantics, rollback, VPS resource guidance, and operational diagnostics.
 
-> Current version: **TG2Cloud v1.1.2**
+> Current source version: **TG2Cloud v1.1.3 (not yet released)**
 >
-> Both official EXEs are built by GitHub Actions from the same `v1.1.2` tag. This update adds actual version/stage feedback, private proxy backup management, bounded renewal drills and renewal warnings. The stable CloudDrive2 transfer core is unchanged. See the [release notes](RELEASE_NOTES.md) for tested and pending acceptance scope.
+> This update adds an optional single-command VPS installation/configuration-preserving upgrade wizard. Both PySide6 deployers remain the primary installers; the stable transfer core is unchanged. Published Windows EXEs remain v1.1.2. Pushing source does not create a v1.1.3 Release; official binaries must still be built and published by GitHub Actions from a matching tag. See the [release notes](RELEASE_NOTES.md) for changes and pending acceptance.
 
 > Only transfer content that you are authorized to save, back up, and use. Follow the laws and terms that apply to Telegram, your cloud provider, CloudDrive2/OpenList, the content source, and your jurisdiction.
 
@@ -68,7 +69,15 @@ Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
 Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 ```
 
-The TG2Cloud v1.1.2 Windows EXEs are not commercially code-signed. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download only from this repository's Releases page, verify SHA-256, and do not disable Microsoft Defender or Windows Security.
+Published Windows EXEs are not commercially code-signed. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download only from this repository's Releases page, verify SHA-256, and do not disable Microsoft Defender or Windows Security.
+
+No Windows computer? Run the optional wizard as root on a Debian/Ubuntu x86_64 VPS with Python 3.10+, curl and an interactive terminal:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
+```
+
+The wizard collects information, checks the environment and asks for confirmation before applying changes. The installed payload comes only from the latest official stable Release. Fresh installation, actual upgrade and rollback still need VPS acceptance; use a test VPS first. See [Optional VPS Installer](#optional-vps-installer). Both Windows EXEs remain the primary installation method.
 
 ## Contents
 
@@ -138,7 +147,7 @@ TG2Cloud follows a “select manually, process automatically” model. You choos
 
 ## Current Version
 
-TG2Cloud v1.1.2 provides two separate PySide6 editions:
+The current source version, TG2Cloud v1.1.3 (not yet released), provides two separate PySide6 editions:
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -289,7 +298,7 @@ Click **一键部署基础环境** (Deploy base environment). A normal first dep
 
 While dependencies or container images are being downloaded, wait for an explicit success or failure. Do not repeatedly click deploy, network repair, or WebDAV acceptance.
 
-When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.1.2 does not provide a general-purpose Restore feature.
+When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.1.3 does not provide a general-purpose Restore feature.
 
 ### 7. First-Installation Sequence
 
@@ -307,18 +316,24 @@ When an installation for the current edition already exists, redeployment preser
 
 ## Optional VPS Installer
 
-The two Windows deployers remain the primary installation method. Without a Windows computer, you can try `install.sh` from the current repository checkout on a Debian/Ubuntu x86_64 VPS as root, with Python 3.10+. It reuses the existing Docker deployment resources without replacing the Bot implementation or changing either EXE.
+The two Windows deployers remain the primary installation method. Without a Windows computer, run the following command as root on a Debian/Ubuntu x86_64 VPS with Python 3.10+, curl and an interactive terminal. It reuses the existing Docker deployment resources without replacing the Bot implementation or changing either EXE.
 
 ```bash
-git clone https://github.com/LuoPoJunZi/TG2Cloud.git
-cd TG2Cloud
-bash ./install.sh --edition clouddrive2 --check
-bash ./install.sh --edition clouddrive2
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
+
+Without arguments, the wizard asks you to select an edition. For CloudDrive2, run a read-only check first, then the installation/upgrade wizard:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2
+```
+
+The entry is downloaded from `main`, but the wizard modules are pinned to a verified, immutable commit. The installed payload still comes only from the latest official stable Release, never unpublished `main` or RC business code. Download failures stop the wizard. This command executes repository-provided code, so use it only if you trust this repository; see the full guide for downloading and inspecting the script or using a local checkout. Do not use `curl | bash`; secrets are read from the current terminal.
 
 A fresh installation collects configuration, checks the environment and asks for confirmation before applying changes. A complete existing installation retains its configuration and targets the latest official stable Release, pinned to its immutable commit. An up-to-date instance is not rebuilt or restarted. Legacy TG115, partial instances, custom code, conflicting directories and gateway image migrations fail closed. Unlike this entry, `manage.sh update` only rebuilds the payload already installed on the VPS.
 
-This is a source-only addition; the product and published EXEs remain **v1.1.2**. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag or use standalone bootstrapping yet. A remote installation command will be provided when a future stable Release includes it. Fresh installation, cross-version upgrade and rollback still require separate VPS acceptance; OpenList script acceptance is deferred.
+The shared source version for the Bot, both deployers and Windows build resources is now **v1.1.3**; published EXEs remain v1.1.2. This source push does not create a tag/Release or upload local binaries. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. Until an official v1.1.3 Release exists, the wizard installs only the currently published stable payload, never unpublished code merely because main has a higher version. Fresh installation, cross-version upgrade and rollback still require separate VPS acceptance; OpenList script acceptance is deferred.
 
 CloudDrive2 passed `--check` on a real VPS: official legacy-source identity, runtime fingerprints, capacity and existing HTTPS were checked, producing a stable-version upgrade plan without upgrading or restarting. This is not acceptance of an actual installation, cross-version upgrade or cloud transfer.
 
@@ -511,7 +526,7 @@ CloudDrive2 has no manual backup button. Its redeployment protection includes pr
 
 Backups contain secrets. Directories are mode `700` and files are set to `600` where possible. Never upload them publicly.
 
-CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.1.2 does not provide a general Restore or Uninstall function.
+CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.1.3 does not provide a general Restore or Uninstall function.
 
 ## Troubleshooting
 

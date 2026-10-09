@@ -18,8 +18,9 @@ if [[ -f "$script_root/scripts/vps_installer.py" && -f "$script_root/scripts/vps
   exec python3 -B -m scripts.vps_installer "$@"
 fi
 
-# Standalone bootstrap: fetch only public helper files from one stable commit.
-# Never fall back to main, and never install packages before wizard confirmation.
+# Standalone bootstrap: the wizard uses a reviewed, immutable source commit.
+# The installed payload still comes only from the latest stable Release.
+# Never install main/RC payloads or packages before wizard confirmation.
 bootstrap_dir="$(mktemp -d /tmp/tg2cloud-cli-bootstrap.XXXXXXXX)"
 child_pid=""
 cleanup() {
@@ -52,6 +53,10 @@ from pathlib import Path
 
 root = Path(sys.argv[1])
 api = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
+# Update this pin only after the helper revision passes its CI and review.
+# It is independent of the target Release, which need not contain the CLI.
+installer_commit = "4e27acb69c2436ef00e74619e7fde6b4d66e9f61"
+installer_version = "1.1.2"
 
 def validate_url(url):
     parsed = urllib.parse.urlsplit(url)
@@ -75,6 +80,8 @@ def fetch(url):
     return data
 
 try:
+    if not re.fullmatch(r"[0-9a-f]{40}", installer_commit):
+        raise ValueError("invalid installer commit")
     release = json.loads(fetch(api + "/releases/latest"))
     tag = release.get("tag_name", "")
     if release.get("draft") is not False or release.get("prerelease") is not False or not re.fullmatch(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)", tag):
@@ -97,7 +104,7 @@ try:
         "payload_clouddrive2/app/__init__.py", "payload_clouddrive2/app/version.py",
     )
     for name in files:
-        data = fetch("https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/" + sha + "/" + name)
+        data = fetch("https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/" + installer_commit + "/" + name)
         target = root / name
         target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
         with target.open("xb") as output:
@@ -107,15 +114,16 @@ try:
     versions = [n.value.value for n in tree.body if isinstance(n, ast.Assign)
                 and isinstance(n.value, ast.Constant)
                 and any(isinstance(t, ast.Name) and t.id == "VERSION" for t in n.targets)]
-    if versions != [tag[1:]]:
-        raise ValueError("tag version mismatch")
+    if versions != [installer_version]:
+        raise ValueError("installer source version mismatch")
     marker = root / ".bootstrap-release.json"
     with marker.open("x", encoding="utf-8") as output:
         os.chmod(marker, 0o600)
-        json.dump({"tag": tag, "commit": sha}, output)
-    print("稳定版入口已固定：" + tag + " / " + sha)
+        json.dump({"tag": tag, "commit": sha, "installer_commit": installer_commit}, output)
+    print("安装向导源码已固定：" + installer_commit)
+    print("部署目标为正式稳定 Release：" + tag + " / " + sha)
 except Exception:
-    print("稳定 Release 入口获取失败。可能尚未正式发布脚本或网络受限；不会改用 main，未修改 VPS 实例。", file=sys.stderr)
+    print("安装向导或稳定 Release 获取失败。请检查网络/限流；不会改用 main/RC 的部署代码，未修改 VPS 实例。", file=sys.stderr)
     sys.exit(2)
 PY
 child_pid="$!"

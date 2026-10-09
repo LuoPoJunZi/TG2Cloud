@@ -1,28 +1,29 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 8 日**，对应 TG2Cloud **v1.1.2**。网站不会通过后台自动证明新的软件版本已经发布或测试完成。
+本次内容核对日期为 **2026 年 10 月 9 日**，对应 TG2Cloud **v1.1.3** 源码（待发布）；已发布下载基线为 v1.1.2。网站不会通过后台自动证明新的软件版本已经发布或测试完成。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
-| [v1.1.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.2) | 当前发布行为、资产名称和已知限制 |
-| [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.2/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
-| [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.2/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
+| [已发布 v1.1.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.2) | 当前可下载资产；不是新源码已经发布的证据 |
+| [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
+| [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
+| [VPS 一键脚本](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md) | 单行入口、正式稳定 payload、配置保留与未验收范围 |
 | [CHANGELOG](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) | TG2Cloud 更新与上游历史边界 |
 | [产品定义](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/deployer_products.py) | 两版默认路径、容器、端口及 FUSE 要求 |
 | [迁移说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/MIGRATION_FROM_TG115.md) | TG115 到 TG2Cloud 的操作与未验证范围 |
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CONTRIBUTING.md) | 测试和构建入口 |
 
-README 中部分日常状态文字沿用 CloudDrive2 描述时，本网站以 v1.1.2 Release 和产品定义区分两个后端，不把旧段落机械套到 OpenList。版本源为 `payload_clouddrive2/app/version.py`；历史验收按其原版本和日期理解，不作为当前全链路通过的承诺。
+本网站以当前源码产品定义及各版本真实发布/验收记录区分两个后端，不把旧段落机械套到 OpenList。版本源为 `payload_clouddrive2/app/version.py`；历史验收按其原版本和日期理解，不作为当前全链路通过的承诺。
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站当前讲解的软件版本；`package.json` 的版本表示文档站源码包自身版本，二者不必相同。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.1.3；依赖和历史版本不机械替换。
 
-导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。发布新软件后，应同时审核下载链接、更新日志和教程，再修改网站版本号。
+导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 
 ## Markdown 内容在哪里
 

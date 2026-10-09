@@ -17,7 +17,7 @@
 
 ## 下载新版不等于 VPS 已更新
 
-本机 EXE、VPS Bot 和 HTTPS 续期容器分别需要核对。仅下载 v1.1.2 不会更改 VPS；只重启也不会安装新版 payload。部署器“查看运行状态”显示正在运行的 Bot 版本，无法获取时不当作最新版，不自动升级或降级。
+本机 EXE、VPS Bot 和 HTTPS 续期容器分别需要核对。仅下载新版 EXE 不会更改 VPS；只重启也不会安装新版 payload。部署器“查看运行状态”显示正在运行的 Bot 版本，无法获取时不当作最新版，不自动升级或降级。
 
 已有 HTTPS 的续期记录需要用新版部署器重新配置同一域名才能生效；旧实例没有记录并不代表 HTTPS 已失效。不要为了获得维护功能卸载重装、重置管理员或覆盖云存储挂载。说明见 [域名访问与 HTTPS](/deploy/domain-https/)。
 
@@ -37,6 +37,24 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh update
 
 OpenList 对应脚本还会拉取当前 Compose 已固定的 OpenList 镜像并核验服务，但这同样不等于获取任意最新 TG2Cloud 源码。
 
+## 没有 Windows：保留配置升级
+
+v1.1.3 源码新增可选 VPS 向导。先做只读预检：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
+```
+
+核对计划、备份和维护窗口后，用同一入口启动交互向导：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2
+```
+
+它只获取正式稳定 Release 的源码，并核验已有实例的官方基线与运行指纹。已有完整受管实例保留 `.env`、rclone、SQLite 和持久化数据；仅重启或本机源码升级不等于 VPS 更新。不自动降级，不静默覆盖旧 TG115、部分安装或自定义配置，也不隐式切换 HTTPS 域名。
+
+当前 CloudDrive2 已完成真实 VPS 只读预检，但首次安装、实际跨版本升级及回退仍未验收；OpenList 脚本实机验收暂缓。完整边界见 [VPS 脚本指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。两个 EXE 仍是主力入口，切勿与脚本同时操作同一实例。
+
 ## 单独应用配置
 
 把新配置保存在安装目录之外的、仅你可访问的绝对路径，再执行：
@@ -52,7 +70,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 应用过程先备份和预检，再重建并检查实际环境；失败时按脚本机制恢复旧配置。改变目的账号或路径前，应先处理完队列及失败保留任务。
 
 :::warning 自动保护不是通用恢复产品
-当前 v1.1.2 只有有限内部失败回退机制，不提供正式自动 Restore 或 Uninstall。共享代理隔离解包也不是在线恢复；不能因为升级脚本有保护，就省略独立备份。
+当前 v1.1.3 只有有限内部失败回退机制，不提供正式自动 Restore 或 Uninstall。共享代理隔离解包也不是在线恢复；不能因为升级脚本有保护，就省略独立备份。
 :::
 
 ## 升级后检查清单

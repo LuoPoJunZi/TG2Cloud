@@ -2,7 +2,7 @@
 
 TG2Cloud 中文网页文档。包含品牌首页、30 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
-**正文基准：TG2Cloud v1.1.2；资料核对日期：2026-10-08。**
+**正文基准：TG2Cloud v1.1.3 源码（待发布）；资料核对日期：2026-10-09。** 当前正式下载基线仍为 v1.1.2，不把本次源码 Push 当作新 Release。
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 
@@ -110,7 +110,7 @@ TG2Cloud-Docs/
 
 日常内容直接编辑对应 Markdown。新增文章时，创建 `docs/分类/文件名.md`，并在 `site.config.json` 的 `navigation` 中新增标题与 `slug`；slug 不加开头或结尾斜杠，站内链接使用 `/分类/文件名/`。
 
-首页文案、卡片与流程图在 `src/templates.mjs` 的 `homeContent()`；配色在 `public/assets/style.css`。更新版本时除配置中的 `version`，还需同步 `docs/download.md` 的固定版本链接、更新日志、事实核对日期和受影响的教程。
+首页文案、卡片与流程图在 `src/templates.mjs` 的 `homeContent()`；配色在 `public/assets/style.css`。更新版本时同步配置中的 `version`、`verifiedAt`、更新日志与受影响的教程。`publishedVersion` 是实际可下载的正式版本，`releaseStatus` 为 `unreleased` 或 `released`；尚未发布时保留真实下载基线，不生成不存在的新版本 EXE/Tag 链接。正式 Release 完成后再同步下载链接、`publishedVersion` 和状态。
 
 提交前运行：
 

@@ -2,6 +2,21 @@
 
 TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发布说明的整理，不把历史 TG115 的版本号当成 TG2Cloud 发布版本。
 
+## TG2Cloud v1.1.3
+
+状态：源码更新，待发布；内容核对日期：2026-10-09。当前已发布 EXE 仍为 v1.1.2，本次不创建新 Tag/Release。
+
+- 新增可选 VPS 单行安装/保留配置升级向导；先收集信息、预检及确认，两个 PySide6 部署器仍是主力。
+- 向导模块固定已验证的 commit，实际 payload 始终来自最新正式稳定 Release，不安装 main/RC 未发布业务代码。
+- 已有完整实例复用配置，核对官方源码、运行指纹与挂载；TG115、部分实例、手改代码、目录冲突和网关数据库迁移安全停止。
+- 复用现有 Docker、备份/有限回退与强制 HTTPS；健康域名不隐式切换，WebDAV 写入验收另行确认。
+- 同步 Bot、两个部署器、Windows 资源和文档版本；保留真实下载基线与历史验收记录，不把版本号更新当作已发布或实机验收。
+- 合入限定范围的 Telethon 1.45.0、PyInstaller 6.22.3 兼容验证；新版 EXE 与真实 Telegram 转存仍待对应验收。
+
+CloudDrive2 脚本仅通过真实 VPS 只读预检，未执行首次安装、跨版本升级或回退；OpenList 脚本实机验收暂缓。
+
+[查看源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) · [下载与 VPS 单行入口](/download/) · [脚本完整指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。
+
 ## TG2Cloud v1.1.2
 
 发布日期：2026-10-08。本次聚焦运行状态、故障提示与 HTTPS 维护，两个 Windows EXE 继续由 Actions 从同一不可变标签构建一次，并以该次实际产物生成 SHA-256。
@@ -108,7 +123,7 @@ TG115 v1.6.2 等记录属于代码演进历史，并不是 TG2Cloud 自身的版
 
 本导航中的历史版本条目是更新日志入口，不是各旧版文档的完整快照。下载历史产物前，应自行核对对应 Release 是否存在及其具体资产。
 
-## v1.1.2 仍然存在的限制
+## v1.1.3 仍然存在的限制
 
 没有正式自动 Restore 或 Uninstall；CloudDrive2 没有手动业务备份 UI，但两版都有共享 HTTPS 代理备份工具；没有旧 TG115 状态/队列的自动原地迁移；没有跨实例 Token 分布式锁；Windows EXE 未提供商业代码签名。
 

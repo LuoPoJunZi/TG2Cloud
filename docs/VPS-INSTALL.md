@@ -2,7 +2,7 @@
 
 TG2Cloud 的主力安装方式仍是两个 PySide6 Windows 部署器。`install.sh` 是没有 Windows 电脑时可用的 Linux 终端入口，复用现有 Docker 安装、配置保留、备份、回退、HTTPS 与 WebDAV 验收流程，不另建一套 Bot 或 Compose 实现。
 
-> 产品及已发布 EXE 保持 v1.1.2；本脚本是单独的源码入口，尚未随正式 Release 发布。CloudDrive2 已完成真实 VPS 的只读预检，首次安装、实际跨版本升级和回退仍未验收，OpenList 脚本实机验收暂缓。既有 Windows EXE 和已部署实例不会因此自动改变。
+> 当前源码版本为 v1.1.3，尚未创建对应 Tag/Release；已发布 EXE 仍为 v1.1.2。本脚本是独立入口，不依赖新 EXE；实际部署目标只取已发布正式稳定版本。CloudDrive2 已完成真实 VPS 的只读预检，首次安装、实际跨版本升级和回退仍未验收，OpenList 脚本实机验收暂缓。既有 Windows EXE 和已部署实例不会因此自动改变。
 
 ## 支持范围
 
@@ -21,27 +21,66 @@ TG2Cloud 的主力安装方式仍是两个 PySide6 Windows 部署器。`install.
 
 缺少 Python 时请先自行确认系统环境，并安装 `python3`、`ca-certificates`、`tzdata`。脚本不会在信息收集与确认前自动安装软件。APT/Docker 的安装权限只在首次基础安装的最终确认后交给现有安装器；升级要求已有 Docker daemon 和 Compose 可用，不自动升级 Docker 引擎。
 
+## VPS 单行安装命令
+
+以 root 登录 VPS，在 Bash 可交互终端运行（需 Python 3.10+、curl 和系统 CA 证书）：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
+```
+
+不带参数时先选择 Edition，随后识别全新安装或已有实例。脚本不会在收集信息、预检及最终确认之前安装软件或修改实例。当前仍建议先在专用测试 VPS 使用。
+
+只检查 CloudDrive2，不安装／升级：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
+```
+
+检查通过后，再运行 CloudDrive2 安装／升级向导：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2
+```
+
+进程替换 `<(...)` 不占用交互标准输入；向导仍通过 `/dev/tty` 隐藏读取秘密。不支持用 `curl | bash`、无人值守管道或命令行参数传入密码。
+
+这类命令会立即执行从仓库下载的代码，只有信任仓库和维护者时才使用。不希望直接运行远程代码时，可先下载、检查，再运行：
+
+```bash
+curl -fSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh -o tg2cloud-install.sh
+less tg2cloud-install.sh
+bash ./tg2cloud-install.sh --edition clouddrive2 --check
+bash ./tg2cloud-install.sh --edition clouddrive2
+```
+
+不要覆盖自己已有的同名文件。网络、API 限流或下载校验失败时停止，不安装替代代码。`curl -f` 会显示 HTTP 下载错误；若首段脚本未下载成功，不会进入向导，即使外层 Bash 的退出码是 0 也不代表安装完成。
+
 ## 从本地源码试用
 
 在 VPS 上进入包含这些新增文件的源码目录，以 root 运行：
 
 ```bash
+git clone https://github.com/LuoPoJunZi/TG2Cloud.git
+cd TG2Cloud
 bash ./install.sh --help
-bash ./install.sh --edition openlist --check
-bash ./install.sh --edition openlist
+bash ./install.sh --edition clouddrive2 --check
+bash ./install.sh --edition clouddrive2
 ```
 
-CloudDrive2 使用 `--edition clouddrive2`。不指定 Edition 时出现选择向导。已有两套完整实例可使用 `--edition both`；不支持一次向导在全新 VPS 批量安装两套。
+OpenList 使用 `--edition openlist`，其脚本实机验收仍暂缓。不指定 Edition 时出现选择向导。已有两套完整实例可使用 `--edition both`；不支持一次向导在全新 VPS 批量安装两套。
 
 `--check` 只读运行实例及 HTTPS 状态，不收集秘密、安装软件或修改运行配置。它仍会访问公开 GitHub API 并在私有临时目录下载源码，因此需要网络和一定的临时磁盘空间。检查通过不代表 WebDAV、HTTPS 公网访问或 Telegram 实际转存已验收。
 
 目标 payload 始终来自 GitHub 最新正式稳定 Release 的源码，不是本地工作树或 `main`。例如当前正式版本尚未包含本脚本时，从新增源码试用仍只会安装已发布的 payload；它不会把未发布业务代码装到 VPS。
 
-## 正式发布后的下载方式
+## 入口与稳定部署版本
 
-只有后续正式稳定 Tag 实际包含 `install.sh`、`scripts/` 和必要模块后，才可发布远程使用命令。届时可从该正式 Tag 下载 `install.sh` 到文件，检查后运行。不要使用 `curl | bash` 输入凭据，也不要使用 `main/install.sh` 作为稳定入口。
+单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到已通过 CI 的不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `4e27acb69c2436ef00e74619e7fde6b4d66e9f61`，模块版本源为 `1.1.2`。维护者只在新向导模块完成审查与 CI 后更新 pin。
 
-独立下载的脚本会通过 GitHub `/releases/latest` 排除草稿及预发布，解析 Tag 到不可变 commit，再从同一 commit 获取必要的公开 Python 模块。向导会核对该 commit 和源码版本。入口缺失、Tag 变化、API 限流或源码版本不匹配时停止；不会退回 main 或 RC。
+这是向导源码身份，不是要部署的 Bot 版本。独立脚本另行通过 GitHub `/releases/latest` 排除草稿及预发布，解析正式 Tag 到不可变 commit；所有实际安装的 payload 来自这个正式 commit。向导会核对 Tag、commit 和 payload 版本。Release Tag 在引导后变化、API 限流、辅助模块缺失或版本不匹配时停止；不会退回 `main` 或 RC 的业务代码。
+
+因此已有 `v1.1.2` Release 不必包含新增脚本，单行入口也不需要构建或替换 EXE。仍不要从旧 `v1.1.2` Tag 下载 `install.sh`。从本地源码运行时使用该 checkout 的向导代码，部署目标仍只取正式稳定 Release。
 
 下载使用系统 HTTPS 校验，源码身份固定到 commit。Release 中的 `SHA256SUMS.txt` 是 Windows EXE 校验清单，不用于校验源码归档；本入口不是额外的数字签名验证方案。仓库和发布账号仍是信任边界。
 

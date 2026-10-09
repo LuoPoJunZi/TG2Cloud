@@ -17,6 +17,8 @@ if(configuredUrl){
   config.siteUrl=parsed.origin;
 } else config.siteUrl='';
 if(!/^\d+\.\d+\.\d+$/.test(config.version))throw new Error('Invalid documented version');
+if(!/^\d+\.\d+\.\d+$/.test(config.publishedVersion))throw new Error('Invalid published version');
+if(!['released','unreleased'].includes(config.releaseStatus))throw new Error('Invalid release status');
 
 const pages=config.navigation.flatMap(group=>group.items.map(item=>({...item,group:group.title})));
 if(new Set(pages.map(p=>p.slug)).size!==pages.length)throw new Error('Duplicate page route');
@@ -54,7 +56,8 @@ await writeFile(join(dist,'index.html'),renderPage({config,page:{title:'首页',
 await writeFile(join(dist,'404.html'),renderPage({config,page:{title:'页面未找到',slug:''},notFound:true,hashes}));
 await writeFile(join(dist,'search-index.json'),JSON.stringify(searchIndex));
 await writeFile(join(dist,'build-info.json'),JSON.stringify({
-  site:'TG2Cloud Docs',documentedVersion:config.version,contentVerifiedAt:config.verifiedAt,
+  site:'TG2Cloud Docs',documentedVersion:config.version,publishedVersion:config.publishedVersion,
+  releaseStatus:config.releaseStatus,contentVerifiedAt:config.verifiedAt,
   articles:pages.length,searchRecords:searchIndex.length,siteUrl:config.siteUrl || null
 },null,2));
 let robots='User-agent: *\nAllow: /\n';
@@ -64,7 +67,7 @@ if(config.siteUrl){
   robots+=`Sitemap: ${config.siteUrl}/sitemap.xml\n`;
 }
 await writeFile(join(dist,'robots.txt'),robots);
-await writeFile(join(dist,'llms.txt'),`# TG2Cloud Docs\n\nDocumented release: ${config.version}\nContent verified: ${config.verifiedAt}\nProject: ${config.repo}\n\n`+pages.map(p=>`- [${p.title}](${config.siteUrl}/${p.slug}/)`).join('\n')+'\n');
+await writeFile(join(dist,'llms.txt'),`# TG2Cloud Docs\n\nDocumented version: ${config.version}\nPublished version: ${config.publishedVersion}\nRelease status: ${config.releaseStatus}\nContent verified: ${config.verifiedAt}\nProject: ${config.repo}\n\n`+pages.map(p=>`- [${p.title}](${config.siteUrl}/${p.slug}/)`).join('\n')+'\n');
 console.log(`Built ${pages.length} articles + homepage + 404, ${searchIndex.length} local search records.`);
 console.log(`Output: ${dist}`);
 console.log(config.siteUrl?`Canonical origin: ${config.siteUrl}`:'SITE_URL is unset: no invented canonical URL or sitemap was generated.');

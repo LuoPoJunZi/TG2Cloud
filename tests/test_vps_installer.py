@@ -8,6 +8,7 @@ import hashlib
 import io
 import json
 import os
+import shlex
 import shutil
 import subprocess
 import tarfile
@@ -25,7 +26,8 @@ from scripts.vps_runtime import LocalFiles, LocalSession, SafeLog, edition_lock
 from vps_resources import StorageAssessment
 
 ROOT = Path(__file__).resolve().parents[1]
-RELEASE = cli.Release("v1.1.3", "a" * 40)
+_major, _minor, _patch = cli.version_tuple(PRODUCTS["clouddrive2"].app_version)
+RELEASE = cli.Release(f"v{_major}.{_minor}.{_patch + 1}", "a" * 40)
 VALUES = {
     "api_id": "123456", "user_id": "123456789", "api_hash": "a" * 32,
     "bot_token": "123456789:FAKE_LOCAL_TEST_VALUE_NOT_A_REAL_TOKEN",
@@ -38,8 +40,131 @@ def report(state="healthy", domain="files.example.test"):
     return ProxyReport(domain, state, "local test report", ())
 
 
+class StandaloneBootstrapTests(unittest.TestCase):
+    """Exercise the downloaded entry without network or deployment calls."""
+
+    def setUp(self):
+        content = (ROOT / "install.sh").read_text(encoding="utf-8")
+        self.embedded = content.split("<<'PY' &\n", 1)[1].split("\nPY\n", 1)[0]
+        constants = {node.targets[0].id: node.value.value for node in ast.parse(self.embedded).body
+                     if isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name)
+                     and isinstance(node.value, ast.Constant)}
+        self.pin = constants["installer_commit"]
+        self.helper_version = constants["installer_version"]
+        self.assertRegex(self.pin, r"^[0-9a-f]{40}$")
+        self.release = {"tag_name": RELEASE.tag, "draft": False, "prerelease": False}
+        self.item = {"object": {"type": "commit", "sha": "a" * 40}}
+        self.urls = []
+
+    def bootstrap(self, root, *, version=None, missing_helper=False):
+        def open_fixture(request, *, timeout):
+            self.assertEqual(timeout, 30)
+            url = request.full_url
+            self.urls.append(url)
+            if url == cli.API + "/releases/latest":
+                return io.BytesIO(json.dumps(self.release).encode())
+            if url == cli.API + "/git/ref/tags/" + self.release["tag_name"]:
+                return io.BytesIO(json.dumps(self.item).encode())
+            prefix = "https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/" + self.pin + "/"
+            self.assertTrue(url.startswith(prefix), "helper must not use main or the payload commit")
+            name = url.removeprefix(prefix)
+            self.assertIn(name, {
+                "scripts/__init__.py", "scripts/vps_runtime.py", "scripts/vps_installer.py",
+                "deployer_products.py", "domain_proxy.py", "vps_resources.py", "proxy_maintenance.py",
+                "payload_clouddrive2/app/__init__.py", "payload_clouddrive2/app/version.py",
+            })
+            if missing_helper:
+                raise OSError("offline fixture: helper unavailable")
+            data = (ROOT / name).read_bytes()
+            if name == "payload_clouddrive2/app/version.py":
+                # The fixture represents the pinned helper revision, not a
+                # future product version in the local working tree.
+                data = version if version is not None else f'VERSION = "{self.helper_version}"\n'.encode()
+            return io.BytesIO(data)
+
+        opener = Mock()
+        opener.open.side_effect = open_fixture
+        output, errors = io.StringIO(), io.StringIO()
+        with patch("sys.argv", ["bootstrap", str(root)]), patch("sys.stdout", output), patch("sys.stderr", errors), patch("urllib.request.build_opener", return_value=opener):
+            try:
+                exec(compile(self.embedded, "install.sh bootstrap", "exec"), {})  # noqa: S102 - repository-owned code with mocked networking
+                code = 0
+            except SystemExit as exc:
+                code = exc.code
+        return code, output.getvalue(), errors.getvalue()
+
+    def test_wizard_pin_is_independent_of_stable_payload_commit_and_version(self):
+        # The payload Release deliberately has no CLI files; helpers are fetched
+        # from the reviewed source pin, not from that old/new payload Release.
+        with tempfile.TemporaryDirectory() as private:
+            root = Path(private)
+            code, output, errors = self.bootstrap(root)
+            self.assertEqual(code, 0, errors)
+            self.assertIn(self.pin, output)
+            self.assertIn(RELEASE.tag + " / " + "a" * 40, output)
+            marker = root / ".bootstrap-release.json"
+            self.assertEqual(json.loads(marker.read_text(encoding="utf-8")), {
+                "tag": RELEASE.tag, "commit": "a" * 40, "installer_commit": self.pin,
+            })
+            if os.name == "posix":
+                self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
+            self.assertEqual(len(self.urls), 11)
+            self.assertFalse(any("/main/" in url or "/heads/" in url for url in self.urls))
+
+    def test_rc_draft_bad_tag_and_commit_stop_before_helpers(self):
+        cases = ({"tag_name": RELEASE.tag + "-rc.1"}, {"draft": True}, {"prerelease": True},
+                 {"tag_name": "main"}, {"commit": "main"})
+        for case in cases:
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as private:
+                self.setUp()
+                if "commit" in case:
+                    self.item["object"]["sha"] = case["commit"]
+                else:
+                    self.release.update(case)
+                root = Path(private)
+                code, _, _ = self.bootstrap(root)
+                self.assertEqual(code, 2)
+                self.assertFalse((root / ".bootstrap-release.json").exists())
+                self.assertFalse(any("raw.githubusercontent.com" in url for url in self.urls))
+
+    def test_helper_download_or_version_failure_does_not_create_marker(self):
+        repeated = f'VERSION = "{self.helper_version}"\n' * 2
+        for options in ({"missing_helper": True}, {"version": b'VERSION = "9.9.9"\n'},
+                        {"version": repeated.encode()}):
+            with self.subTest(options=options), tempfile.TemporaryDirectory() as private:
+                root = Path(private)
+                code, _, errors = self.bootstrap(root, **options)
+                self.assertEqual(code, 2)
+                self.assertIn("未修改 VPS", errors)
+                self.assertFalse((root / ".bootstrap-release.json").exists())
+
+    def test_version_validation_does_not_execute_downloaded_python(self):
+        with tempfile.TemporaryDirectory() as private:
+            root = Path(private)
+            payload = (f'VERSION = "{self.helper_version}"\nraise RuntimeError("must not execute")\n').encode()
+            code, _, errors = self.bootstrap(root, version=payload)
+            self.assertEqual(code, 0, errors)
+
+    def test_payload_tag_changed_after_bootstrap_stops_before_download_or_apply(self):
+        messages = []
+        with tempfile.TemporaryDirectory() as private:
+            root = Path(private).resolve()
+            marker = root / ".bootstrap-release.json"
+            marker.write_text(json.dumps({"tag": "v1.1.2", "commit": "b" * 40}), encoding="utf-8")
+            marker.chmod(0o600)
+            client = Mock()
+            client.resolve.return_value = cli.Release("v1.1.2", "c" * 40)
+            instance = cli.Instance(PRODUCTS["clouddrive2"], root, False)
+            with patch.object(cli, "__file__", str(root / "scripts/vps_installer.py")), patch.object(cli, "validate_host"), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=instance), patch.object(cli, "ReleaseClient", return_value=client), patch.object(cli, "regular_private", side_effect=lambda path: path.read_bytes()), patch.object(cli, "SafeLog", return_value=SafeLog(messages.append)), patch.object(cli, "execute_plan") as apply:
+                self.assertEqual(cli.main(["--edition", "clouddrive2", "--check"]), 1)
+            client.resolve.assert_called_once_with("v1.1.2")
+            client.download.assert_not_called()
+            apply.assert_not_called()
+            self.assertIn("Tag 发生变化", "".join(messages))
+
+
 class ApiTests(unittest.TestCase):
-    def client(self, *, tag="v1.1.3", draft=False, prerelease=False):
+    def client(self, *, tag=RELEASE.tag, draft=False, prerelease=False):
         client = cli.ReleaseClient()
         client.json = Mock(side_effect=[
             {"tag_name": tag, "draft": draft, "prerelease": prerelease},
@@ -51,16 +176,16 @@ class ApiTests(unittest.TestCase):
         client = self.client()
         self.assertEqual(client.resolve(), RELEASE)
         self.assertEqual(client.json.call_args_list[0].args[0], cli.API + "/releases/latest")
-        self.assertEqual(client.json.call_args_list[1].args[0], cli.API + "/git/ref/tags/v1.1.3")
+        self.assertEqual(client.json.call_args_list[1].args[0], cli.API + "/git/ref/tags/" + RELEASE.tag)
 
     def test_reject_rc_draft_and_nonsemver(self):
-        for kwargs in ({"tag": "v1.1.3-rc.1"}, {"draft": True}, {"prerelease": True}, {"tag": "main"}):
+        for kwargs in ({"tag": RELEASE.tag + "-rc.1"}, {"draft": True}, {"prerelease": True}, {"tag": "main"}):
             with self.subTest(kwargs=kwargs), self.assertRaises(ValueError):
                 self.client(**kwargs).resolve()
 
     def test_specific_tag_cannot_select_prerelease(self):
         with self.assertRaises(ValueError):
-            self.client().resolve("v1.1.3-rc.1")
+            self.client().resolve(RELEASE.tag + "-rc.1")
 
     def test_tag_mismatch_and_invalid_sha(self):
         with self.assertRaises(ValueError):
@@ -587,6 +712,34 @@ class LocalRuntimeTests(unittest.TestCase):
     def test_entry_bash_syntax(self):
         result = subprocess.run([self.bash(), "-n", str(ROOT / "install.sh")], capture_output=True, text=True, timeout=15, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    @unittest.skipUnless(os.name == "posix", "Linux process substitution and bootstrap cleanup")
+    def test_process_substitution_forwards_args_exit_and_cleans_bootstrap(self):
+        for bootstrap_exit, cli_exit in ((0, 0), (0, 7), (9, 0)):
+            with self.subTest(bootstrap_exit=bootstrap_exit, cli_exit=cli_exit), tempfile.TemporaryDirectory() as private:
+                command = r'''
+python3() {
+  if [[ "$1" == -c ]]; then return 0; fi
+  if [[ "$1" == - ]]; then
+    cat >/dev/null
+    printf '%s\n' "$2" > "$FIXTURE_DIR/bootstrap-path"
+    return "$FIXTURE_BOOTSTRAP_EXIT"
+  fi
+  printf '%s\n' "$@" > "$FIXTURE_DIR/cli-args"
+  return "$FIXTURE_CLI_EXIT"
+}
+export -f python3
+'''
+                command += "bash <(cat " + shlex.quote(str(ROOT / "install.sh")) + ") --edition clouddrive2 --check"
+                env = {**os.environ, "FIXTURE_DIR": private, "FIXTURE_BOOTSTRAP_EXIT": str(bootstrap_exit), "FIXTURE_CLI_EXIT": str(cli_exit)}
+                result = subprocess.run([self.bash(), "-c", command], cwd=private, env=env, capture_output=True, text=True, timeout=15, check=False)
+                self.assertEqual(result.returncode, bootstrap_exit or cli_exit, result.stderr)
+                fixture = Path(private)
+                self.assertFalse(Path((fixture / "bootstrap-path").read_text().strip()).exists())
+                if bootstrap_exit:
+                    self.assertFalse((fixture / "cli-args").exists())
+                else:
+                    self.assertEqual((fixture / "cli-args").read_text().splitlines(), ["-B", "-m", "scripts.vps_installer", "--edition", "clouddrive2", "--check"])
 
     def test_help_without_root_or_qt(self):
         import sys
