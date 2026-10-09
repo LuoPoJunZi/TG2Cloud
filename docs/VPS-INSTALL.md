@@ -110,7 +110,7 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 ## 入口与稳定部署版本
 
-单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到已通过 CI 的不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `3049e0e470f62dc65ed09bbe0e0ffc493ef44ca3`，模块版本源为 `1.1.4`，包含交互终端与候选镜像源码权限修复，Linux 两 Edition 的真实非 root 镜像预检已通过。维护者只在新向导模块完成审查与 CI 后更新 pin。
+单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到已通过 CI 的不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `1243be0ac91fc3ca5d90eec55c94f41217799ee6`，模块版本源为 `1.1.5`，包含 HTTPS 中断回退、Python 3.10 维护兼容、续做凭据展示和明确的依赖提示。该提交的 Windows/Linux CI、独立脚本 Python 3.10/3.13 矩阵及两 Edition 非 root 候选镜像检查已通过。维护者只在新向导模块完成审查与 CI 后更新 pin。
 
 这是向导源码身份，不是要部署的 Bot 版本。独立脚本另行通过 GitHub `/releases/latest` 排除草稿及预发布，解析正式 Tag 到不可变 commit；所有实际安装的 payload 来自这个正式 commit。向导会核对 Tag、commit 和 payload 版本。Release Tag 在引导后变化、API 限流、辅助模块缺失或版本不匹配时停止；不会退回 `main` 或 RC 的业务代码。
 
@@ -162,16 +162,16 @@ bash ./install.sh --edition openlist --verify
 
 `--configure-https` 是明确的配置/修复授权，执行前仍需要确认。有已保存域名时只能沿用它，不提供隐式切换。已是最新版本时只续做 HTTPS，不重建 Bot。没有保存域名时才收集新域名。
 
-首次 HTTPS 失败前生成的秘密已经由安装器保存到 VPS `.env`。修复版向导在 HTTPS 续做成功后再次提供逐项确认显示；也可在本地源码入口单独查看已有凭据，不安装、不升级、不修复 HTTPS、不重置密码：
+首次 HTTPS 失败前生成的秘密已经由安装器保存到 VPS `.env`。v1.1.5 向导在 HTTPS 续做成功后再次提供逐项确认显示；也可单独查看已有凭据，不安装、不升级、不修复 HTTPS、不重置密码：
 
 ```bash
-bash ./install.sh --edition openlist --show-credentials
-bash ./install.sh --edition clouddrive2 --show-credentials
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --show-credentials
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --show-credentials
 ```
 
 每项默认不显示，仅在确认后写入当前私有终端，不进入普通日志。OpenList 显示的是保存的初始化管理员密码；如果后来在管理页改过密码，这不是当前密码。请避免旁观或录屏，不要把完整 `.env` 贴进日志、聊天或 Issue。该参数不能与 `--check`、`--configure-https` 或 `--verify` 组合。
 
-这些修复先在当前源码中提供。公开单行命令仍使用前文记录的不可变向导 pin，只有维护者完成 CI 后更新 pin 才会生效；旧入口不会自动获得新参数。
+公开单行入口固定到前文记录的 v1.1.5 向导源码，包含这些修复和新参数；实际 Bot payload 仍只取最新正式稳定 Release。使用已下载的旧入口时，重新下载才能获得新向导；从本地 checkout 使用时，按该 checkout 的参数执行。
 
 HTTPS 配置收到 Ctrl+C、TERM 或 HUP 时会尝试恢复原代理配置；状态提交与回退期间的重复信号会延后处理，保留原有命令超时。请等待退出后核对状态，不用强制杀进程加速；断网、断电、SIGKILL 或回退命令失败时仍可能需要人工恢复。已提交的新路由不会仅因提交结束时收到取消信号而恢复成旧运行配置。
 
