@@ -1,13 +1,13 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 9 日**，对应 TG2Cloud **v1.1.3** 源码（待发布）；已发布下载基线为 v1.1.2。网站不会通过后台自动证明新的软件版本已经发布或测试完成。
+本次内容核对日期为 **2026 年 10 月 9 日**，对应 TG2Cloud **v1.1.3** 正式版本；已核对同版本 Release 的两个 EXE、SHA256SUMS 及其 Tag 工作流。网站不会通过后台自动证明其他新版本已经发布或完成实机验收。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
-| [已发布 v1.1.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.2) | 当前可下载资产；不是新源码已经发布的证据 |
+| [已发布 v1.1.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.3) | 本次 Actions 构建的正式资产与实际 SHA256；不等于实机验收通过 |
 | [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
 | [VPS 一键脚本](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md) | 单行入口、正式稳定 payload、配置保留与未验收范围 |

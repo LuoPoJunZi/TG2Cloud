@@ -7,11 +7,11 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.1.3
 git rev-parse HEAD
 ```
 
-当前主分支为 v1.1.3 源码（待发布）。对已发布版本复现问题时使用对应标签；跟随主分支开发时记录提交号，避免把未发布修改当成 Release 行为。
+当前正式版本为 v1.1.3。对已发布版本复现问题时使用对应标签；跟随主分支开发时使用 main 并记录提交号，避免把后续未发布修改当成 Release 行为。
 
 ## 关键目录与入口
 

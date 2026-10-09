@@ -4,18 +4,18 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 ## TG2Cloud v1.1.3
 
-状态：源码更新，待发布；内容核对日期：2026-10-09。当前已发布 EXE 仍为 v1.1.2，本次不创建新 Tag/Release。
+发布日期与内容核对日期：2026-10-09。两个 Windows EXE 已由 GitHub Actions 从同一 v1.1.3 Tag 重新测试、构建和自检；Release 复用该次产物及实际 SHA256，不使用本机旧构建。
 
 - 新增可选 VPS 单行安装/保留配置升级向导；先收集信息、预检及确认，两个 PySide6 部署器仍是主力。
 - 向导模块固定已验证的 commit，实际 payload 始终来自最新正式稳定 Release，不安装 main/RC 未发布业务代码。
 - 已有完整实例复用配置，核对官方源码、运行指纹与挂载；TG115、部分实例、手改代码、目录冲突和网关数据库迁移安全停止。
 - 复用现有 Docker、备份/有限回退与强制 HTTPS；健康域名不隐式切换，WebDAV 写入验收另行确认。
-- 同步 Bot、两个部署器、Windows 资源和文档版本；保留真实下载基线与历史验收记录，不把版本号更新当作已发布或实机验收。
-- 合入限定范围的 Telethon 1.45.0、PyInstaller 6.22.3 兼容验证；新版 EXE 与真实 Telegram 转存仍待对应验收。
+- 同步 Bot、两个部署器、Windows 资源和文档版本；正式发布后同步下载链接与网站发布状态，保留历史验收记录，不把发布成功当作实机验收。
+- 合入 Telethon 1.45.0、PyInstaller 6.22.3 的限定兼容验证及 CI 工具升级；新版 EXE 的真实 VPS 部署、Telegram 登录和转存仍需对应验收。
 
 CloudDrive2 脚本仅通过真实 VPS 只读预检，未执行首次安装、跨版本升级或回退；OpenList 脚本实机验收暂缓。
 
-[查看源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) · [下载与 VPS 单行入口](/download/) · [脚本完整指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。
+[查看正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.3) · [查看源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.3/CHANGELOG.md) · [下载与 VPS 单行入口](/download/) · [脚本完整指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。
 
 ## TG2Cloud v1.1.2
 

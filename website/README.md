@@ -2,7 +2,7 @@
 
 TG2Cloud 中文网页文档。包含品牌首页、30 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
-**正文基准：TG2Cloud v1.1.3 源码（待发布）；资料核对日期：2026-10-09。** 当前正式下载基线仍为 v1.1.2，不把本次源码 Push 当作新 Release。
+**正文基准：TG2Cloud v1.1.3；资料核对日期：2026-10-09。** 正式下载链接已核对到同版本 GitHub Release，包含 Actions 构建的两个 EXE 与 SHA256SUMS。发布成功不代表真实 VPS 或文件转存已完成验收。
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 
