@@ -77,6 +77,7 @@ The TG2Cloud v1.1.2 Windows EXEs are not commercially code-signed. Windows Smart
 - [Important Boundaries](#important-boundaries)
 - [Requirements](#requirements)
 - [Windows GUI Deployment](#windows-gui-deployment)
+- [Optional VPS Installer](#optional-vps-installer)
 - [Mandatory Domain HTTPS Access](#mandatory-domain-https-access)
 - [CloudDrive2 Configuration](#clouddrive2-configuration)
 - [OpenList and Cloud Storage Configuration](#openlist-and-cloud-storage-configuration)
@@ -303,6 +304,25 @@ When an installation for the current edition already exists, redeployment preser
 9. Run **WebDAV 验收** and wait for `TG2CLOUD_DESTINATION=OK`.
 10. Use **修复 CloudDrive2 网络** only when acceptance fails because of a container-network problem, then run acceptance again.
 11. Send a small file to your Bot in a private chat to test the full path.
+
+## Optional VPS Installer
+
+The two Windows deployers remain the primary installation method. Without a Windows computer, you can try `install.sh` from the current repository checkout on a Debian/Ubuntu x86_64 VPS as root, with Python 3.10+. It reuses the existing Docker deployment resources without replacing the Bot implementation or changing either EXE.
+
+```bash
+git clone https://github.com/LuoPoJunZi/TG2Cloud.git
+cd TG2Cloud
+bash ./install.sh --edition clouddrive2 --check
+bash ./install.sh --edition clouddrive2
+```
+
+A fresh installation collects configuration, checks the environment and asks for confirmation before applying changes. A complete existing installation retains its configuration and targets the latest official stable Release, pinned to its immutable commit. An up-to-date instance is not rebuilt or restarted. Legacy TG115, partial instances, custom code, conflicting directories and gateway image migrations fail closed. Unlike this entry, `manage.sh update` only rebuilds the payload already installed on the VPS.
+
+This is a source-only addition; the product and published EXEs remain **v1.1.2**. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag or use standalone bootstrapping yet. A remote installation command will be provided when a future stable Release includes it. Fresh installation, cross-version upgrade and rollback still require separate VPS acceptance; OpenList script acceptance is deferred.
+
+CloudDrive2 passed `--check` on a real VPS: official legacy-source identity, runtime fingerprints, capacity and existing HTTPS were checked, producing a stable-version upgrade plan without upgrading or restarting. This is not acceptance of an actual installation, cross-version upgrade or cloud transfer.
+
+See the [VPS installation and upgrade guide (Chinese)](docs/VPS-INSTALL.md) for the complete scope. Never operate the same instance concurrently from the CLI and EXE. WebDAV write acceptance needs separate confirmation; cloud account credentials and authorization remain in your own CloudDrive2/OpenList instance.
 
 ## Mandatory Domain HTTPS Access
 

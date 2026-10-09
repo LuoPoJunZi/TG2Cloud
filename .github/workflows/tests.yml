@@ -24,6 +24,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -33,6 +35,10 @@ jobs:
       - name: Install uv
         run: python -m pip install uv==0.11.28
 
+      - name: Detect actual EXE input changes
+        id: exe-inputs
+        run: python .github/scripts/exe_build_inputs.py
+
       - name: Unit and scenario tests
         run: >
           uv run
@@ -41,7 +47,7 @@ jobs:
           python -m unittest discover -s tests -v
 
       - name: Ruff
-        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py operation_feedback.py proxy_maintenance.py .github/scripts/release_metadata.py vps_resources.py payload_clouddrive2/app tests
+        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py operation_feedback.py proxy_maintenance.py .github/scripts/release_metadata.py .github/scripts/exe_build_inputs.py vps_resources.py payload_clouddrive2/app scripts tests
 
       - name: Bandit
         run: uv run --with bandit==1.9.4 bandit -q -r payload_clouddrive2/app installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py operation_feedback.py proxy_maintenance.py .github/scripts/release_metadata.py vps_resources.py
@@ -55,6 +61,7 @@ jobs:
           uv run --with pip-audit==2.10.1 pip-audit -r requirements-build.txt
 
       - name: Build and self-test Windows EXE
+        if: steps.exe-inputs.outputs.build == 'true'
         timeout-minutes: 20
         shell: pwsh
         run: |

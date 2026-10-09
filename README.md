@@ -78,6 +78,7 @@ TG2Cloud v1.1.2 的 Windows EXE 当前未提供商业代码签名，首次运行
 - [重要边界](#重要边界)
 - [部署前准备](#部署前准备)
 - [Windows 图形化部署](#windows-图形化部署)
+- [可选 VPS 一键脚本](#可选-vps-一键脚本)
 - [强制 HTTPS 管理入口](#强制-https-管理入口)
 - [CloudDrive2 配置](#clouddrive2-配置)
 - [OpenList 与云存储配置](#openlist-与云存储配置)
@@ -304,6 +305,25 @@ http://tg2cloud-clouddrive2:19798/dav
 9. 点击“WebDAV 验收”，等待出现 `TG2CLOUD_DESTINATION=OK`；
 10. 只有验收因容器网络问题失败时，才点击“修复 CloudDrive2 网络”，修复后重新验收；
 11. 在 Telegram 中私聊自己的 Bot，先发送一个小文件验证完整链路。
+
+## 可选 VPS 一键脚本
+
+两个 Windows 部署器仍是主力。没有 Windows 电脑时，可从当前仓库源码试用 `install.sh`，在 Debian/Ubuntu x86_64 VPS 上以 root 运行；需要 Python 3.10+。它复用现有 Docker 部署资源，不另建一套 Bot，也不改变 EXE。
+
+```bash
+git clone https://github.com/LuoPoJunZi/TG2Cloud.git
+cd TG2Cloud
+bash ./install.sh --edition clouddrive2 --check
+bash ./install.sh --edition clouddrive2
+```
+
+全新 VPS 先收集配置、预检和确认再安装；完整已有实例复用配置，目标源码固定到 GitHub 最新正式稳定 Release 的 commit。已是最新版不重建、不重启。旧 TG115、部分容器、手改程序、冲突目录及网关镜像迁移均停止，不自动覆盖。`manage.sh update` 仍只重建本机已有 payload，与此入口不同。
+
+本次只提交源码入口，产品及已发布 EXE 保持 **v1.1.2**。`v1.1.2` 标签尚不包含脚本，因此不要从该标签下载入口或使用独立下载方式；后续稳定 Release 纳入脚本后才提供正式远程安装命令。首次安装、跨版本升级与回退仍需单独实机验收，OpenList 脚本实机验收暂缓。
+
+CloudDrive2 已通过真实 VPS 的 `--check`：识别官方旧版、核对运行指纹、容量和现有 HTTPS，生成稳定版升级计划；没有升级或重启。此结果不等同于实际安装、跨版本升级或云盘转存验收。
+
+完整说明与安全边界见 [VPS 安装与升级脚本](docs/VPS-INSTALL.md)。不要在脚本和 EXE 中同时操作同一实例；WebDAV 写入验收需另行确认，云盘账号与授权仍只在自己的 CloudDrive2/OpenList 中配置。
 
 ## 强制 HTTPS 管理入口
 

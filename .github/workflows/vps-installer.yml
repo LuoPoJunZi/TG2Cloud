@@ -1,0 +1,66 @@
+name: VPS installer checks
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "install.sh"
+      - "scripts/**"
+      - "tests/test_vps_installer.py"
+      - "deployer_products.py"
+      - "domain_proxy.py"
+      - "vps_resources.py"
+      - "payload_clouddrive2/**"
+      - "payload_openlist/**"
+      - ".github/workflows/vps-installer.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "install.sh"
+      - "scripts/**"
+      - "tests/test_vps_installer.py"
+      - "deployer_products.py"
+      - "domain_proxy.py"
+      - "vps_resources.py"
+      - "payload_clouddrive2/**"
+      - "payload_openlist/**"
+      - ".github/workflows/vps-installer.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  offline-linux:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        python: ["3.10", "3.13"]
+    env:
+      PYTHONDONTWRITEBYTECODE: "1"
+      PYTHONIOENCODING: utf-8
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install lint tools only
+        run: |
+          python -m pip install ruff==0.16.0 bandit==1.9.4
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+      - name: Shell syntax and lint
+        run: |
+          bash -n install.sh
+          shellcheck install.sh
+      - name: Offline tests (no VPS or Docker calls)
+        run: python -B -m unittest discover -s tests -p test_vps_installer.py -v
+      - name: Python lint and syntax
+        run: |
+          ruff check scripts tests/test_vps_installer.py
+          python -m compileall -q scripts tests/test_vps_installer.py
+          bandit -q -r scripts
+      - name: Whitespace check
+        run: git diff --check
