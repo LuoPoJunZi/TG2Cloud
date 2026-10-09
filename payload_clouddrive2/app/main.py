@@ -33,7 +33,7 @@ def setup_logging(settings: Settings) -> None:
     console = logging.StreamHandler(sys.stdout)
     console.setFormatter(formatter)
     file_handler = RotatingFileHandler(
-        settings.log_dir / "tg115.log",
+        settings.log_dir / "tg2cloud.log",
         maxBytes=10 * 1024**2,
         backupCount=5,
         encoding="utf-8",
@@ -51,7 +51,7 @@ class TransferService(CommandMixin):
     ):
         self.settings = settings
         setup_logging(settings)
-        self.log = logging.getLogger("tg115")
+        self.log = logging.getLogger("tg2cloud")
         self.db = TaskDB(settings.data_dir / "tg115.db")
         self.client = TelegramClient(
             str(settings.data_dir / "bot"),

@@ -28,7 +28,7 @@
 
 ### 没有 Windows 电脑能安装吗？
 
-可以选用 v1.1.3 源码提供的 VPS 单行向导，先检查、收集信息并确认，再复用 Docker 安装资源；已有可核验的受管实例走保留配置升级。部署目标只取正式稳定 Release。当前仅完成 CloudDrive2 实机只读预检，写入升级和 OpenList 脚本实机验收仍待完成。两个 EXE 仍是主力入口，详见 [下载页的 VPS 入口](/download/)。
+可以选用 v1.1.4 源码提供的 VPS 单行向导，先检查、收集信息并确认，再复用 Docker 安装资源；已有可核验的受管实例走保留配置升级。部署目标只取正式稳定 Release。当前仅完成 CloudDrive2 实机只读预检，写入升级和 OpenList 脚本实机验收仍待完成。两个 EXE 仍是主力入口，详见 [下载页的 VPS 入口](/download/)。
 
 ### VPS 重装后 Host key 不匹配？
 
@@ -60,7 +60,7 @@
 
 401 优先检查运行配置中的 WebDAV 用户名、密码；429 属于限流，避免连续重试加重压力。两者不能用同一种方案处理。[WebDAV 排查](/troubleshooting/webdav/)。
 
-当前 v1.1.3 源码中的 OpenList Bot `/doctor` 会显示实际探测时间与剩余冷却；刷新诊断不会绕过退避，也不会把消息刷新时间冒充新探测结果。
+当前 v1.1.4 源码中的 OpenList Bot `/doctor` 会显示实际探测时间与剩余冷却；刷新诊断不会绕过退避，也不会把消息刷新时间冒充新探测结果。
 
 ### 修改部署器密码后还是 401？
 
@@ -104,7 +104,7 @@
 
 ### TG115 能一键升级 TG2Cloud 吗？
 
-v1.1.3 不提供原地自动迁移，也没有正式自动 Restore/Uninstall。[迁移说明](/operations/migration/)。
+v1.1.4 不提供原地自动迁移，也没有正式自动 Restore/Uninstall。[迁移说明](/operations/migration/)。
 
 ### CloudDrive2 现在能备份了吗？
 

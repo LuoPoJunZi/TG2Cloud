@@ -543,6 +543,61 @@ class ConfigPayloadTests(unittest.TestCase):
                 self.assertFalse((dest / "tg2cloud-release.json").exists())
                 self.assertEqual(cli.source_version(dest), product.app_version)
 
+    def test_public_payload_modes_do_not_touch_parent_or_candidate_secrets(self):
+        for product in PRODUCTS.values():
+            with self.subTest(edition=product.key), tempfile.TemporaryDirectory() as private:
+                dest = Path(private) / "payload"
+                candidate = Path(private) / "config.env"
+                candidate.write_text("FAKE_CANDIDATE_SECRET", encoding="utf-8")
+                candidate.chmod(0o600)
+                with patch.object(Path, "chmod", autospec=True) as chmod:
+                    cli.build_payload(ROOT, product, dest)
+                expected_files = {dest / name for name in cli.payload_sources(ROOT, product)}
+                expected_files.update(dest / name for name in ("LICENSE", "NOTICE", "README.md") if (ROOT / name).is_file())
+                changed_files = {call.args[0] for call in chmod.call_args_list if call.args[1] == 0o644}
+                self.assertEqual(changed_files, expected_files)
+                for call in chmod.call_args_list:
+                    path, mode = call.args
+                    self.assertTrue(path.is_relative_to(dest))
+                    self.assertNotEqual(path, dest)
+                    self.assertIn(mode, (0o644, 0o755))
+                self.assertEqual(candidate.read_text(encoding="utf-8"), "FAKE_CANDIDATE_SECRET")
+                self.assertFalse((dest / "config.env").exists())
+                self.assertFalse((dest / ".env").exists())
+
+    @unittest.skipUnless(os.name == "posix", "POSIX permission bits require Linux")
+    def test_private_archive_source_becomes_readable_public_context_only(self):
+        for product in PRODUCTS.values():
+            with self.subTest(edition=product.key), tempfile.TemporaryDirectory() as private:
+                source = Path(private) / "source"
+                source.mkdir(mode=0o700)
+                for relative in product.required_payload:
+                    path = source / relative
+                    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+                    shutil.copyfile(ROOT / relative, path)
+                    path.chmod(0o600)
+                (source / ".env").write_text("FAKE_SECRET_NOT_PUBLIC", encoding="utf-8")
+                (source / ".env").chmod(0o600)
+                candidate = Path(private) / "config.env"
+                candidate.write_text("FAKE_CANDIDATE_SECRET", encoding="utf-8")
+                candidate.chmod(0o600)
+                dest = Path(private) / "payload"
+                previous_umask = os.umask(0o077)
+                try:
+                    cli.build_payload(source, product, dest)
+                finally:
+                    os.umask(previous_umask)
+                for path in dest.rglob("*"):
+                    self.assertEqual(path.stat().st_mode & 0o777, 0o755 if path.is_dir() else 0o644, str(path))
+                self.assertEqual(dest.stat().st_mode & 0o777, 0o700)
+                self.assertEqual(Path(private).stat().st_mode & 0o777, 0o700)
+                self.assertEqual(candidate.stat().st_mode & 0o777, 0o600)
+                self.assertEqual((source / ".env").stat().st_mode & 0o777, 0o600)
+                self.assertFalse((dest / ".env").exists())
+                for name, path in cli.payload_sources(source, product).items():
+                    self.assertEqual((dest / name).read_bytes(), path.read_bytes())
+                    self.assertEqual(path.stat().st_mode & 0o777, 0o600)
+
     def test_missing_resource_stops(self):
         with tempfile.TemporaryDirectory() as private, self.assertRaises(ValueError):
             cli.payload_sources(Path(private), PRODUCTS["openlist"])

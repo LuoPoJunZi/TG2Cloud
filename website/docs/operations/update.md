@@ -55,6 +55,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 当前 CloudDrive2 已完成真实 VPS 只读预检，但首次安装、实际跨版本升级及回退仍未验收；OpenList 脚本实机验收暂缓。完整边界见 [VPS 脚本指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。两个 EXE 仍是主力入口，切勿与脚本同时操作同一实例。
 
+v1.1.4 修复向导的交互终端与候选镜像源码权限：公开程序可供非 root Bot 读取，秘密仍保持私有；镜像内程序和日志统一为 TG2Cloud。数据库、Session、UID/GID 与 HTTPS 路由保持不变。遇到旧 `Permission denied` 不要删除数据或重新授权云盘，使用包含修复的正式版本重试；原版本 Tag 缺失时脚本仍安全停止。
+
 ## 单独应用配置
 
 把新配置保存在安装目录之外的、仅你可访问的绝对路径，再执行：
@@ -70,7 +72,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 应用过程先备份和预检，再重建并检查实际环境；失败时按脚本机制恢复旧配置。改变目的账号或路径前，应先处理完队列及失败保留任务。
 
 :::warning 自动保护不是通用恢复产品
-当前 v1.1.3 只有有限内部失败回退机制，不提供正式自动 Restore 或 Uninstall。共享代理隔离解包也不是在线恢复；不能因为升级脚本有保护，就省略独立备份。
+当前 v1.1.4 只有有限内部失败回退机制，不提供正式自动 Restore 或 Uninstall。共享代理隔离解包也不是在线恢复；不能因为升级脚本有保护，就省略独立备份。
 :::
 
 ## 升级后检查清单

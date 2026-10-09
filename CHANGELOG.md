@@ -1,5 +1,18 @@
 # 更新记录
 
+## TG2Cloud v1.1.4
+
+版本日期：2026-10-09。修复可选 VPS 向导的交互终端及候选镜像源码权限问题，并统一两 Edition 共用 Bot 镜像的有效内部名称。正式发布由 Actions 从新不可变 Tag 构建两个 EXE，Release 复用该次 Windows artifact 及实际 SHA256。
+
+- 修复 `/dev/tty` 使用 `r+` 导致 `File or stream is not seekable`：分开管理读取和写入流、刷新提示、隐藏秘密输入并在中断时恢复终端；兼容 Python 3.10。
+- 修复 CLI 私有归档源码复制到 Docker 后 UID 10001 无法读取 `app/__init__.py`：只对公开构建文件设置 0644、子目录设置 0755；上下文根仍为 0700，候选秘密配置保持 0600 且在上下文外。
+- 共享 Dockerfile 对公开 `app/` 追加读取/目录遍历权限，源码仍归 root；Bot 继续以 `10001:10001` 运行，不改为 root、不使用 777。
+- 两版 Bot 镜像内程序目录/PYTHONPATH 改为 `/opt/tg2cloud`，系统用户/组与 logger 改为 `tg2cloud`，新日志为 `tg2cloud.log`。
+- 保留 `tg115.db`、`bot.session`、挂载、旧日志、环境兼容别名、verify 前缀和旧实例检测；不迁移或删除已有数据，不改 HTTPS、队列、rclone、WebDAV 或流式传输策略。
+- 增加权限/隐私边界、日志和持久化路径回归；Linux 分支及 Release 检查实际以非 root 启动两 Edition 候选镜像，不再仅验证 Docker build。
+- 同步版本源、两 EXE Windows 资源、中英文 README 和脚本/迁移指南；公开向导仍只固定通过 CI 的 commit，实际 payload 只来自正式稳定 Release。
+- 本地回归不等于 Linux 镜像或 VPS 升级验收。首次安装、跨版本升级、回退与真实转存仍待专用测试 VPS 验收，OpenList 脚本实机验收暂缓。
+
 ## TG2Cloud v1.1.3
 
 发布日期：2026-10-09。产品版本、两个部署器与 Bot 的共享版本源、Windows 版本资源及文档站版本统一为 1.1.3；正式 EXE 由 GitHub Actions 从同一不可变 Tag 构建、自检并生成实际 SHA256，发布 Job 复用同一次构建产物，不替换历史 Release。

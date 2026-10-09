@@ -30,7 +30,7 @@ from app.backup_database import backup_database
 from app.bot_commands import state_label
 from app.config import Settings
 from app.db import TaskDB
-from app.main import TransferService, safe_file_name
+from app.main import TransferService, safe_file_name, setup_logging
 from app.rclone_client import RcloneClient, RcloneError
 from app.resources import AdaptiveWindow, ResourceSnapshot
 from app.verify_destination import DestinationVerificationError, verify_destination
@@ -2018,6 +2018,41 @@ class UploadRecoveryTests(unittest.TestCase):
 
 
 class PayloadTests(unittest.TestCase):
+    def test_active_container_namespace_and_code_read_permissions(self) -> None:
+        dockerfile = (PAYLOAD / "Dockerfile").read_text(encoding="utf-8")
+        self.assertIn("PYTHONPATH=/opt/tg2cloud", dockerfile)
+        self.assertIn("WORKDIR /opt/tg2cloud", dockerfile)
+        self.assertIn("groupadd --system --gid 10001 tg2cloud", dockerfile)
+        self.assertIn("--shell /usr/sbin/nologin tg2cloud", dockerfile)
+        self.assertNotIn("tg115", dockerfile)
+        self.assertLess(dockerfile.index("COPY app ./app"), dockerfile.index("RUN chmod -R a+rX app"))
+        self.assertLess(dockerfile.index("RUN chmod -R a+rX app"), dockerfile.index("USER 10001:10001"))
+        self.assertNotIn("chmod -R 777", dockerfile)
+
+    def test_runtime_logger_is_tg2cloud_and_persistent_paths_are_unchanged(self) -> None:
+        settings = SimpleNamespace(
+            log_dir=Mock(), data_dir=Path("/data"), download_dir=Path("/downloads"),
+            api_id=123456, api_hash="FAKE_LOCAL_TEST_API_HASH",
+        )
+        with patch("app.main.setup_logging"), patch("app.main.logging.getLogger") as get_logger, \
+                patch("app.main.TaskDB") as database, patch("app.main.TelegramClient") as telegram, \
+                patch("app.main.RcloneClient"), patch("app.main.ResourceMonitor"), \
+                patch("app.main.AdaptiveWindow"), patch.object(TransferService, "_register_handlers"):
+            TransferService(settings)
+        get_logger.assert_called_once_with("tg2cloud")
+        database.assert_called_once_with(Path("/data/tg115.db"))
+        self.assertEqual(telegram.call_args.args[0], str(Path("/data/bot")))
+
+    def test_new_log_name_does_not_rename_or_delete_old_logs(self) -> None:
+        with tempfile.TemporaryDirectory() as private:
+            directory = Path(private)
+            legacy = directory / "tg115.log"
+            legacy.write_text("retained old log", encoding="utf-8")
+            with patch("app.main.logging.getLogger"), patch("app.main.RotatingFileHandler") as handler:
+                setup_logging(SimpleNamespace(log_dir=directory))
+            self.assertEqual(handler.call_args.args[0], directory / "tg2cloud.log")
+            self.assertEqual(legacy.read_text(encoding="utf-8"), "retained old log")
+
     def test_windows_and_server_versions_match(self) -> None:
         self.assertRegex(APP_VERSION, r"^[0-9]+\.[0-9]+\.[0-9]+$")
         self.assertEqual(__version__, APP_VERSION)

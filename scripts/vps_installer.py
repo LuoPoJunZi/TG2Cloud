@@ -220,12 +220,21 @@ def build_payload(root: Path, product: ProductProfile, destination: Path) -> Non
     destination.mkdir(mode=0o700)
     for relative, source in payload_sources(root, product).items():
         target = destination / relative
-        target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        # Only manifest-selected public source enters this Docker context.
+        # COPY preserves its modes, so UID 10001 needs readable files and
+        # traversable subdirectories. The enclosing private directory stays
+        # 0700; candidate credentials remain outside the context at 0600.
+        parent = destination
+        for part in Path(relative).parts[:-1]:
+            parent = parent / part
+            parent.mkdir(mode=0o755, exist_ok=True)
+            parent.chmod(0o755)
         shutil.copyfile(source, target)
-        target.chmod(0o600)
+        target.chmod(0o644)
     for name in ("LICENSE", "NOTICE", "README.md"):
         if (root / name).is_file():
             shutil.copyfile(root / name, destination / name)
+            (destination / name).chmod(0o644)
 
 
 def regular_private(path: Path) -> bytes:

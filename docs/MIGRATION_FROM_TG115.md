@@ -32,6 +32,12 @@ TG2Cloud 的“重新部署”、`manage.sh update`、网络修复、状态和�
 
 本机 SSH 主机记录改存于 `%APPDATA%\TG2Cloud-Deployer\known_hosts`。旧 `%APPDATA%\TG115-Deployer\known_hosts` 不会自动导入或覆盖；第一次连接时应通过 VPS 服务商控制台重新核对主机指纹。
 
+## v1.1.4 容器内部程序名称
+
+v1.1.4 源码将两 Edition 共用 Bot 镜像的程序目录从 `/opt/tg115` 改为 `/opt/tg2cloud`，容器用户/组改为 `tg2cloud`，新日志使用 `tg2cloud` / `tg2cloud.log`。这只修改镜像内的公开程序与日志名称，不是宿主机 TG115 数据迁移，也不改已有宿主机安装目录、容器或网络名称。较早版本源码仍使用旧内部名称；下载新版部署器或更新入口不会自动更改 VPS。
+
+容器 UID/GID 保持 `10001:10001`，继续使用原来的 `/data`、`/downloads`、`/logs`、`/config` 挂载。数据库 `/data/tg115.db` 和 Telegram `/data/bot.session` 不改名、不搬移；旧日志不删除。必要的 `TG115_*` 兼容变量、旧实例识别和校验临时文件前缀继续保留，避免丢失队列、登录状态或破坏回退。不要手工替换这些持久化标识。
+
 ## 尚未验证的迁移路径
 
 本仓库尚未在真实 VPS 上完成旧 TG115 到 TG2Cloud 的状态/队列迁移验收，也没有承诺可以直接复制 `.env`、`rclone.conf`、SQLite 或存储服务数据目录。若这些数据需要延续，请保持旧实例和备份可恢复，待有专门迁移方案及实测后再操作。

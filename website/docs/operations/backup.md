@@ -18,7 +18,7 @@
 
 两个 Edition 的现有备份都**不包含** `/opt/tg2cloud-proxy`。强制 HTTPS 之后，仅恢复 Edition 数据仍不足以恢复管理入口。
 
-当前 v1.1.3 源码可在任一 Edition 的“HTTPS 管理入口 → 维护工具”中选择“备份共享代理”，保存以下内容：
+当前 v1.1.4 源码可在任一 Edition 的“HTTPS 管理入口 → 维护工具”中选择“备份共享代理”，保存以下内容：
 
 - `state/domains.json`：两个 Edition 的域名与后端端口映射；
 - `docker-compose.yml`、`nginx/nginx.conf` 和 `nginx/conf.d/`：共享代理与续期配置；
@@ -84,7 +84,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh prune-backups 5
 
 ## 恢复不是一键承诺
 
-v1.1.3 没有正式自动 Restore。旧 TG115 的队列/数据库迁移也未被声明完成真实环境验收。
+v1.1.4 没有正式自动 Restore。旧 TG115 的队列/数据库迁移也未被声明完成真实环境验收。
 
 备份可读取不等于恢复已验证。重要部署应在受控环境制定恢复步骤，并保留独立可恢复副本；不要边猜数据库位置边覆盖生产实例。
 

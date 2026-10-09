@@ -44,7 +44,7 @@ Your Cloud
 
 本仓库是在原作者 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 基础上的二次开发版本，重点加强了任务恢复、磁盘保护、流式传输、状态语义、升级回退、VPS 资源建议和日常诊断。
 
-> 当前版本：**TG2Cloud v1.1.3**
+> 当前版本：**TG2Cloud v1.1.4**
 >
 > 本版包含 Telethon 1.45.0、PyInstaller 6.22.3 及 CI 工具升级，并新增可选 VPS 单行安装／保留配置升级入口。两个 PySide6 部署器仍是主力，稳定业务代码未重写。正式 Windows EXE 由 GitHub Actions 从对应 Tag 重新测试、构建并自检，Release 复用本次产物及实际 SHA256。变更与待验收范围见 [发布说明](RELEASE_NOTES.md)。
 
@@ -146,7 +146,7 @@ TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑�
 
 ## 当前版本
 
-当前产品版本为 `TG2Cloud v1.1.3`，提供两个独立的 PySide6 Edition：
+当前产品版本为 `TG2Cloud v1.1.4`，提供两个独立的 PySide6 Edition：
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -297,7 +297,7 @@ http://tg2cloud-clouddrive2:19798/dav
 
 日志显示正在下载依赖或构建 Docker 镜像时只需等待，不要重复点击“一键部署基础环境”、“修复 CloudDrive2 网络”或“WebDAV 验收”。基础容器健康后，部署器会自动打开 HTTPS 配置；必须等 HTTPS 全部自检通过并明确显示“部署完成”后再继续。
 
-部署脚本识别到当前 Edition 的既有 TG2Cloud 安装后，重新部署默认保留 VPS 当前 `.env`，并继续保留 SQLite、`rclone.conf`、下载目录、日志以及 CloudDrive2 配置和挂载数据。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”才应用本次表单值；升级前请先备份。升级会先在隔离目录构建候选镜像，并为旧代码、配置和数据库创建回退点；新版本未通过健康核验时只使用原有的有限内部回退逻辑，TG2Cloud v1.1.3 不提供正式自动 Restore。
+部署脚本识别到当前 Edition 的既有 TG2Cloud 安装后，重新部署默认保留 VPS 当前 `.env`，并继续保留 SQLite、`rclone.conf`、下载目录、日志以及 CloudDrive2 配置和挂载数据。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”才应用本次表单值；升级前请先备份。升级会先在隔离目录构建候选镜像，并为旧代码、配置和数据库创建回退点；新版本未通过健康核验时只使用原有的有限内部回退逻辑，TG2Cloud v1.1.4 不提供正式自动 Restore。
 
 ### 7. 完整按钮顺序
 
@@ -334,7 +334,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 全新 VPS 先收集配置、预检和确认再安装；完整已有实例复用配置，目标源码固定到 GitHub 最新正式稳定 Release 的 commit。已是最新版不重建、不重启。旧 TG115、部分容器、手改程序、冲突目录及网关镜像迁移均停止，不自动覆盖。`manage.sh update` 仍只重建本机已有 payload，与此入口不同。
 
-源码、Bot、两个部署器的版本源及 Windows 构建资源统一为 **v1.1.3**；正式 EXE 由 Actions 构建，不上传本机构建。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。首次安装、跨版本升级与回退仍需单独实机验收，OpenList 脚本实机验收暂缓。
+源码、Bot、两个部署器的版本源及 Windows 构建资源统一为 **v1.1.4**；正式 EXE 由 Actions 构建，不上传本机构建。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。首次安装、跨版本升级与回退仍需单独实机验收，OpenList 脚本实机验收暂缓。
 
 CloudDrive2 已通过真实 VPS 的 `--check`：识别官方旧版、核对运行指纹、容量和现有 HTTPS，生成稳定版升级计划；没有升级或重启。此结果不等同于实际安装、跨版本升级或云盘转存验收。
 
@@ -542,7 +542,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 
 CloudDrive2 没有手动“创建备份”UI；重新部署前的内部备份包含程序/`.env`/配置（含现有 `rclone.conf`）和可用时的 SQLite 一致性快照，不包含下载、日志及 CloudDrive2 状态目录。OpenList 的手动安全备份包含程序配置归档（含 `.env`、`rclone.conf`）、可用时的 SQLite 快照，以及已初始化的 OpenList 状态（排除其临时文件和日志）；不包含下载、TG2Cloud 日志或云端文件。备份文件含敏感凭据，目录权限为 `700`、文件尽量为 `600`，不得公开上传。
 
-CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList 升级/手动备份位于 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的 TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.1.3 不提供正式自动 Restore 或 Uninstall。
+CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList 升级/手动备份位于 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的 TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.1.4 不提供正式自动 Restore 或 Uninstall。
 
 ## 常见问题
 

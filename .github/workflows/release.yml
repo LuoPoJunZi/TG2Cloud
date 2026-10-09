@@ -213,6 +213,12 @@ jobs:
           OPENLIST_ADMIN_PASSWORD=ci-only-placeholder docker compose -f payload_openlist/docker-compose.yml config --quiet
           docker build -t tg2cloud-bot:release-test payload_clouddrive2
 
+      - name: Run both Edition candidate images as non-root
+        timeout-minutes: 20
+        env:
+          TG2CLOUD_TEST_DOCKER: "1"
+        run: python -m unittest discover -s tests -p test_runtime_namespace.py -v
+
   release:
     needs:
       - prepare
