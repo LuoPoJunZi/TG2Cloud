@@ -16,7 +16,7 @@ import tarfile
 import tempfile
 import time
 import unittest
-from contextlib import nullcontext
+from contextlib import ExitStack, nullcontext
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
@@ -71,6 +71,10 @@ class NonSeekableTty(io.RawIOBase):
 
 
 class TerminalTests(unittest.TestCase):
+    def setUp(self):
+        self.contexts = ExitStack()
+        self.addCleanup(self.contexts.close)
+
     def fixture(self, text="", *, terminal=True):
         source, output = io.BytesIO(text.encode()), io.BytesIO()
         streams = []
@@ -96,8 +100,8 @@ class TerminalTests(unittest.TestCase):
 
         self.addCleanup(lambda: [stream.close() for stream in streams])
         termios = SimpleNamespace(ECHO=8, TCSANOW=0, tcgetattr=Mock(return_value=[0, 0, 0, 8]), tcsetattr=Mock())
-        self.enterContext(patch.dict("sys.modules", {"termios": termios}))
-        opened = self.enterContext(patch.object(cli, "open", side_effect=open_tty, create=True))
+        self.contexts.enter_context(patch.dict("sys.modules", {"termios": termios}))
+        opened = self.contexts.enter_context(patch.object(cli, "open", side_effect=open_tty, create=True))
         return opened, streams, output, termios
 
     def test_nonseekable_terminal_confirmation_defaults_to_cancel_and_accepts_y(self):
