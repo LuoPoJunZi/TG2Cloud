@@ -76,7 +76,7 @@ OpenList 使用 `--edition openlist`，其脚本实机验收仍暂缓。不指�
 
 ## 入口与稳定部署版本
 
-单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到已通过 CI 的不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `4e27acb69c2436ef00e74619e7fde6b4d66e9f61`，模块版本源为 `1.1.2`。维护者只在新向导模块完成审查与 CI 后更新 pin。
+单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到已通过 CI 的不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `f9819b5b9e7d44a1a83543c0aca7debb5b9e2dc6`，模块版本源为 `1.1.3`。维护者只在新向导模块完成审查与 CI 后更新 pin。
 
 这是向导源码身份，不是要部署的 Bot 版本。独立脚本另行通过 GitHub `/releases/latest` 排除草稿及预发布，解析正式 Tag 到不可变 commit；所有实际安装的 payload 来自这个正式 commit。向导会核对 Tag、commit 和 payload 版本。Release Tag 在引导后变化、API 限流、辅助模块缺失或版本不匹配时停止；不会退回 `main` 或 RC 的业务代码。
 
