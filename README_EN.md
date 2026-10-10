@@ -364,14 +364,20 @@ See the [VPS installation and upgrade guide (Chinese)](docs/VPS-INSTALL.md) for 
 
 The new `install-lan.sh` collects the Linux host's private IPv4 manually and adds an independent Docker Nginx HTTP management entry. It does not change either EXE, `install.sh`, or the Bot transfer pipeline. Initial support is Debian/Ubuntu x86_64, root, Python 3.10+, and local rootful Docker 28+; this is not a claim of native support for every NAS OS or ARM device.
 
-From a complete reviewed local checkout containing this entry, check first, then start the wizard:
+Run as root on the target Linux host; no manual source checkout is needed:
 
 ```bash
-bash ./install-lan.sh --edition clouddrive2 --lan-ip 192.168.26.5 --check
-bash ./install-lan.sh --edition clouddrive2
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
 ```
 
-For OpenList, use `--edition openlist`. Replace the sample address with the actual Linux/VM address; a fresh installation prompts for it. The public `curl` bootstrap is not enabled yet, and real NAS acceptance has not been performed.
+The wizard selects CloudDrive2 / OpenList, asks for the Linux/VM's actual private IPv4 on a fresh installation (for example `192.168.26.5`), collects Telegram and WebDAV settings, then previews the plan. Installation starts only after confirmation; no HTTPS domain is requested. To select an edition directly:
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition clouddrive2
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition openlist
+```
+
+The online bootstrap pins its helper code to an immutable CI-validated commit; business containers use the latest official stable Release. Internet access is required. Real NAS and external LAN-browser acceptance have not been performed.
 
 The entry binds only the selected private address, does not use ports 80/443 or request certificates, and refuses to convert existing HTTPS instances. HTTP is unencrypted: use only a trusted LAN and never forward it publicly. Upgrades preserve existing configuration and the saved IP; the loopback backend and internal Bot WebDAV remain unchanged. See the [LAN installation and safety guide (Chinese)](docs/LAN-INSTALL.md). The mandatory HTTPS rules below still apply to the original EXEs and public VPS installer.
 

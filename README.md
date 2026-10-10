@@ -365,14 +365,20 @@ CloudDrive2 已通过真实 VPS 的 `--check`：识别官方旧版、核对运�
 
 内网 Linux 不需要为了安装而申请公网域名。新增的 `install-lan.sh` 手工收集本机内网 IPv4，通过独立 Docker Nginx 提供内网 HTTP 管理入口；不改变两个 EXE、原 `install.sh` 或 Bot 传输流程。首版支持 Debian/Ubuntu x86_64、root、Python 3.10+ 和本机 rootful Docker 28+，不承诺直接支持所有 NAS 系统或 ARM。
 
-在包含该入口的完整本地源码根目录先做只读预检，再运行向导：
+在目标 Linux 上以 root 运行，无需手动下载完整源码：
 
 ```bash
-bash ./install-lan.sh --edition clouddrive2 --lan-ip 192.168.26.5 --check
-bash ./install-lan.sh --edition clouddrive2
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
 ```
 
-OpenList 将 `--edition` 改为 `openlist`。示例 IP 请替换成实际 Linux / 虚拟机地址，首次安装会要求手工填写。公开 `curl` 入口尚未启用，真实 NAS 验收也尚未执行。
+向导先选择 CloudDrive2 / OpenList，首次安装手填实际 Linux / 虚拟机的内网 IP（例如 `192.168.26.5`），随后收集 Telegram、WebDAV 等配置并展示计划，最终确认后才安装。不会要求 HTTPS 域名。也可直接指定 Edition：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition clouddrive2
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition openlist
+```
+
+在线引导固定到经 CI 验证的不可变源码，业务容器使用最新正式稳定 Release。需要联网，不是离线安装；真实 NAS 与局域网浏览器验收尚未执行。
 
 入口只监听指定内网地址，不占用 80/443、不签发证书，不接管已有 HTTPS 实例。HTTP 不加密，仅用于可信内网，禁止公网端口转发。升级保留原配置与已保存 IP；网关后端和 Bot 内部 WebDAV 不变。详见 [内网安装与安全边界](docs/LAN-INSTALL.md)。以下强制 HTTPS 规则仍适用于原 EXE / 公网 VPS 安装。
 

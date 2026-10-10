@@ -2,11 +2,11 @@
 
 TG2Cloud 的主力仍是两个 Windows 部署器，公网 VPS 仍使用 `install.sh` 和强制 HTTPS。本入口单独使用 `install-lan.sh`：手填运行脚本的 Linux 内网 IPv4，用内网 HTTP 管理网关，不收集域名、不申请证书，也不修改原部署器或 VPS 向导。
 
-> 当前为本地测试实现，尚未完成真实 NAS 验收或发布。公开 `curl` 单行入口暂未启用：必须先提交源码、通过 CI，再将引导模块固定到经过验证的不可变 commit。不要假定现有 Release 包含此脚本。业务 payload 仍只取最新正式稳定 Release；没有新增 EXE 或改动产品版本号。
+> 当前为测试阶段，尚未完成真实 NAS 验收。公开一行入口固定下载经过 CI 验证的不可变源码 commit，不直接运行 moving main 中的依赖；业务 payload 仍只取最新正式稳定 Release。脚本独立发布于源码仓库，不要求现有 Release 包含它；没有新增 EXE 或改动产品版本号。
 
 ## 支持范围与边界
 
-- Debian/Ubuntu、x86_64、root、Python 3.10+、Bash、iproute2、CA 证书、时区数据库及可交互终端。
+- Debian/Ubuntu、x86_64、root、Python 3.10+、Bash、curl（在线入口）、iproute2、CA 证书、时区数据库及可交互终端。
 - 本机默认 rootful Docker Engine 28+、Compose v2；不支持远端 Docker、rootless 或外部 Compose 覆盖。Docker 尚未安装时，由原安装器在最终确认后安装；已安装的旧引擎需要人工升级，脚本不会为此重启 NAS 上的其他容器。
 - CloudDrive2 仍需要 `/dev/fuse`，容量和磁盘保护沿用原安装器。容器权限、APT 依赖安装等原有要求不会因“内网模式”消失。
 - 首版不承诺直接支持 DSM、QTS、Unraid、OpenWrt、ARM NAS 或 Docker Desktop。这类 NAS 建议先建立符合上述条件的 Debian/Ubuntu 虚拟机，并填写**虚拟机自己的 IP**。
@@ -35,7 +35,32 @@ Nginx 仅监听指定内网 IPv4，不监听 `0.0.0.0`、公网 IPv4 或 IPv6，
 
 不要配置路由器公网端口转发或 UPnP，不要把管理入口放入公网反代。只绑定私有 IP 也不能防止人为路由、端口转发或不安全的共享网络。脚本不调整路由器、NAS 防火墙或宿主机 Docker daemon 配置。
 
-## 从本地源码运行
+## 在线一键向导（推荐）
+
+目标 Linux 能联网，并已具备上述运行条件时，以 root 执行：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
+```
+
+无需预先下载完整项目。向导先选择 Edition，首次安装手工填写运行脚本的 Linux 内网 IPv4，再收集 Telegram 和专用 WebDAV 信息、检查容量并展示计划。最终确认默认 **N**；确认前不安装软件、不写入实例或内网模式记录。原 VPS 向导的域名/HTTPS 步骤不会出现在本入口中。
+
+分别选择 CloudDrive2 或 OpenList：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition clouddrive2
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition openlist
+```
+
+首次只读预检需明确 Edition 和本机地址；例如：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition clouddrive2 --lan-ip 192.168.26.5 --check
+```
+
+示例 IP 必须换成自己的 Linux / 虚拟机地址，不能填写另一台设备的地址。后续升级复用已保存信息与 IP，不必重复输入。下载失败直接停止，不回退到 main/RC 或其他源；在线引导的私有临时源码目录退出时清理，不清理用户的运行数据。
+
+## 从本地源码运行（备选）
 
 先把经过审查、包含本入口的完整源码放到目标 Linux，在项目根目录运行。示例地址必须替换成实际运行脚本的 Linux 地址。
 
@@ -63,6 +88,8 @@ bash ./install-lan.sh --edition openlist
 ```
 
 不要使用 `curl | bash` 或把秘密放入命令参数。密码输入复用私有终端读取与隐藏回显；脱敏日志不会输出完整配置。安装后，凭据逐项确认才会显示，不建议录屏。
+
+下方维护示例使用本地 `bash ./install-lan.sh`；也可替换为上面的 `bash <(curl -fsSL …/install-lan.sh)` 在线入口，保留相同的 `--edition`、`--verify` 或 `--show-credentials` 参数。
 
 ## 已有实例与升级
 

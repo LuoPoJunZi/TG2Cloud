@@ -590,9 +590,10 @@ class MainBootstrapTests(unittest.TestCase):
         self.assertEqual(lan.main(["--edition", "openlist"]), 130)
         self.assertIn("不假定已恢复", "\n".join(self.messages))
 
-    def test_standalone_bootstrap_is_stdlib_pinned_and_fail_closed_until_ci_review(self):
+    def test_standalone_bootstrap_is_stdlib_immutable_and_fail_closed(self):
         content = (ROOT / "install-lan.sh").read_text(encoding="utf-8")
-        self.assertIn('installer_commit=""', content)
+        self.assertRegex(content, r'(?m)^installer_commit="[0-9a-f]{40}"$')
+        self.assertIn('if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then', content)
         embedded = content.split("<<'PY' &\n", 1)[1].split("\nPY\n", 1)[0]
         ast.parse(embedded)
         self.assertNotIn("/main/", embedded)
