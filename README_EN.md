@@ -360,6 +360,21 @@ CloudDrive2 passed `--check` on a real VPS: official legacy-source identity, run
 
 See the [VPS installation and upgrade guide (Chinese)](docs/VPS-INSTALL.md) for the complete scope. Never operate the same instance concurrently from the CLI and EXE. WebDAV write acceptance needs separate confirmation; cloud account credentials and authorization remain in your own CloudDrive2/OpenList instance.
 
+## Independent LAN / NAS Installer (Testing)
+
+The new `install-lan.sh` collects the Linux host's private IPv4 manually and adds an independent Docker Nginx HTTP management entry. It does not change either EXE, `install.sh`, or the Bot transfer pipeline. Initial support is Debian/Ubuntu x86_64, root, Python 3.10+, and local rootful Docker 28+; this is not a claim of native support for every NAS OS or ARM device.
+
+From a complete reviewed local checkout containing this entry, check first, then start the wizard:
+
+```bash
+bash ./install-lan.sh --edition clouddrive2 --lan-ip 192.168.26.5 --check
+bash ./install-lan.sh --edition clouddrive2
+```
+
+For OpenList, use `--edition openlist`. Replace the sample address with the actual Linux/VM address; a fresh installation prompts for it. The public `curl` bootstrap is not enabled yet, and real NAS acceptance has not been performed.
+
+The entry binds only the selected private address, does not use ports 80/443 or request certificates, and refuses to convert existing HTTPS instances. HTTP is unencrypted: use only a trusted LAN and never forward it publicly. Upgrades preserve existing configuration and the saved IP; the loopback backend and internal Bot WebDAV remain unchanged. See the [LAN installation and safety guide (Chinese)](docs/LAN-INSTALL.md). The mandatory HTTPS rules below still apply to the original EXEs and public VPS installer.
+
 ## Mandatory Domain HTTPS Access
 
 After the managed base containers become healthy, the deployer automatically opens **Domain Access / HTTPS**. The current edition is not marked complete, and final WebDAV acceptance does not continue, until the domain certificate and every security check pass. Both editions share one Dockerized Nginx/Certbot pair under `/opt/tg2cloud-proxy` while using separate domains. Fixed-port SSH tunnel code remains only for compatibility and emergency recovery; it is no longer an ordinary workbench action.

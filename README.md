@@ -361,6 +361,21 @@ CloudDrive2 已通过真实 VPS 的 `--check`：识别官方旧版、核对运�
 
 完整说明与安全边界见 [VPS 安装与升级脚本](docs/VPS-INSTALL.md)。不要在脚本和 EXE 中同时操作同一实例；WebDAV 写入验收需另行确认，云盘账号与授权仍只在自己的 CloudDrive2/OpenList 中配置。
 
+## 局域网 / NAS 独立脚本（测试阶段）
+
+内网 Linux 不需要为了安装而申请公网域名。新增的 `install-lan.sh` 手工收集本机内网 IPv4，通过独立 Docker Nginx 提供内网 HTTP 管理入口；不改变两个 EXE、原 `install.sh` 或 Bot 传输流程。首版支持 Debian/Ubuntu x86_64、root、Python 3.10+ 和本机 rootful Docker 28+，不承诺直接支持所有 NAS 系统或 ARM。
+
+在包含该入口的完整本地源码根目录先做只读预检，再运行向导：
+
+```bash
+bash ./install-lan.sh --edition clouddrive2 --lan-ip 192.168.26.5 --check
+bash ./install-lan.sh --edition clouddrive2
+```
+
+OpenList 将 `--edition` 改为 `openlist`。示例 IP 请替换成实际 Linux / 虚拟机地址，首次安装会要求手工填写。公开 `curl` 入口尚未启用，真实 NAS 验收也尚未执行。
+
+入口只监听指定内网地址，不占用 80/443、不签发证书，不接管已有 HTTPS 实例。HTTP 不加密，仅用于可信内网，禁止公网端口转发。升级保留原配置与已保存 IP；网关后端和 Bot 内部 WebDAV 不变。详见 [内网安装与安全边界](docs/LAN-INSTALL.md)。以下强制 HTTPS 规则仍适用于原 EXE / 公网 VPS 安装。
+
 ## 强制 HTTPS 管理入口
 
 受管 CloudDrive2/OpenList 的基础容器健康后，部署器自动打开“HTTPS 管理入口”对话框。当前 Edition 必须完成域名证书与全部安全自检，主界面才显示“部署完成”，WebDAV 最终验收才会继续。两个 Edition 共用 VPS 上的一套 Dockerized Nginx/Certbot，并分别使用独立域名。底层固定端口 SSH 隧道仅保留兼容和故障恢复能力，不再显示为普通工作台按钮。
