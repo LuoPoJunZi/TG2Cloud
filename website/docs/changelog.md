@@ -2,6 +2,20 @@
 
 TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发布说明的整理，不把历史 TG115 的版本号当成 TG2Cloud 发布版本。
 
+## TG2Cloud v1.1.5
+
+发布日期与内容核对日期：2026-10-10。两个 Windows EXE 已由 GitHub Actions 从同一 v1.1.5 Tag 测试、构建和自检；Release 复用该次 Windows artifact，实际 SHA256SUMS 与资产摘要已核对。
+
+- HTTPS 配置在 Ctrl+C、TERM 或 HUP 时执行有限回退；提交与回退期间延后重复信号，已提交状态不会恢复成旧运行配置，另一 Edition 路由继续保留。
+- 共享代理备份改为分块 SHA256，证书与续期日期使用兼容 UTC 接口，宿主 Python 3.10 纳入维护兼容检查。
+- 首次基础安装成功但 HTTPS 失败后，续做成功再次提供凭据逐项确认；新增独立 `--show-credentials`，不安装、升级或改密，保存的 OpenList 初始化密码可能已更改。
+- HTTPS 预检列出缺少的工具和安装命令；基础部署补齐 `iproute2`、`python3`，预检本身不自动安装软件。
+- 补充中断、提交一致性、备份兼容和凭据隐私回归；Telegram、SQLite、队列、rclone、WebDAV、streaming 和持久化兼容标识未改。
+
+本地回归 470 passed、18 skipped、211 subtests passed；同标签发布检查通过。真实 VPS 的新中断/续做流程、首次安装、跨版本升级、回退与 Telegram/云盘转存仍待验收，OpenList 脚本实机验收暂缓。
+
+[查看源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.1.5/CHANGELOG.md) · [查看正式 Release v1.1.5](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.5) · [下载与 VPS 单行入口](/download/)。
+
 ## TG2Cloud v1.1.4
 
 发布日期与内容核对日期：2026-10-09。两个 Windows EXE 已由 GitHub Actions 从同一 v1.1.4 Tag 测试、构建和自检，Release 复用该次 Windows artifact；实际 SHA256SUMS 与资产摘要已核对。
@@ -137,7 +151,7 @@ TG115 v1.6.2 等记录属于代码演进历史，并不是 TG2Cloud 自身的版
 
 本导航中的历史版本条目是更新日志入口，不是各旧版文档的完整快照。下载历史产物前，应自行核对对应 Release 是否存在及其具体资产。
 
-## v1.1.4 仍然存在的限制
+## v1.1.5 仍然存在的限制
 
 没有正式自动 Restore 或 Uninstall；CloudDrive2 没有手动业务备份 UI，但两版都有共享 HTTPS 代理备份工具；没有旧 TG115 状态/队列的自动原地迁移；没有跨实例 Token 分布式锁；Windows EXE 未提供商业代码签名。
 

@@ -7,11 +7,11 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.1.4
+git checkout v1.1.5
 git rev-parse HEAD
 ```
 
-当前正式版本为 v1.1.4。对已发布版本复现问题时使用对应标签；跟随主分支开发时使用 main 并记录提交号，避免把后续未发布修改当成 Release 行为。
+当前正式版本为 v1.1.5。对已发布版本复现问题时使用对应标签；跟随主分支开发时使用 main 并记录提交号，避免把后续未发布修改当成 Release 行为。
 
 ## 关键目录与入口
 
@@ -51,6 +51,8 @@ v1.1.2 进一步核对 Tag、共享版本源、Windows 版本资源、CHANGELOG 
 v1.1.3 的 VPS 入口有独立 Shell/Python 回归检查。仅文档或独立 CLI 变更不要求重建 EXE；共享版本源或正式构建输入变化时，分支 CI 会构建并自检两个 EXE，但不创建 Release。正式发布仍需另外确认 Tag，上传该次 Windows Build Job 的 artifact，不能提交本地 build、dist 或 EXE。
 
 v1.1.4 另有真实 Docker 候选启动检查：Linux 分支与 Release Job 显式启用 `TG2CLOUD_TEST_DOCKER=1`，以 UID 10001 验证两 Edition 的公开源码权限及候选配置，不连接 Telegram/云存储。默认离线测试跳过这一用例，不等于镜像验收通过。
+
+v1.1.5 的独立 VPS 脚本 CI 使用真实 Python 3.10/3.13，覆盖标准库维护兼容和终端凭据隐私；共享 HTTPS 增加中断、重复取消及提交一致性回归。这些自动检查不替代真实 VPS 中断/续做或完整转存验收。
 
 ## 构建两个部署器
 

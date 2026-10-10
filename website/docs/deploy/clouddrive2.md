@@ -72,5 +72,5 @@ TG2CLOUD_DESTINATION=OK
 按 [第一次文件转存](/usage/first-transfer/) 发送一个小文件，并在云存储官方客户端核实位置、大小和内容。CloudDrive2 WebDAV 接收成功不等于上游云盘最终状态已被 TG2Cloud 证明。
 
 :::warning 已有安装与备份
-重复部署默认保留 VPS 当前 `.env`。CloudDrive2 没有手动业务“创建安全备份”UI，也没有正式自动 Restore；当前 v1.1.4 源码的 HTTPS 维护工具仅备份共享代理，不包含业务数据。升级前先读 [备份边界](/operations/backup/)。
+重复部署默认保留 VPS 当前 `.env`。CloudDrive2 没有手动业务“创建安全备份”UI，也没有正式自动 Restore；当前 v1.1.5 源码的 HTTPS 维护工具仅备份共享代理，不包含业务数据。升级前先读 [备份边界](/operations/backup/)。
 :::

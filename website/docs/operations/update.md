@@ -69,6 +69,19 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 v1.1.4 修复向导的交互终端与候选镜像源码权限：公开程序可供非 root Bot 读取，秘密仍保持私有；镜像内程序和日志统一为 TG2Cloud。数据库、Session、UID/GID 与 HTTPS 路由保持不变。遇到旧 `Permission denied` 不要删除数据或重新授权云盘，使用包含修复的正式版本重试；原版本 Tag 缺失时脚本仍安全停止。
 
+## HTTPS 续做与已有凭据
+
+v1.1.5 在首次基础安装成功、HTTPS 未完成的实例上，续做成功后再次提供逐项确认的已有凭据展示。取消配置会尝试有限回退；回退失败或 SSH 断连时必须重新核对状态，不代表业务数据已经恢复。
+
+仅查看已保存信息时，不需要再次部署。按已安装的 Edition 在私有交互终端选择一条命令：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --show-credentials
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --show-credentials
+```
+
+每项默认不显示；此模式不安装、升级或改密，不能与 `--check`、`--configure-https`、`--verify` 组合。OpenList 显示的是保存的初始化管理员密码，可能不是你后来修改的当前密码。缺少的保存值不会被重新生成；不要将输出公开分享。
+
 ## 单独应用配置
 
 把新配置保存在安装目录之外的、仅你可访问的绝对路径，再执行：
@@ -84,7 +97,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 应用过程先备份和预检，再重建并检查实际环境；失败时按脚本机制恢复旧配置。改变目的账号或路径前，应先处理完队列及失败保留任务。
 
 :::warning 自动保护不是通用恢复产品
-当前 v1.1.4 只有有限内部失败回退机制，不提供正式自动 Restore 或 Uninstall。共享代理隔离解包也不是在线恢复；不能因为升级脚本有保护，就省略独立备份。
+当前 v1.1.5 只有有限内部失败回退机制，不提供正式自动 Restore 或 Uninstall。共享代理隔离解包也不是在线恢复；不能因为升级脚本有保护，就省略独立备份。
 :::
 
 ## 升级后检查清单
