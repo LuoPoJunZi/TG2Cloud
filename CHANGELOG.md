@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.1.5
 
-版本日期：2026-10-09。修复共享 HTTPS 的取消回退、宿主 Python 3.10 兼容、VPS 向导续做凭据展示和精简系统依赖提示。两 Edition 正式 EXE 继续由 Actions 从不可变 Tag 构建一次，Release 复用已自检的 Windows artifact 与本次 SHA256。
+版本日期：2026-10-10。修复共享 HTTPS 的取消回退、宿主 Python 3.10 兼容、VPS 向导续做凭据展示和精简系统依赖提示。两 Edition 正式 EXE 继续由 Actions 从不可变 Tag 构建一次，Release 复用已自检的 Windows artifact 与本次 SHA256。
 
 - HTTPS 配置收到 Ctrl+C、TERM 或 HUP 时进入有限回退；状态提交和回退阶段延后处理重复信号，避免状态文件与实际路由不一致。已提交状态不会因随后收到取消信号而恢复成旧运行配置，另一 Edition 的路由继续保留。
 - 共享代理备份改用分块 SHA256，证书及续期日期使用兼容的 UTC 接口，支持宿主 Python 3.10；备份核验和隔离恢复流程保持原范围。
