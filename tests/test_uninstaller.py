@@ -498,6 +498,16 @@ class DataSafetyTests(unittest.TestCase):
         with self.assertRaises(uninstall.UninstallError):
             uninstall.mount_overlaps({"mounts": [{}]}, root)
 
+    def test_foreign_tmpfs_is_not_a_host_data_reference(self):
+        root = Path(PRODUCTS["clouddrive2"].install_dir)
+        foreign = {"mounts": [{"Type": "tmpfs", "Source": "", "Destination": "/tmp"},
+                              {"Type": "bind", "Source": "/srv/unrelated", "Destination": "/data"}]}
+        self.assertFalse(uninstall.mount_overlaps(foreign, root))
+        with patch.object(uninstall, "checked_path"), patch.object(uninstall, "mountpoints", return_value=(Path("/"),)):
+            uninstall.purge_preflight(("clouddrive2",), {"foreign": foreign}, {}, False)
+        foreign["mounts"].append({"Type": "bind", "Source": str(root.parent), "Destination": "/opt"})
+        self.assertTrue(uninstall.mount_overlaps(foreign, root))
+
     def test_empty_proxy_lock_root_is_valid_but_unknown_files_are_not_adopted(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()

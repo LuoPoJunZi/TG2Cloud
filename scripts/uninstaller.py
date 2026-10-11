@@ -126,6 +126,8 @@ def bind_map(item: dict) -> dict:
 def mount_overlaps(item: dict, root: Path) -> bool:
     """Parent bind mounts also expose the subtree about to be removed."""
     for mount in item.get("mounts", []):
+        if mount.get("Type") == "tmpfs":
+            continue
         source = mount.get("Source")
         if not isinstance(source, str) or not source:
             raise UninstallError("挂载源无法核对；停止，不删除数据")
