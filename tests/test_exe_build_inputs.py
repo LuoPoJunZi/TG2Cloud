@@ -16,7 +16,10 @@ class ExeBuildInputTests(unittest.TestCase):
         paths = ["install.sh", "scripts/vps_installer.py", "scripts/vps_runtime.py", "README.md",
                  "README_EN.md", "docs/VPS-INSTALL.md", "tests/test_vps_installer.py",
                  "tests/test_exe_build_inputs.py", ".github/workflows/vps-installer.yml",
-                 ".github/workflows/tests.yml", ".github/scripts/exe_build_inputs.py"]
+                 ".github/workflows/tests.yml", ".github/scripts/exe_build_inputs.py",
+                 ".editorconfig", ".ruff.toml", ".github/scripts/check_python.py",
+                 "docs/README.md", "docs/development/REPOSITORY.md", "tests/test_repository.py",
+                 ".gitignore", ".github/scripts/check_repository.py", ".github/workflows/repository.yml"]
         self.assertFalse(inputs.requires_build(paths))
 
     def test_each_exe_source_and_resource_builds(self):

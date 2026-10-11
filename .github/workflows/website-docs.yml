@@ -7,12 +7,22 @@ on:
       - main
     paths:
       - "website/**"
+      - "assets/brand/**"
+      - "docs/**"
+      - "README.md"
+      - "README_EN.md"
+      - "payload_clouddrive2/app/version.py"
       - ".github/workflows/website-docs.yml"
   pull_request:
     branches:
       - main
     paths:
       - "website/**"
+      - "assets/brand/**"
+      - "docs/**"
+      - "README.md"
+      - "README_EN.md"
+      - "payload_clouddrive2/app/version.py"
       - ".github/workflows/website-docs.yml"
 
 permissions:

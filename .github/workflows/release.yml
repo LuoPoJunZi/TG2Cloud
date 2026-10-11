@@ -40,6 +40,9 @@ jobs:
         id: metadata
         run: python3 .github/scripts/release_metadata.py --tag "${GITHUB_REF_NAME}" --github-output "${GITHUB_OUTPUT}"
 
+      - name: Check public repository inputs before any EXE build
+        run: python3 -B .github/scripts/check_repository.py
+
       - name: Check immutable tag and release state
         id: preflight
         env:
@@ -96,10 +99,13 @@ jobs:
           uv run
           --with-requirements requirements-build.txt
           --with-requirements payload_clouddrive2/requirements.txt
-          python -m unittest discover -s tests -v
+          python .github/scripts/check_python.py test
 
       - name: Ruff
-        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py operation_feedback.py proxy_maintenance.py .github/scripts/release_metadata.py vps_resources.py payload_clouddrive2/app scripts tests
+        run: uv run --with ruff==0.16.0 python .github/scripts/check_python.py lint
+
+      - name: Python syntax
+        run: python .github/scripts/check_python.py compile
 
       - name: Build and self-test Windows EXE once
         timeout-minutes: 20
@@ -207,7 +213,7 @@ jobs:
         run: |
           command -v bash shellcheck rclone docker
           docker info >/dev/null
-          python -m unittest discover -s tests -v
+          python .github/scripts/check_python.py test
 
       - name: Validate edition Compose and build the runtime image
         run: |

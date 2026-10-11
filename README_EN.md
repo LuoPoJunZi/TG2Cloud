@@ -18,6 +18,7 @@
   <a href="#windows-gui-deployment">Deployment Guide</a> ·
   <a href="#optional-vps-installer">VPS Installer</a> ·
   <a href="docs/UNINSTALL.md">Uninstall Guide</a> ·
+  <a href="docs/README.md">Documentation Index</a> ·
   <a href="#bot-commands">Bot Commands</a> ·
   <a href="#troubleshooting">Troubleshooting</a> ·
   <a href="RELEASE_NOTES.md">Release Notes</a>

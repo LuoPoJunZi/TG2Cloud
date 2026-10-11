@@ -119,6 +119,8 @@ npm run build
 npm test
 ```
 
+本仓库的版本、公开脚本命令和品牌副本一致性测试会读取上级 TG2Cloud 源文档与 `assets/brand/`，因此完整检查需要保留仓库目录结构；只拷贝 `website/` 可以构建与预览，但不能完成这些仓库级测试。来源与同步职责见 [仓库维护规范](../docs/development/REPOSITORY.md)。
+
 不要编辑生成后的 `dist/` 来维护文章；下次构建会覆盖它。`dist/` 已加入 `.gitignore`，由 Pages 每次重新构建。
 
 ### Markdown 支持范围
@@ -140,6 +142,8 @@ npm test
 ## 品牌与截图
 
 页头与浏览器图标直接复制自主仓库 `assets/brand/`，不重新绘制或修改，确保文档站与部署器使用同一套 TG2Cloud 正式品牌资源。首页流程图是 HTML/CSS 工作原理示意，不是正在运行的任务状态或部署器截图。
+
+`npm test` 会逐字节校验 SVG、32/64/256 PNG 和 favicon ICO 五个副本。正式资源改变时，从 `assets/brand/` 手动复制对应文件后再检查；测试不会自动覆盖资源或重新生成图标。
 
 没有放置“安全占位截图”，也未嵌入伪造的实机界面。今后加入真实截图，应先移除 IP、SSH 凭据、Bot Token、API Hash、Cookie、网盘 Token、私人文件名等敏感信息，再放进 `public/images/` 并用普通 Markdown 图片语法引用。
 

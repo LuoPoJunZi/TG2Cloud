@@ -13,6 +13,10 @@ on:
       - "tests/test_lan*.py"
       - "tests/test_uninstaller.py"
       - "tests/test_proxy_host_compat.py"
+      - "tests/test_repository.py"
+      - ".github/scripts/check_python.py"
+      - ".github/scripts/check_repository.py"
+      - ".ruff.toml"
       - "proxy_maintenance.py"
       - "deployer_products.py"
       - "domain_proxy.py"
@@ -31,6 +35,10 @@ on:
       - "tests/test_lan*.py"
       - "tests/test_uninstaller.py"
       - "tests/test_proxy_host_compat.py"
+      - "tests/test_repository.py"
+      - ".github/scripts/check_python.py"
+      - ".github/scripts/check_repository.py"
+      - ".ruff.toml"
       - "proxy_maintenance.py"
       - "deployer_products.py"
       - "domain_proxy.py"
@@ -71,10 +79,7 @@ jobs:
           shellcheck install.sh install-lan.sh uninstall.sh
       - name: Offline tests (no VPS or Docker calls)
         run: |
-          python -B -m unittest discover -s tests -p test_vps_installer.py -v
-          python -B -m unittest discover -s tests -p test_lan_installer.py -v
-          python -B -m unittest discover -s tests -p test_uninstaller.py -v
-          python -B -m unittest discover -s tests -p test_proxy_host_compat.py -v
+          python .github/scripts/check_python.py test --scope cli
       - name: Isolated LAN Nginx checks (no product deployment)
         if: matrix.python == '3.13'
         env:
@@ -82,8 +87,8 @@ jobs:
         run: python -B -m unittest discover -s tests -p test_lan_gateway_docker.py -v
       - name: Python lint and syntax
         run: |
-          ruff check scripts domain_proxy.py proxy_maintenance.py tests/test_vps_installer.py tests/test_proxy_host_compat.py tests/test_lan_installer.py tests/test_lan_gateway_docker.py tests/test_uninstaller.py
-          python -m compileall -q scripts domain_proxy.py proxy_maintenance.py tests/test_vps_installer.py tests/test_proxy_host_compat.py tests/test_lan_installer.py tests/test_lan_gateway_docker.py tests/test_uninstaller.py
+          python .github/scripts/check_python.py lint --scope cli
+          python .github/scripts/check_python.py compile --scope cli
           bandit -q -r scripts
       - name: Whitespace check
         run: git diff --check

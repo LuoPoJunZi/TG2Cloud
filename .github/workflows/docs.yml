@@ -7,6 +7,15 @@ on:
       - main
     paths:
       - "RELEASE_NOTES.md"
+      - "README.md"
+      - "README_EN.md"
+      - "CONTRIBUTING.md"
+      - "docs/**"
+      - ".editorconfig"
+      - ".ruff.toml"
+      - ".github/scripts/check_python.py"
+      - ".github/scripts/check_repository.py"
+      - "tests/test_repository.py"
       - ".github/scripts/validate_release_notes.py"
       - ".github/workflows/docs.yml"
   pull_request:
@@ -14,6 +23,15 @@ on:
       - main
     paths:
       - "RELEASE_NOTES.md"
+      - "README.md"
+      - "README_EN.md"
+      - "CONTRIBUTING.md"
+      - "docs/**"
+      - ".editorconfig"
+      - ".ruff.toml"
+      - ".github/scripts/check_python.py"
+      - ".github/scripts/check_repository.py"
+      - "tests/test_repository.py"
       - ".github/scripts/validate_release_notes.py"
       - ".github/workflows/docs.yml"
 
@@ -34,3 +52,9 @@ jobs:
 
       - name: Validate GitHub Release notes layout
         run: python .github/scripts/validate_release_notes.py RELEASE_NOTES.md
+
+      - name: Validate repository conventions and document index
+        run: python -B -m unittest discover -s tests -p test_repository.py -v
+
+      - name: Check public repository file inventory
+        run: python -B .github/scripts/check_repository.py

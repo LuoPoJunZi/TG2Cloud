@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
+import {createHash} from 'node:crypto';
 
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 const config=JSON.parse(await read('site.config.json'));
@@ -84,7 +85,8 @@ test('VPS one-line entry is consistent with the root user guide',async()=>{
   const download=await read('docs/download.md');
   const guide=await readFile(new URL('../../docs/VPS-INSTALL.md',import.meta.url),'utf8');
   const readme=await readFile(new URL('../../README.md',import.meta.url),'utf8');
-  for(const content of [download,guide,readme])assert.ok(content.includes(command));
+  const english=await readFile(new URL('../../README_EN.md',import.meta.url),'utf8');
+  for(const content of [download,guide,readme,english])assert.ok(content.includes(command));
   assert.ok(download.includes('只读预检'));
   assert.ok(download.includes('OpenList 脚本实机验收暂缓'));
 });
@@ -92,10 +94,11 @@ test('VPS one-line entry is consistent with the root user guide',async()=>{
 test('independent LAN and uninstall entries agree with root guides',async()=>{
   const download=await read('docs/download.md');
   const readme=await readFile(new URL('../../README.md',import.meta.url),'utf8');
+  const english=await readFile(new URL('../../README_EN.md',import.meta.url),'utf8');
   for(const [script,guide] of [['install-lan.sh','LAN-INSTALL.md'],['uninstall.sh','UNINSTALL.md']]){
     const command=`bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/${script})`;
     const source=await readFile(new URL(`../../docs/${guide}`,import.meta.url),'utf8');
-    for(const content of [download,readme,source])assert.ok(content.includes(command),script);
+    for(const content of [download,readme,english,source])assert.ok(content.includes(command),script);
   }
   assert.ok(download.includes('卸载不是升级步骤'));
   assert.ok(download.includes('完整清理增强仍待新的实机验收'));
@@ -105,4 +108,18 @@ test('independent LAN and uninstall entries agree with root guides',async()=>{
   const uninstallCommands=download.match(/^bash .*\/uninstall\.sh\).*$/gm)||[];
   assert.ok(uninstallCommands.length>0);
   assert.ok(uninstallCommands.every(command=>command.includes('--check')));
+});
+
+test('website brand copies match the canonical repository assets byte for byte',async()=>{
+  const pairs=[
+    ['tg2cloud.ico','favicon.ico'],
+    ...['tg2cloud-icon.svg','tg2cloud-icon-32.png','tg2cloud-icon-64.png','tg2cloud-icon-256.png']
+      .map(name=>[name,`assets/${name}`])
+  ];
+  const digest=buffer=>createHash('sha256').update(buffer).digest('hex');
+  for(const [canonical,copy] of pairs){
+    const original=await readFile(new URL(`../../assets/brand/${canonical}`,import.meta.url));
+    const website=await readFile(new URL(`../public/${copy}`,import.meta.url));
+    assert.equal(digest(website),digest(original),`${copy} must be copied unchanged from assets/brand/${canonical}`);
+  }
 });

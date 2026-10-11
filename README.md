@@ -18,6 +18,7 @@
   <a href="#windows-图形化部署">部署指南</a> ·
   <a href="#可选-vps-一键脚本">VPS 一键脚本</a> ·
   <a href="docs/UNINSTALL.md">卸载指南</a> ·
+  <a href="docs/README.md">文档目录</a> ·
   <a href="#bot-命令">Bot 命令</a> ·
   <a href="#常见问题">常见问题</a> ·
   <a href="RELEASE_NOTES.md">发布说明</a>
