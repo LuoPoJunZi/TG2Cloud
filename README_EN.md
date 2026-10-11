@@ -47,7 +47,7 @@ This repository evolved from [whyhhh20/TG115](https://github.com/whyhhh20/TG115)
 
 > Current version: **TG2Cloud v1.2.0**
 >
-> This version fixes interrupted HTTPS recovery, host Python 3.10 maintenance compatibility, saved-credential display after resuming setup, and missing-tool diagnostics on minimal VPS systems. Both PySide6 deployers remain the primary installers; the optional VPS wizard adds confirmed viewing of saved credentials. GitHub Actions tests, builds and self-tests the official Windows EXEs from the matching tag; the Release reuses those artifacts and their actual SHA256 values. See the [release notes](RELEASE_NOTES.md) for changes and pending acceptance.
+> This version adds independent LAN installation and removal wizards, repeats the LAN management address before verification, and protects externally referenced directories during removal. Both PySide6 deployers remain the primary installers; their mandatory HTTPS and stable transfer behavior are unchanged. GitHub Actions tests, builds and self-tests the official Windows EXEs from the matching tag; the Release reuses those artifacts and their actual SHA256 values. See the [release notes](RELEASE_NOTES.md) for pending real-host removal and other acceptance limits.
 
 > Only transfer content that you are authorized to save, back up, and use. Follow the laws and terms that apply to Telegram, your cloud provider, CloudDrive2/OpenList, the content source, and your jurisdiction.
 
@@ -383,15 +383,21 @@ The online bootstrap pins its helper code to an immutable CI-validated commit; b
 
 The entry binds only the selected private address, does not use ports 80/443 or request certificates, and refuses to convert existing HTTPS instances. HTTP is unencrypted: use only a trusted LAN and never forward it publicly. Upgrades preserve existing configuration and the saved IP; the loopback backend and internal Bot WebDAV remain unchanged. See the [LAN installation and safety guide (Chinese)](docs/LAN-INSTALL.md). The mandatory HTTPS rules below still apply to the original EXEs and public VPS installer.
 
-## Independent uninstaller (local validation)
+## Independent uninstaller
 
 [View uninstall script](uninstall.sh) · [Uninstall guide (Chinese)](docs/UNINSTALL.md)
 
 The new `uninstall.sh` removes the selected managed Bot, gateway, project network, HTTPS route and LAN entry at standard installation paths. TG2Cloud's own Nginx/Certbot containers are removed only when no HTTPS route remains. Data and historical backups are retained by default; `--purge-data` needs a separate typed confirmation. System Docker/Nginx, unrelated containers, named volumes, image caches and legacy TG115 instances are not removed.
 
-Online one-line uninstaller (pending publication):
+Online one-line uninstaller:
 
-> **Not available yet; do not run this command now.** The script has not been pushed and the immutable source pin remains disabled. After publication, CI and review, this command will start the wizard, ask which Edition to remove, preview the plan and require confirmation.
+> The bootstrap pins its helpers to an immutable, reviewed, CI-validated commit. **Real VPS/NAS removal is still untested: finish active tasks, back up and run the read-only preview first.** The wizard asks which Edition to remove, previews resources and requires confirmation, defaulting to N; there is no unattended forced deletion.
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
+```
+
+After reviewing the plan, start the interactive wizard:
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
@@ -404,7 +410,7 @@ bash ./uninstall.sh --edition all --check
 bash ./uninstall.sh --edition all
 ```
 
-Select `--edition clouddrive2` or `--edition openlist` to remove only one Edition. The online bootstrap remains disabled pending a reviewed, CI-validated source commit. Real VPS/NAS removal has not been tested in this round. See the [uninstall guide (Chinese)](docs/UNINSTALL.md) for data deletion, FUSE mount protection, shared proxy handling and retained directories.
+Select `--edition clouddrive2` or `--edition openlist` to remove only one Edition. A successful `--check` is not a completed uninstall. See the [uninstall guide (Chinese)](docs/UNINSTALL.md) for data deletion, FUSE mount protection, shared proxy handling and retained directories.
 
 ## Mandatory Domain HTTPS Access
 

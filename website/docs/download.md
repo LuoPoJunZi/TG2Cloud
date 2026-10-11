@@ -89,7 +89,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 卸载不是升级步骤。v1.2.0 增加独立入口，默认保留实例数据、证书和历史备份，不卸载系统 Docker/Nginx；真实 VPS/NAS 卸载尚未验收。仅在确实需要移除服务时参考 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
 
-在线入口目前待 CI 验证后启用。启用后可先用以下只读命令查看范围；`--check` 不会停止容器或删除数据：
+在线入口固定到审查并通过 CI 的源码 commit。可先用以下只读命令查看范围；`--check` 不会停止容器或删除数据：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check

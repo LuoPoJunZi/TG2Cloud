@@ -47,7 +47,7 @@ Your Cloud
 
 > 当前版本：**TG2Cloud v1.2.0**
 >
-> 本版修复 HTTPS 中断回退、宿主 Python 3.10 维护兼容、首次安装失败后续做的凭据展示及精简 VPS 依赖提示。两个 PySide6 部署器仍是主力；可选 VPS 向导新增确认后查看已保存凭据。正式 Windows EXE 由 GitHub Actions 从对应 Tag 测试、构建并自检，Release 复用本次产物及实际 SHA256。变更与待验收范围见 [发布说明](RELEASE_NOTES.md)。
+> 本版增加独立内网安装与卸载向导，内网验收前再次显示完整管理地址，并补齐卸载的外部目录引用保护。两个 PySide6 部署器仍是主力，原强制 HTTPS 与传输核心保持原行为。正式 Windows EXE 由 GitHub Actions 从对应 Tag 测试、构建并自检，Release 复用本次产物及实际 SHA256。实机卸载等未验收范围见 [发布说明](RELEASE_NOTES.md)。
 
 > 仅转存你有权保存、备份和使用的内容，并遵守 Telegram、所用云存储、CloudDrive2/OpenList、内容来源平台及所在地的法律法规和服务条款。
 
@@ -384,15 +384,21 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 入口只监听指定内网地址，不占用 80/443、不签发证书，不接管已有 HTTPS 实例。HTTP 不加密，仅用于可信内网，禁止公网端口转发。升级保留原配置与已保存 IP；网关后端和 Bot 内部 WebDAV 不变。详见 [内网安装与安全边界](docs/LAN-INSTALL.md)。以下强制 HTTPS 规则仍适用于原 EXE / 公网 VPS 安装。
 
-## 独立卸载脚本（本地验证阶段）
+## 独立卸载脚本
 
 [查看卸载脚本](uninstall.sh) · [卸载使用说明](docs/UNINSTALL.md)
 
 新增 `uninstall.sh` 可统一移除标准部署的所选 Bot、云网关、项目网络、HTTPS 路由和内网入口；没有剩余 HTTPS 路由时才移除 TG2Cloud 自己的 Nginx/Certbot 容器。默认保留业务数据和历史备份，`--purge-data` 需要额外删除确认。不卸载系统 Docker/Nginx，不清理其他容器、命名卷、镜像缓存或旧 TG115。
 
-在线一键卸载命令（待发布启用）：
+在线一键卸载命令：
 
-> **目前不可用，请勿立即执行。** 卸载脚本尚未推送，在线引导的固定源码版本也尚未启用。提交、CI 和审核通过后，才能使用下面的命令；届时向导会询问要卸载的 Edition，并展示计划、等待确认。
+> 在线引导固定到已审查并通过 CI 的不可变源码提交。**真实 VPS/NAS 卸载尚未验收，请先结束任务、备份并执行只读预检。** 实际向导询问所选 Edition，展示资源范围后等待默认 N 的确认；没有无人值守强制删除。
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
+```
+
+核对预检范围后，运行交互向导：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
@@ -405,7 +411,7 @@ bash ./uninstall.sh --edition all --check
 bash ./uninstall.sh --edition all
 ```
 
-也可选择 `--edition clouddrive2` 或 `--edition openlist`。在线引导暂未启用，等待提交、CI 和审核；本轮未进行真实 VPS/NAS 卸载。数据删除、FUSE 挂载保护、共享代理和保留目录边界见 [卸载说明](docs/UNINSTALL.md)。
+也可选择 `--edition clouddrive2` 或 `--edition openlist`。`--check` 通过不是卸载成功；数据删除、FUSE 挂载保护、共享代理和保留目录边界见 [卸载说明](docs/UNINSTALL.md)。
 
 ## 强制 HTTPS 管理入口
 

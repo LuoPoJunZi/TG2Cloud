@@ -2,11 +2,11 @@
 
 `uninstall.sh` 适用于标准目录下的 CloudDrive2 / OpenList 受管 Docker 部署，包括公网 VPS 的 HTTPS 和独立内网管理入口。它独立于 `install.sh`、`install-lan.sh` 和两个 Windows EXE，不改动安装器或 Bot 业务流程。
 
-> 本轮为本地实现和离线回归阶段，尚未提交推送，也未进行真实 VPS / NAS 卸载验收。在线引导的不可变源码 pin 暂不启用；不要把当前 GitHub 下载链接当作已经可用的卸载命令。提交、CI 和审核通过后才能启用公开单行入口。当前源码版本为 v1.2.0；正式 EXE 由 GitHub Actions 构建，不从本机上传。
+> 当前源码版本为 v1.2.0。在线引导固定到已审查且通过 Windows/Linux、Python 3.10/3.13 CI 的不可变提交 `5b85703a2a484788d4b51428032d20f61c55cd4d`。**真实 VPS / NAS 卸载尚未验收**；请先结束任务、独立备份并只读预检，模拟测试不代表生产删除已验证。正式 EXE 由 GitHub Actions 构建，不从本机上传。
 
-## 本地源码运行
+## 在线一键入口
 
-在线入口待 CI 验证并启用固定 commit 后，先以只读方式检查：
+先以只读方式检查；要求信任本仓库，可以先下载检查脚本：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
@@ -17,6 +17,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
 ```
+
+## 本地源码运行
 
 在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu x86_64、Python 3.10+、Bash、本机默认 Docker；涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`。不会替你安装、升级、重启或卸载系统软件。
 

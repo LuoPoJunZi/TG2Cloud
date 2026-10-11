@@ -112,7 +112,7 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 ## 入口与稳定部署版本
 
-单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到已通过 CI 的不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `1243be0ac91fc3ca5d90eec55c94f41217799ee6`，模块版本源为 `1.1.5`，包含 HTTPS 中断回退、Python 3.10 维护兼容、续做凭据展示和明确的依赖提示。该提交的 Windows/Linux CI、独立脚本 Python 3.10/3.13 矩阵及两 Edition 非 root 候选镜像检查已通过。维护者只在新向导模块完成审查与 CI 后更新 pin。
+单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到已通过 CI 的不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `5b85703a2a484788d4b51428032d20f61c55cd4d`，模块版本源为 `1.2.0`，包含 HTTPS 中断回退、Python 3.10 维护兼容、续做凭据展示和明确的依赖提示。该提交的 Windows/Linux CI、独立脚本 Python 3.10/3.13 矩阵及两 Edition 非 root 候选镜像检查已通过。维护者只在新向导模块完成审查与 CI 后更新 pin。
 
 这是向导源码身份，不是要部署的 Bot 版本。独立脚本另行通过 GitHub `/releases/latest` 排除草稿及预发布，解析正式 Tag 到不可变 commit；所有实际安装的 payload 来自这个正式 commit。向导会核对 Tag、commit 和 payload 版本。Release Tag 在引导后变化、API 限流、辅助模块缺失或版本不匹配时停止；不会退回 `main` 或 RC 的业务代码。
 
@@ -173,7 +173,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 每项默认不显示，仅在确认后写入当前私有终端，不进入普通日志。OpenList 显示的是保存的初始化管理员密码；如果后来在管理页改过密码，这不是当前密码。请避免旁观或录屏，不要把完整 `.env` 贴进日志、聊天或 Issue。该参数不能与 `--check`、`--configure-https` 或 `--verify` 组合。
 
-公开单行入口固定到前文记录的 v1.1.5 向导源码，包含这些修复和新参数；实际 Bot payload 仍只取最新正式稳定 Release。使用已下载的旧入口时，重新下载才能获得新向导；从本地 checkout 使用时，按该 checkout 的参数执行。
+公开单行入口固定到前文记录的 v1.2.0 向导源码，包含这些修复和新参数；实际 Bot payload 仍只取最新正式稳定 Release。使用已下载的旧入口时，重新下载才能获得新向导；从本地 checkout 使用时，按该 checkout 的参数执行。
 
 HTTPS 配置收到 Ctrl+C、TERM 或 HUP 时会尝试恢复原代理配置；状态提交与回退期间的重复信号会延后处理，保留原有命令超时。请等待退出后核对状态，不用强制杀进程加速；断网、断电、SIGKILL 或回退命令失败时仍可能需要人工恢复。已提交的新路由不会仅因提交结束时收到取消信号而恢复成旧运行配置。
 
@@ -203,7 +203,7 @@ cd /opt/tg2cloud-openlist && docker compose down
 
 这里不使用 `--volumes`、`--rmi`、`--remove-orphans` 或目录删除命令。标准 TG2Cloud 的持久化数据使用宿主机目录挂载，`.env`、Session、SQLite、下载、云网关配置与备份仍保留；Docker 引擎和另一 Edition 不会由这两条标准项目命令卸载。`down` 的范围见 [Docker 官方说明](https://docs.docker.com/reference/cli/docker/compose/down/)。
 
-**这不是完整的一键卸载**：共享 Nginx/Certbot、证书和已保存 HTTPS 路由仍存在，本节两条命令也不会移除独立 LAN 入口。需要统一移除受管资源与入口时，使用 [独立卸载向导](UNINSTALL.md)；默认保留数据，删除数据需要额外确认，不卸载系统 Docker / Nginx。目前新增卸载入口仅完成本地实现，在线命令待提交和 CI 审核后启用。
+**这不是完整的一键卸载**：共享 Nginx/Certbot、证书和已保存 HTTPS 路由仍存在，本节两条命令也不会移除独立 LAN 入口。需要统一移除受管资源与入口时，使用 [独立卸载向导](UNINSTALL.md)；默认保留数据，删除数据需要额外确认，不卸载系统 Docker / Nginx。独立卸载已固定到审查并通过 CI 的源码；真实 VPS/NAS 卸载仍未验收，请先只读预检和备份。
 
 ## 本地验证与待验收
 
