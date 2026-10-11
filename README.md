@@ -388,11 +388,11 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 [查看卸载脚本](uninstall.sh) · [卸载使用说明](docs/UNINSTALL.md)
 
-新增 `uninstall.sh` 可统一移除标准部署的所选 Bot、云网关、项目网络、HTTPS 路由和内网入口；没有剩余 HTTPS 路由时才移除 TG2Cloud 自己的 Nginx/Certbot 容器。默认保留业务数据和历史备份，`--purge-data` 需要额外删除确认。不卸载系统 Docker/Nginx，不清理其他容器、命名卷、镜像缓存或旧 TG115。
+`uninstall.sh` 可统一移除标准部署的所选 Bot、云网关、项目网络、HTTPS 路由和内网入口；没有剩余 HTTPS 路由时才移除 TG2Cloud 自己的 Nginx/Certbot 容器。本地增强版默认完整清理所选配置、数据库、下载及可识别历史备份，需要确认并输入 `DELETE ALL <edition/all>`；`--keep-data` 明确保留数据，原 `--purge-data` 仍保留备份。不卸载系统 Docker/Nginx，不清理其他容器、命名卷、镜像缓存或旧 TG115，也不删除云端文件。
 
 在线一键卸载命令：
 
-> 在线引导固定到已审查并通过 CI 的不可变源码提交。**真实 VPS/NAS 卸载尚未验收，请先结束任务、备份并执行只读预检。** 实际向导询问所选 Edition，展示资源范围后等待默认 N 的确认；没有无人值守强制删除。
+> 用户已反馈原保留数据卸载在其 VPS 验收通过；新增完整清理仍待实机验证。**完整清理增强尚未发布，在线入口仍固定到原保留数据版本，不能直接用在线命令调用新增选项。** 更新固定源码前，完整清理请使用本地修改后的源码。先结束任务、把备份保存到清理范围之外并只读预检；没有无人值守强制删除。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
@@ -404,14 +404,14 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
 ```
 
-在目标 Linux 的源码根目录以 root 运行，先预览，再确认卸载：
+在目标 Linux 的修改后源码根目录以 root 运行，先预览，再双重确认完整清理：
 
 ```bash
 bash ./uninstall.sh --edition all --check
 bash ./uninstall.sh --edition all
 ```
 
-也可选择 `--edition clouddrive2` 或 `--edition openlist`。`--check` 通过不是卸载成功；数据删除、FUSE 挂载保护、共享代理和保留目录边界见 [卸载说明](docs/UNINSTALL.md)。
+也可选择 `--edition clouddrive2` 或 `--edition openlist`；保留配置和备份请加 `--keep-data`。`--check` 通过不是卸载成功；共享证书仍被另一 Edition 使用时不删除。“完整清理”不保证回滚系统包、镜像缓存或 Cloudflare DNS 到安装前，详细边界见 [卸载说明](docs/UNINSTALL.md)。
 
 ## 强制 HTTPS 管理入口
 
@@ -615,7 +615,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 
 CloudDrive2 没有手动“创建备份”UI；重新部署前的内部备份包含程序/`.env`/配置（含现有 `rclone.conf`）和可用时的 SQLite 一致性快照，不包含下载、日志及 CloudDrive2 状态目录。OpenList 的手动安全备份包含程序配置归档（含 `.env`、`rclone.conf`）、可用时的 SQLite 快照，以及已初始化的 OpenList 状态（排除其临时文件和日志）；不包含下载、TG2Cloud 日志或云端文件。备份文件含敏感凭据，目录权限为 `700`、文件尽量为 `600`，不得公开上传。
 
-CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList 升级/手动备份位于 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的 TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.2.0 仍不提供正式自动 Restore；卸载使用独立的 [卸载脚本](docs/UNINSTALL.md)，不是升级步骤，默认保留业务数据和历史备份。
+CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList 升级/手动备份位于 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的 TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.2.0 仍不提供正式自动 Restore；卸载使用独立的 [卸载脚本](docs/UNINSTALL.md)，不是升级步骤。新增本地完整清理会删除所选备份；需要保留时明确使用 `--keep-data`，在线原固定版本暂保持旧行为。
 
 ## 常见问题
 

@@ -387,11 +387,11 @@ The entry binds only the selected private address, does not use ports 80/443 or 
 
 [View uninstall script](uninstall.sh) · [Uninstall guide (Chinese)](docs/UNINSTALL.md)
 
-The new `uninstall.sh` removes the selected managed Bot, gateway, project network, HTTPS route and LAN entry at standard installation paths. TG2Cloud's own Nginx/Certbot containers are removed only when no HTTPS route remains. Data and historical backups are retained by default; `--purge-data` needs a separate typed confirmation. System Docker/Nginx, unrelated containers, named volumes, image caches and legacy TG115 instances are not removed.
+`uninstall.sh` removes the selected managed Bot, gateway, project network, HTTPS route and LAN entry at standard installation paths. TG2Cloud's own Nginx/Certbot containers are removed only when no HTTPS route remains. The local enhanced version defaults to removing selected configuration, databases, downloads and recognized historical backups after confirmation and typing `DELETE ALL <edition/all>`. Use `--keep-data` to retain data; the existing `--purge-data` option still retains backups. System Docker/Nginx, unrelated containers, named volumes, image caches, legacy TG115 instances and cloud files are not removed.
 
 Online one-line uninstaller:
 
-> The bootstrap pins its helpers to an immutable, reviewed, CI-validated commit. **Real VPS/NAS removal is still untested: finish active tasks, back up and run the read-only preview first.** The wizard asks which Edition to remove, previews resources and requires confirmation, defaulting to N; there is no unattended forced deletion.
+> The user reported successful VPS acceptance of the original data-preserving uninstaller; the new complete cleanup still requires real-host testing. **This enhancement has not been published: the online bootstrap remains pinned to the old data-preserving implementation and does not support the new options yet.** Use the modified local checkout until a reviewed, CI-validated pin is published. Finish active tasks, save backups outside the cleanup paths and preview first; there is no unattended forced deletion.
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
@@ -403,14 +403,14 @@ After reviewing the plan, start the interactive wizard:
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
 ```
 
-As root in the source checkout on the target Linux host, preview first:
+As root in the modified checkout on the target Linux host, preview complete cleanup before both confirmations:
 
 ```bash
 bash ./uninstall.sh --edition all --check
 bash ./uninstall.sh --edition all
 ```
 
-Select `--edition clouddrive2` or `--edition openlist` to remove only one Edition. A successful `--check` is not a completed uninstall. See the [uninstall guide (Chinese)](docs/UNINSTALL.md) for data deletion, FUSE mount protection, shared proxy handling and retained directories.
+Select `--edition clouddrive2` or `--edition openlist` to remove only one Edition; add `--keep-data` to retain configuration and backups. Shared certificates still needed by another Edition are preserved. A successful `--check` is not a completed uninstall. Complete cleanup is not a rollback of system packages, image caches or Cloudflare DNS. See the [uninstall guide (Chinese)](docs/UNINSTALL.md) for the exact boundaries.
 
 ## Mandatory Domain HTTPS Access
 
@@ -599,7 +599,7 @@ CloudDrive2 has no manual backup button. Its redeployment protection includes pr
 
 Backups contain secrets. Directories are mode `700` and files are set to `600` where possible. Never upload them publicly.
 
-CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.2.0 still has no general Restore function. Removal uses the [independent uninstaller](docs/UNINSTALL.md), not the upgrade flow, and retains business data and backups by default.
+CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.2.0 still has no general Restore function. Removal uses the [independent uninstaller](docs/UNINSTALL.md), not the upgrade flow. The local complete-cleanup enhancement deletes selected backups; use `--keep-data` to retain them. The online pinned version retains its old behavior until publication.
 
 ## Troubleshooting
 

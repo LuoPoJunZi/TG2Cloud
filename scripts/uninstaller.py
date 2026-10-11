@@ -11,7 +11,7 @@ import shutil
 import signal
 import stat
 from contextlib import ExitStack
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from deployer_products import PRODUCTS, ProductProfile
@@ -25,6 +25,8 @@ from domain_proxy import (
     normalize_state,
     proxy_lock_command,
 )
+from proxy_maintenance import ARCHIVE_NAME
+from proxy_maintenance import BACKUP_ROOT as PROXY_BACKUP_ROOT
 from scripts import vps_installer as vps
 from scripts.vps_runtime import LocalSession, SafeLog, edition_lock
 
@@ -212,9 +214,52 @@ class Plan:
     state: dict
     remove_proxy: bool
     purge_data: bool
+    purge_backups: bool = False
+    backups: dict = field(default_factory=dict)
 
 
-def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: bool = False) -> Plan:
+def other_edition_present(editions: tuple[str, ...], containers: dict) -> bool:
+    """Retained data also needs its shared certificates, not just live containers."""
+    return any(PRODUCTS[key].bot_container in containers or PRODUCTS[key].storage_container in containers
+               or Path(PRODUCTS[key].install_dir).exists() or (LAN_ROOT / key).exists()
+               for key in PRODUCTS if key not in editions)
+
+
+def backup_targets(editions: tuple[str, ...], containers: dict, remove_proxy: bool) -> dict:
+    targets = {}
+    for key in editions:
+        kinds = r"config-[A-Za-z0-9]{8}\.tar\.gz|database-[A-Za-z0-9]{8}\.db|env-[A-Za-z0-9]{8}\.env"
+        if PRODUCTS[key].is_openlist:
+            kinds += r"|openlist-state-[A-Za-z0-9]{8}\.tar\.gz"
+        targets[Path(PRODUCTS[key].backup_dir)] = re.compile(kinds)
+    if remove_proxy and not other_edition_present(editions, containers):
+        targets[PROXY_BACKUP_ROOT] = ARCHIVE_NAME
+    return targets
+
+
+def backup_identity(root: Path, pattern: re.Pattern) -> tuple | None:
+    """Inspect only generated file names and metadata, never backup secrets."""
+    checked_path(root)
+    if not root.exists():
+        return None
+    info = root.stat()
+    if os.name == "posix" and (info.st_uid != os.getuid() or info.st_mode & 0o077):
+        raise UninstallError("备份目录所有者/权限不符合受管私密目录；停止")
+    entries = []
+    for child in sorted(root.iterdir()):
+        metadata = child.lstat()
+        if (not pattern.fullmatch(child.name) or not stat.S_ISREG(metadata.st_mode)
+                or child.is_symlink() or child.resolve() != child
+                or (os.name == "posix" and (metadata.st_uid != os.getuid() or metadata.st_mode & 0o077))):
+            raise UninstallError("备份目录含未知文件、链接或不安全归属；停止，不按目录名猜测删除")
+        entries.append((child.name, metadata.st_dev, metadata.st_ino, metadata.st_size,
+                        metadata.st_mtime_ns, metadata.st_ctime_ns))
+    return (info.st_dev, info.st_ino, info.st_mode, info.st_uid, tuple(entries))
+
+
+def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: bool = False,
+               purge_backups: bool = False) -> Plan:
+    purge_data = purge_data or purge_backups
     containers, networks = docker_snapshot(session)
     state = read_state()
     selected = {}
@@ -301,8 +346,12 @@ def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: 
                 if not all(re.search(r"(?m)^    container_name: " + re.escape(name) + r"\s*$", text)
                            for name in (PRODUCTS[key].bot_container, PRODUCTS[key].storage_container)):
                     raise UninstallError("残留目录不是所选 Edition 的标准 payload；不删除")
-        purge_preflight(editions, containers, selected, remove_proxy)
-    return Plan(editions, selected, selected_networks, state, remove_proxy, purge_data)
+        targets = backup_targets(editions, containers, remove_proxy) if purge_backups else {}
+        backups = {root: backup_identity(root, pattern) for root, pattern in targets.items()}
+        purge_preflight(editions, containers, selected, remove_proxy, tuple(targets))
+    else:
+        backups = {}
+    return Plan(editions, selected, selected_networks, state, remove_proxy, purge_data, purge_backups, backups)
 
 
 def mountpoints() -> tuple[Path, ...]:
@@ -320,13 +369,14 @@ def mountpoints() -> tuple[Path, ...]:
     return tuple(result)
 
 
-def purge_preflight(editions: tuple[str, ...], containers: dict, selected: dict, remove_proxy: bool) -> None:
+def purge_preflight(editions: tuple[str, ...], containers: dict, selected: dict, remove_proxy: bool,
+                    backups: tuple[Path, ...] = ()) -> None:
     roots = [Path(PRODUCTS[key].install_dir) for key in editions]
     # Never delete shared certificates while another Edition is still present,
     # even if that Edition has no committed HTTPS route yet.
-    if remove_proxy and not any(PRODUCTS[key].bot_container in containers or PRODUCTS[key].storage_container in containers
-                                for key in PRODUCTS if key not in editions):
+    if remove_proxy and not other_edition_present(editions, containers):
         roots.append(Path(PROXY_ROOT))
+    roots.extend(backups)
     points = mountpoints()
     for root in roots:
         checked_path(root)
@@ -383,7 +433,7 @@ def execute(plan: Plan, session: LocalSession, log: SafeLog) -> None:
         for key in sorted(plan.editions):
             locks.enter_context(edition_lock(LOCK_ROOT / (key + ".lock")))
         locks.enter_context(session.hold_lock(proxy_lock_command()))
-        if build_plan(plan.editions, session, purge_data=plan.purge_data) != plan:
+        if build_plan(plan.editions, session, purge_data=plan.purge_data, purge_backups=plan.purge_backups) != plan:
             raise UninstallError("确认期间实例/网络/HTTPS 状态发生变化；停止，请重新预检")
         # Reuse the existing transactional route removal. Abort before touching
         # Bot/gateway containers if a remaining route cannot pass its checks.
@@ -449,18 +499,32 @@ def execute(plan: Plan, session: LocalSession, log: SafeLog) -> None:
                 delete_tree(directory, {LAN_ROOT / value for value in plan.editions})
                 log("已移除内网入口配置：" + str(directory))
         if plan.purge_data:
-            purge_preflight(plan.editions, containers, {}, plan.remove_proxy)
+            targets = backup_targets(plan.editions, containers, plan.remove_proxy) if plan.purge_backups else {}
+            if {root: backup_identity(root, pattern) for root, pattern in targets.items()} != plan.backups:
+                raise UninstallError("备份范围或内容在卸载期间变化；停止数据删除，请重新预检")
+            purge_preflight(plan.editions, containers, {}, plan.remove_proxy, tuple(targets))
             roots = {Path(PRODUCTS[key].install_dir) for key in plan.editions}
             for root in sorted(roots):
                 delete_tree(root, roots)
+                if root.exists():
+                    raise UninstallError("本地实例目录删除后复检失败；停止，不输出成功")
                 log("已删除本地实例目录：" + str(root))
-            other_present = any(PRODUCTS[key].bot_container in containers or PRODUCTS[key].storage_container in containers
-                                for key in PRODUCTS if key not in plan.editions)
+            other_present = other_edition_present(plan.editions, containers)
             if plan.remove_proxy and not other_present:
                 roots = {Path(PROXY_ROOT) / name for name in PROXY_CHILDREN}
                 for root in sorted(roots):
                     delete_tree(root, roots)
+                    if root.exists():
+                        raise UninstallError("共享代理配置/证书删除后复检失败")
                 log("已删除不再使用的共享代理配置/证书；事务锁文件保留。")
+            for root, pattern in sorted(targets.items()):
+                if backup_identity(root, pattern) != plan.backups[root]:
+                    raise UninstallError("备份在删除前变化；停止，不删除未经确认的新备份")
+                if plan.backups[root] is not None:
+                    delete_tree(root, set(targets))
+                    if root.exists():
+                        raise UninstallError("备份目录删除后复检失败；停止，不输出成功")
+                    log("已删除历史备份目录：" + str(root))
         state = read_state()
         if set(state["domains"]) & set(plan.editions):
             raise UninstallError("所选 HTTPS 路由仍存在；卸载复检未通过")
@@ -486,8 +550,12 @@ def preview(plan: Plan, log: SafeLog) -> None:
     log("共享 Nginx/Certbot：" + ("没有剩余 HTTPS 路由，移除受管容器" if plan.remove_proxy else "保留，另一 Edition 仍在使用"))
     for key in plan.editions:
         log(("删除本地数据：" if plan.purge_data else "保留本地配置/数据：") + PRODUCTS[key].install_dir)
-        log("历史备份保留：" + PRODUCTS[key].backup_dir)
-    log("共享代理历史备份 /opt/tg2cloud-proxy-backups 始终保留；镜像缓存、锁文件、旧 TG115 和系统软件不清理。")
+        log(("删除历史备份：" if plan.purge_backups else "历史备份保留：") + PRODUCTS[key].backup_dir)
+    if PROXY_BACKUP_ROOT in plan.backups:
+        log("删除不再使用的共享代理备份：" + str(PROXY_BACKUP_ROOT))
+    else:
+        log("共享代理历史备份保留；所选范围之外的数据不会清理。")
+    log("镜像缓存、并发锁元数据、旧 TG115 和系统软件不清理；不能保证系统逐字节恢复到安装前。")
     log("请先结束进行中的传输并自行备份；停止容器会中断任务。不要同时运行 EXE/其他安装器。")
 
 
@@ -495,7 +563,14 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="仅卸载受管 TG2Cloud；不卸载系统 Docker/Nginx")
     parser.add_argument("--edition", choices=(*PRODUCTS, "all"), help="CloudDrive2、OpenList 或全部；不指定时询问")
     parser.add_argument("--check", action="store_true", help="只读预览，无需确认，不执行卸载")
-    parser.add_argument("--purge-data", action="store_true", help="另行确认后删除所选本地实例数据；云端文件与历史备份不删除")
+    cleanup = parser.add_mutually_exclusive_group()
+    cleanup.add_argument("--purge-all", dest="cleanup", action="store_const", const="all",
+                         help="默认模式：双重确认后删除所选实例数据和可识别历史备份")
+    cleanup.add_argument("--purge-data", dest="cleanup", action="store_const", const="data",
+                         help="双重确认后删除实例数据，保留历史备份（兼容原选项）")
+    cleanup.add_argument("--keep-data", dest="cleanup", action="store_const", const="runtime",
+                         help="只移除运行资源，保留实例数据、证书和历史备份")
+    parser.set_defaults(cleanup="all")
     args = parser.parse_args(argv)
     log = SafeLog()
     ui = None
@@ -511,7 +586,7 @@ def main(argv: list[str] | None = None) -> int:
             if not key:
                 raise UninstallError("没有选择有效 Edition；未执行卸载")
         editions = tuple(PRODUCTS) if key == "all" else (key,)
-        plan = build_plan(editions, session, purge_data=args.purge_data)
+        plan = build_plan(editions, session, purge_data=args.cleanup != "runtime", purge_backups=args.cleanup == "all")
         preview(plan, log)
         if args.check:
             log("TG2CLOUD_UNINSTALL_CHECK=OK；只是预检，不是已经卸载")
@@ -520,16 +595,19 @@ def main(argv: list[str] | None = None) -> int:
         if not ui.confirm("是否执行以上 TG2Cloud 资源卸载？"):
             log("TG2CLOUD_UNINSTALL_RESULT=CANCELLED；未执行卸载")
             return 0
-        if args.purge_data:
-            log("危险：删除 .env、Session、SQLite、下载、日志、云网关授权配置后不能自动恢复；历史备份不删除。")
-            token = "DELETE " + key
+        if plan.purge_data:
+            log("危险：删除 .env、Session、SQLite、下载、日志、云网关授权配置后不能自动恢复；"
+                + ("历史备份也删除，不能使用原备份恢复。" if plan.purge_backups else "历史备份保留。"))
+            token = ("DELETE ALL " if plan.purge_backups else "DELETE ") + key
             if ui.ask("请输入 " + token + " 确认删除上述本地数据", validate=lambda value: value) != token:
                 log("TG2CLOUD_UNINSTALL_RESULT=CANCELLED；删除确认不匹配，未执行卸载")
                 return 0
         execute(plan, session, log)
         log("TG2CLOUD_UNINSTALL_RESULT=OK；所选受管运行资源及路由已移除，系统应用未卸载。")
-        if not args.purge_data:
-            log("本地实例数据/证书默认保留；再次安装前请按卸载文档处理残留目录，不会静默覆盖。")
+        if not plan.purge_data:
+            log("--keep-data 保留本地实例数据/证书/备份；再次安装前请按卸载文档处理残留目录，不会静默覆盖。")
+        elif plan.purge_backups:
+            log("所选实例数据和已核对的备份已清理；共享资源按剩余 Edition 保留，镜像缓存/锁元数据与系统应用未清理。")
         return 0
     except (KeyboardInterrupt, EOFError):
         log("TG2CLOUD_UNINSTALL_RESULT=INTERRUPTED；可能部分完成，请用 --check 核对；不自动重装/删除数据。")

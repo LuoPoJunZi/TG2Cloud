@@ -412,8 +412,143 @@ class ExecutionTests(unittest.TestCase):
             uninstall.execute(uninstall.build_plan(("clouddrive2",), self.docker, purge_data=True), self.docker, self.log)
         self.deleted.assert_not_called()
 
+    def test_full_cleanup_includes_selected_backups_but_preserves_other_edition(self):
+        root = Path(PRODUCTS["clouddrive2"].backup_dir)
+        identity = (1, 2, 3, 0, ())
+        with patch.object(uninstall, "purge_preflight"), patch.object(uninstall, "backup_identity", return_value=identity):
+            plan = uninstall.build_plan(("clouddrive2",), self.docker, purge_backups=True)
+            uninstall.execute(plan, self.docker, self.log)
+        self.assertTrue(plan.purge_data)
+        self.assertTrue(plan.purge_backups)
+        self.assertEqual(set(plan.backups), {root})
+        self.assertEqual({call.args[0] for call in self.deleted.call_args_list},
+                         {root, Path(PRODUCTS["clouddrive2"].install_dir)})
+        self.assertIn(PRODUCTS["openlist"].bot_container, self.docker.containers)
+
+    def test_full_cleanup_all_deletes_generated_backups_and_shared_certificate_children(self):
+        with patch.object(uninstall, "purge_preflight"), patch.object(uninstall, "backup_identity", return_value=(1, 2, 3, 0, ())):
+            plan = uninstall.build_plan(tuple(PRODUCTS), self.docker, purge_backups=True)
+            uninstall.execute(plan, self.docker, self.log)
+        expected = {Path(product.install_dir) for product in PRODUCTS.values()}
+        expected.update(Path(product.backup_dir) for product in PRODUCTS.values())
+        expected.add(uninstall.PROXY_BACKUP_ROOT)
+        expected.update(Path(uninstall.PROXY_ROOT) / child for child in uninstall.PROXY_CHILDREN)
+        self.assertEqual({call.args[0] for call in self.deleted.call_args_list}, expected)
+        self.assertFalse(any("lock" in str(call.args[0]) for call in self.deleted.call_args_list))
+        self.assertEqual(set(self.docker.containers), {"unrelated-nginx"})
+
+    def test_backup_change_after_confirmation_aborts_before_runtime_mutation(self):
+        identity = Mock(return_value=(1, 2, 3, 0, ()))
+        with patch.object(uninstall, "purge_preflight"), patch.object(uninstall, "backup_identity", identity):
+            plan = uninstall.build_plan(("clouddrive2",), self.docker, purge_backups=True)
+            identity.return_value = (1, 2, 3, 0, ("NEW BACKUP",))
+            with self.assertRaisesRegex(uninstall.UninstallError, "变化"):
+                uninstall.execute(plan, self.docker, self.log)
+        self.assertEqual(self.docker.commands, [])
+        self.deleted.assert_not_called()
+
+    def test_backup_change_during_runtime_removal_aborts_all_data_deletion(self):
+        with patch.object(uninstall, "purge_preflight"), patch.object(uninstall, "backup_identity", side_effect=[None, None, (1, 2, 3, 0, ())]):
+            plan = uninstall.build_plan(("clouddrive2",), self.docker, purge_backups=True)
+            with self.assertRaisesRegex(uninstall.UninstallError, "备份范围或内容"):
+                uninstall.execute(plan, self.docker, self.log)
+        self.assertTrue(self.docker.commands)
+        self.deleted.assert_not_called()
+
 
 class DataSafetyTests(unittest.TestCase):
+    def test_backup_metadata_only_allows_generated_regular_private_files(self):
+        patterns = uninstall.backup_targets(tuple(PRODUCTS), {}, True)
+        for standard, pattern in patterns.items():
+            with self.subTest(root=standard), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                root.chmod(0o700)
+                name = ("proxy-20261011T120000Z-" + "a" * 32 + ".tar.gz"
+                        if standard == uninstall.PROXY_BACKUP_ROOT else "config-abCD1234.tar.gz")
+                archive = root / name
+                archive.touch(mode=0o600)
+                with patch.object(Path, "read_text", side_effect=AssertionError("must not read secrets")):
+                    identity = uninstall.backup_identity(root, pattern)
+                self.assertEqual(identity[-1][0][0], name)
+                (root / "personal-notes.txt").touch(mode=0o600)
+                with self.assertRaisesRegex(uninstall.UninstallError, "未知文件"):
+                    uninstall.backup_identity(root, pattern)
+
+    def test_backup_nested_directory_and_symlink_are_never_adopted(self):
+        pattern = next(iter(uninstall.backup_targets(("clouddrive2",), {}, False).values()))
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            root.chmod(0o700)
+            (root / "config-abCD1234.tar.gz").mkdir()
+            with self.assertRaisesRegex(uninstall.UninstallError, "未知文件"):
+                uninstall.backup_identity(root, pattern)
+        if os.name == "posix":
+            with tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary).resolve()
+                root.chmod(0o700)
+                (root / "config-abCD1234.tar.gz").symlink_to("/etc/passwd")
+                with self.assertRaisesRegex(uninstall.UninstallError, "链接"):
+                    uninstall.backup_identity(root, pattern)
+
+    def test_backup_mount_or_foreign_parent_reference_blocks_purge(self):
+        root = Path(PRODUCTS["clouddrive2"].backup_dir)
+        with patch.object(uninstall, "checked_path"), patch.object(uninstall, "mountpoints", return_value=(root,)), self.assertRaisesRegex(uninstall.UninstallError, "挂载点"):
+            uninstall.purge_preflight(("clouddrive2",), {}, {}, False, (root,))
+        with patch.object(uninstall, "checked_path"), patch.object(uninstall, "mountpoints", return_value=(Path("/"),)):
+            containers = {"foreign": {"mounts": [{"Source": str(root.parent), "Type": "bind"}]}}
+            with self.assertRaisesRegex(uninstall.UninstallError, "其他容器"):
+                uninstall.purge_preflight(("clouddrive2",), containers, {}, False, (root,))
+
+    def test_shared_certificates_and_backups_kept_for_retained_other_edition_data(self):
+        retained = Path(PRODUCTS["openlist"].install_dir)
+        with patch.object(Path, "exists", lambda path: path == retained):
+            self.assertTrue(uninstall.other_edition_present(("clouddrive2",), {}))
+            self.assertNotIn(uninstall.PROXY_BACKUP_ROOT, uninstall.backup_targets(("clouddrive2",), {}, True))
+            with patch.object(uninstall, "checked_path"), patch.object(uninstall, "mountpoints", return_value=(Path(uninstall.PROXY_ROOT),)):
+                uninstall.purge_preflight(("clouddrive2",), {}, {}, True)
+
+    def test_backup_patterns_are_edition_specific_and_do_not_match_foreign_files(self):
+        patterns = uninstall.backup_targets(tuple(PRODUCTS), {}, True)
+        cd2 = patterns[Path(PRODUCTS["clouddrive2"].backup_dir)]
+        openlist = patterns[Path(PRODUCTS["openlist"].backup_dir)]
+        self.assertIsNone(cd2.fullmatch("openlist-state-12345678.tar.gz"))
+        self.assertIsNotNone(openlist.fullmatch("openlist-state-12345678.tar.gz"))
+        for name in ("config-custom.tar.gz", "../../config-12345678.tar.gz", "database-12345678.db-journal", "personal.zip"):
+            self.assertIsNone(cd2.fullmatch(name))
+
+    @unittest.skipUnless(os.name == "posix", "Linux private ownership and safe directory removal")
+    def test_full_cleanup_real_temporary_directories_not_real_docker_or_vps(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            base = Path(temporary).resolve()
+            products = {}
+            for key, product in PRODUCTS.items():
+                products[key] = replace(product, install_dir=str(base / key), backup_dir=str(base / (key + "-backups")))
+                Path(products[key].install_dir).mkdir(mode=0o700)
+                backup = Path(products[key].backup_dir)
+                backup.mkdir(mode=0o700)
+                (backup / "config-abCD1234.tar.gz").touch(mode=0o600)
+            proxy = base / "proxy"
+            proxy.mkdir(mode=0o700)
+            (proxy / "transaction.lock").touch(mode=0o600)
+            proxy_backup = base / "proxy-backups"
+            proxy_backup.mkdir(mode=0o700)
+            (proxy_backup / ("proxy-20261011T120000Z-" + "a" * 32 + ".tar.gz")).touch(mode=0o600)
+            foreign = base / "foreign"
+            foreign.mkdir()
+            (foreign / "keep.txt").write_text("KEEP", encoding="utf-8")
+            with patch.dict(uninstall.PRODUCTS, products), patch.object(uninstall, "PROXY_ROOT", str(proxy)), patch.object(uninstall, "PROXY_BACKUP_ROOT", proxy_backup), patch.object(uninstall, "LAN_ROOT", base / "lan"), patch.object(uninstall, "LOCK_ROOT", base / "locks"), patch.object(uninstall, "mountpoints", return_value=(Path("/"),)), patch.object(uninstall, "edition_lock", return_value=nullcontext()):
+                docker = FakeDocker()
+                with patch.object(uninstall, "docker_snapshot", side_effect=docker.snapshot):
+                    plan = uninstall.build_plan(tuple(products), docker, purge_backups=True)
+                    uninstall.execute(plan, docker, SafeLog(lambda _message: None))
+            for product in products.values():
+                self.assertFalse(Path(product.install_dir).exists())
+                self.assertFalse(Path(product.backup_dir).exists())
+            self.assertFalse(proxy_backup.exists())
+            self.assertTrue((proxy / "transaction.lock").exists())
+            self.assertEqual((foreign / "keep.txt").read_text(encoding="utf-8"), "KEEP")
+            self.assertEqual(set(docker.containers), {"unrelated-nginx"})
+
     def test_residual_purge_requires_recognizable_compose_and_does_not_adopt_unknown_directory(self):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary).resolve()
@@ -523,7 +658,8 @@ class EntryTests(unittest.TestCase):
     def run_main(self, args, *, confirm=True, typed="", failure=None):
         output = io.StringIO()
         docker = FakeDocker()
-        plan = uninstall.Plan(tuple(PRODUCTS), {}, {}, uninstall.empty_state(), True, "--purge-data" in args)
+        plan = uninstall.Plan(tuple(PRODUCTS), {}, {}, uninstall.empty_state(), True,
+                              "--keep-data" not in args, "--purge-data" not in args and "--keep-data" not in args)
         ui = Mock()
         ui.confirm.return_value = confirm
         ui.ask.return_value = typed
@@ -555,10 +691,43 @@ class EntryTests(unittest.TestCase):
         ui.ask.assert_called_once()
         self.assertIn("RESULT=OK", output)
 
+    def test_default_full_cleanup_requires_typed_all_deletion_confirmation(self):
+        for args in (["--edition", "all"], ["--edition", "all", "--purge-all"]):
+            with self.subTest(args=args):
+                code, output, execute, ui = self.run_main(args, typed="DELETE ALL all")
+                self.assertEqual(code, 0)
+                execute.assert_called_once()
+                self.assertTrue(execute.call_args.args[0].purge_backups)
+                ui.ask.assert_called_once()
+                self.assertIn("历史备份也删除", output)
+
+    def test_default_full_cleanup_wrong_token_does_not_execute(self):
+        for token in ("", "DELETE all", "DELETE ALL openlist"):
+            code, output, execute, _ui = self.run_main(["--edition", "all"], typed=token)
+            self.assertEqual(code, 0)
+            self.assertIn("CANCELLED", output)
+            execute.assert_not_called()
+
+    def test_keep_data_preserves_prior_runtime_only_behavior(self):
+        code, output, execute, ui = self.run_main(["--edition", "all", "--keep-data"])
+        self.assertEqual(code, 0)
+        execute.assert_called_once()
+        self.assertFalse(execute.call_args.args[0].purge_data)
+        ui.ask.assert_not_called()
+        self.assertIn("--keep-data 保留", output)
+
+    def test_default_full_check_is_read_only_without_prompts(self):
+        code, output, execute, ui = self.run_main(["--edition", "all", "--check"])
+        self.assertEqual(code, 0)
+        execute.assert_not_called()
+        ui.confirm.assert_not_called()
+        ui.ask.assert_not_called()
+        self.assertIn("只是预检", output)
+
     def test_failure_and_interruption_never_show_success_or_raw_secret(self):
         for failure, expected in ((RuntimeError("FAKE_OFFLINE_SECRET"), 1), (KeyboardInterrupt(), 130), (EOFError(), 130)):
             with self.subTest(error=type(failure).__name__):
-                code, output, execute, _ui = self.run_main(["--edition", "all"], failure=failure)
+                code, output, execute, _ui = self.run_main(["--edition", "all", "--keep-data"], failure=failure)
                 self.assertEqual(code, expected)
                 self.assertNotIn("RESULT=OK", output)
                 self.assertNotIn("FAKE_OFFLINE_SECRET", output)
