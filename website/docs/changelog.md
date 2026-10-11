@@ -4,7 +4,7 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 ## TG2Cloud v1.2.0
 
-内容核对日期：2026-10-11。待发布；正式两个 EXE 将由 GitHub Actions 从同一不可变 Tag 测试、构建和自检，发布 Job 复用该次 artifact，不上传本机产物。
+发布日期与内容核对日期：2026-10-11。两个 Windows EXE 已由 GitHub Actions 从同一 v1.2.0 Tag 测试、构建和自检；Release 复用该次 Windows artifact，实际 SHA256SUMS 与资产摘要已核对。
 
 - 增加独立内网向导，人工输入私有 IPv4，不申请域名证书、不改变原 EXE / 公网 VPS 的强制 HTTPS；验收前再次显示内网 IP 和 Edition 固定端口。
 - 增加独立卸载入口，先预检并确认所选 Edition / all，默认保留业务数据、历史备份和证书，不卸载系统 Docker/Nginx；未知归属、外部引用、FUSE 或使用中的网络均停止。
@@ -12,7 +12,7 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 用户提供的 CloudDrive2 内网 Debian 日志显示首次部署和 WebDAV 验收通过；OpenList 内网、其他 NAS、跨版本升级/回退、真实卸载及本轮 Telegram 转存仍未验收。
 
-[查看源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) · [下载与安装入口](/download/)。
+[查看源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.2.0/CHANGELOG.md) · [查看正式 Release v1.2.0](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.0) · [下载与安装入口](/download/)。
 
 ## TG2Cloud v1.1.5
 

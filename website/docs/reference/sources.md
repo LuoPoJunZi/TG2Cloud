@@ -1,13 +1,13 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 11 日**，对应 TG2Cloud **v1.2.0** 源码（待发布）；目前下载基线为已核对的 v1.1.5。新版本须通过同标签 Windows/Linux 检查并核对实际资产，不把发布成功当作真实 VPS/NAS 或转存验收通过。
+本次内容核对日期为 **2026 年 10 月 11 日**，对应 TG2Cloud **v1.2.0** 正式版本；已核对不可变 Tag、同标签 Windows/Linux 发布工作流、两个 EXE 与实际 SHA256SUMS，不把发布成功当作真实 VPS/NAS 或转存验收通过。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
-| [已发布 v1.1.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.1.5) | 同一次 Actions 构建的实际资产与 SHA256；不是实机验收结论 |
+| [已发布 v1.2.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.0) | 同一次 Actions 构建的实际资产与 SHA256；不是实机验收结论 |
 | [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
 | [VPS 一键脚本](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md) | 单行入口、正式稳定 payload、配置保留与未验收范围 |
