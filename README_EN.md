@@ -387,11 +387,11 @@ The entry binds only the selected private address, does not use ports 80/443 or 
 
 [View uninstall script](uninstall.sh) · [Uninstall guide (Chinese)](docs/UNINSTALL.md)
 
-`uninstall.sh` removes the selected managed Bot, gateway, project network, HTTPS route and LAN entry at standard installation paths. TG2Cloud's own Nginx/Certbot containers are removed only when no HTTPS route remains. The local enhanced version defaults to removing selected configuration, databases, downloads and recognized historical backups after confirmation and typing `DELETE ALL <edition/all>`. Use `--keep-data` to retain data; the existing `--purge-data` option still retains backups. System Docker/Nginx, unrelated containers, named volumes, image caches, legacy TG115 instances and cloud files are not removed.
+`uninstall.sh` removes the selected managed Bot, gateway, project network, HTTPS route and LAN entry at standard installation paths. TG2Cloud's own Nginx/Certbot containers are removed only when no HTTPS route remains. The enhanced main-branch version defaults to removing selected configuration, databases, downloads and recognized historical backups after confirmation and typing `DELETE ALL <edition/all>`. Use `--keep-data` to retain data; the existing `--purge-data` option still retains backups. System Docker/Nginx, unrelated containers, named volumes, image caches, legacy TG115 instances and cloud files are not removed.
 
 Online one-line uninstaller:
 
-> The user reported successful VPS acceptance of the original data-preserving uninstaller; the new complete cleanup still requires real-host testing. **This enhancement has not been published: the online bootstrap remains pinned to the old data-preserving implementation and does not support the new options yet.** Use the modified local checkout until a reviewed, CI-validated pin is published. Finish active tasks, save backups outside the cleanup paths and preview first; there is no unattended forced deletion.
+> The user reported successful VPS acceptance of the original data-preserving uninstaller; **the new complete cleanup still requires real-host testing**. The online entry pins reviewed commit `4faeeb3590b68fe5591d859be322dbfcb0a18533`, validated by Windows/Linux and Python 3.10/3.13 CI. This is not a new Tag/Release: both official EXEs remain v1.2.0. Finish active tasks, save backups outside the cleanup paths and preview first; there is no unattended forced deletion.
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
@@ -403,7 +403,7 @@ After reviewing the plan, start the interactive wizard:
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
 ```
 
-As root in the modified checkout on the target Linux host, preview complete cleanup before both confirmations:
+As root in the current main-branch checkout on the target Linux host, preview complete cleanup before both confirmations:
 
 ```bash
 bash ./uninstall.sh --edition all --check
@@ -599,7 +599,7 @@ CloudDrive2 has no manual backup button. Its redeployment protection includes pr
 
 Backups contain secrets. Directories are mode `700` and files are set to `600` where possible. Never upload them publicly.
 
-CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.2.0 still has no general Restore function. Removal uses the [independent uninstaller](docs/UNINSTALL.md), not the upgrade flow. The local complete-cleanup enhancement deletes selected backups; use `--keep-data` to retain them. The online pinned version retains its old behavior until publication.
+CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.2.0 still has no general Restore function. Removal uses the [independent uninstaller](docs/UNINSTALL.md), not the upgrade flow. The current main-branch and online complete-cleanup entry delete selected backups; use `--keep-data` to retain them. The original v1.2.0 Tag retains its original behavior.
 
 ## Troubleshooting
 

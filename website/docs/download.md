@@ -87,7 +87,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 独立卸载：先预检
 
-卸载不是升级步骤。v1.2.0 增加独立入口，默认保留实例数据、证书和历史备份，不卸载系统 Docker/Nginx；真实 VPS/NAS 卸载尚未验收。仅在确实需要移除服务时参考 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
+卸载不是升级步骤。v1.2.0 Tag 中的原入口默认保留实例数据、证书和历史备份；主分支追加的完整清理增强会在双重确认后删除所选配置、数据库、下载和可识别历史备份。需要保留数据时必须明确使用 `--keep-data`。用户已反馈原保留数据卸载在其 VPS 通过，但完整清理增强仍待新的实机验收，不据此推定 NAS 或两个 Edition 均通过。两个 EXE 与正式 Release 不变，详情见 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
 
 在线入口固定到审查并通过 CI 的源码 commit。可先用以下只读命令查看范围；`--check` 不会停止容器或删除数据：
 
@@ -95,7 +95,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
 ```
 
-确认前请结束传输、备份并核对资源归属；未知安装、外部引用、使用中的网络或 FUSE 挂载不会强制清理。
+确认前请结束传输、将需要保留的备份复制到清理目录之外并核对资源归属；未知安装、外部引用、使用中的网络或 FUSE 挂载不会强制清理。系统 Docker/Nginx、其他项目与云端文件不操作；镜像缓存、锁元数据、系统软件包和 DNS 变化不自动回滚，完整清理不等于把 VPS 恢复到安装前。本页只提供只读预检，不提供无人值守删除命令。
 
 ## 只查看已有凭据
 

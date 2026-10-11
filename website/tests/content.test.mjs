@@ -98,5 +98,11 @@ test('independent LAN and uninstall entries agree with root guides',async()=>{
     for(const content of [download,readme,source])assert.ok(content.includes(command),script);
   }
   assert.ok(download.includes('卸载不是升级步骤'));
-  assert.ok(download.includes('真实 VPS/NAS 卸载尚未验收'));
+  assert.ok(download.includes('完整清理增强仍待新的实机验收'));
+  assert.ok(download.includes('v1.2.0 Tag'));
+  assert.ok(download.includes('--keep-data'));
+  assert.ok(download.includes('不等于把 VPS 恢复到安装前'));
+  const uninstallCommands=download.match(/^bash .*\/uninstall\.sh\).*$/gm)||[];
+  assert.ok(uninstallCommands.length>0);
+  assert.ok(uninstallCommands.every(command=>command.includes('--check')));
 });

@@ -26,7 +26,7 @@ git rev-parse HEAD
 | `operation_feedback.py` | 真实操作阶段、错误建议与版本摘要 |
 | `install.sh`、`scripts/vps_installer.py`、`scripts/vps_runtime.py` | 可选 VPS 向导、稳定 Release 解析与运行环境适配，不替代 EXE 主入口 |
 | `install-lan.sh`、`scripts/lan_installer.py` | 独立内网入口，人工指定私有 IPv4，不修改 EXE 的 HTTPS 规则 |
-| `uninstall.sh`、`scripts/uninstaller.py` | 独立卸载、只读预检及明确确认，默认保留数据，不卸载系统软件 |
+| `uninstall.sh`、`scripts/uninstaller.py` | 独立卸载、只读预检；主分支完整清理需双确认，`--keep-data` 保留数据，不卸载系统软件 |
 | `payload_clouddrive2/` | CloudDrive2 部署脚本与共享核心文件来源 |
 | `payload_openlist/` | OpenList 部署脚本 |
 | `tests/` | 自动化回归 |

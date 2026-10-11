@@ -2,7 +2,7 @@
 
 `uninstall.sh` 适用于标准目录下的 CloudDrive2 / OpenList 受管 Docker 部署，包括公网 VPS 的 HTTPS 和独立内网管理入口。它独立于 `install.sh`、`install-lan.sh` 和两个 Windows EXE，不改动安装器或 Bot 业务流程。
 
-> 当前正式版本为 v1.2.0。用户已反馈原保留数据卸载在其 VPS 验收通过，不据此标记两 Edition、NAS 或新增完整清理均通过。**本轮完整清理增强尚未发布，仍需新的实机验收**；在线引导仍固定到原不可变提交 `5b85703a2a484788d4b51428032d20f61c55cd4d`，在线命令暂保持原保留数据行为。下面的完整清理选项适用于修改后的本地源码，须先通过 CI / 审查并更新固定提交才能在线生效。两个 EXE 未修改。
+> 当前正式版本及两个 EXE 仍为 v1.2.0，原 Tag 不变。主分支追加完整清理，在线引导固定到已审查且通过 Windows/Linux、Python 3.10/3.13 CI 的不可变提交 `4faeeb3590b68fe5591d859be322dbfcb0a18533`，支持下面的完整清理选项。用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍需新的实机验收**，不据此标记两 Edition、NAS 或新行为均通过。这不是新 Tag/Release。
 
 ## 在线一键入口
 
@@ -12,7 +12,7 @@
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
 ```
 
-实际卸载命令会询问 Edition 并展示范围，再等待默认 N 的确认：
+实际卸载命令会询问 Edition 并展示完整清理范围，再等待默认 N 的确认及 `DELETE ALL …` 删除口令：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
@@ -28,7 +28,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 bash ./uninstall.sh --edition all --check
 ```
 
-修改后的本地向导默认完整清理所选 TG2Cloud 实例及可识别备份。先核对范围，执行时还需输入删除口令：
+当前主分支及在线向导默认完整清理所选 TG2Cloud 实例及可识别备份。先核对范围，执行时还需输入删除口令：
 
 ```bash
 bash ./uninstall.sh --edition all

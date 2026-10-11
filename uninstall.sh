@@ -19,7 +19,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this immutable pin only after the new uninstaller passes CI/review.
-installer_commit="5b85703a2a484788d4b51428032d20f61c55cd4d"
+installer_commit="4faeeb3590b68fe5591d859be322dbfcb0a18533"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '卸载向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2

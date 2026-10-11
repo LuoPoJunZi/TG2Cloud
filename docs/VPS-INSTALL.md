@@ -203,7 +203,7 @@ cd /opt/tg2cloud-openlist && docker compose down
 
 这里不使用 `--volumes`、`--rmi`、`--remove-orphans` 或目录删除命令。标准 TG2Cloud 的持久化数据使用宿主机目录挂载，`.env`、Session、SQLite、下载、云网关配置与备份仍保留；Docker 引擎和另一 Edition 不会由这两条标准项目命令卸载。`down` 的范围见 [Docker 官方说明](https://docs.docker.com/reference/cli/docker/compose/down/)。
 
-**这不是完整的一键卸载**：共享 Nginx/Certbot、证书和已保存 HTTPS 路由仍存在，本节两条命令也不会移除独立 LAN 入口。需要统一移除受管资源与入口时，使用 [独立卸载向导](UNINSTALL.md)。新增本地增强版默认双重确认后清理所选数据与可识别备份，保留数据请明确加 `--keep-data`；不卸载系统 Docker / Nginx。用户已反馈原保留数据卸载在其 VPS 通过；完整清理仍待新的实机验证，且在线固定源码暂未切换。请先只读预检，把必要备份保存到清理目录之外。
+**这不是完整的一键卸载**：共享 Nginx/Certbot、证书和已保存 HTTPS 路由仍存在，本节两条命令也不会移除独立 LAN 入口。需要统一移除受管资源与入口时，使用 [独立卸载向导](UNINSTALL.md)。当前主分支及在线增强版默认双重确认后清理所选数据与可识别备份，保留数据请明确加 `--keep-data`；不卸载系统 Docker / Nginx。用户已反馈原保留数据卸载在其 VPS 通过；完整清理仍待新的实机验证，在线只固定到通过 CI 的源码，不修改原 v1.2.0 Tag/EXE。请先只读预检，把必要备份保存到清理目录之外。
 
 ## 本地验证与待验收
 

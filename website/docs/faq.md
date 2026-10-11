@@ -104,7 +104,7 @@
 
 ### TG115 能一键升级 TG2Cloud 吗？
 
-v1.2.0 不提供原地自动迁移或正式自动 Restore。新增独立卸载向导默认保留数据，不是迁移或升级步骤；实机卸载仍待验收，详见 [独立卸载说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。[迁移说明](/operations/migration/)。
+v1.2.0 不提供原地自动迁移或正式自动 Restore。独立卸载不是迁移或升级步骤，也不会清理旧 TG115。主分支追加的完整清理默认双重确认后删除所选 TG2Cloud 数据与可识别备份；需要保留时明确使用 `--keep-data`。完整清理增强仍待新的实机验收，不能把原保留数据版本的用户验收当作新行为已经通过。详见 [独立卸载说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) 和 [迁移说明](/operations/migration/)。
 
 ### CloudDrive2 现在能备份了吗？
 
