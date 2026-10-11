@@ -466,7 +466,7 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_rc_requires_exact_notes_identity(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for path in ("payload_clouddrive2/app/version.py", "packaging/windows/TG2Cloud-CloudDrive2.version.txt", "packaging/windows/TG2Cloud-OpenList.version.txt", "CHANGELOG.md", "RELEASE_NOTES.md"):
+            for path in ("payload_clouddrive2/app/version.py", "packaging/windows/TG2Cloud-CloudDrive2.version.txt", "packaging/windows/TG2Cloud-OpenList.version.txt", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / path).read_bytes())
@@ -477,6 +477,18 @@ class ReleaseMetadataTests(unittest.TestCase):
             metadata = release.release_metadata(root, tag)
             self.assertEqual(metadata["is_prerelease"], "true")
             self.assertTrue(metadata["release_title"].endswith("RC1"))
+
+    def test_release_rejects_stale_wizard_version_or_disabled_source_pin(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
+                (root / name).write_bytes((ROOT / name).read_bytes())
+            release.linux_entries(root, RELEASE_VERSION)
+            with self.assertRaisesRegex(ValueError, "helper version"):
+                release.linux_entries(root, "0.0.0")
+            (root / "uninstall.sh").write_text('installer_commit=""\n', encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "immutable Linux entry pin"):
+                release.linux_entries(root, RELEASE_VERSION)
 
     def test_workflow_uses_validated_tag_and_reuses_one_build(self):
         text = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")

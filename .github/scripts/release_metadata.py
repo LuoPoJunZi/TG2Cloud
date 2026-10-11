@@ -50,6 +50,16 @@ def windows_resources(root: Path, version: str, *, sync: bool = False) -> None:
             raise ValueError(f"Windows version mismatch: {edition}")
 
 
+def linux_entries(root: Path, version: str) -> None:
+    """Release entry pins must be enabled; VPS helper identity must agree."""
+    for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
+        text = (root / name).read_text(encoding="utf-8")
+        if len(re.findall(r'^installer_commit\s*=\s*"[0-9a-f]{40}"$', text, re.MULTILINE)) != 1:
+            raise ValueError(f"invalid immutable Linux entry pin: {name}")
+        if name == "install.sh" and re.findall(r'^installer_version\s*=\s*"([0-9.]+)"$', text, re.MULTILINE) != [version]:
+            raise ValueError("Linux entry helper version must match release source")
+
+
 def release_metadata(root: Path, tag: str) -> dict[str, str]:
     match = TAG.fullmatch(tag)
     version = source_version(root)
@@ -63,6 +73,7 @@ def release_metadata(root: Path, tag: str) -> dict[str, str]:
     versions = re.findall(rf"TG2Cloud (v{CORE}(?:-(?:alpha|beta|rc)\.[1-9][0-9]*)?)", notes)
     if not versions or versions[0] != tag:
         raise ValueError("Release Notes identity must match the exact release tag")
+    linux_entries(root, version)
     title = f"TG2Cloud v{version}"
     if match[2]:
         title += f" {match[2].upper()}{match[3]}"
