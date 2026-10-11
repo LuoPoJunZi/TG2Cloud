@@ -99,7 +99,7 @@ jobs:
           python -m unittest discover -s tests -v
 
       - name: Ruff
-        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py operation_feedback.py proxy_maintenance.py .github/scripts/release_metadata.py vps_resources.py payload_clouddrive2/app tests
+        run: uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py domain_proxy.py operation_feedback.py proxy_maintenance.py .github/scripts/release_metadata.py vps_resources.py payload_clouddrive2/app scripts tests
 
       - name: Build and self-test Windows EXE once
         timeout-minutes: 20
@@ -186,6 +186,10 @@ jobs:
 
       - name: ShellCheck
         run: |
+          bash -n install.sh
+          bash -n install-lan.sh
+          bash -n uninstall.sh
+          shellcheck install.sh install-lan.sh uninstall.sh
           shellcheck -x \
             payload_clouddrive2/backup_retention.sh \
             payload_clouddrive2/preserve_runtime_config.sh \
@@ -218,6 +222,11 @@ jobs:
         env:
           TG2CLOUD_TEST_DOCKER: "1"
         run: python -m unittest discover -s tests -p test_runtime_namespace.py -v
+
+      - name: Isolated LAN Nginx checks (no product deployment)
+        env:
+          TG2CLOUD_TEST_LAN_DOCKER: "1"
+        run: python -m unittest discover -s tests -p test_lan_gateway_docker.py -v
 
   release:
     needs:

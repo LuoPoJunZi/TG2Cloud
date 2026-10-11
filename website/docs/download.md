@@ -1,6 +1,6 @@
 # 下载与 SHA-256 校验
 
-本文档对应 **TG2Cloud v1.1.5** 正式版本。两个 EXE 和 SHA256SUMS 已由 GitHub Actions 从同一不可变 Tag 构建、自检并发布，校验清单与实际资产摘要已核对；获取程序请使用项目自己的 GitHub Releases，不使用第三方改包。
+本文档对应 **TG2Cloud v1.2.0** 源码（待发布），当前可下载的正式版本仍为 v1.1.5。正式两个 EXE 与 SHA256SUMS 均由 GitHub Actions 从同一不可变 Tag 构建、自检；发布并核对新资产后再同步下载链接。获取程序请使用项目自己的 GitHub Releases，不使用第三方改包。
 
 ## 下载已发布版本
 
@@ -73,6 +73,30 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 当前脚本完成 CloudDrive2 真实 VPS 的只读预检，没有执行首次安装或实际跨版本升级；OpenList 脚本实机验收暂缓。执行写入前请备份、安排维护窗口，并阅读 [完整 VPS 脚本指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。不要同时运行 EXE 和命令行向导。
 :::
 
+## 没有公网域名：独立内网入口
+
+可信内网 Debian / Ubuntu x86_64 主机可使用独立脚本，按向导选择 Edition 并人工输入本机私有 IPv4：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
+```
+
+内网 HTTP 不加密，禁止公网端口转发；要求 Python 3.10+ 和 Docker 28+，不保证兼容所有 NAS 或 ARM。不会申请域名证书、占用 80/443 或转换已有 HTTPS 实例，也不修改两个 EXE 的强制 HTTPS 规则。入口检查通过后，验收前会再次显示实际 `http://IP:19798`（CloudDrive2）或 `http://IP:5244`（OpenList）。
+
+用户提供的 CloudDrive2 内网 Debian 日志显示首次部署和 WebDAV 验收通过；OpenList 内网、其他 NAS、升级/回退及 Telegram 转存仍待验收。详见 [内网安装指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md)。
+
+## 独立卸载：先预检
+
+卸载不是升级步骤。v1.2.0 增加独立入口，默认保留实例数据、证书和历史备份，不卸载系统 Docker/Nginx；真实 VPS/NAS 卸载尚未验收。仅在确实需要移除服务时参考 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
+
+在线入口目前待 CI 验证后启用。启用后可先用以下只读命令查看范围；`--check` 不会停止容器或删除数据：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
+```
+
+确认前请结束传输、备份并核对资源归属；未知安装、外部引用、使用中的网络或 FUSE 挂载不会强制清理。
+
 ## 只查看已有凭据
 
 v1.1.5 提供独立凭据查看模式，按已安装的 Edition 选择一条命令，在自己的私有交互终端运行：
@@ -86,12 +110,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 从源码构建部署器
 
-这部分用于从正式 v1.1.5 标签构建主项目，不是下载已发布 EXE，也不是构建本文档站。正式 Release 资产仍以 Actions 本次产物为准，本机构建的 SHA256 不要求相同。
+这部分用于从待发布 v1.2.0 的 main 源码构建主项目，不是下载已发布 EXE，也不是构建本文档站。正式 Release 资产仍以 Actions 本次产物为准，本机构建的 SHA256 不要求相同。
 
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.1.5
+git checkout main
 git rev-parse HEAD
 .\build.ps1 -Edition All
 ```

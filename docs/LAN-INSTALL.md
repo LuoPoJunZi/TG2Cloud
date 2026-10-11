@@ -2,7 +2,7 @@
 
 TG2Cloud 的主力仍是两个 Windows 部署器，公网 VPS 仍使用 `install.sh` 和强制 HTTPS。本入口单独使用 `install-lan.sh`：手填运行脚本的 Linux 内网 IPv4，用内网 HTTP 管理网关，不收集域名、不申请证书，也不修改原部署器或 VPS 向导。
 
-> 当前为测试阶段，尚未完成真实 NAS 验收。公开一行入口固定下载经过 CI 验证的不可变源码 commit，不直接运行 moving main 中的依赖；业务 payload 仍只取最新正式稳定 Release。脚本独立发布于源码仓库，不要求现有 Release 包含它；没有新增 EXE 或改动产品版本号。
+> 当前为测试阶段。已收到 CloudDrive2 在内网 Debian 实机首次部署和 WebDAV 验收通过的日志；OpenList 实机、不同 NAS 系统、跨版本升级与回退仍需单独验收。公开一行入口固定下载经过 CI 验证的不可变源码 commit，不直接运行 moving main 中的依赖；业务 payload 仍只取最新正式稳定 Release。脚本独立发布于源码仓库，不要求现有 Release 包含它；本次随 v1.2.0 发布；两个原有 PySide6 部署器继续保留，没有新增 EXE 产品，也不改变它们的强制 HTTPS 规则。
 
 ## 支持范围与边界
 
@@ -106,7 +106,7 @@ bash ./install-lan.sh --edition openlist
 
 内网模式存放在 `/opt/tg2cloud-lan/<edition>/`，与原 `/opt/tg2cloud-clouddrive2`、`/opt/tg2cloud-openlist` 分开。升级复用已保存的 IP，不能用 `--lan-ip` 隐式换地址。建议预先设置 DHCP 地址保留或静态 IP；地址失效时停止并提示，不尝试切换到公网模式。
 
-原 payload 备份不包含这个独立目录。备份运行实例时应另行保留对应内网模式目录；当前不提供内网模式转换、地址迁移或自动卸载功能。不要并发用 EXE、原 VPS 脚本或另一终端操作同一实例，EXE 的 HTTPS 管理流程不会因本功能改变。
+原 payload 备份不包含这个独立目录。备份运行实例时应另行保留对应内网模式目录；安装入口不提供内网模式转换或地址迁移。卸载由新增 [独立卸载脚本](UNINSTALL.md) 处理，包含所选 LAN 管理容器与入口配置，默认保留业务数据；在线卸载入口待提交和 CI 审核后启用。不要并发用 EXE、原 VPS 脚本或另一终端操作同一实例，EXE 的 HTTPS 管理流程不会因本功能改变。
 
 ## 管理页、WebDAV 与实际转存分别验收
 
@@ -119,6 +119,20 @@ TG2CLOUD_LAN_BASE=OK；TG2CLOUD_LAN_ENTRY=OK；HTTPS=NOT_APPLICABLE
 这只表示基础服务、指定地址上的本机管理页和 `/dav` 阻断通过，**不等同于另一台内网电脑可访问、WebDAV 写入通过或云盘转存通过**。`--check` 不安装、不升级、不写测试文件；已有入口故障时不会给出通过标记。
 
 从另一台局域网电脑访问管理页，配置自己的云存储，再建立与 Bot 保存信息一致的专用 WebDAV 用户。云盘 Token、Cookie 和 OAuth 仍只在自己的 CloudDrive2/OpenList 中填写，脚本不收集。
+
+向导在基础安装与内网入口检查通过后、显示凭据和询问 WebDAV 写入验收之前，再次给出完整管理地址，避免被前面的镜像构建日志淹没。例如：
+
+```text
+CloudDrive2 内网管理页：http://192.168.26.5:19798
+请先用局域网电脑的浏览器打开上面的地址，配置云存储，并创建与保存凭据一致的专用 WebDAV 用户；完成后再确认写入验收。
+```
+
+OpenList 对应端口是 `5244`，地址采用本人输入并通过检查的 IP。尚未完成管理页配置时，写入验收选择 **N**；之后可单独运行在线验收，不需要重新安装：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition clouddrive2 --verify
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition openlist --verify
+```
 
 另行请求 WebDAV 写入验收：
 
@@ -146,4 +160,4 @@ bash ./install-lan.sh --edition openlist --show-credentials
 - **取消、中断、掉线或断电**：不能假定已经完全回退。重新只读检查，确认容器、版本和数据状态；SIGKILL/断电不保证自动恢复。
 - **旧 Docker、非受管实例或手改配置**：人工核对，不提供强制接管参数。
 
-真实 NAS、跨版本升级与回退、局域网浏览器访问及实际云盘转存仍需单独验收，离线测试不替代这些检查。
+已收到的 CloudDrive2 实机日志显示内网入口及 WebDAV 的认证、列目录、写入、大小复验、改名和清理均通过。这不替代不同 NAS 系统、OpenList、跨版本升级与回退、外部浏览器或真实 Telegram 云盘转存验收；其他项目仍需单独检查。

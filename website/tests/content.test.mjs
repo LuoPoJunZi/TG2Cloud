@@ -88,3 +88,15 @@ test('VPS one-line entry is consistent with the root user guide',async()=>{
   assert.ok(download.includes('只读预检'));
   assert.ok(download.includes('OpenList 脚本实机验收暂缓'));
 });
+
+test('independent LAN and uninstall entries agree with root guides',async()=>{
+  const download=await read('docs/download.md');
+  const readme=await readFile(new URL('../../README.md',import.meta.url),'utf8');
+  for(const [script,guide] of [['install-lan.sh','LAN-INSTALL.md'],['uninstall.sh','UNINSTALL.md']]){
+    const command=`bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/${script})`;
+    const source=await readFile(new URL(`../../docs/${guide}`,import.meta.url),'utf8');
+    for(const content of [download,readme,source])assert.ok(content.includes(command),script);
+  }
+  assert.ok(download.includes('卸载不是升级步骤'));
+  assert.ok(download.includes('真实 VPS/NAS 卸载尚未验收'));
+});

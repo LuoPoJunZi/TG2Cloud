@@ -7,9 +7,11 @@ on:
     paths:
       - "install.sh"
       - "install-lan.sh"
+      - "uninstall.sh"
       - "scripts/**"
       - "tests/test_vps_installer.py"
       - "tests/test_lan*.py"
+      - "tests/test_uninstaller.py"
       - "tests/test_proxy_host_compat.py"
       - "proxy_maintenance.py"
       - "deployer_products.py"
@@ -23,9 +25,11 @@ on:
     paths:
       - "install.sh"
       - "install-lan.sh"
+      - "uninstall.sh"
       - "scripts/**"
       - "tests/test_vps_installer.py"
       - "tests/test_lan*.py"
+      - "tests/test_uninstaller.py"
       - "tests/test_proxy_host_compat.py"
       - "proxy_maintenance.py"
       - "deployer_products.py"
@@ -63,11 +67,13 @@ jobs:
         run: |
           bash -n install.sh
           bash -n install-lan.sh
-          shellcheck install.sh install-lan.sh
+          bash -n uninstall.sh
+          shellcheck install.sh install-lan.sh uninstall.sh
       - name: Offline tests (no VPS or Docker calls)
         run: |
           python -B -m unittest discover -s tests -p test_vps_installer.py -v
           python -B -m unittest discover -s tests -p test_lan_installer.py -v
+          python -B -m unittest discover -s tests -p test_uninstaller.py -v
           python -B -m unittest discover -s tests -p test_proxy_host_compat.py -v
       - name: Isolated LAN Nginx checks (no product deployment)
         if: matrix.python == '3.13'
@@ -76,8 +82,8 @@ jobs:
         run: python -B -m unittest discover -s tests -p test_lan_gateway_docker.py -v
       - name: Python lint and syntax
         run: |
-          ruff check scripts domain_proxy.py proxy_maintenance.py tests/test_vps_installer.py tests/test_proxy_host_compat.py tests/test_lan_installer.py tests/test_lan_gateway_docker.py
-          python -m compileall -q scripts domain_proxy.py proxy_maintenance.py tests/test_vps_installer.py tests/test_proxy_host_compat.py tests/test_lan_installer.py tests/test_lan_gateway_docker.py
+          ruff check scripts domain_proxy.py proxy_maintenance.py tests/test_vps_installer.py tests/test_proxy_host_compat.py tests/test_lan_installer.py tests/test_lan_gateway_docker.py tests/test_uninstaller.py
+          python -m compileall -q scripts domain_proxy.py proxy_maintenance.py tests/test_vps_installer.py tests/test_proxy_host_compat.py tests/test_lan_installer.py tests/test_lan_gateway_docker.py tests/test_uninstaller.py
           bandit -q -r scripts
       - name: Whitespace check
         run: git diff --check

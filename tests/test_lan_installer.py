@@ -438,7 +438,7 @@ class PlanExecutionTests(unittest.TestCase):
     def test_current_newer_and_broken_entry_plans_do_not_rebuild_before_confirmation(self):
         self.patches["inspect_lan"].return_value = inspected(self.product)
         self.assertTrue(self.plan().entry_healthy)
-        self.instance.version = "1.1.99"
+        self.instance.version = f"{int(self.product.app_version.split('.')[0]) + 1}.0.0"
         self.assertEqual(self.plan().action, "newer")
         self.patches["check_entry"].side_effect = OSError("refused")
         self.assertFalse(self.plan().entry_healthy)
@@ -506,6 +506,36 @@ class PlanExecutionTests(unittest.TestCase):
         self.patches["show_credentials"].assert_not_called()
         self.patches["verify_destination"].assert_called_once()
         apply.assert_called_once()
+
+    def test_management_url_is_shown_before_credentials_and_verify_for_both_editions(self):
+        for product in PRODUCTS.values():
+            for action in ("install", "current"):
+                with self.subTest(edition=product.key, action=action):
+                    self.product = product
+                    before = instance(product, present=action != "install")
+                    after = instance(product)
+                    saved = lan.state_for(product, IP) if before.present else None
+                    plan = lan.Plan(before, action, IP, saved, dict(after.config))
+                    session, _apply = self.execute_fixture(plan, current=before)
+                    self.discover.side_effect = [before, after]
+                    self.messages.clear()
+                    url_line = f"{product.display_name} 内网管理页：http://{IP}:{product.management_port}"
+
+                    def show_credentials(*_args, expected_url=url_line):
+                        self.assertIn(expected_url, self.messages)
+                        self.messages.append("OFFLINE_CREDENTIALS_PROMPT")
+
+                    def verify(*_args, expected_url=url_line):
+                        self.assertIn(expected_url, self.messages)
+                        self.assertIn("OFFLINE_CREDENTIALS_PROMPT", self.messages)
+                        self.messages.append("OFFLINE_VERIFY_PROMPT")
+
+                    self.patches["show_credentials"].side_effect = show_credentials
+                    self.patches["verify_destination"].side_effect = verify
+                    lan.execute(plan, RELEASE, ROOT, ROOT, session, self.log, Mock(), verify=action == "current")
+                    self.assertLess(self.messages.index(url_line), self.messages.index("OFFLINE_VERIFY_PROMPT"))
+                    self.assertIn("完成后再确认写入验收", "\n".join(self.messages))
+                    self.assertNotIn("FAKE_OFFLINE_SECRET", "\n".join(self.messages))
 
 
 class MainBootstrapTests(unittest.TestCase):

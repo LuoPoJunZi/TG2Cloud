@@ -4,7 +4,7 @@ TG2Cloud 的主力安装方式仍是两个 PySide6 Windows 部署器。`install.
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本（测试阶段）](LAN-INSTALL.md)。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前源码版本为 v1.1.5。本脚本是独立入口，不依赖本机 EXE；公开向导另行固定到已验证 commit，实际部署目标只取已发布正式稳定版本。CloudDrive2 已完成真实 VPS 的只读预检，首次安装、实际跨版本升级和回退仍未验收，OpenList 脚本实机验收暂缓。下载新版入口或 EXE 不会自动更改已部署实例。
+> 当前源码版本为 v1.2.0。本脚本是独立入口，不依赖本机 EXE；公开向导另行固定到已验证 commit，实际部署目标只取已发布正式稳定版本。CloudDrive2 已完成真实 VPS 的只读预检，首次安装、实际跨版本升级和回退仍未验收，OpenList 脚本实机验收暂缓。下载新版入口或 EXE 不会自动更改已部署实例。
 
 ## 支持范围
 
@@ -187,7 +187,23 @@ HTTPS 配置收到 Ctrl+C、TERM 或 HUP 时会尝试恢复原代理配置；状
 - `TG2CLOUD_CLI_WEBDAV=NOT_RUN/OK`：独立写入验收的实际结果。
 - `TG2CLOUD_CLI_RESULT=FAILED/INTERRUPTED`：停止后续操作；请核对备份、回退及当前实例状态，不假定已恢复。
 
-脚本不承担 uninstall、删除业务数据、备份清理、历史重写、自动证书续期策略变更或生产 VPS 故障注入。这些操作继续使用现有部署器/管理流程。旧 TG115 请参考 [迁移说明](MIGRATION_FROM_TG115.md)。
+安装脚本不承担 uninstall、删除业务数据、备份清理、历史重写、自动证书续期策略变更或生产 VPS 故障注入。`install.sh` 没有 `--uninstall` 参数，`manage.sh` 也没有 `uninstall` 子命令；卸载使用独立的 [TG2Cloud 卸载脚本](UNINSTALL.md)，不要用不存在的安装参数。旧 TG115 请参考 [迁移说明](MIGRATION_FROM_TG115.md)。
+
+## 停止并移除容器（保留数据，不是完整卸载）
+
+标准安装目录下，可以在 VPS 上用下面的命令停止并移除所选 Edition 的 Compose 容器及项目网络。先确认没有进行中的传输，并做好必要备份；执行一条对应命令即可，不必同时移除两个 Edition：
+
+```bash
+# CloudDrive2
+cd /opt/tg2cloud-clouddrive2 && docker compose down
+
+# OpenList
+cd /opt/tg2cloud-openlist && docker compose down
+```
+
+这里不使用 `--volumes`、`--rmi`、`--remove-orphans` 或目录删除命令。标准 TG2Cloud 的持久化数据使用宿主机目录挂载，`.env`、Session、SQLite、下载、云网关配置与备份仍保留；Docker 引擎和另一 Edition 不会由这两条标准项目命令卸载。`down` 的范围见 [Docker 官方说明](https://docs.docker.com/reference/cli/docker/compose/down/)。
+
+**这不是完整的一键卸载**：共享 Nginx/Certbot、证书和已保存 HTTPS 路由仍存在，本节两条命令也不会移除独立 LAN 入口。需要统一移除受管资源与入口时，使用 [独立卸载向导](UNINSTALL.md)；默认保留数据，删除数据需要额外确认，不卸载系统 Docker / Nginx。目前新增卸载入口仅完成本地实现，在线命令待提交和 CI 审核后启用。
 
 ## 本地验证与待验收
 

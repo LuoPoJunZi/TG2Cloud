@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 10 日**，对应 TG2Cloud **v1.1.5** 正式版本；已核对不可变 Tag、同标签 Windows/Linux 发布工作流、两个 EXE 与实际 SHA256SUMS，不把发布成功当作真实 VPS 或转存验收通过。
+本次内容核对日期为 **2026 年 10 月 11 日**，对应 TG2Cloud **v1.2.0** 源码（待发布）；目前下载基线为已核对的 v1.1.5。新版本须通过同标签 Windows/Linux 检查并核对实际资产，不把发布成功当作真实 VPS/NAS 或转存验收通过。
 
 ## 主要来源
 
@@ -11,6 +11,8 @@
 | [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
 | [VPS 一键脚本](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md) | 单行入口、正式稳定 payload、配置保留与未验收范围 |
+| [内网安装](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md) | 独立内网入口、固定端口、用户提供验收与未验收范围 |
+| [独立卸载](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) | 归属检查、默认保留、外部引用保护与部分失败 |
 | [CHANGELOG](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) | TG2Cloud 更新与上游历史边界 |
 | [产品定义](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/deployer_products.py) | 两版默认路径、容器、端口及 FUSE 要求 |
 | [迁移说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/MIGRATION_FROM_TG115.md) | TG115 到 TG2Cloud 的操作与未验证范围 |
@@ -21,7 +23,7 @@
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.1.5；依赖和历史版本不机械替换。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.2.0；依赖和历史版本不机械替换。
 
 导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 

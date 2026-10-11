@@ -1,5 +1,18 @@
 # 更新记录
 
+## TG2Cloud v1.2.0
+
+版本日期：2026-10-11。增加独立内网安装和卸载入口，两个 PySide6 部署器仍是主力，公网 VPS / EXE 的强制 HTTPS 与稳定传输核心保持原行为。正式两个 EXE 由 GitHub Actions 从不可变 Tag 构建、自检；Release 复用该次 Windows artifact 和实际 SHA256，不上传本机产物。
+
+- 新增 `install-lan.sh` 独立内网向导：人工输入并核对私有 IPv4，单独监听管理入口，不申请域名证书、不占用 80/443、不转换已有 HTTPS 实例；业务 payload 只使用最新正式稳定 Release。
+- 内网入口检查通过后，在凭据展示和 WebDAV 验收之前再次显示实际 `http://IP:端口`；CloudDrive2 为 19798，OpenList 为 5244。
+- 新增 `uninstall.sh`：预览并确认所选 Edition / all 的受管容器、项目网络和路由；另一 Edition 路由保留，最后一条 HTTPS 路由移除后才移除受管共享 Nginx/Certbot。
+- 默认保留实例数据、证书、历史备份、镜像缓存与锁文件；删除实例数据需要独立 `--purge-data` 和二次输入确认。拒绝未知归属、外部容器引用（包括父目录挂载）、使用中的网络、链接和云盘/FUSE 挂载，不卸载系统 Docker/Nginx，不操作旧 TG115 或云端文件。
+- 发布验证纳入三个 Shell 入口、独立 Python 脚本和两 Edition 的隔离 LAN Nginx 检查；测试中的“未来版本”从当前版本计算，不再写死旧版本范围。
+- 同步中英文 README、安装/卸载指南、网站版本和下载说明；历史版本、许可证与上游致谢保留。
+
+用户提供的 CloudDrive2 内网 Debian 日志显示首次部署和 WebDAV 验收通过。OpenList 内网实机、其他 NAS、跨版本升级/回退、真实 VPS/NAS 卸载和本轮 Telegram 转存仍需单独验收；离线模拟与隔离 CI 不代表这些项目已经通过。
+
 ## TG2Cloud v1.1.5
 
 版本日期：2026-10-10。修复共享 HTTPS 的取消回退、宿主 Python 3.10 兼容、VPS 向导续做凭据展示和精简系统依赖提示。两 Edition 正式 EXE 继续由 Actions 从不可变 Tag 构建一次，Release 复用已自检的 Windows artifact 与本次 SHA256。

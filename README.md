@@ -17,6 +17,7 @@
   <a href="#下载">下载</a> ·
   <a href="#windows-图形化部署">部署指南</a> ·
   <a href="#可选-vps-一键脚本">VPS 一键脚本</a> ·
+  <a href="docs/UNINSTALL.md">卸载指南</a> ·
   <a href="#bot-命令">Bot 命令</a> ·
   <a href="#常见问题">常见问题</a> ·
   <a href="RELEASE_NOTES.md">发布说明</a>
@@ -44,7 +45,7 @@ Your Cloud
 
 本仓库是在原作者 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 基础上的二次开发版本，重点加强了任务恢复、磁盘保护、流式传输、状态语义、升级回退、VPS 资源建议和日常诊断。
 
-> 当前版本：**TG2Cloud v1.1.5**
+> 当前版本：**TG2Cloud v1.2.0**
 >
 > 本版修复 HTTPS 中断回退、宿主 Python 3.10 维护兼容、首次安装失败后续做的凭据展示及精简 VPS 依赖提示。两个 PySide6 部署器仍是主力；可选 VPS 向导新增确认后查看已保存凭据。正式 Windows EXE 由 GitHub Actions 从对应 Tag 测试、构建并自检，Release 复用本次产物及实际 SHA256。变更与待验收范围见 [发布说明](RELEASE_NOTES.md)。
 
@@ -88,6 +89,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 - [部署前准备](#部署前准备)
 - [Windows 图形化部署](#windows-图形化部署)
 - [可选 VPS 一键脚本](#可选-vps-一键脚本)
+- [卸载指南](docs/UNINSTALL.md)
 - [强制 HTTPS 管理入口](#强制-https-管理入口)
 - [CloudDrive2 配置](#clouddrive2-配置)
 - [OpenList 与云存储配置](#openlist-与云存储配置)
@@ -146,7 +148,7 @@ TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑�
 
 ## 当前版本
 
-当前产品版本为 `TG2Cloud v1.1.5`，提供两个独立的 PySide6 Edition：
+当前产品版本为 `TG2Cloud v1.2.0`，提供两个独立的 PySide6 Edition：
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -297,7 +299,7 @@ http://tg2cloud-clouddrive2:19798/dav
 
 日志显示正在下载依赖或构建 Docker 镜像时只需等待，不要重复点击“一键部署基础环境”、“修复 CloudDrive2 网络”或“WebDAV 验收”。基础容器健康后，部署器会自动打开 HTTPS 配置；必须等 HTTPS 全部自检通过并明确显示“部署完成”后再继续。
 
-部署脚本识别到当前 Edition 的既有 TG2Cloud 安装后，重新部署默认保留 VPS 当前 `.env`，并继续保留 SQLite、`rclone.conf`、下载目录、日志以及 CloudDrive2 配置和挂载数据。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”才应用本次表单值；升级前请先备份。升级会先在隔离目录构建候选镜像，并为旧代码、配置和数据库创建回退点；新版本未通过健康核验时只使用原有的有限内部回退逻辑，TG2Cloud v1.1.5 不提供正式自动 Restore。
+部署脚本识别到当前 Edition 的既有 TG2Cloud 安装后，重新部署默认保留 VPS 当前 `.env`，并继续保留 SQLite、`rclone.conf`、下载目录、日志以及 CloudDrive2 配置和挂载数据。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”才应用本次表单值；升级前请先备份。升级会先在隔离目录构建候选镜像，并为旧代码、配置和数据库创建回退点；新版本未通过健康核验时只使用原有的有限内部回退逻辑，TG2Cloud v1.2.0 不提供正式自动 Restore。
 
 ### 7. 完整按钮顺序
 
@@ -346,7 +348,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 全新 VPS 先收集配置、预检和确认再安装；完整已有实例复用配置，目标源码固定到 GitHub 最新正式稳定 Release 的 commit。已是最新版不重建、不重启。旧 TG115、部分容器、手改程序、冲突目录及网关镜像迁移均停止，不自动覆盖。`manage.sh update` 仍只重建本机已有 payload，与此入口不同。
 
-源码、Bot、两个部署器的版本源及 Windows 构建资源统一为 **v1.1.5**；正式 EXE 由 Actions 构建，不上传本机构建。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。首次安装、跨版本升级与回退仍需单独实机验收，OpenList 脚本实机验收暂缓。
+源码、Bot、两个部署器的版本源及 Windows 构建资源统一为 **v1.2.0**；正式 EXE 由 Actions 构建，不上传本机构建。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。首次安装、跨版本升级与回退仍需单独实机验收，OpenList 脚本实机验收暂缓。
 
 HTTPS 续做成功后可再次确认显示已有凭据。也可单独在私有终端运行以下命令，每项默认不显示；此操作不会安装、升级或改密，不能与 `--check`、`--configure-https` 或 `--verify` 组合：
 
@@ -378,9 +380,32 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition openlist
 ```
 
-在线引导固定到经 CI 验证的不可变源码，业务容器使用最新正式稳定 Release。需要联网，不是离线安装；真实 NAS 与局域网浏览器验收尚未执行。
+在线引导固定到经 CI 验证的不可变源码，业务容器使用最新正式稳定 Release。需要联网，不是离线安装。已收到 CloudDrive2 在内网 Debian 实机首次部署及 WebDAV 验收通过的日志；OpenList、不同 NAS 系统、升级/回退与真实 Telegram 转存仍需单独验收。
 
 入口只监听指定内网地址，不占用 80/443、不签发证书，不接管已有 HTTPS 实例。HTTP 不加密，仅用于可信内网，禁止公网端口转发。升级保留原配置与已保存 IP；网关后端和 Bot 内部 WebDAV 不变。详见 [内网安装与安全边界](docs/LAN-INSTALL.md)。以下强制 HTTPS 规则仍适用于原 EXE / 公网 VPS 安装。
+
+## 独立卸载脚本（本地验证阶段）
+
+[查看卸载脚本](uninstall.sh) · [卸载使用说明](docs/UNINSTALL.md)
+
+新增 `uninstall.sh` 可统一移除标准部署的所选 Bot、云网关、项目网络、HTTPS 路由和内网入口；没有剩余 HTTPS 路由时才移除 TG2Cloud 自己的 Nginx/Certbot 容器。默认保留业务数据和历史备份，`--purge-data` 需要额外删除确认。不卸载系统 Docker/Nginx，不清理其他容器、命名卷、镜像缓存或旧 TG115。
+
+在线一键卸载命令（待发布启用）：
+
+> **目前不可用，请勿立即执行。** 卸载脚本尚未推送，在线引导的固定源码版本也尚未启用。提交、CI 和审核通过后，才能使用下面的命令；届时向导会询问要卸载的 Edition，并展示计划、等待确认。
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
+```
+
+在目标 Linux 的源码根目录以 root 运行，先预览，再确认卸载：
+
+```bash
+bash ./uninstall.sh --edition all --check
+bash ./uninstall.sh --edition all
+```
+
+也可选择 `--edition clouddrive2` 或 `--edition openlist`。在线引导暂未启用，等待提交、CI 和审核；本轮未进行真实 VPS/NAS 卸载。数据删除、FUSE 挂载保护、共享代理和保留目录边界见 [卸载说明](docs/UNINSTALL.md)。
 
 ## 强制 HTTPS 管理入口
 
@@ -584,7 +609,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 
 CloudDrive2 没有手动“创建备份”UI；重新部署前的内部备份包含程序/`.env`/配置（含现有 `rclone.conf`）和可用时的 SQLite 一致性快照，不包含下载、日志及 CloudDrive2 状态目录。OpenList 的手动安全备份包含程序配置归档（含 `.env`、`rclone.conf`）、可用时的 SQLite 快照，以及已初始化的 OpenList 状态（排除其临时文件和日志）；不包含下载、TG2Cloud 日志或云端文件。备份文件含敏感凭据，目录权限为 `700`、文件尽量为 `600`，不得公开上传。
 
-CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList 升级/手动备份位于 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的 TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.1.5 不提供正式自动 Restore 或 Uninstall。
+CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList 升级/手动备份位于 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的 TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.2.0 仍不提供正式自动 Restore；卸载使用独立的 [卸载脚本](docs/UNINSTALL.md)，不是升级步骤，默认保留业务数据和历史备份。
 
 ## 常见问题
 

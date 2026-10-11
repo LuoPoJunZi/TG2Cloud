@@ -17,6 +17,7 @@
   <a href="#downloads">Download</a> ·
   <a href="#windows-gui-deployment">Deployment Guide</a> ·
   <a href="#optional-vps-installer">VPS Installer</a> ·
+  <a href="docs/UNINSTALL.md">Uninstall Guide</a> ·
   <a href="#bot-commands">Bot Commands</a> ·
   <a href="#troubleshooting">Troubleshooting</a> ·
   <a href="RELEASE_NOTES.md">Release Notes</a>
@@ -44,7 +45,7 @@ Your Cloud
 
 This repository evolved from [whyhhh20/TG115](https://github.com/whyhhh20/TG115). It retains the original attribution and license while adding stronger task recovery, disk protection, streaming transfers, state semantics, rollback, VPS resource guidance, and operational diagnostics.
 
-> Current version: **TG2Cloud v1.1.5**
+> Current version: **TG2Cloud v1.2.0**
 >
 > This version fixes interrupted HTTPS recovery, host Python 3.10 maintenance compatibility, saved-credential display after resuming setup, and missing-tool diagnostics on minimal VPS systems. Both PySide6 deployers remain the primary installers; the optional VPS wizard adds confirmed viewing of saved credentials. GitHub Actions tests, builds and self-tests the official Windows EXEs from the matching tag; the Release reuses those artifacts and their actual SHA256 values. See the [release notes](RELEASE_NOTES.md) for changes and pending acceptance.
 
@@ -87,6 +88,7 @@ The wizard collects information, checks the environment and asks for confirmatio
 - [Requirements](#requirements)
 - [Windows GUI Deployment](#windows-gui-deployment)
 - [Optional VPS Installer](#optional-vps-installer)
+- [Uninstall Guide (Chinese)](docs/UNINSTALL.md)
 - [Mandatory Domain HTTPS Access](#mandatory-domain-https-access)
 - [CloudDrive2 Configuration](#clouddrive2-configuration)
 - [OpenList and Cloud Storage Configuration](#openlist-and-cloud-storage-configuration)
@@ -147,7 +149,7 @@ TG2Cloud follows a “select manually, process automatically” model. You choos
 
 ## Current Version
 
-The current version, TG2Cloud v1.1.5, provides two separate PySide6 editions:
+The current version, TG2Cloud v1.2.0, provides two separate PySide6 editions:
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -298,7 +300,7 @@ Click **一键部署基础环境** (Deploy base environment). A normal first dep
 
 While dependencies or container images are being downloaded, wait for an explicit success or failure. Do not repeatedly click deploy, network repair, or WebDAV acceptance.
 
-When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.1.5 does not provide a general-purpose Restore feature.
+When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.2.0 does not provide a general-purpose Restore feature.
 
 ### 7. First-Installation Sequence
 
@@ -345,7 +347,7 @@ The entry is downloaded from `main`, but the wizard modules are pinned to a veri
 
 A fresh installation collects configuration, checks the environment and asks for confirmation before applying changes. A complete existing installation retains its configuration and targets the latest official stable Release, pinned to its immutable commit. An up-to-date instance is not rebuilt or restarted. Legacy TG115, partial instances, custom code, conflicting directories and gateway image migrations fail closed. Unlike this entry, `manage.sh update` only rebuilds the payload already installed on the VPS.
 
-The shared source version for the Bot, both deployers and Windows build resources is **v1.1.5**. Official EXEs are built by Actions, not uploaded from a local machine. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. The wizard installs only the latest officially released stable payload, never unpublished code merely because main has a higher version. Fresh installation, cross-version upgrade and rollback still require separate VPS acceptance; OpenList script acceptance is deferred.
+The shared source version for the Bot, both deployers and Windows build resources is **v1.2.0**. Official EXEs are built by Actions, not uploaded from a local machine. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. The wizard installs only the latest officially released stable payload, never unpublished code merely because main has a higher version. Fresh installation, cross-version upgrade and rollback still require separate VPS acceptance; OpenList script acceptance is deferred.
 
 After successful HTTPS recovery, the wizard offers to display saved credentials again. You can also view them separately in your private terminal. Each item requires confirmation and defaults to hidden; this operation does not install, upgrade or reset passwords and cannot be combined with `--check`, `--configure-https` or `--verify`:
 
@@ -377,9 +379,32 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition openlist
 ```
 
-The online bootstrap pins its helper code to an immutable CI-validated commit; business containers use the latest official stable Release. Internet access is required. Real NAS and external LAN-browser acceptance have not been performed.
+The online bootstrap pins its helper code to an immutable CI-validated commit; business containers use the latest official stable Release. Internet access is required. User-provided logs confirm a successful first CloudDrive2 deployment and WebDAV acceptance on a Debian LAN host. OpenList, other NAS systems, upgrade/rollback, and real Telegram transfers still require separate acceptance.
 
 The entry binds only the selected private address, does not use ports 80/443 or request certificates, and refuses to convert existing HTTPS instances. HTTP is unencrypted: use only a trusted LAN and never forward it publicly. Upgrades preserve existing configuration and the saved IP; the loopback backend and internal Bot WebDAV remain unchanged. See the [LAN installation and safety guide (Chinese)](docs/LAN-INSTALL.md). The mandatory HTTPS rules below still apply to the original EXEs and public VPS installer.
+
+## Independent uninstaller (local validation)
+
+[View uninstall script](uninstall.sh) · [Uninstall guide (Chinese)](docs/UNINSTALL.md)
+
+The new `uninstall.sh` removes the selected managed Bot, gateway, project network, HTTPS route and LAN entry at standard installation paths. TG2Cloud's own Nginx/Certbot containers are removed only when no HTTPS route remains. Data and historical backups are retained by default; `--purge-data` needs a separate typed confirmation. System Docker/Nginx, unrelated containers, named volumes, image caches and legacy TG115 instances are not removed.
+
+Online one-line uninstaller (pending publication):
+
+> **Not available yet; do not run this command now.** The script has not been pushed and the immutable source pin remains disabled. After publication, CI and review, this command will start the wizard, ask which Edition to remove, preview the plan and require confirmation.
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
+```
+
+As root in the source checkout on the target Linux host, preview first:
+
+```bash
+bash ./uninstall.sh --edition all --check
+bash ./uninstall.sh --edition all
+```
+
+Select `--edition clouddrive2` or `--edition openlist` to remove only one Edition. The online bootstrap remains disabled pending a reviewed, CI-validated source commit. Real VPS/NAS removal has not been tested in this round. See the [uninstall guide (Chinese)](docs/UNINSTALL.md) for data deletion, FUSE mount protection, shared proxy handling and retained directories.
 
 ## Mandatory Domain HTTPS Access
 
@@ -568,7 +593,7 @@ CloudDrive2 has no manual backup button. Its redeployment protection includes pr
 
 Backups contain secrets. Directories are mode `700` and files are set to `600` where possible. Never upload them publicly.
 
-CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.1.5 does not provide a general Restore or Uninstall function.
+CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.2.0 still has no general Restore function. Removal uses the [independent uninstaller](docs/UNINSTALL.md), not the upgrade flow, and retains business data and backups by default.
 
 ## Troubleshooting
 

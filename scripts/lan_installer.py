@@ -475,7 +475,8 @@ def execute(plan: Plan, release, source, baseline, session, log, ui, *, verify=F
             raise RuntimeError("内网入口容器未运行；不冒充成功")
         wait_for_entry(product, plan.address)
         log("TG2CLOUD_LAN_BASE=OK；TG2CLOUD_LAN_ENTRY=OK；HTTPS=NOT_APPLICABLE")
-        log("本机内网入口检查通过；请另用局域网电脑访问管理页，再配置云存储与专用 WebDAV 用户。")
+        log(f"{product.display_name} 内网管理页：http://{plan.address}:{product.management_port}")
+        log("请先用局域网电脑的浏览器打开上面的地址，配置云存储，并创建与保存凭据一致的专用 WebDAV 用户；完成后再确认写入验收。")
         if plan.action == "install" or not plan.entry_healthy:
             vps.show_credentials(ui, product, current.config, log)
         if verify or plan.action == "install":

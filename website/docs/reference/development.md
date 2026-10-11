@@ -7,11 +7,11 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.1.5
+git checkout main
 git rev-parse HEAD
 ```
 
-当前正式版本为 v1.1.5。对已发布版本复现问题时使用对应标签；跟随主分支开发时使用 main 并记录提交号，避免把后续未发布修改当成 Release 行为。
+当前源码为 v1.2.0（待发布），正式下载基线为 v1.1.5。对已发布版本复现问题时使用对应标签；跟随主分支开发时使用 main 并记录提交号，避免把后续未发布修改当成 Release 行为。
 
 ## 关键目录与入口
 
@@ -25,6 +25,8 @@ git rev-parse HEAD
 | `domain_proxy.py`、`proxy_maintenance.py` | 共享 HTTPS 网关与私密维护助手 |
 | `operation_feedback.py` | 真实操作阶段、错误建议与版本摘要 |
 | `install.sh`、`scripts/vps_installer.py`、`scripts/vps_runtime.py` | 可选 VPS 向导、稳定 Release 解析与运行环境适配，不替代 EXE 主入口 |
+| `install-lan.sh`、`scripts/lan_installer.py` | 独立内网入口，人工指定私有 IPv4，不修改 EXE 的 HTTPS 规则 |
+| `uninstall.sh`、`scripts/uninstaller.py` | 独立卸载、只读预检及明确确认，默认保留数据，不卸载系统软件 |
 | `payload_clouddrive2/` | CloudDrive2 部署脚本与共享核心文件来源 |
 | `payload_openlist/` | OpenList 部署脚本 |
 | `tests/` | 自动化回归 |
