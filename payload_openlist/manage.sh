@@ -124,7 +124,7 @@ create_backup() (
   if [[ -f "$INSTALL_DIR/openlist/data/data.db" ]]; then
     openlist_backup="$(mktemp "$BACKUP_DIR/openlist-state-XXXXXXXX.tar.gz")"
     tar -czf "$openlist_backup" -C "$INSTALL_DIR" \
-      --exclude='./openlist/data/temp' --exclude='./openlist/data/log' \
+      --exclude='openlist/data/temp' --exclude='openlist/data/log' \
       openlist/data
     tar -tzf "$openlist_backup" >/dev/null
     chmod 600 "$openlist_backup"

@@ -12,6 +12,8 @@ OPENLIST_SERVICE="openlist"
 OPENLIST_CONTAINER="tg2cloud-openlist"
 BACKUP=""
 DATABASE_BACKUP=""
+DATABASE_BACKUP_CANDIDATE=""
+ROLLBACK_DATABASE=""
 OPENLIST_BACKUP=""
 RELEASE_STAGE=""
 CANDIDATE_TAG=""
@@ -60,25 +62,66 @@ wait_openlist_http() {
   return 1
 }
 
+validate_database_backup() {
+  # Snapshots must be self-contained: never create a missing database or rely
+  # on a live WAL alongside a truncated backup. Keep failures free of row data.
+  python3 - "$1" <<'PY'
+import sqlite3
+import sys
+from contextlib import closing
+from pathlib import Path
+
+try:
+    path = Path(sys.argv[1])
+    if path.is_symlink() or not path.is_file() or path.stat().st_size == 0:
+        raise ValueError("invalid snapshot")
+    with closing(sqlite3.connect(path.resolve().as_uri() + "?mode=ro&immutable=1", uri=True)) as database:
+        if database.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+            raise ValueError("invalid snapshot")
+except Exception:
+    print("TG2CLOUD_DATABASE_CHECK=FAILED", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
+restore_image_reference() {
+  local image_id="$1" reference="$2" resolved_id
+  if [[ "$reference" == *@sha256:* ]]; then
+    # An immutable digest is already a reference, not a tag Docker can create.
+    resolved_id="$(docker image inspect --format '{{.Id}}' "$reference")" || return 1
+    [[ "$resolved_id" == "$image_id" ]] || return 1
+  else
+    docker tag "$image_id" "$reference" || return 1
+  fi
+}
+
 rollback_install() {
   ROLLBACK_ARMED=false
   [[ -n "$BACKUP" && -f "$BACKUP" ]] || return 1
+  if [[ -n "$DATABASE_BACKUP" ]]; then
+    validate_database_backup "$DATABASE_BACKUP" || return 1
+    # Stage and validate before touching the live database or its WAL/SHM.
+    ROLLBACK_DATABASE="$(mktemp "$INSTALL_DIR/data/.rollback-XXXXXXXX.db")" || return 1
+    install -m 600 "$DATABASE_BACKUP" "$ROLLBACK_DATABASE" || return 1
+    validate_database_backup "$ROLLBACK_DATABASE" || return 1
+    chown 10001:10001 "$ROLLBACK_DATABASE" || return 1
+  fi
+  if [[ -n "$OLD_BOT_IMAGE_ID" && -n "$OLD_BOT_IMAGE_TAG" ]]; then
+    restore_image_reference "$OLD_BOT_IMAGE_ID" "$OLD_BOT_IMAGE_TAG" || return 1
+  fi
+  if [[ -n "$OLD_OPENLIST_IMAGE_ID" && -n "$OLD_OPENLIST_IMAGE_TAG" ]]; then
+    restore_image_reference "$OLD_OPENLIST_IMAGE_ID" "$OLD_OPENLIST_IMAGE_TAG" || return 1
+  fi
   log "新版本未通过验收，开始恢复升级前的程序、配置和 Bot 数据库"
   if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
-    (cd "$INSTALL_DIR" && docker compose rm -sf "$BOT_SERVICE") || true
+    (cd "$INSTALL_DIR" && docker compose rm -sf "$BOT_SERVICE") || return 1
   fi
   remove_program_files || return 1
   tar -xzf "$BACKUP" -C "$INSTALL_DIR" || return 1
-  if [[ -n "$DATABASE_BACKUP" && -f "$DATABASE_BACKUP" ]]; then
+  if [[ -n "$DATABASE_BACKUP" ]]; then
     rm -f -- "$INSTALL_DIR/data/tg115.db-wal" "$INSTALL_DIR/data/tg115.db-shm" || return 1
-    install -m 600 "$DATABASE_BACKUP" "$INSTALL_DIR/data/tg115.db" || return 1
-    chown 10001:10001 "$INSTALL_DIR/data/tg115.db" || return 1
-  fi
-  if [[ -n "$OLD_BOT_IMAGE_ID" && -n "$OLD_BOT_IMAGE_TAG" ]]; then
-    docker tag "$OLD_BOT_IMAGE_ID" "$OLD_BOT_IMAGE_TAG" || return 1
-  fi
-  if [[ -n "$OLD_OPENLIST_IMAGE_ID" && -n "$OLD_OPENLIST_IMAGE_TAG" ]]; then
-    docker tag "$OLD_OPENLIST_IMAGE_ID" "$OLD_OPENLIST_IMAGE_TAG" || return 1
+    mv -f -- "$ROLLBACK_DATABASE" "$INSTALL_DIR/data/tg115.db" || return 1
+    ROLLBACK_DATABASE=""
   fi
   cd "$INSTALL_DIR" || return 1
   docker compose up -d "$OPENLIST_SERVICE" || return 1
@@ -96,6 +139,13 @@ cleanup_release_stage() {
   fi
   if [[ "$DB_TEMP_NAME" == .upgrade-backup-*.db ]]; then
     rm -f -- "$INSTALL_DIR/data/$DB_TEMP_NAME"
+  fi
+  if [[ "$DATABASE_BACKUP_CANDIDATE" == "$BACKUP_DIR"/database-*.db \
+    && "$DATABASE_BACKUP_CANDIDATE" != "$DATABASE_BACKUP" ]]; then
+    rm -f -- "$DATABASE_BACKUP_CANDIDATE"
+  fi
+  if [[ "$ROLLBACK_DATABASE" == "$INSTALL_DIR"/data/.rollback-*.db ]]; then
+    rm -f -- "$ROLLBACK_DATABASE"
   fi
 }
 
@@ -320,21 +370,29 @@ if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
     docker stop --time 30 "$BOT_CONTAINER" >/dev/null
   fi
   if [[ -f "$INSTALL_DIR/data/tg115.db" ]]; then
-    DATABASE_BACKUP="$(mktemp "$BACKUP_DIR/database-XXXXXXXX.db")"
-    rm -f -- "$DATABASE_BACKUP"
+    DATABASE_BACKUP_CANDIDATE="$(mktemp "$BACKUP_DIR/database-XXXXXXXX.db")"
     DB_TEMP_NAME=".upgrade-backup-$$.db"
     docker run --rm --read-only --tmpfs /tmp --user 10001:10001 \
       --volume "$INSTALL_DIR/data:/data" --entrypoint python "$CANDIDATE_TAG" \
       -m app.backup_database /data/tg115.db "/data/$DB_TEMP_NAME"
-    install -m 600 "$INSTALL_DIR/data/$DB_TEMP_NAME" "$DATABASE_BACKUP"
+    install -m 600 "$INSTALL_DIR/data/$DB_TEMP_NAME" "$DATABASE_BACKUP_CANDIDATE"
+    validate_database_backup "$DATABASE_BACKUP_CANDIDATE"
+    DATABASE_BACKUP="$DATABASE_BACKUP_CANDIDATE"
     rm -f -- "$INSTALL_DIR/data/$DB_TEMP_NAME"
   fi
   if [[ -f "$INSTALL_DIR/openlist/data/data.db" ]]; then
+    if [[ -n "$OLD_OPENLIST_IMAGE_ID" ]]; then
+      log "短暂停止 OpenList，创建一致的状态备份"
+      docker stop --time 30 "$OPENLIST_CONTAINER" >/dev/null
+    fi
     OPENLIST_BACKUP="$(mktemp "$BACKUP_DIR/openlist-state-XXXXXXXX.tar.gz")"
     tar -czf "$OPENLIST_BACKUP" -C "$INSTALL_DIR" \
-      --exclude='./openlist/data/temp' --exclude='./openlist/data/log' openlist/data \
+      --exclude='openlist/data/temp' --exclude='openlist/data/log' openlist/data \
       || fail "OpenList 状态备份失败，停止升级"
     tar -tzf "$OPENLIST_BACKUP" >/dev/null || fail "OpenList 状态备份无法读取"
+    if [[ -n "$OLD_OPENLIST_IMAGE_ID" ]]; then
+      docker start "$OPENLIST_CONTAINER" >/dev/null
+    fi
   fi
   ROLLBACK_ARMED=true
 fi
