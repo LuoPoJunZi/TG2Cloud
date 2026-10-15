@@ -10,6 +10,8 @@ BOT_SERVICE="tg2cloud-clouddrive2-bot"
 BOT_CONTAINER="tg2cloud-clouddrive2-bot"
 BACKUP=""
 DATABASE_BACKUP=""
+DATABASE_BACKUP_CANDIDATE=""
+ROLLBACK_DATABASE=""
 RELEASE_STAGE=""
 CANDIDATE_TAG=""
 OLD_IMAGE_ID=""
@@ -33,22 +35,52 @@ remove_program_files() {
   done
 }
 
+validate_database_backup() {
+  python3 - "$1" <<'PY'
+import sqlite3
+import sys
+from contextlib import closing
+from pathlib import Path
+try:
+    path = Path(sys.argv[1])
+    if path.is_symlink() or not path.is_file() or path.stat().st_size == 0:
+        raise ValueError("invalid snapshot")
+    with closing(sqlite3.connect(path.resolve().as_uri() + "?mode=ro&immutable=1", uri=True)) as database:
+        if database.execute("PRAGMA quick_check").fetchall() != [("ok",)]:
+            raise ValueError("invalid snapshot")
+except Exception:
+    print("TG2CLOUD_DATABASE_CHECK=FAILED", file=sys.stderr)
+    sys.exit(1)
+PY
+}
+
 rollback_install() {
   ROLLBACK_ARMED=false
   [[ -n "$BACKUP" && -f "$BACKUP" ]] || return 1
+  if [[ -n "$DATABASE_BACKUP" ]]; then
+    validate_database_backup "$DATABASE_BACKUP" || return 1
+    ROLLBACK_DATABASE="$(mktemp "$INSTALL_DIR/data/.rollback-XXXXXXXX.db")" || return 1
+    install -m 600 "$DATABASE_BACKUP" "$ROLLBACK_DATABASE" || return 1
+    validate_database_backup "$ROLLBACK_DATABASE" || return 1
+    chown 10001:10001 "$ROLLBACK_DATABASE" || return 1
+  fi
+  if [[ -n "$OLD_IMAGE_ID" && -n "$OLD_IMAGE_TAG" ]]; then
+    if [[ "$OLD_IMAGE_TAG" == *@sha256:* ]]; then
+      [[ "$(docker image inspect --format '{{.Id}}' "$OLD_IMAGE_TAG")" == "$OLD_IMAGE_ID" ]] || return 1
+    else
+      docker tag "$OLD_IMAGE_ID" "$OLD_IMAGE_TAG" || return 1
+    fi
+  fi
   log "新版本未通过验收，开始恢复升级前的程序、配置和数据库"
   if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
-    (cd "$INSTALL_DIR" && docker compose rm -sf "$BOT_SERVICE") || true
+    (cd "$INSTALL_DIR" && docker compose rm -sf "$BOT_SERVICE") || return 1
   fi
   remove_program_files || return 1
   tar -xzf "$BACKUP" -C "$INSTALL_DIR" || return 1
-  if [[ -n "$DATABASE_BACKUP" && -f "$DATABASE_BACKUP" ]]; then
+  if [[ -n "$DATABASE_BACKUP" ]]; then
     rm -f -- "$INSTALL_DIR/data/tg115.db-wal" "$INSTALL_DIR/data/tg115.db-shm" || return 1
-    install -m 600 "$DATABASE_BACKUP" "$INSTALL_DIR/data/tg115.db" || return 1
-    chown 10001:10001 "$INSTALL_DIR/data/tg115.db" || return 1
-  fi
-  if [[ -n "$OLD_IMAGE_ID" && -n "$OLD_IMAGE_TAG" ]]; then
-    docker tag "$OLD_IMAGE_ID" "$OLD_IMAGE_TAG" || return 1
+    mv -f -- "$ROLLBACK_DATABASE" "$INSTALL_DIR/data/tg115.db" || return 1
+    ROLLBACK_DATABASE=""
   fi
   cd "$INSTALL_DIR" || return 1
   docker compose up -d --no-deps --force-recreate "$BOT_SERVICE" || return 1
@@ -63,6 +95,12 @@ rollback_install() {
 }
 
 cleanup_release_stage() {
+  if [[ "$ROLLBACK_DATABASE" == "$INSTALL_DIR"/data/.rollback-*.db ]]; then
+    rm -f -- "$ROLLBACK_DATABASE"
+  fi
+  if [[ "$DATABASE_BACKUP_CANDIDATE" == "$BACKUP_DIR"/database-*.db && "$DATABASE_BACKUP_CANDIDATE" != "$DATABASE_BACKUP" ]]; then
+    rm -f -- "$DATABASE_BACKUP_CANDIDATE"
+  fi
   if [[ -n "$RELEASE_STAGE" && "$RELEASE_STAGE" == /opt/tg2cloud-clouddrive2-release-* && -d "$RELEASE_STAGE" ]]; then
     rm -rf -- "$RELEASE_STAGE"
   fi
@@ -323,6 +361,7 @@ if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
       --volume "$INSTALL_DIR/data:/data" --entrypoint python "$CANDIDATE_TAG" \
       -m app.backup_database /data/tg115.db "/data/$DB_TEMP_NAME"
     install -m 600 "$INSTALL_DIR/data/$DB_TEMP_NAME" "$DATABASE_BACKUP_CANDIDATE"
+    validate_database_backup "$DATABASE_BACKUP_CANDIDATE"
     DATABASE_BACKUP="$DATABASE_BACKUP_CANDIDATE"
     rm -f -- "$INSTALL_DIR/data/$DB_TEMP_NAME"
   fi

@@ -657,7 +657,12 @@ class QueueAndResourceSimulationTests(unittest.TestCase):
 
                 service._download_one = hold  # type: ignore[method-assign]
                 try:
-                    await service._start_downloads()
+                    # This scenario controls capacity through the snapshot. Keep
+                    # the live check consistent, including on small CI tmpfs.
+                    with patch("app.main.shutil.disk_usage", return_value=SimpleNamespace(
+                        free=service.snapshot.disk_free,
+                    )):
+                        await service._start_downloads()
                     self.assertEqual(
                         sorted(service.download_tasks), list(range(201, 206))
                     )

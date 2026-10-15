@@ -11,6 +11,7 @@ from pathlib import Path
 
 from .config import Settings
 from .interfaces import DestinationProbe
+from .recovery import STAGING_PATTERN, StagingScan, safe_failure
 
 
 class RcloneError(RuntimeError):
@@ -282,6 +283,10 @@ class RcloneClient:
             self._config_ready = True
 
     def remote(self, relative_path: str = "") -> str:
+        if (relative_path and (relative_path.startswith(("/", "\\"))
+                or any(p in {".", ".."} for p in relative_path.split("/"))
+                or "\\" in relative_path or any(ord(c) < 32 for c in relative_path))):
+            raise ValueError("远端相对路径不安全")
         target = self.settings.cd2_target.strip("/")
         relative = relative_path.strip("/")
         path = "/".join(part for part in (target, relative) if part)
@@ -349,7 +354,7 @@ class RcloneClient:
             self.log.warning(
                 "%s WebDAV 健康检查失败：%s",
                 self.destination_label,
-                exc,
+                safe_failure(exc),
             )
             return DestinationProbe(False, "unknown", "目录探测异常；请查看 VPS 最近日志")
 
@@ -371,28 +376,83 @@ class RcloneClient:
     async def healthy(self) -> bool:
         return (await self.probe()).accessible
 
-    async def list_staging_objects(self) -> list[tuple[int, str]]:
-        """Read top-level TG115 staging objects without deleting anything."""
+    async def list_staging_objects(self) -> StagingScan:
+        """Stream the complete top-level listing within explicit time/memory bounds."""
         await self.ensure_config()
-        _, out, _ = await self._run(
-            "lsjson", self.remote(), "--files-only", "--max-depth", "1", timeout=45,
+        process = await asyncio.create_subprocess_exec(
+            "rclone", "--config", str(self.settings.rclone_config_path),
+            "lsjson", self.remote(), "--files-only", "--max-depth", "1",
+            "--retries", "1", "--low-level-retries", "1",
+            stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE,
         )
+        scan = StagingScan()
+        stderr = asyncio.create_task(_read_process_tail(process.stderr))
         try:
-            payload = json.loads(out)
-            if not isinstance(payload, list):
-                raise TypeError("lsjson result is not a list")
-            result: list[tuple[int, str]] = []
-            pattern = re.compile(r"\.uploading-(\d+)-.+")
-            for item in payload[:10000]:
-                name = str(item.get("Name", "")) if isinstance(item, dict) else ""
-                if "/" in name or "\\" in name:
-                    continue
-                matched = pattern.fullmatch(name)
-                if matched:
-                    result.append((int(matched.group(1)), name))
-            return result
-        except (TypeError, ValueError, AttributeError) as exc:
-            raise RcloneError("无法解析远端临时文件清单") from exc
+            await asyncio.wait_for(self._read_staging(process, scan), timeout=40)
+        except (TimeoutError, ValueError, UnicodeError):
+            scan.complete, scan.reason = False, "扫描超时、超过资源上限或清单不完整"
+        finally:
+            if process.returncode is None:
+                try:
+                    process.kill()
+                except ProcessLookupError:
+                    pass
+            await process.wait()
+            await stderr
+        return scan
+
+    @staticmethod
+    async def _read_staging(process: asyncio.subprocess.Process, scan: StagingScan) -> None:
+        import codecs
+
+        decoder = codecs.getincrementaldecoder("utf-8")()
+        parser = json.JSONDecoder()
+        buffer, phase = "", "start"
+        while True:
+            chunk = await process.stdout.read(8192)
+            buffer += decoder.decode(chunk, final=not chunk)
+            while True:
+                buffer = buffer.lstrip()
+                if not buffer:
+                    break
+                if phase == "start":
+                    if buffer[0] != "[":
+                        raise ValueError("array required")
+                    buffer, phase = buffer[1:], "first"
+                elif phase in {"first", "item"}:
+                    if phase == "first" and buffer[0] == "]":
+                        buffer, phase = buffer[1:], "done"
+                        continue
+                    try:
+                        item, offset = parser.raw_decode(buffer)
+                    except ValueError:
+                        break
+                    if not isinstance(item, dict) or not isinstance(item.get("Name"), str):
+                        raise ValueError("invalid item")
+                    scan.checked += 1
+                    name = item["Name"]
+                    matched = STAGING_PATTERN.fullmatch(name)
+                    if matched and item.get("IsDir") is not True and item.get("Path", name) == name:
+                        scan.found += 1
+                        if len(scan.objects) >= 20000:
+                            raise ValueError("candidate limit")
+                        scan.objects.append((int(matched[1]), name))
+                    if scan.checked > 1000000:
+                        raise ValueError("listing limit")
+                    buffer, phase = buffer[offset:], "separator"
+                elif phase == "separator":
+                    if buffer[0] not in ",]":
+                        raise ValueError("invalid separator")
+                    phase = "item" if buffer[0] == "," else "done"
+                    buffer = buffer[1:]
+                else:
+                    raise ValueError("trailing content")
+            if len(buffer) > 1024 * 1024:
+                raise ValueError("entry limit")
+            if not chunk:
+                if phase != "done" or buffer.strip() or await process.wait() != 0:
+                    raise ValueError("incomplete listing")
+                return
 
     async def upload(
         self, local_path: Path, remote_temp: str, *,
@@ -408,9 +468,9 @@ class RcloneClient:
             "--checkers",
             "2",
             "--retries",
-            "2",
+            "1" if getattr(self.settings, "storage_backend", "clouddrive2") == "openlist" else "2",
             "--low-level-retries",
-            "5",
+            "1" if getattr(self.settings, "storage_backend", "clouddrive2") == "openlist" else "5",
             "--contimeout",
             "20s",
             "--timeout",
@@ -442,7 +502,7 @@ class RcloneClient:
             "--retries",
             "1",
             "--low-level-retries",
-            "5",
+            "1" if getattr(self.settings, "storage_backend", "clouddrive2") == "openlist" else "5",
             "--stats",
             "0",
         ]
@@ -580,5 +640,5 @@ class RcloneClient:
             self.log.warning(
                 "清理远端临时文件失败（rclone 退出码 %s）：%s",
                 code,
-                err or out or "未知错误",
+                safe_failure(err or out or "未知错误"),
             )

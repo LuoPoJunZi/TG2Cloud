@@ -1867,6 +1867,7 @@ class UploadRecoveryTests(unittest.TestCase):
         service = TransferService.__new__(TransferService)
         service.settings = SimpleNamespace(max_retries=1)
         service.db = UploadRecoveryTests.FakeDB(task)  # type: ignore[assignment]
+        service.db.staging_name = lambda task_id, name: f".uploading-{task_id}-{name}"
         service._finalize_lock = asyncio.Lock()
         service.recent_upload_errors = deque(maxlen=50)
         service.log = Mock()
@@ -1985,7 +1986,7 @@ class UploadRecoveryTests(unittest.TestCase):
             self.assertIn("本地文件暂时无法清理", str(service.db.task["error"]))
             self.assertGreater(float(service.db.task["next_retry_at"]), 0)
 
-    def test_failed_upload_removes_remote_temporary_file(self) -> None:
+    def test_failed_upload_preserves_uncertain_remote_temporary_file(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             local = Path(temp) / "1-video.mp4"
             local.write_bytes(b"1234")
@@ -2013,7 +2014,7 @@ class UploadRecoveryTests(unittest.TestCase):
             service.rclone = fake  # type: ignore[assignment]
             asyncio.run(service._upload_one(1))
             self.assertEqual(service.db.task["state"], "upload_failed_retained")
-            self.assertEqual(fake.removed, [".uploading-1-video.mp4"])
+            self.assertEqual(fake.removed, [])
             self.assertTrue(local.exists())
 
 
@@ -2032,6 +2033,7 @@ class PayloadTests(unittest.TestCase):
     def test_runtime_logger_is_tg2cloud_and_persistent_paths_are_unchanged(self) -> None:
         settings = SimpleNamespace(
             log_dir=Mock(), data_dir=Path("/data"), download_dir=Path("/downloads"),
+            rclone_config_path=Path("/config/rclone/rclone.conf"),
             api_id=123456, api_hash="FAKE_LOCAL_TEST_API_HASH",
         )
         with patch("app.main.setup_logging"), patch("app.main.logging.getLogger") as get_logger, \

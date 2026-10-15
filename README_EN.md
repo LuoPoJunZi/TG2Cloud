@@ -32,6 +32,8 @@
 
 TG2Cloud is a self-hosted personal file transfer tool. Send a file to your own Telegram Bot, let a VPS persist and process the task, and write it through rclone and CloudDrive2 or OpenList WebDAV to cloud storage mounted by you.
 
+v1.2.1 adds confirmed restarts of cancelled tasks, rename-based conflict recovery, caption-derived video names and offline backup preflight. See the [recovery guide (Chinese)](docs/RECOVERY.md). Downloading a new EXE does not update a running Bot; available release files are listed on GitHub Releases.
+
 ```text
 Telegram
     ↓
@@ -46,9 +48,9 @@ Your Cloud
 
 This repository evolved from [whyhhh20/TG115](https://github.com/whyhhh20/TG115). It retains the original attribution and license while adding stronger task recovery, disk protection, streaming transfers, state semantics, rollback, VPS resource guidance, and operational diagnostics.
 
-> Current version: **TG2Cloud v1.2.0**
+> Current source version: **TG2Cloud v1.2.1**
 >
-> This version adds independent LAN installation and removal wizards, repeats the LAN management address before verification, and protects externally referenced directories during removal. Both PySide6 deployers remain the primary installers; their mandatory HTTPS and stable transfer behavior are unchanged. GitHub Actions tests, builds and self-tests the official Windows EXEs from the matching tag; the Release reuses those artifacts and their actual SHA256 values. See the [release notes](RELEASE_NOTES.md) for pending real-host removal and other acceptance limits.
+> This version improves task recovery, remote-file protection, orphan scans, video naming and weekly failure counts. Both PySide6 deployers remain the primary installers, and each storage backend retains its upload strategy. GitHub Actions tests, builds and self-tests the official Windows EXEs from the matching tag; the Release reuses those artifacts and their actual SHA256 values. See the [release notes](RELEASE_NOTES.md) for acceptance results and remaining checks.
 
 > Only transfer content that you are authorized to save, back up, and use. Follow the laws and terms that apply to Telegram, your cloud provider, CloudDrive2/OpenList, the content source, and your jurisdiction.
 
@@ -150,7 +152,7 @@ TG2Cloud follows a “select manually, process automatically” model. You choos
 
 ## Current Version
 
-The current version, TG2Cloud v1.2.0, provides two separate PySide6 editions:
+The current version, TG2Cloud v1.2.1, provides two separate PySide6 editions:
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
@@ -301,7 +303,7 @@ Click **一键部署基础环境** (Deploy base environment). A normal first dep
 
 While dependencies or container images are being downloaded, wait for an explicit success or failure. Do not repeatedly click deploy, network repair, or WebDAV acceptance.
 
-When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.2.0 does not provide a general-purpose Restore feature.
+When an installation for the current edition already exists, redeployment preserves the VPS `.env` by default, along with SQLite, `rclone.conf`, downloads, logs, and gateway data. Current form values are applied only after explicitly enabling **使用本页配置覆盖 VPS 当前 .env**. The upgrade builds a candidate in an isolated directory and creates code, configuration, and database rollback points before replacement. v1.2.1 does not provide a general-purpose Restore feature.
 
 ### 7. First-Installation Sequence
 
@@ -348,7 +350,7 @@ The entry is downloaded from `main`, but the wizard modules are pinned to a veri
 
 A fresh installation collects configuration, checks the environment and asks for confirmation before applying changes. A complete existing installation retains its configuration and targets the latest official stable Release, pinned to its immutable commit. An up-to-date instance is not rebuilt or restarted. Legacy TG115, partial instances, custom code, conflicting directories and gateway image migrations fail closed. Unlike this entry, `manage.sh update` only rebuilds the payload already installed on the VPS.
 
-The shared source version for the Bot, both deployers and Windows build resources is **v1.2.0**. Official EXEs are built by Actions, not uploaded from a local machine. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. The wizard installs only the latest officially released stable payload, never unpublished code merely because main has a higher version. Fresh installation, cross-version upgrade and rollback still require separate VPS acceptance; OpenList script acceptance is deferred.
+The shared source version for the Bot, both deployers and Windows build resources is **v1.2.1**. Official EXEs are built by Actions, not uploaded from a local machine. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. The wizard installs only the latest officially released stable payload, never unpublished code merely because main has a higher version. The CloudDrive2 candidate passed database compatibility, startup and read-only WebDAV checks on the test VPS. Full installer upgrades/rollback, real Telegram transfers and OpenList script acceptance remain pending.
 
 After successful HTTPS recovery, the wizard offers to display saved credentials again. You can also view them separately in your private terminal. Each item requires confirmation and defaults to hidden; this operation does not install, upgrade or reset passwords and cannot be combined with `--check`, `--configure-https` or `--verify`:
 
@@ -392,7 +394,7 @@ The entry binds only the selected private address, does not use ports 80/443 or 
 
 Online one-line uninstaller:
 
-> The user reported successful VPS acceptance of the original data-preserving uninstaller; **the new complete cleanup still requires real-host testing**. The online entry pins reviewed commit `4faeeb3590b68fe5591d859be322dbfcb0a18533`, validated by Windows/Linux and Python 3.10/3.13 CI. This is not a new Tag/Release: both official EXEs remain v1.2.0. Finish active tasks, save backups outside the cleanup paths and preview first; there is no unattended forced deletion.
+> The user reported successful VPS acceptance of the original data-preserving uninstaller; **the new complete cleanup still requires real-host testing**. The online entry pins reviewed commit `4faeeb3590b68fe5591d859be322dbfcb0a18533`, validated by Windows/Linux and Python 3.10/3.13 CI. Obtain official EXEs from the matching GitHub Release. Finish active tasks, save backups outside the cleanup paths and preview first; there is no unattended forced deletion.
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
@@ -600,7 +602,7 @@ CloudDrive2 has no manual backup button. Its redeployment protection includes pr
 
 Backups contain secrets. Directories are mode `700` and files are set to `600` where possible. Never upload them publicly.
 
-CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.2.0 still has no general Restore function. Removal uses the [independent uninstaller](docs/UNINSTALL.md), not the upgrade flow. The current main-branch and online complete-cleanup entry delete selected backups; use `--keep-data` to retain them. The original v1.2.0 Tag retains its original behavior.
+CloudDrive2 upgrade backups are stored under `/opt/tg2cloud-clouddrive2-backups`; OpenList upgrade/manual backups are under `/opt/tg2cloud-openlist-backups`. Deployment reports usage and warns above 5 GB but does not delete rollback points automatically. `prune-backups` only removes recognized generated files inside the current edition's backup path. v1.2.1 still has no general Restore function. Removal uses the [independent uninstaller](docs/UNINSTALL.md), not the upgrade flow. The current main-branch and online complete-cleanup entry delete selected backups; use `--keep-data` to retain them. The original v1.2.0 Tag retains its original behavior.
 
 ## Troubleshooting
 

@@ -78,15 +78,20 @@ class TelethonContractTests(unittest.IsolatedAsyncioTestCase):
         async def callback_handler(_event):
             return None
 
+        async def album_handler(_event):
+            return None
+
         service = SimpleNamespace(
             client=self.client, _on_message=message_handler, _on_callback=callback_handler,
+            _on_album=album_handler,
         )
         TransferService._register_handlers(service)
         handlers = self.client.list_event_handlers()
-        self.assertEqual([handler for handler, _ in handlers], [message_handler, callback_handler])
+        self.assertEqual([handler for handler, _ in handlers], [message_handler, callback_handler, album_handler])
         self.assertIsInstance(handlers[0][1], events.NewMessage)
         self.assertTrue(handlers[0][1].incoming)
         self.assertIsInstance(handlers[1][1], events.CallbackQuery)
+        self.assertIsInstance(handlers[2][1], events.Album)
 
     async def test_real_document_download_to_file_and_async_stream(self) -> None:
         payload = bytes(range(256)) * 41

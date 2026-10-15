@@ -68,7 +68,7 @@ LEGAL_TRANSITIONS = {
     "verification_failed_retained": {"waiting_upload", "queued", "cancelled"},
     "completed": {"confirmed"},
     "confirmed": set(),
-    "cancelled": set(),
+    "cancelled": {"queued", "waiting_upload"},  # Only after revision-bound user confirmation.
 }
 
 

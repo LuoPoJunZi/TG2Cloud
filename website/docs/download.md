@@ -1,6 +1,6 @@
 # 下载与 SHA-256 校验
 
-本文档对应 **TG2Cloud v1.2.0** 正式版本。两个 EXE 和 SHA256SUMS 已由 GitHub Actions 从同一不可变 Tag 构建、自检并发布，校验清单与实际资产摘要已核对；获取程序请使用项目自己的 GitHub Releases，不使用第三方改包。
+本文档对应 **TG2Cloud v1.2.1** 待发布源码；以下下载暂保持已发布并核对的 v1.2.0。v1.2.1 两个 EXE 和 SHA256SUMS 由 GitHub Actions 完成构建、自检和发布后再更新链接。
 
 ## 下载已发布版本
 
@@ -110,12 +110,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 从源码构建部署器
 
-这部分用于从正式 v1.2.0 标签构建主项目，不是下载已发布 EXE，也不是构建本文档站。正式 Release 资产仍以 Actions 本次产物为准，本机构建的 SHA256 不要求相同。
+这部分用于从 main 构建 v1.2.1 待发布源码，不是下载已发布 EXE，也不是构建本文档站。正式 Release 资产仍以 Actions 本次产物为准，本机构建的 SHA256 不要求相同。
 
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.2.0
+git checkout main
 git rev-parse HEAD
 .\build.ps1 -Edition All
 ```

@@ -64,7 +64,7 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
         self.temp.cleanup()
 
     def task(self, *, size: int = 4, local: bool = False, message_id: int = 1) -> dict:
-        task, _ = self.db.create_task(chat_id=1, message_id=message_id, sender_id=2,
+        task, _ = self.db.create_task(chat_id=1, message_id=message_id, sender_id=self.settings.allowed_user_id,
                                       file_name="sample.bin", file_size=size)
         if local:
             path = self.settings.download_dir / f"{task['id']}-sample.bin"
@@ -120,6 +120,7 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
         )
 
     async def test_dashboard_uses_live_counts_rates_and_openlist_label(self) -> None:
+        self.service.db.weekly_failed_count = Mock(return_value=2)
         self.service.settings = replace(
             self.settings,
             storage_backend="openlist",
@@ -990,17 +991,21 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
     async def test_staging_listing_returns_only_tg115_temp_objects(self) -> None:
         client = RcloneClient(self.settings)
         client.ensure_config = AsyncMock()
-        client._run = AsyncMock(return_value=(0, json.dumps([
+        stream = asyncio.StreamReader()
+        stream.feed_data(json.dumps([
             {"Name": ".uploading-12-video.bin"},
             {"Name": ".uploading-13-../outside.bin"},
             {"Name": ".uploading-14-dir\\outside.bin"},
             {"Name": "normal.bin"},
             {"Name": ".uploading-invalid.bin"},
-        ]), ""))
-        self.assertEqual(
-            await client.list_staging_objects(),
-            [(12, ".uploading-12-video.bin")],
-        )
+        ]).encode())
+        stream.feed_eof()
+        process = SimpleNamespace(stdout=stream, stderr=None, returncode=0, wait=AsyncMock(return_value=0))
+        with patch("app.rclone_client.asyncio.create_subprocess_exec", new=AsyncMock(return_value=process)):
+            scan = await client.list_staging_objects()
+        self.assertTrue(scan.complete)
+        self.assertEqual(scan.checked, 5)
+        self.assertEqual(scan.objects, [(12, ".uploading-12-video.bin")])
 
     async def test_streaming_json_stats_are_parsed_incrementally_and_bounded(self) -> None:
         stream = asyncio.StreamReader()

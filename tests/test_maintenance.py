@@ -434,6 +434,7 @@ class ProbeVisibilityTests(unittest.IsolatedAsyncioTestCase):
         from app.interfaces import DestinationProbe
         service = review.OpenListReviewTests.service(DestinationProbe(False, "root", "limited", "rate_limited"))
         service.settings.destination_label = "OpenList"
+        service.db = SimpleNamespace(is_paused=lambda: False)
         service._sample_fresh = lambda: True
         service._destination_ready = lambda: service.destination_healthy
         service.download_window = service.upload_window = SimpleNamespace(value=1)

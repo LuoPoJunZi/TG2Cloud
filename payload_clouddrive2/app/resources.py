@@ -19,11 +19,13 @@ class ResourceSnapshot:
     disk_free: int
     network_bytes_per_second: float
     sampled_at: float
+    filesystems: tuple[tuple[str, int], ...] = ()
 
 
 class ResourceMonitor:
-    def __init__(self, download_dir: Path):
+    def __init__(self, download_dir: Path, **directories: Path):
         self.download_dir = download_dir
+        self.directories = {"暂存": download_dir, **directories}
         self._cpu_samples: deque[float] = deque(maxlen=5)
         self._last_net = psutil.net_io_counters()
         self._last_time = time.monotonic()
@@ -37,6 +39,13 @@ class ResourceMonitor:
         memory = psutil.virtual_memory()
         swap = psutil.swap_memory()
         disk = psutil.disk_usage(str(self.download_dir))
+        filesystems: dict[int, tuple[list[str], int]] = {}
+        for label, directory in self.directories.items():
+            device = directory.stat().st_dev
+            if device in filesystems:
+                filesystems[device][0].append(label)
+            else:
+                filesystems[device] = ([label], int(psutil.disk_usage(str(directory)).free))
         net = psutil.net_io_counters()
         elapsed = max(0.001, now - self._last_time)
         network_delta = (net.bytes_recv - self._last_net.bytes_recv) + (
@@ -52,6 +61,7 @@ class ResourceMonitor:
             disk_free=int(disk.free),
             network_bytes_per_second=network_rate,
             sampled_at=time.time(),
+            filesystems=tuple(("/".join(labels), free) for labels, free in filesystems.values()),
         )
 
 

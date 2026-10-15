@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 11 日**，对应 TG2Cloud **v1.2.0** 正式版本；已核对不可变 Tag、同标签 Windows/Linux 发布工作流、两个 EXE 与实际 SHA256SUMS，不把发布成功当作真实 VPS/NAS 或转存验收通过。
+本次内容核对日期为 **2026 年 10 月 15 日**，对应 TG2Cloud **v1.2.1** 待发布源码；正式下载暂保持已核对的 v1.2.0。CloudDrive2 候选已完成数据库兼容、启动和只读 WebDAV 检查，真实 Telegram 转存与完整安装升级仍待验收。
 
 ## 主要来源
 
@@ -23,7 +23,7 @@
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.2.0；依赖和历史版本不机械替换。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.2.1；依赖和历史版本不机械替换。
 
 导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 

@@ -1,14 +1,23 @@
 from __future__ import annotations
 
+import json
 import sqlite3
 import threading
 import time
 from collections.abc import Iterable
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any
 
 from .naming import safe_file_name
-from .states import GROWING_STATES, LOCAL_STATES, STATE_LABELS, can_transition
+from .recovery import needs_review
+from .states import (
+    FAILED_STATES,
+    GROWING_STATES,
+    LOCAL_STATES,
+    STATE_LABELS,
+    can_transition,
+)
 
 SCHEMA_VERSION = 1
 
@@ -87,6 +96,10 @@ class TaskDB:
                 ("remote_temp_path", "TEXT"),
                 ("remote_final_path", "TEXT"),
                 ("cancel_requested", "INTEGER NOT NULL DEFAULT 0"),
+                ("failure_kind", "TEXT"),
+                ("verification_method", "TEXT"),
+                ("verified_at", "REAL"),
+                ("original_file_name", "TEXT"),
             ):
                 if name not in columns:
                     self._conn.execute(f"ALTER TABLE tasks ADD COLUMN {name} {declaration}")
@@ -110,6 +123,26 @@ class TaskDB:
             self._conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_events_task ON task_events(task_id, id)"
             )
+            self._conn.execute("CREATE INDEX IF NOT EXISTS idx_tasks_owner_id ON tasks(sender_id, id)")
+            self._conn.execute(
+                """CREATE TABLE IF NOT EXISTS task_recoveries (
+                id INTEGER PRIMARY KEY, task_id INTEGER NOT NULL REFERENCES tasks(id),
+                happened_at REAL NOT NULL, operation TEXT NOT NULL, previous TEXT NOT NULL)"""
+            )
+            self._conn.execute(
+                """CREATE TABLE IF NOT EXISTS retained_objects (
+                path TEXT PRIMARY KEY, task_id INTEGER NOT NULL REFERENCES tasks(id))"""
+            )
+            self._conn.execute("CREATE INDEX IF NOT EXISTS idx_recoveries_task ON task_recoveries(task_id, id)")
+            self._conn.execute("CREATE INDEX IF NOT EXISTS idx_events_state_time ON task_events(new_state, happened_at, task_id)")
+            # Preserve the timestamp of pre-event-schema failures before recovery
+            # or progress updates can change updated_at. Never delete old tasks.
+            for state in FAILED_STATES:
+                self._conn.execute(
+                    """INSERT INTO task_events(task_id,old_state,new_state,happened_at)
+                    SELECT t.id,NULL,t.state,t.updated_at FROM tasks t WHERE t.state=?
+                    AND NOT EXISTS (SELECT 1 FROM task_events e WHERE e.task_id=t.id)""", (state,),
+                )
             self._conn.execute(
                 """CREATE TRIGGER IF NOT EXISTS task_state_event AFTER UPDATE OF state ON tasks
                 WHEN OLD.state != NEW.state BEGIN
@@ -132,10 +165,20 @@ class TaskDB:
 
     def remote_claimed(self, path: str, task_id: int) -> bool:
         with self._lock:
-            return self._conn.execute(
+            return self.protected_remote(path) or self._conn.execute(
                 "SELECT 1 FROM tasks WHERE remote_final_path=? AND id!=? "
                 "AND state!='cancelled' LIMIT 1", (path, task_id)
             ).fetchone() is not None
+
+    def protected_remote(self, path: str) -> bool:
+        with self._lock:
+            return self._conn.execute("SELECT 1 FROM retained_objects WHERE path=?", (path,)).fetchone() is not None
+
+    def staging_name(self, task_id: int, safe_name: str) -> str:
+        with self._lock:
+            recovery = self._conn.execute("SELECT MAX(id) FROM task_recoveries WHERE task_id=?", (task_id,)).fetchone()[0]
+        attempt = f"r{recovery}-" if recovery else ""
+        return f".uploading-{task_id}-{attempt}{safe_name}"
 
     def set_paused(self, paused: bool) -> None:
         with self._lock:
@@ -156,6 +199,80 @@ class TaskDB:
         with self._lock:
             self._conn.close()
 
+    def requeue(
+        self, task_id: int, *, sender_id: int, expected_updated_at: float,
+        local_complete: bool, fresh_path: bool = False, restart_cancelled: bool = False,
+        message_id: int | None = None,
+    ) -> bool:
+        """CAS the user-confirmed revision; preserve identity, dedup and attempt history."""
+        with self._lock:
+            self._conn.execute("BEGIN IMMEDIATE")
+            try:
+                row = self._conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
+                task = dict(row) if row else None
+                eligible = task and task["state"] in {
+                    "download_failed", "upload_failed_retained", "verification_failed_retained",
+                }
+                if restart_cancelled:
+                    eligible = task and task["state"] == "cancelled"
+                if (not eligible or task["sender_id"] != sender_id
+                        or task["updated_at"] != expected_updated_at
+                        or task["cancel_requested"] or (needs_review(task) and not fresh_path)):
+                    self._conn.execute("ROLLBACK")
+                    return False
+                previous = {key: task.get(key) for key in (
+                    "state", "remote_path", "remote_temp_path", "remote_final_path",
+                    "verification_method", "verified_at", "failure_kind",
+                )}
+                now = time.time()
+                if fresh_path:
+                    for key in ("remote_path", "remote_temp_path", "remote_final_path"):
+                        if task.get(key):
+                            self._conn.execute("INSERT OR IGNORE INTO retained_objects(path,task_id) VALUES(?,?)",
+                                               (task[key], task_id))
+                self._conn.execute(
+                    "INSERT INTO task_recoveries(task_id,happened_at,operation,previous) VALUES(?,?,?,?)",
+                    (task_id, now, "restart" if restart_cancelled else "rename" if fresh_path else "retry",
+                     json.dumps(previous, ensure_ascii=False)),
+                )
+                self._conn.execute(
+                    """UPDATE tasks SET state=?, local_path=CASE WHEN ? THEN local_path ELSE NULL END,
+                    downloaded_bytes=CASE WHEN ? THEN file_size ELSE 0 END,
+                    uploaded_bytes=0, download_retries=0, upload_retries=0,
+                    remote_path=CASE WHEN ? THEN NULL ELSE remote_path END,
+                    remote_temp_path=CASE WHEN ? THEN NULL ELSE remote_temp_path END,
+                    remote_final_path=CASE WHEN ? THEN NULL ELSE remote_final_path END,
+                    failure_kind=NULL, verification_method=NULL, verified_at=NULL,
+                    error=NULL, wait_reason='用户确认恢复；等待资源与目的端就绪',
+                    next_retry_at=0, updated_at=?, message_id=COALESCE(?,message_id) WHERE id=?""",
+                    ("waiting_upload" if local_complete else "queued", local_complete, local_complete,
+                     fresh_path, fresh_path, fresh_path, now, message_id, task_id),
+                )
+                self._conn.execute("COMMIT")
+                return True
+            except Exception:
+                self._conn.execute("ROLLBACK")
+                raise
+
+    def search(self, *, sender_id: int, query: str = "", state: str = "", after_id: int = 0,
+               limit: int = 6) -> list[dict[str, Any]]:
+        if state and state not in STATE_LABELS and state != "failed":
+            raise ValueError("未知任务状态")
+        literal = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+        states = sorted(FAILED_STATES) if state == "failed" else [state]
+        placeholders = ",".join("?" for _ in states)
+        # Only the fixed count of parameter placeholders is interpolated.
+        sql = ("SELECT * FROM tasks WHERE sender_id=? "  # nosec B608
+               f"AND (?='' OR state IN ({placeholders})) "
+               "AND (?='' OR file_name LIKE ? ESCAPE '\\') AND (?=0 OR id<?) "
+               "ORDER BY id DESC LIMIT ?")
+        with self._lock:
+            return [dict(row) for row in self._conn.execute(
+                sql,
+                (sender_id, state, *states, query, f"%{literal}%", after_id, after_id,
+                 max(1, min(limit, 50))),
+            ).fetchall()]
+
     @staticmethod
     def _dict(row: sqlite3.Row | None) -> dict[str, Any] | None:
         return dict(row) if row is not None else None
@@ -169,6 +286,7 @@ class TaskDB:
         media_key: str | None = None,
         file_name: str,
         file_size: int,
+        original_file_name: str | None = None,
     ) -> tuple[dict[str, Any], bool]:
         now = time.time()
         with self._lock:
@@ -177,8 +295,8 @@ class TaskDB:
                     """
                     INSERT INTO tasks (
                         chat_id, message_id, sender_id, media_key, file_name,
-                        file_size, state, created_at, updated_at
-                    ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?)
+                        file_size, state, created_at, updated_at, original_file_name
+                    ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?)
                     """,
                     (
                         chat_id,
@@ -189,6 +307,7 @@ class TaskDB:
                         file_size,
                         now,
                         now,
+                        original_file_name,
                     ),
                 )
                 row = self._conn.execute(
@@ -220,6 +339,14 @@ class TaskDB:
                 ).fetchone()
             )
 
+    def has_message(self, chat_id: int, message_id: int) -> bool:
+        """Check an exact received message, not a different forward of its media."""
+        with self._lock:
+            return self._conn.execute(
+                "SELECT 1 FROM tasks WHERE chat_id=? AND message_id=? LIMIT 1",
+                (chat_id, message_id),
+            ).fetchone() is not None
+
     def list_states(
         self,
         states: Iterable[str],
@@ -249,15 +376,15 @@ class TaskDB:
                 for row in self._conn.execute(query, params).fetchall()
             ]
 
-    def list_recent(self, limit: int = 20, offset: int = 0) -> list[dict[str, Any]]:
+    def list_recent(self, limit: int = 20, offset: int = 0, *, sender_id: int | None = None) -> list[dict[str, Any]]:
         if limit <= 0 or offset < 0:
             raise ValueError("limit 必须大于 0，offset 不能小于 0")
         with self._lock:
             return [
                 dict(row)
                 for row in self._conn.execute(
-                    "SELECT * FROM tasks ORDER BY id DESC LIMIT ? OFFSET ?",
-                    (limit, offset),
+                    "SELECT * FROM tasks WHERE (? IS NULL OR sender_id=?) ORDER BY id DESC LIMIT ? OFFSET ?",
+                    (sender_id, sender_id, limit, offset),
                 ).fetchall()
             ]
 
@@ -269,6 +396,30 @@ class TaskDB:
                     "SELECT state, COUNT(*) AS count FROM tasks GROUP BY state"
                 ).fetchall()
             }
+
+    def weekly_failed_count(self, *, now: float | None = None) -> int:
+        """Current failed tasks that failed this local calendar week, counted once.
+
+        This is a display filter, never a task deletion or state reset. Legacy
+        rows without failure events use their last recorded state timestamp.
+        """
+        now = time.time() if now is None else now
+        local = time.localtime(now)
+        today = date(local.tm_year, local.tm_mon, local.tm_mday)
+        monday = today - timedelta(days=today.weekday())
+        # mktime with isdst=-1 resolves the offset at Monday, not today's offset.
+        start = time.mktime((monday.year, monday.month, monday.day, 0, 0, 0, 0, 0, -1))
+        placeholders = ",".join("?" for _ in FAILED_STATES)
+        states = sorted(FAILED_STATES)
+        # Only placeholder count is interpolated; timestamps/states are bound.
+        query = f"""SELECT COUNT(*) FROM tasks t WHERE t.state IN ({placeholders})
+            AND (EXISTS (SELECT 1 FROM task_events e WHERE e.task_id=t.id
+                         AND e.new_state IN ({placeholders}) AND e.happened_at>=? AND e.happened_at<=?)
+                 OR (t.updated_at>=? AND t.updated_at<=? AND NOT EXISTS
+                     (SELECT 1 FROM task_events e WHERE e.task_id=t.id AND e.new_state IN ({placeholders}))))"""  # nosec B608
+        with self._lock:
+            return self._conn.execute(query, (*states, *states, start, now,
+                                              start, now, *states)).fetchone()[0]
 
     def used_local_bytes(self) -> int:
         placeholders = ",".join("?" for _ in LOCAL_STATES)
@@ -405,6 +556,7 @@ class TaskDB:
             raise ValueError("未知传输模式")
         allowed = {
             "state",
+            "failure_kind", "verification_method", "verified_at",
             "transfer_mode",
             "local_path",
             "remote_path",
@@ -439,6 +591,7 @@ class TaskDB:
         if "state" in fields:
             raise ValueError("状态必须通过 new_state 参数指定")
         allowed = {
+            "failure_kind", "verification_method", "verified_at",
             "transfer_mode", "local_path", "remote_path", "remote_temp_path",
             "remote_final_path", "cancel_requested", "downloaded_bytes",
             "uploaded_bytes", "download_retries", "upload_retries", "error",
@@ -556,15 +709,15 @@ class TaskDB:
                 self._conn.execute("ROLLBACK")
                 raise
 
-    def confirm_completed(self, limit: int = 100) -> list[int]:
+    def confirm_completed(self, limit: int = 100, *, sender_id: int | None = None) -> list[int]:
         """Atomically batch-confirm recent completed transfers."""
         safe_limit = max(1, min(int(limit), 100))
         with self._lock:
             self._conn.execute("BEGIN IMMEDIATE")
             try:
                 rows = self._conn.execute(
-                    "SELECT id FROM tasks WHERE state='completed' ORDER BY id DESC LIMIT ?",
-                    (safe_limit,),
+                    "SELECT id FROM tasks WHERE state='completed' AND (? IS NULL OR sender_id=?) ORDER BY id DESC LIMIT ?",
+                    (sender_id, sender_id, safe_limit),
                 ).fetchall()
                 task_ids = [int(row["id"]) for row in rows]
                 if task_ids:
@@ -599,7 +752,7 @@ class TaskDB:
             for row in rows:
                 if row["cancel_requested"]:
                     continue
-                if str(row["error"] or "").startswith("MOVE_UNCERTAIN:"):
+                if needs_review(dict(row)) or row["failure_kind"] in {"authentication", "permission", "rate_limited"}:
                     # A restart must not retry a MOVE whose result is unknown.
                     recovered["failed"] += 1
                     continue

@@ -11,6 +11,7 @@ from telethon import Button, events
 from telethon.errors import MessageNotModifiedError
 from telethon.tl import functions, types
 
+from .recovery import STAGING_PATTERN, StagingScan, needs_review, safe_failure
 from .states import FAILED_STATES, STATE_LABELS
 
 ORPHAN_CLEANUP_LIMIT = 100
@@ -150,6 +151,9 @@ class CommandMixin:
             "任务查看：/task <编号>\n"
             "进度跟踪：/watch <编号>\n"
             "失败重试：/retry <编号|all>\n"
+            "重新转存：/restart <编号>（已取消任务，需确认）\n"
+            "冲突恢复：/recover <编号>（保留原文件，换名重传，需确认）\n"
+            "任务搜索：/search <文件名>；/tasks <状态> [最后编号]\n"
             "取消任务：/cancel <编号>\n"
             "流式传输：/stream <编号>\n"
             "调度控制：/pause、/resume\n"
@@ -197,7 +201,11 @@ class CommandMixin:
             ]
         ]
         actions: list[Any] = []
-        if task["state"] in FAILED_STATES or task.get("cancel_requested"):
+        if task["state"] == "cancelled":
+            actions.append(Button.inline("重新转存", data=f"task:restart:{task_id}".encode()))
+        elif needs_review(task):
+            actions.append(Button.inline("换名重传", data=f"task:recover:{task_id}".encode()))
+        elif task["state"] in FAILED_STATES or task.get("cancel_requested"):
             actions.append(
                 Button.inline("重新排队", data=f"task:retry:{task_id}".encode())
             )
@@ -212,7 +220,7 @@ class CommandMixin:
             )
         if actions:
             rows.append(actions)
-        if task["state"] not in {
+        if not needs_review(task) and task["state"] not in {
             "completed",
             "confirmed",
             "cleanup_pending",
@@ -267,7 +275,7 @@ class CommandMixin:
         self, page: int
     ) -> tuple[str, list[dict[str, Any]], bool]:
         offset = (page - 1) * QUEUE_PAGE_SIZE
-        fetched = self.db.list_recent(QUEUE_PAGE_SIZE + 1, offset=offset)
+        fetched = self.db.list_recent(QUEUE_PAGE_SIZE + 1, offset=offset, sender_id=self.settings.allowed_user_id)
         tasks = fetched[:QUEUE_PAGE_SIZE]
         has_next = len(fetched) > QUEUE_PAGE_SIZE
         if not tasks:
@@ -329,9 +337,9 @@ class CommandMixin:
         owner = self
 
         class EditReplyProxy:
-            async def reply(self, text: str, **_: Any) -> None:
+            async def reply(self, text: str, **options: Any) -> None:
                 task = owner.db.get(task_id)
-                await owner._edit_callback(event, text, owner._task_buttons(task))
+                await owner._edit_callback(event, text, options.get("buttons", owner._task_buttons(task)))
 
         await handler(EditReplyProxy(), parts)
 
@@ -342,7 +350,7 @@ class CommandMixin:
             text = "临时巡检\n\n巡检结果：当前目的端不支持巡检"
         except Exception as exc:  # noqa: BLE001 - external diagnostic boundary
             self.log.warning("远端临时文件巡检失败：%s", exc)
-            text = "临时巡检\n\n巡检结果：远端巡检失败\n安全处理：没有执行删除操作"
+            text = "临时巡检\n\n巡检结果：扫描未完成\n安全处理：没有执行删除操作"
         else:
             if not orphans:
                 text = (
@@ -361,7 +369,7 @@ class CommandMixin:
                     "清理方式：发送 /orphans clean 获取一次性确认码"
                 )
         await self._edit_callback(
-            event, text, self._secondary_buttons(b"menu:orphans")
+            event, text + "\n" + self._scan_summary(), self._secondary_buttons(b"menu:orphans")
         )
 
     async def _handle_callback(self, event: Any) -> None:
@@ -388,7 +396,7 @@ class CommandMixin:
             elif (
                 len(parts) == 3
                 and parts[0] == "task"
-                and parts[1] in {"view", "retry", "stream", "cancel"}
+                and parts[1] in {"view", "retry", "stream", "cancel", "restart", "recover"}
             ):
                 task_id = int(parts[2])
                 if task_id <= 0:
@@ -397,7 +405,7 @@ class CommandMixin:
             elif (
                 len(parts) == 4
                 and parts[0] == "task"
-                and parts[1] in {"cancel_yes", "cancel_no"}
+                and parts[1] in {"cancel_yes", "cancel_no", "recover_yes"}
                 and parts[3]
             ):
                 task_id = int(parts[2])
@@ -412,6 +420,18 @@ class CommandMixin:
 
         await event.answer()
         name, value = action
+        if name.startswith("task:"):
+            requested_id = value[0] if isinstance(value, tuple) else value
+            owned = self.db.get(requested_id)
+            if owned and owned["sender_id"] != self.settings.allowed_user_id:
+                await self._edit_callback(event, "没有找到这个任务。", self._secondary_buttons(b"queue:1"))
+                return
+        if name in {"task:restart", "task:recover", "task:recover_yes"}:
+            if name == "task:recover_yes":
+                await self._confirm_recovery(event, *value)
+            else:
+                await self._offer_recovery(event, value, rename=name == "task:recover", edit=True)
+            return
         if name in {"menu:home", "menu:status", "refresh:home"}:
             await self._refresh_destination_for_dashboard()
             await self._edit_callback(
@@ -547,6 +567,12 @@ class CommandMixin:
     ) -> None:
         parts = text.split()
         command = parts[0].split("@", 1)[0].lower()
+        if command in {"/task", "/watch", "/retry", "/cancel", "/stream", "/confirm", "/restart", "/recover"}:
+            task_id = self._parse_task_id(parts)
+            task = self.db.get(task_id) if task_id else None
+            if task and task["sender_id"] != self.settings.allowed_user_id:
+                await event.reply("没有找到这个任务。")
+                return
         if command == "/start":
             await event.reply(self._format_status(), buttons=self._home_buttons())
         elif command == "/help":
@@ -561,6 +587,14 @@ class CommandMixin:
             await event.reply(self._format_status(), buttons=self._home_buttons())
         elif command == "/task":
             await self._command_task(event, parts)
+        elif command in {"/restart", "/recover"}:
+            task_id = self._parse_task_id(parts)
+            if task_id:
+                await self._offer_recovery(event, task_id, rename=command == "/recover")
+            else:
+                await event.reply(f"用法：{command} <任务编号>")
+        elif command in {"/search", "/tasks"}:
+            await self._command_search(event, parts)
         elif command == "/watch":
             task_id = self._parse_task_id(parts)
             task = self.db.get(task_id) if task_id else None
@@ -616,13 +650,13 @@ class CommandMixin:
         if task is None:
             await event.reply("使用说明\n\n正确格式：/task <任务编号>")
             return
-        await event.reply(self._format_task(task, verbose=True))
+        await event.reply(self._format_task(task, verbose=True), buttons=self._task_buttons(task))
 
     async def _command_confirm(
         self, event: events.NewMessage.Event, parts: list[str]
     ) -> None:
         if len(parts) == 2 and parts[1].lower() == "all":
-            task_ids = self.db.confirm_completed(limit=100)
+            task_ids = self.db.confirm_completed(limit=100, sender_id=self.settings.allowed_user_id)
             if not task_ids:
                 await event.reply("当前没有等待人工确认的已完成任务。")
                 return
@@ -696,6 +730,9 @@ class CommandMixin:
             )
 
     def _is_orphan_staging(self, task_id: int, remote_path: str) -> bool:
+        match = STAGING_PATTERN.fullmatch(remote_path)
+        if not match or int(match[1]) != task_id or self.db.protected_remote(remote_path):
+            return False
         task = self.db.get(task_id)
         if task is None:
             return True
@@ -711,15 +748,27 @@ class CommandMixin:
         return task["state"] in TERMINAL_TASK_STATES
 
     async def _find_orphan_staging(self) -> list[tuple[int, str]]:
+        self._last_staging_scan = StagingScan(complete=False, reason="未取得完整清单")
         inspect_staging = getattr(self.rclone, "list_staging_objects", None)
         if not callable(inspect_staging):
             raise NotImplementedError
         objects = await asyncio.wait_for(inspect_staging(), timeout=45)
+        scan = objects if isinstance(objects, StagingScan) else StagingScan(objects, len(objects), len(objects))
+        self._last_staging_scan = scan
+        if not scan.complete:
+            raise RuntimeError("扫描未完成；禁止生成或执行清理计划")
         return [
             (task_id, remote_path)
             for task_id, remote_path in objects
             if self._is_orphan_staging(task_id, remote_path)
         ]
+
+    def _scan_summary(self) -> str:
+        scan = getattr(self, "_last_staging_scan", None)
+        if scan is None:
+            return ""
+        return (f"扫描范围：配置目标目录第一层；已检查 {scan.checked} 项，"
+                f"发现 {scan.found} 项临时文件；{'完整' if scan.complete else '未完成'}\n")
 
     async def _command_orphans(
         self, event: events.NewMessage.Event, parts: list[str] | None = None
@@ -746,13 +795,14 @@ class CommandMixin:
         except Exception as exc:  # noqa: BLE001 - external diagnostic boundary
             self.log.warning("远端临时文件巡检失败：%s", exc)
             await event.reply(
-                "临时巡检\n\n巡检结果：远端巡检失败\n"
+                "临时巡检\n\n巡检结果：远端巡检失败，扫描未完成\n" + self._scan_summary() +
                 "安全处理：未执行任何删除操作"
             )
             return
         if not orphans:
             await event.reply(
                 "临时巡检\n\n"
+                + self._scan_summary() +
                 "巡检结果：没有发现疑似遗留文件\n"
                 "安全处理：本次只读检查，没有删除内容"
             )
@@ -762,6 +812,7 @@ class CommandMixin:
         if len(parts) == 1:
             await event.reply(
                 "临时巡检\n\n"
+                + self._scan_summary() +
                 f"巡检结果：发现 {len(orphans)} 个疑似遗留文件\n"
                 f"任务编号：{shown}{suffix}\n"
                 "安全处理：本次没有删除任何内容\n"
@@ -857,7 +908,7 @@ class CommandMixin:
                 self._retry_task(task)
                 for task in tasks
                 if not task.get("cancel_requested")
-                and not str(task.get("error") or "").startswith("MOVE_UNCERTAIN:")
+                and not needs_review(task)
             )
             await event.reply(
                 self._format_operation_result(
@@ -871,6 +922,9 @@ class CommandMixin:
         task = self.db.get(task_id) if task_id else None
         if task is None:
             await event.reply("用法：/retry <任务编号>")
+            return
+        if task["state"] == "cancelled" or needs_review(task):
+            await self._offer_recovery(event, task_id, rename=needs_review(task))
             return
         if self._retry_task(task):
             updated = self.db.get(task_id)
@@ -894,7 +948,11 @@ class CommandMixin:
 
     def _retry_task(self, task: dict[str, Any]) -> bool:
         task_id = int(task["id"])
-        if task_id in getattr(self, "_cancelling", set()):
+        if (task_id in getattr(self, "_cancelling", set())
+                or task_id in self.download_tasks or task_id in self.upload_tasks):
+            return False
+        task = self.db.get(task_id) or task
+        if task.get("sender_id") != self.settings.allowed_user_id or needs_review(task):
             return False
         state = task["state"]
         if task.get("cancel_requested"):
@@ -903,41 +961,90 @@ class CommandMixin:
             self.db.recover(self.settings.download_dir, task_id=task_id)
             task = self.db.get(task_id) or task
             state = task["state"]
-        if state in {"upload_failed_retained", "verification_failed_retained"}:
-            local_path = Path(task["local_path"] or "")
-            if not local_path.is_file():
-                self.db.transition(
-                    task_id,
-                    "queued",
-                    local_path=None,
-                    downloaded_bytes=0,
-                    download_retries=0,
-                    upload_retries=0,
-                    error=None,
-                    wait_reason="本地文件已不存在，用户要求重新下载",
-                    next_retry_at=0,
-                )
-                return True
-            self.db.transition(
-                task_id,
-                "waiting_upload",
-                upload_retries=0,
-                error=None,
-                wait_reason="用户要求重试",
-                next_retry_at=0,
+        if state in FAILED_STATES:
+            return self.db.requeue(
+                task_id, sender_id=self.settings.allowed_user_id,
+                expected_updated_at=task["updated_at"], local_complete=self._local_complete(task),
             )
-            return True
-        if state == "download_failed":
-            self.db.transition(
-                task_id,
-                "queued",
-                download_retries=0,
-                error=None,
-                wait_reason="用户要求重试",
-                next_retry_at=0,
-            )
-            return True
         return state in {"queued", "waiting_upload"}
+
+    def _local_complete(self, task: dict[str, Any]) -> bool:
+        if not task.get("local_path"):
+            return False
+        path = Path(task["local_path"])
+        try:
+            return (path.resolve().is_relative_to(self.settings.download_dir.resolve())
+                    and not path.is_symlink() and path.is_file()
+                    and not path.name.endswith(".part") and path.stat().st_size == task["file_size"])
+        except OSError:
+            return False
+
+    async def _offer_recovery(self, event: Any, task_id: int, *, rename: bool = False,
+                              edit: bool = False, message_id: int | None = None) -> None:
+        task = self.db.get(task_id)
+        valid = task and task["sender_id"] == self.settings.allowed_user_id and (
+            task["state"] in FAILED_STATES if rename else task["state"] == "cancelled"
+        )
+        if not valid or task.get("cancel_requested") or task_id in getattr(self, "_cancelling", set()):
+            text, buttons = "任务状态不支持此操作；取消处理中请等待结果。", self._task_buttons(task)
+        else:
+            token = secrets.token_hex(6)
+            plans = getattr(self, "_recovery_confirmations", {})
+            plans[task_id] = {"token": token, "expires": time.monotonic() + TASK_ACTION_TTL_SECONDS,
+                              "revision": task["updated_at"], "rename": rename, "message_id": message_id}
+            self._recovery_confirmations = plans
+            text = (f"确认{'换名重传' if rename else '重新转存'} · #{task_id}\n"
+                    "保留历史记录和原远端文件；完整本地副本优先复用，否则重新下载。\n"
+                    "新传输使用不冲突的文件名。请在 5 分钟内确认。")
+            buttons = [[Button.inline("确认恢复", data=f"task:recover_yes:{task_id}:{token}".encode()),
+                        Button.inline("返回详情", data=f"task:view:{task_id}".encode())]]
+        if edit:
+            await self._edit_callback(event, text, buttons)
+        else:
+            await event.reply(text, buttons=buttons)
+
+    async def _confirm_recovery(self, event: Any, task_id: int, token: str) -> None:
+        plans = getattr(self, "_recovery_confirmations", {})
+        plan = plans.get(task_id)
+        task = self.db.get(task_id)
+        valid = (plan and task and time.monotonic() <= plan["expires"]
+                 and secrets.compare_digest(plan["token"], token))
+        updated = False
+        if valid:
+            plans.pop(task_id, None)  # Consume before mutation, including failed CAS.
+            if (task_id not in getattr(self, "_cancelling", set())
+                    and task_id not in self.download_tasks and task_id not in self.upload_tasks):
+                updated = self.db.requeue(
+                    task_id, sender_id=self.settings.allowed_user_id,
+                    expected_updated_at=plan["revision"], local_complete=self._local_complete(task),
+                    fresh_path=True, restart_cancelled=not plan["rename"], message_id=plan["message_id"],
+                )
+        text = "已确认恢复；原远端文件保持不变，等待调度。" if updated else "确认已失效或任务状态已改变，请刷新详情。"
+        await self._edit_callback(event, text, self._task_buttons(self.db.get(task_id)))
+
+    async def _command_search(self, event: Any, parts: list[str]) -> None:
+        state, query, after_id = "", "", 0
+        try:
+            if parts[0].split("@", 1)[0].lower() == "/tasks":
+                if len(parts) not in {2, 3}:
+                    raise ValueError
+                state = parts[1].lower()
+                after_id = int(parts[2].lstrip("#")) if len(parts) == 3 else 0
+                if after_id < 0:
+                    raise ValueError
+            else:
+                query = " ".join(parts[1:])[:200]
+                if not query:
+                    raise ValueError
+            tasks = self.db.search(sender_id=self.settings.allowed_user_id, query=query, state=state,
+                                   after_id=after_id)
+        except ValueError:
+            await event.reply("用法：/search <文件名> 或 /tasks <状态> [最后编号]；编号查询使用 /task。")
+            return
+        text = "任务查询\n\n" + ("\n\n".join(self._format_queue_task(t) for t in tasks[:5]) or "没有匹配任务")
+        if len(tasks) > 5:
+            text += f"\n下一页：/tasks {state} {tasks[4]['id']}" if state else "\n还有更多结果，请缩小文件名范围。"
+        await event.reply(text, buttons=self._queue_buttons(1, tasks[:5], False))
 
     async def _command_cancel(
         self, event: events.NewMessage.Event, parts: list[str]
@@ -961,6 +1068,9 @@ class CommandMixin:
         task = self.db.get(task_id) if task_id else None
         if task is None:
             await event.reply("使用说明\n\n正确格式：/cancel <任务编号>")
+            return
+        if needs_review(task):
+            await event.reply("远端文件归属或完整性待核对，取消不会删除这些文件。请先使用 /recover 换名恢复，或人工核对。")
             return
         if task["state"] in {
             "completed",
@@ -993,6 +1103,10 @@ class CommandMixin:
                 "执行操作：取消任务\n后续说明：任务记录已经不存在"
             )
             return
+        if needs_review(task):
+            self.db.update(task_id, cancel_requested=0)
+            await event.reply("任务已进入远端结果待核对状态；保留本地和远端文件，请刷新详情。")
+            return
         if task["state"] in {
             "completed",
             "confirmed",
@@ -1007,6 +1121,7 @@ class CommandMixin:
                     task=task,
                 )
             )
+            self.db.update(task_id, cancel_requested=0)
             return
         remote_paths = dict.fromkeys(
             str(task.get(key) or "")
@@ -1023,7 +1138,7 @@ class CommandMixin:
                     self._format_operation_result(
                     status="取消中止",
                         operation="取消任务",
-                        note=f"远端无法确认安全清理，本地副本已保留：{exc}",
+                        note=f"远端无法确认安全清理，本地副本已保留：{safe_failure(exc)}",
                         task=task,
                     )
                 )
@@ -1113,7 +1228,7 @@ class CommandMixin:
         if reason:
             text += f"\n等待原因：{reason}"
         if error:
-            text += f"\n失败原因：{str(error)[:500]}"
+            text += f"\n失败原因：{safe_failure(str(error))}"
         text += (
             "\n传输模式：流式传输（不占用本地任务额度）"
             if task.get("transfer_mode") == "stream"
@@ -1129,6 +1244,15 @@ class CommandMixin:
                 f"\n已经耗时：{int(time.monotonic() - progress['started'])} 秒"
             )
         if verbose:
+            original = task.get("original_file_name")
+            if original and original != task["file_name"]:
+                text += f"\n原文件名称：{original}"
+            method = task.get("verification_method")
+            verified = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(task["verified_at"])) if task.get("verified_at") else "无记录"
+            text += (f"\n本地副本：{'完整，已保留' if self._local_complete(task) else '无完整本地副本'}"
+                     f"\n验证等级：{'远端大小已验证（非内容哈希）' if method == 'size' else '尚无验证记录'}"
+                     f"\n验证时间：{verified}"
+                     + ("\n远端状态：需要核对；可换名重传，原文件保持不变" if needs_review(task) else ""))
             text += (
                 f"\n已经下载：{format_bytes(task['downloaded_bytes'])}"
                 f"\n重试次数：下载 {task['download_retries']}，上传 {task['upload_retries']}"
@@ -1178,7 +1302,7 @@ class CommandMixin:
         queued = counts.get("queued", 0)
         downloading = len(self.download_tasks)
         uploading = len(self.upload_tasks) + self._stream_count()
-        failed = sum(counts.get(state, 0) for state in FAILED_STATES)
+        failed = self.db.weekly_failed_count()
         stream_rate = self._stage_rate("stream")
         download_rate = self._stage_rate("download") + stream_rate
         upload_rate = self._stage_rate("upload") + stream_rate
@@ -1222,7 +1346,11 @@ class CommandMixin:
             f"CPU　{cpu}\n"
             f"内存　{memory}\n"
             f"磁盘　{disk}\n"
-            f"本地　{local}\n\n"
+            f"本地　{local}\n"
+            + ("\n".join(f"文件系统（{name}）　{format_dashboard_bytes(free)} 可用"
+                          for name, free in snapshot.filesystems) + "\n" if snapshot and snapshot.filesystems else "")
+            + (f"保护状态　{self._resource_pause_reason}\n" if getattr(self, "_resource_pause_reason", "") else "")
+            + "\n"
             f"🕐 更新于 {self._dashboard_time()}"
         )
 
@@ -1250,6 +1378,8 @@ class CommandMixin:
             f"检查说明：{self.destination_error or '目录探测通过，不代表可写'}\n"
             f"{probe_details}"
             f"并发窗口：下载 {self.download_window.value}，上传 {self.upload_window.value}\n"
+            f"队列状态：{'用户暂停' if self.db.is_paused() else '调度启用'}\n"
+            f"资源保护：{getattr(self, '_resource_pause_reason', '') or '无额外阻塞'}\n"
             "写入验收：请主动执行 manage.sh verify\n"
             "敏感信息：不会在诊断结果中显示"
         )

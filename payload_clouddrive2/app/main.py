@@ -3,12 +3,14 @@ from __future__ import annotations
 import asyncio
 import logging
 import os
+import shutil
 import signal
 import sys
 import time
 from collections import deque
 from logging.handlers import RotatingFileHandler
 from pathlib import Path
+from types import SimpleNamespace
 from typing import Any
 
 from telethon import TelegramClient, events
@@ -17,15 +19,20 @@ from .bot_commands import CommandMixin, format_bytes
 from .config import Settings
 from .db import TaskDB
 from .interfaces import Destination, DestinationProbe, MediaSource
-from .naming import safe_file_name
+from .naming import album_file_name, caption_title, safe_file_name, video_file_name
 from .rclone_client import MoveUncertainError, RcloneClient
+from .recovery import RemoteReviewRequired, failure_kind, redact_text, safe_failure
 from .resources import AdaptiveWindow, ResourceMonitor, ResourceSnapshot
 from .states import FAILED_STATES
 
 
 def setup_logging(settings: Settings) -> None:
     settings.log_dir.mkdir(parents=True, exist_ok=True)
-    formatter = logging.Formatter(
+    class PrivateFormatter(logging.Formatter):
+        def format(self, record):
+            return redact_text(super().format(record), settings)
+
+    formatter = PrivateFormatter(
         "%(asctime)s %(levelname)s %(name)s: %(message)s"
     )
     root = logging.getLogger()
@@ -64,7 +71,8 @@ class TransferService(CommandMixin):
         )
         self._source = source
         self.rclone = destination or RcloneClient(settings)
-        self.monitor = ResourceMonitor(settings.download_dir)
+        self.monitor = ResourceMonitor(settings.download_dir, 数据库=settings.data_dir,
+                                       日志=settings.log_dir, 配置=settings.rclone_config_path.parent)
         self.download_window = AdaptiveWindow(settings, "download")
         self.upload_window = AdaptiveWindow(settings, "upload")
         self.snapshot: ResourceSnapshot | None = None
@@ -131,6 +139,7 @@ class TransferService(CommandMixin):
     def _register_handlers(self) -> None:
         self.client.add_event_handler(self._on_message, events.NewMessage(incoming=True))
         self.client.add_event_handler(self._on_callback, events.CallbackQuery())
+        self.client.add_event_handler(self._on_album, events.Album())
 
     def _authorized(self, sender_id: int | None) -> bool:
         return sender_id == self.settings.allowed_user_id
@@ -157,17 +166,71 @@ class TransferService(CommandMixin):
             return
         await self._handle_callback(event)
 
-    async def _on_message(self, event: events.NewMessage.Event) -> None:
+    async def _on_album(self, event: events.Album.Event) -> None:
+        if (not self._authorized(event.sender_id) or not event.is_private
+                or event.chat_id != self.settings.allowed_user_id):
+            return
+        messages = event.messages
+        if not messages or not event.grouped_id or any(
+            message.sender_id != event.sender_id or message.chat_id != event.chat_id
+            or message.grouped_id != event.grouped_id or message.out
+            for message in messages
+        ):
+            return
+        if len(messages) > 100:
+            await event.reply("媒体组过大，未按组接收；请分组重发并核对任务列表。")
+            return
+        # Telegram updates may arrive out of order or be repeated. Use only this
+        # received group, ordered by message id; never fetch channel history.
+        messages = sorted({message.id: message for message in messages}.values(), key=lambda item: item.id)
+        title = ""
+        if len(messages) > 1:
+            for message in messages:
+                title = caption_title(message.raw_text or "", message.entities)
+                if title:
+                    break
+        numbers = {"视频": 0, "图片": 0}
+        deliveries = []
+        for message in messages:
+            file = message.file
+            mime = str(getattr(file, "mime_type", ""))
+            kind = ("视频" if getattr(message, "video", None) or mime.startswith("video/")
+                    else "图片" if getattr(message, "photo", None) or mime.startswith("image/") else "")
+            name = None
+            if title and kind and file:
+                numbers[kind] += 1
+                extension = file.ext or Path(file.name or "").suffix or (".jpg" if kind == "图片" else ".bin")
+                name = album_file_name(title, kind, numbers[kind], extension)
+            proxy = SimpleNamespace(sender_id=message.sender_id, chat_id=message.chat_id,
+                                    is_private=True, message=message, raw_text=message.raw_text,
+                                    reply=message.reply)
+            deliveries.append(self._on_message(proxy, album_name=name, album_delivery=True))
+        # Each ingestion writes its SQLite task before awaiting the reply. A slow
+        # reply for one photo must not delay registration of the other members.
+        results = await asyncio.gather(*deliveries, return_exceptions=True)
+        for message, result in zip(messages, results):
+            if isinstance(result, Exception):
+                self.log.error("媒体组消息 %s 接收或回复失败；请核对任务列表后重发。", message.id)
+
+    async def _on_message(self, event: events.NewMessage.Event, *,
+                          album_name: str | None = None, album_delivery: bool = False) -> None:
         if not self._authorized(event.sender_id) or not getattr(event, "is_private", False):
             self.log.warning("忽略未授权或非私聊消息")
             return
 
+        message = getattr(event, "message", None)
+        if getattr(message, "grouped_id", None):
+            if not album_delivery:
+                # Album aggregates split updates for ~0.5 s. Keep a fallback for
+                # singleton/late groups so an isolated grouped video is not lost.
+                await asyncio.sleep(2)
+            if self.db.has_message(int(event.chat_id), int(message.id)):
+                return
         text = (event.raw_text or "").strip()
-        if text.startswith("/"):
+        if text.startswith("/") and not album_delivery:
             await self._handle_command(event, text)
             return
 
-        message = event.message
         if not message.media or not message.file:
             await event.reply("这条消息没有可下载的文件。请转发视频或文档。")
             return
@@ -175,8 +238,18 @@ class TransferService(CommandMixin):
         if file_size <= 0:
             await event.reply("无法读取文件大小，任务没有进入队列。")
             return
+        snapshot = getattr(self, "snapshot", None)
+        if snapshot and (snapshot.disk_free <= self.settings.min_free_disk_bytes or any(
+            free <= self.settings.min_free_disk_bytes for _, free in snapshot.filesystems
+        )):
+            await event.reply("磁盘空间触及安全线，暂不接收新文件。请释放空间后重新转发；已有任务记录保留。")
+            return
         fallback = f"telegram-{message.id}{message.file.ext or '.bin'}"
         file_name = safe_file_name(message.file.name or "", fallback)
+        if getattr(message, "video", None) or str(getattr(message.file, "mime_type", "")).startswith("video/"):
+            file_name = video_file_name(message.file.name or "", text, fallback, getattr(message, "entities", ()))
+        if album_name:
+            file_name = album_name
         task, created = self.db.create_task(
             chat_id=int(event.chat_id),
             message_id=int(message.id),
@@ -184,10 +257,14 @@ class TransferService(CommandMixin):
             media_key=self._media_key(message),
             file_name=file_name,
             file_size=file_size,
+            original_file_name=safe_file_name(message.file.name or "", fallback),
         )
         if not created:
+            if task["state"] == "cancelled":
+                await self._offer_recovery(event, int(task["id"]), message_id=int(message.id))
+                return
             await event.reply(
-                f"这个文件已经登记过。\n{self._format_task(task)}"
+                f"这个文件已经登记过。\n{self._format_task(task)}", buttons=self._task_buttons(task)
             )
             return
         await event.reply(
@@ -394,6 +471,11 @@ class TransferService(CommandMixin):
             return
         if self.db.is_paused():
             return
+        if self.snapshot.filesystems and any(free <= self.settings.min_free_disk_bytes
+                                            for _, free in self.snapshot.filesystems):
+            self._resource_pause_reason = "暂存/数据库/日志/配置所在文件系统触及安全线；暂停新下载"
+            return
+        self._resource_pause_reason = ""
         available_slots = self.download_window.value - len(self.download_tasks)
         if available_slots <= 0:
             return
@@ -415,7 +497,7 @@ class TransferService(CommandMixin):
                 reserved, reason = self.db.reserve(
                     task_id,
                     budget_bytes=self.settings.local_budget_bytes,
-                    current_free_bytes=self.snapshot.disk_free,
+                    current_free_bytes=min(self.snapshot.disk_free, shutil.disk_usage(self.settings.download_dir).free),
                     minimum_free_bytes=self.settings.min_free_disk_bytes,
                 )
                 if not reserved:
@@ -548,7 +630,7 @@ class TransferService(CommandMixin):
                     self.db.update(
                         task_id,
                         download_retries=attempt + 1,
-                        error=str(exc)[:1000],
+                        error=safe_failure(exc),
                     )
                     if attempt + 1 < self.settings.max_retries:
                         await asyncio.sleep(min(60, 2 ** (attempt + 1)))
@@ -583,7 +665,7 @@ class TransferService(CommandMixin):
                 task_id,
                 "download_failed",
                 local_path=None,
-                error=str(exc)[:1000],
+                error=safe_failure(exc),
             )
 
     async def _finalize_stream_remote(
@@ -603,7 +685,7 @@ class TransferService(CommandMixin):
                 if not final_remote:
                     final_remote = await self._choose_remote_final(safe_name, task_id)
                 elif await self.rclone.exists(final_remote):
-                    raise RuntimeError("预留正式路径已经存在；保留数据，等待复核")
+                    raise RemoteReviewRequired("预留正式路径已经存在；保留数据，等待复核")
                 self.db.transition(
                     task_id,
                     "finalizing",
@@ -632,8 +714,7 @@ class TransferService(CommandMixin):
                     "MOVE_UNCERTAIN: OpenList 改名后的目标文件大小不符；"
                     "已停止自动重试并保留文件供核对。"
                 )
-            await self.rclone.remove(final_remote)
-            raise RuntimeError(
+            raise RemoteReviewRequired(
                 f"流式改名后远端大小错误：{final_size} != {task['file_size']}"
             )
         await self._complete_cloud_receive(
@@ -663,7 +744,7 @@ class TransferService(CommandMixin):
             if not final_remote:
                 final_remote = await self._choose_remote_final(safe_name, task_id)
             elif await self.rclone.exists(final_remote):
-                raise RuntimeError(
+                raise RemoteReviewRequired(
                     "预留的 OpenList 最终路径已经存在；保留文件并等待复核"
                 )
             self.db.transition(
@@ -684,22 +765,20 @@ class TransferService(CommandMixin):
                    (legacy if legacy.startswith(".uploading-") else ""))
         if final and await self.rclone.exists(final):
             if await self.rclone.remote_size(final) != int(task["file_size"]):
-                raise RuntimeError("记录的正式文件大小不符；停止覆盖并保留本地数据")
+                raise RemoteReviewRequired("记录的正式文件大小不符；停止覆盖并保留本地数据")
             await self._complete_cloud_receive(task_id, task, local_path, final)
             return True
         if temp and await self.rclone.exists(temp):
             if getattr(
                 self.settings, "storage_backend", "clouddrive2"
             ) == "openlist":
-                raise RuntimeError(
+                raise RemoteReviewRequired(
                     "检测到旧版 OpenList 临时文件；不会自动改名或覆盖，请先人工核对"
                 )
             if await self.rclone.remote_size(temp) == int(task["file_size"]):
                 await self._finalize_stream_remote(task_id, task, temp, safe_name, local_path)
                 return True
-            await self.rclone.remove(temp)
-            if await self.rclone.exists(temp):
-                raise RuntimeError("不完整远端临时文件无法清理；停止重传")
+            raise RemoteReviewRequired("远端临时文件不完整；保留现场，请确认换名重传")
         return False
 
     async def _stream_one(self, task_id: int) -> None:
@@ -707,7 +786,7 @@ class TransferService(CommandMixin):
         if not task:
             return
         safe_name = safe_file_name(task["file_name"], f"task-{task_id}.bin")
-        remote_temp = f".uploading-{task_id}-{safe_name}"
+        remote_temp = self.db.staging_name(task_id, safe_name)
         stream = None
         try:
             for attempt in range(
@@ -763,7 +842,7 @@ class TransferService(CommandMixin):
                     self.db.transition(task_id, "verifying")
                     remote_size = await self.rclone.remote_size(remote_write)
                     if remote_size != int(task["file_size"]):
-                        raise RuntimeError(
+                        raise RemoteReviewRequired(
                             f"流式远端大小错误：{remote_size} "
                             f"!= {task['file_size']}"
                         )
@@ -777,7 +856,8 @@ class TransferService(CommandMixin):
                     if stream is not None:
                         await stream.abort()
                     self.db.transition(
-                        task_id, "download_failed", error=str(exc)[:1000],
+                        task_id, "download_failed", error=safe_failure(exc), failure_kind="remote_conflict",
+                        verification_method=None, verified_at=None,
                         wait_reason="OpenList 改名结果未确认；停止自动重试并保留远端现场",
                     )
                     await self._notify(
@@ -789,22 +869,22 @@ class TransferService(CommandMixin):
                     if stream is not None:
                         await stream.abort()
                         stream = None
-                    if getattr(
-                        self.settings, "storage_backend", "clouddrive2"
-                    ) != "openlist":
-                        await self.rclone.remove(remote_temp)
+                    if await self._hold_transfer_failure(task_id, exc, stream=True):
+                        return
+                    # Unknown remote results are reconciled on the next attempt;
+                    # never discard a possibly recoverable staging object here.
                     self.recent_download_errors.append(time.time())
                     self.recent_upload_errors.append(time.time())
                     self.log.warning(
                         "任务 #%s 流式传输第 %s 次失败：%s",
                         task_id,
                         attempt + 1,
-                        exc,
+                        safe_failure(exc),
                     )
                     self.db.update(
                         task_id,
                         download_retries=attempt + 1,
-                        error=str(exc)[:1000],
+                        error=safe_failure(exc), failure_kind=failure_kind(exc),
                     )
                     if attempt + 1 < self.settings.max_retries:
                         await asyncio.sleep(min(120, 3 ** (attempt + 1)))
@@ -846,7 +926,7 @@ class TransferService(CommandMixin):
                 task_id,
                 "download_failed",
                 local_path=None,
-                error=str(exc)[:1000],
+                error=safe_failure(exc),
             )
 
     async def _choose_remote_final(self, file_name: str, task_id: int) -> str:
@@ -863,6 +943,19 @@ class TransferService(CommandMixin):
             candidate = f"{path.stem} (task-{task_id}-{suffix}){path.suffix}"
             suffix += 1
         return candidate
+
+    async def _hold_transfer_failure(self, task_id: int, exc: Exception, *, stream: bool = False) -> bool:
+        kind = failure_kind(exc)
+        if kind not in {"remote_conflict", "authentication", "permission", "rate_limited"}:
+            return False
+        self.db.transition(
+            task_id, "download_failed" if stream else "upload_failed_retained",
+            error=safe_failure(exc), failure_kind=kind,
+            verification_method=None, verified_at=None,
+            wait_reason="已停止自动重试；请查看任务详情选择恢复操作", next_retry_at=0,
+        )
+        await self._notify(f"⚠️ 任务 #{task_id} 需要处理\n{safe_failure(exc)}\n使用 /task {task_id} 查看详情。")
+        return True
 
     async def _complete_cloud_receive(
         self,
@@ -887,6 +980,7 @@ class TransferService(CommandMixin):
             remote_final_path=final_remote,
             remote_temp_path=None,
             uploaded_bytes=int(task["file_size"]),
+            verification_method="size", verified_at=time.time(), failure_kind=None,
             error=None,
             wait_reason="远端文件已校验，正在清理 VPS 本地副本",
             next_retry_at=0,
@@ -931,7 +1025,8 @@ class TransferService(CommandMixin):
                         and await self.rclone.remote_size(recorded_remote) != int(task["file_size"])):
                     self.db.transition(
                         task_id, "verification_failed_retained",
-                        error="已接收的正式文件大小发生变化；停止自动操作，保留路径和本地副本",
+                        error=safe_failure(RemoteReviewRequired("changed after verification")),
+                        failure_kind="remote_conflict", verification_method=None, verified_at=None,
                         wait_reason=None,
                     )
                     return
@@ -948,7 +1043,8 @@ class TransferService(CommandMixin):
             except Exception as exc:  # noqa: BLE001 - retry external I/O
                 self.db.update(
                     task_id,
-                    error=f"检查已接收的远端文件失败：{exc}"[:1000],
+                    error="检查已接收的远端文件失败：" + safe_failure(exc),
+                    verification_method=None, verified_at=None,
                     wait_reason=(
                         f"等待 {self.destination_label} 恢复后继续本地清理"
                     ),
@@ -963,6 +1059,7 @@ class TransferService(CommandMixin):
                         local_path=None,
                         downloaded_bytes=0,
                         uploaded_bytes=0,
+                        verification_method=None, verified_at=None,
                         wait_reason=(
                             "流式任务的远端文件无法确认，已自动重新排队"
                         ),
@@ -973,6 +1070,7 @@ class TransferService(CommandMixin):
                     task_id,
                     "verification_failed_retained",
                     error="远端正式文件和 VPS 本地副本都无法确认，已停止自动操作",
+                    failure_kind="remote_conflict", verification_method=None, verified_at=None,
                     wait_reason=None,
                 )
                 return
@@ -982,6 +1080,7 @@ class TransferService(CommandMixin):
                 remote_path=None,
                 remote_final_path=None,
                 error="远端正式文件不存在，保留本地副本并重新上传",
+                verification_method=None, verified_at=None,
                 wait_reason=None,
                 next_retry_at=0,
             )
@@ -1029,7 +1128,7 @@ class TransferService(CommandMixin):
             )
             return
         safe_name = safe_file_name(task["file_name"], f"task-{task_id}.bin")
-        remote_temp = f".uploading-{task_id}-{safe_name}"
+        remote_temp = self.db.staging_name(task_id, safe_name)
         try:
             for attempt in range(
                 int(task["upload_retries"]), self.settings.max_retries
@@ -1056,7 +1155,7 @@ class TransferService(CommandMixin):
                     self.db.transition(task_id, "verifying")
                     remote_size = await self.rclone.remote_size(remote_write)
                     if remote_size != int(task["file_size"]):
-                        raise RuntimeError(
+                        raise RemoteReviewRequired(
                             f"远端大小错误：{remote_size} != {task['file_size']}"
                         )
                     await self._finalize_stream_remote(
@@ -1067,7 +1166,8 @@ class TransferService(CommandMixin):
                     raise
                 except MoveUncertainError as exc:
                     self.db.transition(
-                        task_id, "upload_failed_retained", error=str(exc)[:1000],
+                        task_id, "upload_failed_retained", error=safe_failure(exc), failure_kind="remote_conflict",
+                        verification_method=None, verified_at=None,
                         wait_reason="OpenList 改名结果未确认；保留本地和远端文件",
                     )
                     await self._notify(
@@ -1076,21 +1176,19 @@ class TransferService(CommandMixin):
                     )
                     return
                 except Exception as exc:  # noqa: BLE001 - retry external I/O
+                    if await self._hold_transfer_failure(task_id, exc):
+                        return
                     self.recent_upload_errors.append(time.time())
                     self.log.warning(
-                        "任务 #%s 上传第 %s 次失败：%s", task_id, attempt + 1, exc
+                        "任务 #%s 上传第 %s 次失败：%s", task_id, attempt + 1, safe_failure(exc)
                     )
                     self.db.update(
                         task_id,
                         upload_retries=attempt + 1,
-                        error=str(exc)[:1000],
+                        error=safe_failure(exc), failure_kind=failure_kind(exc),
                     )
                     if attempt + 1 < self.settings.max_retries:
                         await asyncio.sleep(min(120, 3 ** (attempt + 1)))
-            if getattr(
-                self.settings, "storage_backend", "clouddrive2"
-            ) != "openlist":
-                await self.rclone.remove(remote_temp)
             self.db.transition(
                 task_id,
                 "upload_failed_retained",
@@ -1110,7 +1208,7 @@ class TransferService(CommandMixin):
             self.db.transition(
                 task_id,
                 "upload_failed_retained",
-                error=str(exc)[:1000],
+                error=safe_failure(exc),
             )
 
     async def _notify(self, message: str) -> None:
