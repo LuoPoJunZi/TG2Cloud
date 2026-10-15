@@ -395,7 +395,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 在线一键卸载命令：
 
-> 用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍待实机验证**。在线入口固定到已审查并通过 Windows/Linux、Python 3.10/3.13 CI 的完整清理提交 `4faeeb3590b68fe5591d859be322dbfcb0a18533`；正式 EXE 按同版本 GitHub Release 获取。先结束任务、把备份保存到清理范围之外并只读预检；没有无人值守强制删除。
+> 用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍待实机验证**。在线入口固定到本版不可变向导源码 `d83e37acea5d5ae9d106fb0183b663bbdd7a9bfa`；正式 EXE 按同版本 GitHub Release 获取。先结束任务、把备份保存到清理范围之外并只读预检；没有无人值守强制删除。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check

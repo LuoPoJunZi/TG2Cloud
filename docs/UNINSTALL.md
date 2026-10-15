@@ -2,7 +2,7 @@
 
 `uninstall.sh` 适用于标准目录下的 CloudDrive2 / OpenList 受管 Docker 部署，包括公网 VPS 的 HTTPS 和独立内网管理入口。它独立于 `install.sh`、`install-lan.sh` 和两个 Windows EXE，不改动安装器或 Bot 业务流程。
 
-> 当前正式版本及两个 EXE 仍为 v1.2.0，原 Tag 不变。主分支追加完整清理，在线引导固定到已审查且通过 Windows/Linux、Python 3.10/3.13 CI 的不可变提交 `4faeeb3590b68fe5591d859be322dbfcb0a18533`，支持下面的完整清理选项。用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍需新的实机验收**，不据此标记两 Edition、NAS 或新行为均通过。这不是新 Tag/Release。
+> v1.2.1 纳入完整清理增强；在线引导固定到本版不可变向导源码 `d83e37acea5d5ae9d106fb0183b663bbdd7a9bfa`，支持下面的完整清理选项。原 v1.2.0 Tag 保持原行为，正式 EXE 按对应 GitHub Release 获取。用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍需新的实机验收**，不据此标记两 Edition、NAS 或新行为均通过。
 
 ## 在线一键入口
 

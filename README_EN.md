@@ -394,7 +394,7 @@ The entry binds only the selected private address, does not use ports 80/443 or 
 
 Online one-line uninstaller:
 
-> The user reported successful VPS acceptance of the original data-preserving uninstaller; **the new complete cleanup still requires real-host testing**. The online entry pins reviewed commit `4faeeb3590b68fe5591d859be322dbfcb0a18533`, validated by Windows/Linux and Python 3.10/3.13 CI. Obtain official EXEs from the matching GitHub Release. Finish active tasks, save backups outside the cleanup paths and preview first; there is no unattended forced deletion.
+> The user reported successful VPS acceptance of the original data-preserving uninstaller; **the new complete cleanup still requires real-host testing**. The online entry pins immutable helper source `d83e37acea5d5ae9d106fb0183b663bbdd7a9bfa` for this version. Obtain official EXEs from the matching GitHub Release. Finish active tasks, save backups outside the cleanup paths and preview first; there is no unattended forced deletion.
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check

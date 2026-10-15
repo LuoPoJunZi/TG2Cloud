@@ -19,7 +19,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this reviewed immutable pin only after the LAN module passes CI/review.
-installer_commit="5b85703a2a484788d4b51428032d20f61c55cd4d"
+installer_commit="d83e37acea5d5ae9d106fb0183b663bbdd7a9bfa"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '内网向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2
