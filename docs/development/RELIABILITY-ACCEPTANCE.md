@@ -13,12 +13,14 @@
 
 ## 自动检查
 
-- [ ] 完整 pytest / CI unittest discovery；新增恢复、分页、取消竞争、DB 兼容、离线恢复测试已被发现。
-- [ ] Ruff、Bandit、compileall、Bash -n、ShellCheck、git diff --check。
-- [ ] 仓库公开文件与两 Edition payload 清单；新模块全部进入打包。
-- [ ] Docker Compose config、两 Edition 非 root 镜像启动、隔离 WebDAV 集成。
-- [ ] Windows 两 EXE 构建与自检；品牌与版本资源仍匹配。
-- [ ] website build / tests；待发布说明未冒充当前稳定版本。
+- [x] 完整 pytest / CI unittest discovery；新增恢复、分页、取消竞争、DB 兼容、离线恢复测试已被发现。
+- [x] Ruff、Bandit、compileall、Bash -n、ShellCheck、git diff --check。
+- [x] 仓库公开文件与两 Edition payload 清单；新模块全部进入打包。
+- [x] Docker Compose config、两 Edition 非 root 镜像启动、隔离 WebDAV 集成。
+- [x] Windows 两 EXE 构建与自检；品牌与版本资源仍匹配。
+- [x] website build / tests；源码与实际可下载版本分开标识。
+
+正式标签 `v1.2.1` 对应提交 `347c2e23091c1f0db92b2d7872689b08ac11a78a`；[同标签发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/38701732827) 的四个 Job 均成功。[Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 仅含两个正式 EXE 和 SHA256SUMS；校验清单与 GitHub 资产摘要已核对，在线入口 latest 和两版公开源码载荷检查通过。这些自动结果不替代下列人工验收。
 
 ## 专用环境人工验收（本轮尚未执行）
 

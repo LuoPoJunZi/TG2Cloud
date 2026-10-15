@@ -60,7 +60,7 @@
 
 401 优先检查运行配置中的 WebDAV 用户名、密码；429 属于限流，避免连续重试加重压力。两者不能用同一种方案处理。[WebDAV 排查](/troubleshooting/webdav/)。
 
-当前 v1.2.0 源码中的 OpenList Bot `/doctor` 会显示实际探测时间与剩余冷却；刷新诊断不会绕过退避，也不会把消息刷新时间冒充新探测结果。
+当前 v1.2.1 源码中的 OpenList Bot `/doctor` 会显示实际探测时间与剩余冷却；刷新诊断不会绕过退避，也不会把消息刷新时间冒充新探测结果。
 
 ### 修改部署器密码后还是 401？
 
@@ -78,7 +78,7 @@
 
 ### 取消后能再次转存吗？遇到不完整远端文件怎么办？
 
-本轮待发布源码支持重新转发已取消文件或 `/restart 编号`，确认后重新排队，保留编号/历史与活动任务去重。远端结果不确定时使用 `/recover 编号` 确认换名重传，不自动覆盖或删除旧文件。尚未包含在 v1.2.0 Release，详见[命令](/usage/commands/)和[恢复排查](/troubleshooting/transfer/)。
+v1.2.1 支持重新转发已取消文件或 `/restart 编号`，确认后重新排队，保留编号/历史与活动任务去重。远端结果不确定时使用 `/recover 编号` 确认换名重传，不自动覆盖或删除旧文件。旧 v1.2.0 Release 不包含这些功能，详见[命令](/usage/commands/)和[恢复排查](/troubleshooting/transfer/)。
 
 ### Bot 一直排队？
 
@@ -108,7 +108,7 @@
 
 ### TG115 能一键升级 TG2Cloud 吗？
 
-v1.2.0 不提供原地自动迁移或正式自动 Restore。独立卸载不是迁移或升级步骤，也不会清理旧 TG115。主分支追加的完整清理默认双重确认后删除所选 TG2Cloud 数据与可识别备份；需要保留时明确使用 `--keep-data`。完整清理增强仍待新的实机验收，不能把原保留数据版本的用户验收当作新行为已经通过。详见 [独立卸载说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) 和 [迁移说明](/operations/migration/)。
+v1.2.1 不提供原地自动迁移或正式自动 Restore。独立卸载不是迁移或升级步骤，也不会清理旧 TG115。主分支追加的完整清理默认双重确认后删除所选 TG2Cloud 数据与可识别备份；需要保留时明确使用 `--keep-data`。完整清理增强仍待新的实机验收，不能把原保留数据版本的用户验收当作新行为已经通过。详见 [独立卸载说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) 和 [迁移说明](/operations/migration/)。
 
 ### CloudDrive2 现在能备份了吗？
 

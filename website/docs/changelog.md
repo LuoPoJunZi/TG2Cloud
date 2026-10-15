@@ -4,7 +4,7 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 ## TG2Cloud v1.2.1
 
-本节对应待发布源码，详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。正式下载见 [v1.2.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.0)。
+本节对应 v1.2.1 正式版本，详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.2.1/CHANGELOG.md)与 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
 
 - 视频数字/默认名称从同条说明提取标题，过滤链接、话题与常见推广；不获取评论区资源。
 - 整组图片/视频可共用本组说明标题并分别编号；没有说明的单个视频保留原名，不回查频道。
@@ -15,7 +15,7 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 - 遗留扫描增量读取并显示完整性，删除范围和数量保护不变。
 - 大小验证记录、CloudDrive2 安全回退、离线备份预检、多文件系统容量诊断与错误脱敏。
 
-待发布，内容核对日期：2026-10-15。包含主分支此前的 OpenList DB 快照/digest 回退修复。CloudDrive2 候选已完成保留历史任务的迁移、健康启动与只读 WebDAV 检查，真实 Telegram 转存、完整安装升级、OpenList 实机和灾难恢复仍待验收；正式下载暂保持 v1.2.0。见[源码验收清单](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/RELIABILITY-ACCEPTANCE.md)。
+发布日期与内容核对日期：2026-10-15。两个 EXE 已由同标签 Actions 构建、自检和发布，实际 SHA256SUMS 已核对。包含主分支此前的 OpenList DB 快照/digest 回退修复。CloudDrive2 候选已完成保留历史任务的迁移、健康启动与只读 WebDAV 检查，真实 Telegram 转存、完整安装升级、OpenList 实机和灾难恢复仍待验收；正式下载为 v1.2.1。见[源码验收清单](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/RELIABILITY-ACCEPTANCE.md)。
 
 ## TG2Cloud v1.2.0
 

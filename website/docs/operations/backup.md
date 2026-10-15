@@ -2,11 +2,11 @@
 
 先明确哪些数据被包含，哪些没有被包含。备份包本身可能含敏感凭据，不能公开上传。
 
-## 待发布：离线业务快照预检
+## v1.2.1：离线业务快照预检
 
-本轮待发布源码提供可选 `app.backup_bundle` 工具，仅接受人工准备的静止副本，覆盖标准 `.env`、Compose、业务 DB、Telegram Session、rclone 配置及所选网关配置。现有业务升级/手动备份不应假设包含 Telegram Session。下载、日志、云端文件和共享 HTTPS 仍须分别处理。
+v1.2.1 提供可选 `app.backup_bundle` 工具，仅接受人工准备的静止副本，覆盖标准 `.env`、Compose、业务 DB、Telegram Session、rclone 配置及所选网关配置。现有业务升级/手动备份不应假设包含 Telegram Session。下载、日志、云端文件和共享 HTTPS 仍须分别处理。
 
-工具生成版本/内容/SHA256 清单，在新私密目录检查归档和 SQLite 后清理；拒绝路径穿越、链接、重复成员、版本不兼容与不足空间。不覆盖生产文件，不自动启动服务，不提供一键 Restore，也不把结构通过写成服务恢复成功。完整前提、命令和回退步骤见[恢复指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/RECOVERY.md)。本节不是已发布 v1.2.0 的能力承诺。
+工具生成版本/内容/SHA256 清单，在新私密目录检查归档和 SQLite 后清理；拒绝路径穿越、链接、重复成员、版本不兼容与不足空间。不覆盖生产文件，不自动启动服务，不提供一键 Restore，也不把结构通过写成服务恢复成功。完整前提、命令和回退步骤见[恢复指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/RECOVERY.md)。旧 v1.2.0 不包含本节新增工具。
 
 ## CloudDrive2 Edition
 
@@ -24,7 +24,7 @@
 
 两个 Edition 的现有备份都**不包含** `/opt/tg2cloud-proxy`。强制 HTTPS 之后，仅恢复 Edition 数据仍不足以恢复管理入口。
 
-当前 v1.2.0 源码可在任一 Edition 的“HTTPS 管理入口 → 维护工具”中选择“备份共享代理”，保存以下内容：
+当前 v1.2.1 源码可在任一 Edition 的“HTTPS 管理入口 → 维护工具”中选择“备份共享代理”，保存以下内容：
 
 - `state/domains.json`：两个 Edition 的域名与后端端口映射；
 - `docker-compose.yml`、`nginx/nginx.conf` 和 `nginx/conf.d/`：共享代理与续期配置；
@@ -92,7 +92,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh prune-backups 5
 
 ## 恢复不是一键承诺
 
-v1.2.0 没有正式自动 Restore。旧 TG115 的队列/数据库迁移也未被声明完成真实环境验收。
+v1.2.1 没有正式自动 Restore。旧 TG115 的队列/数据库迁移也未被声明完成真实环境验收。
 
 备份可读取不等于恢复已验证。重要部署应在受控环境制定恢复步骤，并保留独立可恢复副本；不要边猜数据库位置边覆盖生产实例。
 
