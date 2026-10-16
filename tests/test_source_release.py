@@ -43,6 +43,11 @@ class SourceReleaseTests(unittest.TestCase):
         package.git(self.root, "config", "tag.gpgsign", "false")
         package.git(self.root, "config", "core.autocrlf", "false")
         package.git(self.root, "config", "core.hooksPath", str(Path(self.temp.name) / "no-hooks"))
+        # A detached maintenance process can recreate .git files during cleanup.
+        # Fixture repositories are short-lived and need no background maintenance.
+        package.git(self.root, "config", "gc.auto", "0")
+        package.git(self.root, "config", "gc.autoDetach", "false")
+        package.git(self.root, "config", "maintenance.auto", "false")
         self.commit()
         pin = package.git(self.root, "rev-parse", "HEAD").decode().strip()
         for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
