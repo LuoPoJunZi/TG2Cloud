@@ -114,6 +114,8 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到不可变源码 commit，不逐文件追随移动的 `main`。v1.3.0 向导包含磁盘推荐；准确的辅助源码身份由三个入口中的 `installer_commit` 给出。新向导先经过 CI，再更新三个入口的 pin；源码发布检查会拒绝 pin 与新版本辅助文件不一致的情况。业务 payload 仍只取最新正式稳定 Release。
 
+v1.3.0 的三个在线入口固定向导 commit 为 `fb37e5f0d6b4dfaed95eafafa08ef95faf33ca25`，模块版本为 `1.3.0`；该提交的 Windows／Linux 回归、Python 3.10／3.13 脚本矩阵及仓库检查通过。正式 payload 的 Tag commit 与向导 commit 分别核对，不要求两者相同。
+
 这是向导源码身份，不是要部署的 Bot 版本。独立脚本另行通过 GitHub `/releases/latest` 排除草稿及预发布，解析正式 Tag 到不可变 commit；所有实际安装的 payload 来自这个正式 commit。向导会核对 Tag、commit 和 payload 版本。Release Tag 在引导后变化、API 限流、辅助模块缺失或版本不匹配时停止；不会退回 `main` 或 RC 的业务代码。
 
 因此已有 `v1.1.2` Release 不必包含新增脚本，单行入口也不需要构建或替换 EXE。仍不要从旧 `v1.1.2` Tag 下载 `install.sh`。从本地源码运行时使用该 checkout 的向导代码，部署目标仍只取正式稳定 Release。
