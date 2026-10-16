@@ -11,6 +11,7 @@ import shlex
 import subprocess
 import tarfile
 import tempfile
+import textwrap
 import time
 import unittest
 from contextlib import nullcontext
@@ -511,7 +512,8 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_workflow_uses_validated_tag_and_reuses_one_build(self):
         text = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertNotIn("RELEASE_TAG: v1.", text)
-        self.assertIn('test "${GITHUB_REF_TYPE}" = tag', text)
+        self.assertIn('if [[ "${GITHUB_REF_TYPE}" == tag ]]', text)
+        self.assertIn('ref: refs/tags/${{ steps.target.outputs.release_tag }}', text)
         self.assertIn("needs.prepare.outputs.release_tag", text)
         self.assertNotIn("./build.ps1", text)
         self.assertNotIn("windows-build", text)
@@ -523,6 +525,39 @@ class ReleaseMetadataTests(unittest.TestCase):
         branch = (ROOT / ".github/workflows/tests.yml").read_text(encoding="utf-8")
         self.assertNotIn("./build.ps1", branch)
         self.assertNotIn("exe_build_inputs.py", branch)
+
+    @unittest.skipUnless(BASH, "Bash unavailable")
+    def test_release_target_selector_rejects_branches_and_untrusted_inputs(self):
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        script = textwrap.dedent(workflow.split("        run: |\n", 1)[1].split("\n      - name:", 1)[0])
+        cases = (
+            ("tag", "push", "v1.3.0", "", "v1.3.0"),
+            ("branch", "workflow_dispatch", "main", "v1.3.0", "v1.3.0"),
+            ("branch", "workflow_dispatch", "main", "v1.3.1-rc.1", "v1.3.1-rc.1"),
+            ("branch", "push", "main", "v1.3.0", None),
+            ("branch", "workflow_dispatch", "main", "", None),
+            ("branch", "workflow_dispatch", "main", "main", None),
+            ("branch", "workflow_dispatch", "main", "v1.3.0; touch SHOULD_NOT_EXIST", None),
+            ("branch", "workflow_dispatch", "main", "v1.3.0\nrelease_tag=main", None),
+        )
+        with tempfile.TemporaryDirectory() as temp:
+            for index, (kind, event, ref, requested, expected) in enumerate(cases):
+                with self.subTest(kind=kind, event=event, requested=requested):
+                    output = Path(temp) / str(index)
+                    environment = os.environ | {
+                        "GITHUB_REF_TYPE": kind, "GITHUB_EVENT_NAME": event,
+                        "GITHUB_REF_NAME": ref, "REQUESTED_TAG": requested,
+                        "GITHUB_OUTPUT": bash_path(output),
+                    }
+                    result = subprocess.run([BASH], input=script, text=True, env=environment,
+                                            capture_output=True, cwd=temp, timeout=15, check=False)
+                    if expected:
+                        self.assertEqual(result.returncode, 0, result.stderr)
+                        self.assertEqual(output.read_text().strip(), "release_tag=" + expected)
+                    else:
+                        self.assertNotEqual(result.returncode, 0)
+                        self.assertFalse(output.exists())
+                    self.assertFalse((Path(temp) / "SHOULD_NOT_EXIST").exists())
 
 
 if __name__ == "__main__":

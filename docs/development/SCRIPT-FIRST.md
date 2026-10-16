@@ -38,4 +38,6 @@ v1.2.1 的 SHA256SUMS 校验两个 EXE。后续脚本版的 SHA256SUMS 校验该
 3. 执行离线测试、代码检查、两 Edition Docker/本地 WebDAV、网站检查及上述实机验收。未运行的检查明确保留待验收。
 4. 创建新 Tag 后 Actions 打包一次，发布同一源码包及 SHA256。不覆盖已有版本，不上传本机产物。
 
+若已有 Tag 的发布仅因工作流检查环境失败，修复主分支 Workflow 后，可在 Actions 的 release 工作流选择 main，填写 `release_tag` 为已有版本重试。实际源码、版本检查、Release Notes 与打包仍从 `refs/tags/<版本>` 读取，不从 main 取业务代码，不移动 Tag；已有 Release 继续拒绝覆盖。
+
 发布授权不等于真实实例部署授权。v1.3.0 的真实 VPS／NAS 首次安装、升级和回退尚未执行；自动测试结果不能替代上述实机门槛。
