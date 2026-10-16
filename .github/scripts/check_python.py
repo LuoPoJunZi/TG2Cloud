@@ -10,11 +10,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CLI_TESTS = (
     "test_vps_installer.py", "test_lan_installer.py", "test_uninstaller.py",
-    "test_proxy_host_compat.py", "test_repository.py",
+    "test_proxy_host_compat.py", "test_repository.py", "test_storage_wizard.py", "test_source_release.py",
 )
 CLI_PATHS = (
     "scripts", "deployer_products.py", "domain_proxy.py", "proxy_maintenance.py",
     "vps_resources.py", ".github/scripts/check_python.py", ".github/scripts/check_repository.py",
+    ".github/scripts/source_release.py",
     *(f"tests/{name}" for name in CLI_TESTS),
     "tests/test_lan_gateway_docker.py",
 )

@@ -48,15 +48,17 @@ Your Cloud
 
 This repository evolved from [whyhhh20/TG115](https://github.com/whyhhh20/TG115). It retains the original attribution and license while adding stronger task recovery, disk protection, streaming transfers, state semantics, rollback, VPS resource guidance, and operational diagnostics.
 
-> Current source version: **TG2Cloud v1.2.1**
+> Current source version: **TG2Cloud v1.3.0**
 >
-> This version improves task recovery, remote-file protection, orphan scans, video naming and weekly failure counts. Both PySide6 deployers remain the primary installers, and each storage backend retains its upload strategy. GitHub Actions tests, builds and self-tests the official Windows EXEs from the matching tag; the Release reuses those artifacts and their actual SHA256 values. See the [release notes](RELEASE_NOTES.md) for acceptance results and remaining checks.
+> **v1.2.1 is the final Windows deployer release.** From v1.3.0, both editions use the Linux VPS and LAN scripts for ongoing maintenance. Fresh installations offer storage recommendations; releases provide a source package and SHA256 checksum. See the [transition and acceptance checklist (Chinese)](docs/development/SCRIPT-FIRST.md).
 
 > Only transfer content that you are authorized to save, back up, and use. Follow the laws and terms that apply to Telegram, your cloud provider, CloudDrive2/OpenList, the content source, and your jurisdiction.
 
 ## Downloads
 
-Windows users should download the required edition and `SHA256SUMS.txt` from [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases):
+Use the one-line commands below for Linux installation and upgrades. The [v1.3.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) provides `TG2Cloud-v1.3.0-source.tar.gz` and its `SHA256SUMS.txt`. This checksum covers the source package; historical EXEs require the separate v1.2.1 checksum list.
+
+For the historical Windows installers, download the required edition and matching `SHA256SUMS.txt` from [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). Future releases will not contain new EXEs:
 
 - **CloudDrive2 Edition** — `TG2Cloud-CloudDrive2-Deployer.exe`
 
@@ -75,13 +77,13 @@ Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 
 Published Windows EXEs are not commercially code-signed. Windows SmartScreen may show an “Unknown publisher” warning on first launch. Download only from this repository's Releases page, verify SHA-256, and do not disable Microsoft Defender or Windows Security.
 
-No Windows computer? Run the optional wizard as root on a Debian/Ubuntu x86_64 VPS with Python 3.10+, curl and an interactive terminal:
+For ongoing installation and upgrades, run the Linux wizard as root on a Debian/Ubuntu x86_64 VPS with Python 3.10+, curl and an interactive terminal:
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-The wizard collects information, checks the environment and asks for confirmation before applying changes. The installed payload comes only from the latest official stable Release. Fresh installation, actual upgrade and rollback still need VPS acceptance; use a test VPS first. See [Optional VPS Installer](#optional-vps-installer). Both Windows EXEs remain the primary installation method.
+The wizard collects information, checks the environment and asks for confirmation before applying changes. The installed payload comes only from the latest official stable Release. Fresh installation, actual upgrade and rollback still need VPS acceptance; use a test VPS first. See [Optional VPS Installer](#optional-vps-installer). The Windows EXEs remain available at v1.2.1; do not redeploy an upgraded instance using an older EXE.
 
 ## Contents
 
@@ -152,12 +154,12 @@ TG2Cloud follows a “select manually, process automatically” model. You choos
 
 ## Current Version
 
-The current version, TG2Cloud v1.2.1, provides two separate PySide6 editions:
+The current version, TG2Cloud v1.3.0, provides two Linux script editions. The graphical instructions retained below describe the historical v1.2.1 deployers:
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
 
-They share the stable task core and visual design, while using separate product entry points, storage gateways, deployment resources, and EXE artifacts.
+They share the stable task core while using separate storage gateways, installation paths and deployment resources. New releases no longer build the historical PySide6 UI.
 
 ## Requirements
 
@@ -321,7 +323,7 @@ When an installation for the current edition already exists, redeployment preser
 
 ## Optional VPS Installer
 
-The two Windows deployers remain the primary installation method. Without a Windows computer, run the following command as root on a Debian/Ubuntu x86_64 VPS with Python 3.10+, curl and an interactive terminal. It reuses the existing Docker deployment resources without replacing the Bot implementation or changing either EXE.
+Use the script for future maintenance. Run the following command as root on a Debian/Ubuntu x86_64 VPS with Python 3.10+, curl and an interactive terminal. It reuses the existing Docker deployment resources without replacing the Bot implementation or changing either EXE.
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
@@ -350,7 +352,7 @@ The entry is downloaded from `main`, but the wizard modules are pinned to a veri
 
 A fresh installation collects configuration, checks the environment and asks for confirmation before applying changes. A complete existing installation retains its configuration and targets the latest official stable Release, pinned to its immutable commit. An up-to-date instance is not rebuilt or restarted. Legacy TG115, partial instances, custom code, conflicting directories and gateway image migrations fail closed. Unlike this entry, `manage.sh update` only rebuilds the payload already installed on the VPS.
 
-The shared source version for the Bot, both deployers and Windows build resources is **v1.2.1**. Official EXEs are built by Actions, not uploaded from a local machine. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. The wizard installs only the latest officially released stable payload, never unpublished code merely because main has a higher version. The CloudDrive2 candidate passed database compatibility, startup and read-only WebDAV checks on the test VPS. Full installer upgrades/rollback, real Telegram transfers and OpenList script acceptance remain pending.
+The Bot and script source version is **v1.3.0**; Windows resources and the final EXEs remain at **v1.2.1**. Fresh interactive installation offers stream-first, balanced or manual storage budgets and rechecks capacity before applying changes. Upgrades preserve existing values. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. The wizard installs only the latest officially released stable payload, never unpublished code merely because main has a higher version. The CloudDrive2 candidate passed database compatibility, startup and read-only WebDAV checks on the test VPS. Full installer upgrades/rollback, real Telegram transfers and OpenList script acceptance remain pending.
 
 After successful HTTPS recovery, the wizard offers to display saved credentials again. You can also view them separately in your private terminal. Each item requires confirmation and defaults to hidden; this operation does not install, upgrade or reset passwords and cannot be combined with `--check`, `--configure-https` or `--verify`:
 

@@ -1,8 +1,12 @@
 # 下载与 SHA-256 校验
 
-本文档对应 **TG2Cloud v1.2.1** 正式版本。两个 EXE 和 SHA256SUMS 已由 GitHub Actions 从同一不可变 Tag 构建、自检并发布，校验清单与实际资产摘要已核对；获取程序请使用项目自己的 GitHub Releases。
+当前文档对应 **TG2Cloud v1.3.0**（待发布），以 Linux 一键脚本安装和维护两个 Edition。Windows 部署器最后更新到 v1.2.1，以下历史下载继续保留；获取程序请使用项目自己的 GitHub Releases。
 
-## 下载已发布版本
+## v1.3.0 源码包与脚本
+
+本版待发布，正式资产将由 GitHub Actions 生成：`TG2Cloud-v1.3.0-source.tar.gz` 与 `SHA256SUMS.txt`。确认发布后再下载并执行 `sha256sum -c SHA256SUMS.txt`；该清单校验源码包，不用于历史 EXE。直接安装和升级使用下方 VPS／内网单行入口。
+
+## 下载 v1.2.1 历史 Windows 部署器
 
 | 版本 | 发布文件 | 教程 |
 | --- | --- | --- |
@@ -16,9 +20,9 @@
 本页下载按钮固定到已发布 v1.2.1，两个 EXE 与 SHA256SUMS 来自同一次 Actions 构建，不使用旧版本的摘要。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
 :::
 
-两个正式 EXE 由 GitHub Actions 的 Windows Runner 从同一标签构建并自检，Release 复用该次构建产物。校验值来自这次 Actions 实际生成的文件，不要求与本机旧构建一致。
+v1.2.1 的两个正式 EXE 由 GitHub Actions 的 Windows Runner 从同一标签构建并自检，Release 复用该次构建产物。校验值来自这次 Actions 实际生成的文件，不要求与本机旧构建一致。
 
-下载新版 EXE 不会自动更新 VPS Bot 或 HTTPS 续期容器；已有实例请按 [升级与修改配置](/operations/update/) 操作，不要卸载重装。
+后续源码版 Release 不再提供新版 EXE，其 SHA256 清单对应源码包。已有实例请按 [升级与修改配置](/operations/update/) 操作，不要用旧 EXE 覆盖较新实例，也不要卸载重装。
 
 ## 在 Windows 中计算校验值
 
@@ -41,7 +45,7 @@ Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 
 ## 没有 Windows：VPS 单行入口
 
-两个 PySide6 部署器仍是主力入口。没有 Windows 时，可在自己的 Debian/Ubuntu x86_64 VPS 上，以 root 运行以下命令；需要 Python 3.10+、curl、CA 证书及可交互终端。
+后续主要使用脚本维护。在自己的 Debian/Ubuntu x86_64 VPS 上，以 root 运行以下命令；需要 Python 3.10+、curl、CA 证书及可交互终端。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)

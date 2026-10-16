@@ -137,7 +137,7 @@ class RepositoryContractTests(unittest.TestCase):
 
     def test_release_checks_public_inputs_before_any_build(self):
         release = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
-        prepare, downstream = release.split("  windows-build:\n", 1)
+        prepare, downstream = release.split("  linux-validation:\n", 1)
         self.assertIn(".github/scripts/check_repository.py", prepare)
         self.assertIn("    needs: prepare", downstream)
 

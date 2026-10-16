@@ -55,17 +55,17 @@ class ExeBuildInputTests(unittest.TestCase):
                 self.assertTrue(inputs.event_requires_build(name, event))
                 git.assert_not_called()
 
-    def test_build_step_condition_and_full_history(self):
+    def test_branch_and_release_stop_automated_desktop_builds(self):
         workflow = (ROOT / ".github/workflows/tests.yml").read_text(encoding="utf-8")
         self.assertIn("fetch-depth: 0", workflow)
-        self.assertIn("if: steps.exe-inputs.outputs.build == 'true'", workflow)
+        self.assertNotIn("exe-inputs", workflow)
+        self.assertNotIn("./build.ps1", workflow)
         release = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         self.assertNotIn("exe-inputs", release)
+        self.assertNotIn("./build.ps1", release)
+        self.assertNotIn("windows-build:", release)
 
-    def test_windows_branch_and_release_use_same_utf8_output(self):
-        for filename, job in (("tests.yml", "windows"), ("release.yml", "windows-build")):
-            with self.subTest(workflow=filename):
-                workflow = (ROOT / ".github/workflows" / filename).read_text(encoding="utf-8")
-                section = workflow.split(f"  {job}:\n", 1)[1].split("    steps:\n", 1)[0]
-                self.assertIn("    env:\n", section)
-                self.assertIn("      PYTHONIOENCODING: utf-8\n", section)
+    def test_retained_windows_compatibility_tests_use_utf8_output(self):
+        workflow = (ROOT / ".github/workflows/tests.yml").read_text(encoding="utf-8")
+        section = workflow.split("  windows:\n", 1)[1].split("    steps:\n", 1)[0]
+        self.assertIn("      PYTHONIOENCODING: utf-8\n", section)

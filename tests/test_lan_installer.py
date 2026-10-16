@@ -360,6 +360,7 @@ class PlanExecutionTests(unittest.TestCase):
             self.patches[name] = self.stack.enter_context(patch.object(vps, name))
         self.patches["docker_inventory"] = self.stack.enter_context(patch.object(vps, "docker_inventory", return_value=set()))
         self.patches["gateway_image"] = self.stack.enter_context(patch.object(vps, "gateway_image", return_value=self.instance.gateway_image))
+        self.patches["choose_storage"] = self.stack.enter_context(patch.object(vps, "choose_storage", return_value=("8", "8")))
 
     def plan(self, **kwargs):
         return lan.make_plan(self.instance, RELEASE, ROOT, ROOT, Mock(), self.log, **kwargs)
@@ -387,6 +388,7 @@ class PlanExecutionTests(unittest.TestCase):
         self.assertEqual(plan.action, "upgrade")
         self.assertEqual(plan.address, IP)
         self.assertEqual(plan.config, self.instance.config)
+        self.patches["choose_storage"].assert_not_called()
         ui.ask.assert_not_called()
         self.patches["resource_check"].assert_called_once()
         with self.assertRaisesRegex(ValueError, "切换"):
@@ -398,6 +400,15 @@ class PlanExecutionTests(unittest.TestCase):
         self.patches["gateway_image"].return_value = "different@sha256:" + "c" * 64
         with self.assertRaisesRegex(ValueError, "人工迁移"):
             self.plan()
+
+    def test_final_capacity_loss_does_not_save_lan_state_or_deploy(self):
+        self.instance.version = "1.1.4"
+        plan = self.plan()
+        self.patches["resource_check"].side_effect = ValueError("资源不足")
+        with patch.object(lan, "edition_lock", return_value=nullcontext()), patch.object(vps, "discover", return_value=self.instance), patch.object(vps, "apply_base") as apply, self.assertRaisesRegex(ValueError, "资源不足"):
+            lan.execute(plan, RELEASE, ROOT, ROOT, Mock(), self.log, Mock())
+        apply.assert_not_called()
+        self.patches["save_state"].assert_not_called()
 
     def test_new_install_needs_explicit_ip_and_collects_no_secrets_on_check(self):
         self.instance = instance(self.product, present=False)
@@ -422,6 +433,7 @@ class PlanExecutionTests(unittest.TestCase):
             plan = self.plan(ui=ui)
         ui.ask.assert_called_once()
         collect.assert_called_once()
+        self.assertEqual(collect.call_args.kwargs, {"storage": ("8", "8")})
         self.assertEqual(plan.address, IP)
         self.patches["validate_local_ip"].side_effect = ValueError("not local")
         with patch.object(vps, "collect_config") as collect, self.assertRaises(ValueError):

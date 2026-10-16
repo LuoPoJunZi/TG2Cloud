@@ -59,7 +59,7 @@ python -B -m unittest discover -s tests -p test_repository.py -v
 python .github/scripts/validate_release_notes.py RELEASE_NOTES.md
 ```
 
-公共文件检查只读，不删除或取消跟踪任何文件：禁止提交的常见产物、缓存、本地配置或内部记录会报告路径；正式构建文件和两 Edition 的 payload 输入必须存在且进入候选公共文件集合；新增 `docs/` 下的公开 Markdown 文档必须链接到 `docs/README.md`。这不是秘密内容 / Git 历史扫描，也不执行 EXE 构建或 VPS 验收。公共文件 CI 对 main 的 Push / PR 均运行，不因“只有文档变更”而跳过；Release 在 Windows 构建之前执行同一检查。
+公共文件检查只读，不删除或取消跟踪任何文件：禁止提交的常见产物、缓存、本地配置或内部记录会报告路径；正式构建文件和两 Edition 的 payload 输入必须存在且进入候选公共文件集合；新增 `docs/` 下的公开 Markdown 文档必须链接到 `docs/README.md`。这不是秘密内容 / Git 历史扫描，也不执行 EXE 构建或 VPS 验收。公共文件 CI 对 main 的 Push / PR 均运行，不因“只有文档变更”而跳过；Release 在 Linux 验证与源码打包之前执行同一检查。
 
 文档站使用 Node.js 22。在 `website/` 中执行现有命令：
 
@@ -71,12 +71,12 @@ npm test
 
 版本、品牌副本和公开脚本命令的一致性测试需要完整 TG2Cloud 仓库；不只拷贝 `website/` 来执行仓库级检查。网站与根目录文档允许不同篇幅，但安全边界、操作命令和发布事实必须同步审阅。实际构建/预览方式仍见 [网站维护说明](website/README.md)。
 
-## Windows 构建
+## 历史 Windows 构建（停留在 v1.2.1）
 
-修改 Windows 部署器公共行为或版本号时，要同时检查 `installer.py`、`installer_clouddrive2.py`、`installer_openlist.py` 和 `deployer_products.py`；运行 `.\build.ps1` 会构建并自检 CloudDrive2、OpenList 两个 PySide6 产品。当前项目不再保留 Classic/Tkinter 部署器源码或 CMD 启动器。
+恢复历史构建请使用 v1.2.1 Tag 或独立源码备份。桌面源码暂时保留用于兼容回归，分支和 Release 不再自动打包 EXE；当前 build.ps1 拒绝将新版本打成 Windows 产品。物理清理门槛见[脚本优先说明](docs/development/SCRIPT-FIRST.md)。
 
 ## 版本与 Release
 
-唯一版本源为 `payload_clouddrive2/app/version.py`，部署器与 Bot 均引用该文件。修改版本后运行 `python .github/scripts/release_metadata.py --sync-windows` 同步两个 Windows 版本资源，再更新 CHANGELOG 和 RELEASE_NOTES。`python .github/scripts/release_metadata.py --tag vX.Y.Z` 检查标签、源码、Windows 资源和发布文档是否一致；这个命令不会创建标签或发布。
+Bot 和脚本版本源为 `payload_clouddrive2/app/version.py`。新版本同步安装入口、网站、CHANGELOG 和 RELEASE_NOTES；Windows 资源固定 1.2.1，不再运行 `--sync-windows` 将它提升到新版本。`python .github/scripts/release_metadata.py --tag vX.Y.Z` 校验版本与发布文档，不创建标签或发布。
 
-Release Workflow 仅接受严格版本标签 `vX.Y.Z` 或 `vX.Y.Z-alpha.N` / `beta.N` / `rc.N`。手动触发也必须选择已有 Tag，不允许把 main 当作发布来源。预发布的 Release Notes 必须写明完整预发布标签；Workflow 自动标记 Pre-release。Windows 和 Linux 检查必须来自同一标签，Release Job 继续复用 Windows 一次构建并通过自检的两个 EXE 与实际 SHA256 清单；不替换已有 Release，不上传本机 EXE。
+Release Workflow 仅接受严格版本标签 `vX.Y.Z` 或 `vX.Y.Z-alpha.N` / `beta.N` / `rc.N`。手动触发也必须选择已有 Tag，不允许把 main 当作发布来源。预发布的 Release Notes 必须写明完整预发布标签；Workflow 自动标记 Pre-release。Linux 检查从同一标签执行，包含完整回归、两 Edition Docker 和本地 WebDAV。`source_release.py build` 从该 Tag 打包一次并校验在线向导 pin；Release Job 下载同一 artifact，再次 verify 后发布源码归档和 SHA256。旧 pin 与本版辅助代码不一致会阻断发布；不替换已有 Release，不上传本机产物。

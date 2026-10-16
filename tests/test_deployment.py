@@ -9,7 +9,7 @@ import unittest
 from dataclasses import replace
 from pathlib import Path
 
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT, RELEASE_VERSION
+from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
 from installer import runtime_status_command
 
 SOURCE = Path(__file__).resolve().parents[1]
@@ -723,7 +723,7 @@ class DeploymentStructureTests(unittest.TestCase):
         ):
             self.assertTrue(version_file.is_file())
             metadata = version_file.read_text(encoding="utf-8")
-            self.assertIn(f"ProductVersion', '{RELEASE_VERSION}'", metadata)
+            self.assertIn("ProductVersion', '1.2.1'", metadata)
             self.assertIn("TG2Cloud", metadata)
         self.assertNotIn("Source = 'installer_classic.py'", script)
         self.assertNotIn("import tkinter", script)
@@ -738,10 +738,8 @@ class DeploymentStructureTests(unittest.TestCase):
         workflow = (SOURCE / ".github" / "workflows" / "tests.yml").read_text(
             encoding="utf-8"
         )
-        self.assertIn(
-            "$env:TG2CLOUD_BUILD_PYTHON = (Get-Command python -ErrorAction Stop).Source",
-            workflow,
-        )
+        self.assertNotIn("TG2CLOUD_BUILD_PYTHON", workflow)
+        self.assertNotIn("./build.ps1", workflow)
         self.assertIn("timeout-minutes: 20", workflow)
         self.assertIn("WaitForExit(120000)", script)
         self.assertIn("app_version=$ReleaseVersion", script)

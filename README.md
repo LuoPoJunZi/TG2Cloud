@@ -48,15 +48,17 @@ Your Cloud
 
 本仓库是在原作者 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 基础上的二次开发版本，重点加强了任务恢复、磁盘保护、流式传输、状态语义、升级回退、VPS 资源建议和日常诊断。
 
-> 当前源码版本：**TG2Cloud v1.2.1**
+> 当前源码版本：**TG2Cloud v1.3.0**
 >
-> 本版完善任务恢复、远端文件保护、遗留扫描、视频命名和每周失败计数。两个 PySide6 部署器仍是主力，CloudDrive2 与 OpenList 保留各自上传策略。正式 Windows EXE 由 GitHub Actions 从对应 Tag 测试、构建并自检，Release 复用本次产物及实际 SHA256。实机验收范围见 [发布说明](RELEASE_NOTES.md)。
+> Windows 部署器最后更新到 **v1.2.1**；从 v1.3.0 起以 Linux 一键脚本维护两个 Edition。首次安装提供磁盘预算推荐，后续 Release 提供源码包及 SHA256。历史 EXE 下载保留；迁移与验收边界见[脚本优先说明](docs/development/SCRIPT-FIRST.md)。
 
 > 仅转存你有权保存、备份和使用的内容，并遵守 Telegram、所用云存储、CloudDrive2/OpenList、内容来源平台及所在地的法律法规和服务条款。
 
 ## 下载
 
-普通 Windows 用户推荐从 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 下载所需 Edition 和 `SHA256SUMS.txt`：
+Linux 安装／升级使用下方单行入口；v1.3.0 的 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) 提供 `TG2Cloud-v1.3.0-source.tar.gz` 和对应的 `SHA256SUMS.txt`。该清单校验源码包，历史 EXE 请使用 v1.2.1 自己的清单。
+
+历史 Windows 图形部署器请从 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 下载所需 Edition 和该版本的 `SHA256SUMS.txt`；后续版本不再提供新版 EXE：
 
 - **CloudDrive2 Edition** — `TG2Cloud-CloudDrive2-Deployer.exe`
 
@@ -75,13 +77,13 @@ Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 
 已发布的 Windows EXE 当前未提供商业代码签名，首次运行时 Windows SmartScreen 可能显示“未知发布者”；请从本仓库 Release 下载并核对 SHA-256，不要关闭 Defender 或 Windows Security。
 
-没有 Windows 电脑？在 Debian/Ubuntu x86_64 VPS 上以 root 运行可选安装向导（需 Python 3.10+、curl 和可交互终端）：
+后续安装和升级主要使用 Linux 向导。在 Debian/Ubuntu x86_64 VPS 上以 root 运行（需 Python 3.10+、curl 和可交互终端）：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-安装向导先收集信息、预检和确认，实际部署代码只取最新正式稳定 Release。首次安装、实际升级与回退仍待实机验收，请先在测试 VPS 使用。详见 [VPS 一键脚本](#可选-vps-一键脚本)。两个 Windows EXE 仍是主力。
+安装向导先收集信息、预检和确认，实际部署代码只取最新正式稳定 Release。首次安装、实际升级与回退仍待实机验收，请先在测试 VPS 使用。详见 [VPS 一键脚本](#可选-vps-一键脚本)。Windows EXE 固定保留 v1.2.1；已升级的实例不要用旧 EXE 再部署。
 
 ## 目录
 
@@ -151,12 +153,12 @@ TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑�
 
 ## 当前版本
 
-当前产品版本为 `TG2Cloud v1.2.1`，提供两个独立的 PySide6 Edition：
+当前产品版本为 `TG2Cloud v1.3.0`，Linux 脚本提供两个 Edition；下文保留 v1.2.1 历史图形部署教程：
 
 - `TG2Cloud · CloudDrive2`
 - `TG2Cloud · OpenList`
 
-两版共用稳定任务核心和统一 UI，但使用各自的部署入口、存储网关与构建产物。
+两版共用稳定任务核心，使用各自的存储网关、安装目录和部署资源。历史 PySide6 UI 不再随新版本构建。
 
 ## 部署前准备
 
@@ -322,7 +324,7 @@ http://tg2cloud-clouddrive2:19798/dav
 
 ## 可选 VPS 一键脚本
 
-两个 Windows 部署器仍是主力。没有 Windows 电脑时，可在 Debian/Ubuntu x86_64 VPS 上以 root 运行以下命令；需要 Python 3.10+、curl 和可交互终端。它复用现有 Docker 部署资源，不另建一套 Bot，也不改变 EXE。
+后续使用脚本维护。在 Debian/Ubuntu x86_64 VPS 上以 root 运行以下命令；需要 Python 3.10+、curl 和可交互终端。它复用现有 Docker 部署资源；Windows 用户可先通过 SSH 登录服务器。以下旧图形化教程仍对应 v1.2.1。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
@@ -351,7 +353,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 全新 VPS 先收集配置、预检和确认再安装；完整已有实例复用配置，目标源码固定到 GitHub 最新正式稳定 Release 的 commit。已是最新版不重建、不重启。旧 TG115、部分容器、手改程序、冲突目录及网关镜像迁移均停止，不自动覆盖。`manage.sh update` 仍只重建本机已有 payload，与此入口不同。
 
-源码、Bot、两个部署器的版本源及 Windows 构建资源统一为 **v1.2.1**；正式 EXE 由 Actions 构建，不上传本机构建。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。CloudDrive2 候选代码已通过测试 VPS 的数据库兼容、启动和只读 WebDAV 检查；完整安装脚本升级/回退、真实 Telegram 转存及 OpenList 脚本实机验收仍需完成。
+源码、Bot 和脚本版本为 **v1.3.0**；Windows 构建资源与最后发布的 EXE 固定为 **v1.2.1**。首次交互安装会读取资源，提供流式优先、均衡和手动预算，执行前再次校验；已有实例升级保留原值。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。CloudDrive2 候选代码已通过测试 VPS 的数据库兼容、启动和只读 WebDAV 检查；完整安装脚本升级/回退、真实 Telegram 转存及 OpenList 脚本实机验收仍需完成。
 
 HTTPS 续做成功后可再次确认显示已有凭据。也可单独在私有终端运行以下命令，每项默认不显示；此操作不会安装、升级或改密，不能与 `--check`、`--configure-https` 或 `--verify` 组合：
 
@@ -614,7 +616,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 
 ### 升级程序
 
-推荐使用新版 Windows 部署器重新执行“一键部署基础环境”。`manage.sh update` 只会使用 VPS 已经安装的 payload 重建 Bot，不会自动从 GitHub 拉取新代码。
+后续推荐使用 [VPS 安装／升级脚本](docs/VPS-INSTALL.md) 检查并保留配置升级；内网实例使用 [LAN 脚本](docs/LAN-INSTALL.md)。`manage.sh update` 只会使用 VPS 已经安装的 payload 重建 Bot，不会自动从 GitHub 拉取新代码。
 
 CloudDrive2 没有手动“创建备份”UI；重新部署前的内部备份包含程序/`.env`/配置（含现有 `rclone.conf`）和可用时的 SQLite 一致性快照，不包含下载、日志及 CloudDrive2 状态目录。OpenList 的手动安全备份包含程序配置归档（含 `.env`、`rclone.conf`）、可用时的 SQLite 快照，以及已初始化的 OpenList 状态（排除其临时文件和日志）；不包含下载、TG2Cloud 日志或云端文件。备份文件含敏感凭据，目录权限为 `700`、文件尽量为 `600`，不得公开上传。
 

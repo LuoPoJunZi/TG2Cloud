@@ -11,6 +11,9 @@ $VersionSource = Get-Content -LiteralPath (Join-Path $SourceDir 'payload_clouddr
 $VersionMatch = [regex]::Match($VersionSource, '(?m)^VERSION = "([0-9]+\.[0-9]+\.[0-9]+)"\r?$')
 if (-not $VersionMatch.Success) { throw '无法读取唯一版本源' }
 $ReleaseVersion = $VersionMatch.Groups[1].Value
+if ($ReleaseVersion -ne '1.2.1') {
+    throw 'Windows 部署器停留在 v1.2.1。请使用 v1.2.1 Tag 或桌面源码备份恢复历史构建；后续版本只发布 Linux 脚本源码。'
+}
 $BrandIcon = Join-Path $SourceDir 'assets/brand/tg2cloud.ico'
 $ProxyMaintenance = Join-Path $SourceDir 'proxy_maintenance.py'
 $PyInstallerArgs = @(

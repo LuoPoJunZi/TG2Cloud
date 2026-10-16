@@ -33,7 +33,7 @@
 
 构建约束保留正式入口、共享模块、Windows 资源及品牌输入，并以 AST 读取 `deployer_products.py` 中两 Edition 的 payload 字面量路径，不导入或执行运行代码。它验证文件存在、是仓库内普通文件且未被排除，但不是所有动态依赖的解析器，也不能代替 `build.ps1` 的实际打包自检。文档约束检查索引中的本地文件链接，并要求每个公开 `docs/` Markdown 文件被索引收录；不检查网页链接是否在线，不自动修改文章或导航。
 
-这些检查需要完整 Git checkout，不能在源码 ZIP 中推断跟踪状态。公共文件 Workflow 对 main 的 Push / PR 全部运行；Release 的 prepare 阶段也在 Windows 构建前检查。检查只显示问题路径 / 索引行号及原因，不读取或打印凭据文件内容，不扫描 Git 历史；通过不代表不存在真实 Secret。
+这些检查需要完整 Git checkout，不能在源码 ZIP 中推断跟踪状态。公共文件 Workflow 对 main 的 Push / PR 全部运行；Release 的 prepare 阶段也在 Linux 验证和源码打包前检查。检查只显示问题路径 / 索引行号及原因，不读取或打印凭据文件内容，不扫描 Git 历史；通过不代表不存在真实 Secret。
 
 网站继续使用 `npm run build` 与 `npm test`。文档 CI 检查索引链接和仓库规范；网站测试检查公开命令、版本和品牌副本。自动检查只验证明确列出的约束，不能代替语义审阅、浏览器检查和真实 VPS/NAS 验收。
 
@@ -62,4 +62,4 @@
 
 ## 发布边界
 
-整理规范和文档不提升产品版本、不创建 Tag、不替换已有 Release。正式 EXE 仍只由 GitHub Actions Windows Runner 执行 `build.ps1` 生成，Release 复用同次构建并自检的两个 EXE 及实际 SHA256，不重复构建或上传本机产物。
+整理规范和文档不提升产品版本、不创建 Tag、不替换已有 Release。Windows EXE 停留在 v1.2.1；后续 Release 从同一 Tag 验证并打包 Linux 源码一次，发布 Job 复用其 artifact 和实际 SHA256。桌面相关文件暂留用于兼容测试，后续清理和备份要求见[脚本优先说明](SCRIPT-FIRST.md)。

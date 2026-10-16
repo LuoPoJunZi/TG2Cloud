@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+LAST_DESKTOP_VERSION = "1.2.1"
 CORE = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
 TAG = re.compile(rf"v({CORE})(?:-(alpha|beta|rc)\.([1-9][0-9]*))?")
 
@@ -65,7 +66,7 @@ def release_metadata(root: Path, tag: str) -> dict[str, str]:
     version = source_version(root)
     if not match or match[1] != version:
         raise ValueError("release tag must match the source version")
-    windows_resources(root, version)
+    windows_resources(root, LAST_DESKTOP_VERSION)
     changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
     if not re.search(rf"^## TG2Cloud v{re.escape(version)}\s*$", changelog, re.MULTILINE):
         raise ValueError("current version missing from CHANGELOG")
@@ -78,19 +79,21 @@ def release_metadata(root: Path, tag: str) -> dict[str, str]:
     if match[2]:
         title += f" {match[2].upper()}{match[3]}"
     return {"release_tag": tag, "release_title": title,
-            "release_artifact": f"TG2Cloud-{tag}-windows",
+            "release_artifact": f"TG2Cloud-{tag}-source",
             "is_prerelease": "true" if match[2] else "false"}
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="校验版本/Windows 资源/发布文档；不会创建 Tag 或 Release")
+    parser = argparse.ArgumentParser(description="校验脚本版本/冻结的桌面资源/发布文档；不会创建 Tag 或 Release")
     parser.add_argument("--tag")
     parser.add_argument("--github-output", type=Path)
     parser.add_argument("--sync-windows", action="store_true")
     args = parser.parse_args()
     try:
         version = source_version(ROOT)
-        windows_resources(ROOT, version, sync=args.sync_windows)
+        if args.sync_windows and version != LAST_DESKTOP_VERSION:
+            raise ValueError("Windows deployers are frozen at v1.2.1; do not sync them to a new Linux release")
+        windows_resources(ROOT, LAST_DESKTOP_VERSION, sync=args.sync_windows)
         metadata = release_metadata(ROOT, args.tag) if args.tag else {"version": version}
         if args.github_output:
             with args.github_output.open("a", encoding="utf-8") as handle:

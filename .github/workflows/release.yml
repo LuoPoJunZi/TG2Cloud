@@ -7,8 +7,7 @@ on:
       - 'v*'
 
 permissions:
-  actions: read
-  contents: write
+  contents: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -36,11 +35,11 @@ jobs:
           ref: ${{ github.ref_name }}
           fetch-depth: 0
 
-      - name: Validate tag, single version source, Windows resources and release documents
+      - name: Validate tag, version and release documents
         id: metadata
         run: python3 .github/scripts/release_metadata.py --tag "${GITHUB_REF_NAME}" --github-output "${GITHUB_OUTPUT}"
 
-      - name: Check public repository inputs before any EXE build
+      - name: Check public repository inputs before packaging
         run: python3 -B .github/scripts/check_repository.py
 
       - name: Check immutable tag and release state
@@ -62,108 +61,6 @@ jobs:
         if: steps.preflight.outputs.publish == 'true'
         run: python3 .github/scripts/validate_release_notes.py RELEASE_NOTES.md
 
-  windows-build:
-    needs: prepare
-    if: needs.prepare.outputs.publish == 'true'
-    runs-on: windows-latest
-    env:
-      PYTHONIOENCODING: utf-8
-      RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
-      RELEASE_ARTIFACT: ${{ needs.prepare.outputs.release_artifact }}
-    steps:
-      - name: Checkout immutable release tag
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          ref: ${{ env.RELEASE_TAG }}
-          fetch-depth: 0
-
-      - name: Verify checked-out tag
-        shell: pwsh
-        run: |
-          $tagCommit = (git rev-parse "$($env:RELEASE_TAG)^{commit}").Trim()
-          if ($LASTEXITCODE -ne 0 -or $tagCommit -ne (git rev-parse HEAD).Trim()) {
-            throw "Checked out commit does not match $env:RELEASE_TAG"
-          }
-          Write-Output "Release commit: $((git rev-parse HEAD).Trim())"
-
-      - name: Set up Python
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
-        with:
-          python-version: "3.13"
-
-      - name: Install uv
-        run: python -m pip install uv==0.11.28
-
-      - name: Unit and scenario tests
-        run: >
-          uv run
-          --with-requirements requirements-build.txt
-          --with-requirements payload_clouddrive2/requirements.txt
-          python .github/scripts/check_python.py test
-
-      - name: Ruff
-        run: uv run --with ruff==0.16.0 python .github/scripts/check_python.py lint
-
-      - name: Python syntax
-        run: python .github/scripts/check_python.py compile
-
-      - name: Build and self-test Windows EXE once
-        timeout-minutes: 20
-        shell: pwsh
-        run: |
-          $env:TG2CLOUD_BUILD_PYTHON = (Get-Command python -ErrorAction Stop).Source
-          ./build.ps1 -Edition All
-
-      - name: Generate and verify release package
-        shell: pwsh
-        run: |
-          $expectedExe = @(
-            "TG2Cloud-CloudDrive2-Deployer.exe",
-            "TG2Cloud-OpenList-Deployer.exe"
-          )
-          $actualExe = @(
-            Get-ChildItem -LiteralPath ./dist -File -Filter '*.exe' |
-              Sort-Object Name |
-              Select-Object -ExpandProperty Name
-          )
-          if (Compare-Object $expectedExe $actualExe) {
-            throw "Unexpected EXE set: $($actualExe -join ', ')"
-          }
-
-          $hashLines = foreach ($name in $expectedExe) {
-            $hash = (Get-FileHash -LiteralPath "./dist/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
-            "$hash  $name"
-          }
-          $checksumPath = Join-Path (Resolve-Path ./dist) 'SHA256SUMS.txt'
-          [System.IO.File]::WriteAllText(
-            $checksumPath,
-            (($hashLines -join "`n") + "`n"),
-            [System.Text.Encoding]::ASCII
-          )
-
-          $expectedAssets = @($expectedExe + 'SHA256SUMS.txt') | Sort-Object
-          $actualAssets = @(
-            Get-ChildItem -LiteralPath ./dist -File |
-              Sort-Object Name |
-              Select-Object -ExpandProperty Name
-          )
-          if (Compare-Object $expectedAssets $actualAssets) {
-            throw "Unexpected release assets: $($actualAssets -join ', ')"
-          }
-          Get-Content -LiteralPath ./dist/SHA256SUMS.txt
-
-      - name: Upload the GitHub-built release package
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: ${{ env.RELEASE_ARTIFACT }}
-          path: |
-            dist/TG2Cloud-CloudDrive2-Deployer.exe
-            dist/TG2Cloud-OpenList-Deployer.exe
-            dist/SHA256SUMS.txt
-          if-no-files-found: error
-          compression-level: 0
-          retention-days: 30
-
   linux-validation:
     needs: prepare
     if: needs.prepare.outputs.publish == 'true'
@@ -173,11 +70,13 @@ jobs:
     env:
       QT_QPA_PLATFORM: offscreen
       RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
+      RELEASE_ARTIFACT: ${{ needs.prepare.outputs.release_artifact }}
     steps:
       - name: Checkout the same immutable release tag
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           ref: ${{ env.RELEASE_TAG }}
+          fetch-depth: 0
 
       - name: Set up runtime Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -188,7 +87,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck rclone
-          python -m pip install -r requirements-build.txt -r payload_clouddrive2/requirements.txt
+          python -m pip install -r requirements-build.txt -r payload_clouddrive2/requirements.txt ruff==0.16.0 bandit==1.9.4 pip-audit==2.10.1
 
       - name: ShellCheck
         run: |
@@ -214,6 +113,10 @@ jobs:
           command -v bash shellcheck rclone docker
           docker info >/dev/null
           python .github/scripts/check_python.py test
+          python .github/scripts/check_python.py lint
+          python .github/scripts/check_python.py compile
+          bandit -q -r scripts payload_clouddrive2/app domain_proxy.py proxy_maintenance.py .github/scripts/source_release.py
+          pip-audit -r payload_clouddrive2/requirements.txt
 
       - name: Validate edition Compose and build the runtime image
         run: |
@@ -234,16 +137,30 @@ jobs:
           TG2CLOUD_TEST_LAN_DOCKER: "1"
         run: python -m unittest discover -s tests -p test_lan_gateway_docker.py -v
 
+      - name: Package immutable source once and verify bootstrap pins and SHA256
+        run: python .github/scripts/source_release.py build --tag "${RELEASE_TAG}" --directory build/source-release
+
+      - name: Upload validated source package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: ${{ env.RELEASE_ARTIFACT }}
+          path: |
+            build/source-release/TG2Cloud-*-source.tar.gz
+            build/source-release/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 30
+
   release:
     needs:
       - prepare
-      - windows-build
       - linux-validation
     if: >-
       needs.prepare.outputs.publish == 'true' &&
-      needs.windows-build.result == 'success' &&
       needs.linux-validation.result == 'success'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     env:
       RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
       RELEASE_TITLE: ${{ needs.prepare.outputs.release_title }}
@@ -255,26 +172,14 @@ jobs:
         with:
           ref: ${{ env.RELEASE_TAG }}
 
-      - name: Download the Windows Build Job artifact
+      - name: Download the validated Linux source artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
           name: ${{ env.RELEASE_ARTIFACT }}
           path: release-assets
 
-      - name: Verify downloaded package and SHA256
-        run: |
-          set -euo pipefail
-          mapfile -t actual < <(find release-assets -maxdepth 1 -type f -printf '%f\n' | sort)
-          expected=(
-            SHA256SUMS.txt
-            TG2Cloud-CloudDrive2-Deployer.exe
-            TG2Cloud-OpenList-Deployer.exe
-          )
-          diff <(printf '%s\n' "${expected[@]}") <(printf '%s\n' "${actual[@]}")
-          (
-            cd release-assets
-            sha256sum --check SHA256SUMS.txt
-          )
+      - name: Verify downloaded package without rebuilding
+        run: python3 .github/scripts/source_release.py verify --tag "${RELEASE_TAG}" --directory release-assets
 
       - name: Create GitHub release from the same package
         env:
@@ -290,8 +195,7 @@ jobs:
             prerelease_args+=(--prerelease)
           fi
           gh release create "${RELEASE_TAG}" \
-            release-assets/TG2Cloud-CloudDrive2-Deployer.exe \
-            release-assets/TG2Cloud-OpenList-Deployer.exe \
+            "release-assets/TG2Cloud-${RELEASE_TAG}-source.tar.gz" \
             release-assets/SHA256SUMS.txt \
             --repo "${GITHUB_REPOSITORY}" \
             --verify-tag \
@@ -309,8 +213,7 @@ jobs:
           test "$(gh release view "${RELEASE_TAG}" --repo "${GITHUB_REPOSITORY}" --json isPrerelease --jq .isPrerelease)" = "${RELEASE_PRERELEASE}"
           expected=(
             SHA256SUMS.txt
-            TG2Cloud-CloudDrive2-Deployer.exe
-            TG2Cloud-OpenList-Deployer.exe
+            "TG2Cloud-${RELEASE_TAG}-source.tar.gz"
           )
           mapfile -t actual < <(
             gh release view "${RELEASE_TAG}" \

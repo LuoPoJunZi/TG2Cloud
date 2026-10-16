@@ -35,7 +35,12 @@ test('downloads point to published assets and source checkout respects release s
     'TG2Cloud-CloudDrive2-Deployer.exe',
     'TG2Cloud-OpenList-Deployer.exe',
     'SHA256SUMS.txt'
-  ].map(name=>`${config.repo}/releases/download/v${config.publishedVersion}/${name}`);
+  ].map(name=>`${config.repo}/releases/download/v1.2.1/${name}`);
+  const [major,minor]=config.publishedVersion.split('.').map(Number);
+  if(major>1 || (major===1 && minor>=3)){
+    expected.push(...[`TG2Cloud-v${config.publishedVersion}-source.tar.gz`,'SHA256SUMS.txt']
+      .map(name=>`${config.repo}/releases/download/v${config.publishedVersion}/${name}`));
+  }
   assert.deepEqual(links.sort(),expected.sort());
   assert.ok(download.includes(`${config.repo}/releases/tag/v${config.publishedVersion}`));
   assert.ok(download.includes(`**TG2Cloud v${config.version}**`));
@@ -46,7 +51,8 @@ test('downloads point to published assets and source checkout respects release s
   }
   for(const path of ['docs/download.md','docs/reference/development.md']){
     const content=await read(path);
-    assert.deepEqual([...content.matchAll(/^git checkout (\S+)\r?$/gm)].map(match=>match[1]),[config.releaseStatus==='released'?`v${config.version}`:'main']);
+    const checkout=path==='docs/download.md'?'v1.2.1':(config.releaseStatus==='released'?`v${config.version}`:'main');
+    assert.deepEqual([...content.matchAll(/^git checkout (\S+)\r?$/gm)].map(match=>match[1]),[checkout]);
   }
 });
 

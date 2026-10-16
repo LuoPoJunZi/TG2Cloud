@@ -409,7 +409,8 @@ def make_plan(instance, release, source, baseline, session, log, ui=None, *, add
         except (ValueError, OSError):
             log("已有内网入口检查未通过；预览后需确认才尝试恢复入口，不重装 Bot。")
     if action == "install" and ui is not None:
-        plan.config = vps.collect_config(ui, product)
+        storage = vps.choose_storage(instance, session, log, ui)
+        plan.config = vps.collect_config(ui, product, storage=storage)
         log.register(plan.config)
     if action in {"install", "upgrade"}:
         vps.resource_check(instance, plan.config, session, log)
@@ -451,6 +452,8 @@ def execute(plan: Plan, release, source, baseline, session, log, ui, *, verify=F
         else:
             check_port(product, "127.0.0.1", False)
         vps.check_foreign_gateway(product, session)
+        if plan.action in {"install", "upgrade"}:
+            vps.resource_check(instance, plan.config, session, log)
         # Persist the explicit intent before base installation. If base succeeds
         # but Nginx fails, rerunning resumes the LAN entry, not a fresh reinstall.
         save_state(product, plan.address)

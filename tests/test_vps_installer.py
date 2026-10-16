@@ -887,7 +887,7 @@ class InstanceTests(unittest.TestCase):
     def test_https_failure_does_not_report_acceptance(self):
         manager = Mock()
         manager.status.return_value = report("running_error")
-        with patch.object(cli, "edition_lock", return_value=nullcontext()), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "apply_base"), patch.object(cli, "verify_destination") as verify, self.assertRaisesRegex(RuntimeError, "HTTPS"):
+        with patch.object(cli, "edition_lock", return_value=nullcontext()), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "resource_check"), patch.object(cli, "apply_base"), patch.object(cli, "verify_destination") as verify, self.assertRaisesRegex(RuntimeError, "HTTPS"):
             cli.execute_plan(cli.Plan(self.instance, "upgrade", manager), RELEASE, ROOT, ROOT, Mock(), self.log, Mock(), verify=True)
         verify.assert_not_called()
 
@@ -941,11 +941,19 @@ class InstanceTests(unittest.TestCase):
         manager, ui = Mock(), Mock()
         manager.status.return_value = report()
         plan = cli.Plan(self.instance, "upgrade", manager, self.instance.config)
-        with patch.object(cli, "edition_lock", return_value=nullcontext()), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "apply_base"), patch.object(cli, "verify_destination") as verify:
+        with patch.object(cli, "edition_lock", return_value=nullcontext()), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "resource_check"), patch.object(cli, "apply_base"), patch.object(cli, "verify_destination") as verify:
             cli.execute_plan(plan, RELEASE, ROOT, ROOT, Mock(), self.log, ui)
         ui.reveal.assert_not_called()
         manager.configure.assert_not_called()
         verify.assert_not_called()
+
+    def test_final_resource_recheck_stops_before_base_or_https_changes(self):
+        manager = Mock()
+        plan = cli.Plan(self.instance, "upgrade", manager, self.instance.config)
+        with patch.object(cli, "edition_lock", return_value=nullcontext()), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "discover", return_value=self.instance), patch.object(cli, "resource_check", side_effect=ValueError("资源不足")), patch.object(cli, "apply_base") as apply, self.assertRaisesRegex(ValueError, "资源不足"):
+            cli.execute_plan(plan, RELEASE, ROOT, ROOT, Mock(), self.log, Mock())
+        apply.assert_not_called()
+        manager.configure.assert_not_called()
 
     def test_credential_view_does_not_install_when_instance_absent(self):
         absent = cli.Instance(self.product, self.directory, False)
@@ -1021,8 +1029,10 @@ class InstanceTests(unittest.TestCase):
         ui.ask.side_effect = ["files.example.test", ""]
         session = Mock()
         session.run.return_value = (1, "")  # Docker missing on a fresh VPS
-        with patch.object(cli, "DomainProxyManager", return_value=manager), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "collect_config", return_value=cli.new_config(self.product, VALUES)), patch.object(cli, "resource_check"), patch.object(cli, "apply_base") as apply:
+        with patch.object(cli, "DomainProxyManager", return_value=manager), patch.object(cli, "docker_inventory", return_value=set()), patch.object(cli, "choose_storage", return_value=("8", "8")) as storage, patch.object(cli, "collect_config", return_value=cli.new_config(self.product, VALUES)) as collect, patch.object(cli, "resource_check"), patch.object(cli, "apply_base") as apply:
             plan = cli.make_plan(fresh, RELEASE, ROOT, None, session, self.log, ui)
+        storage.assert_called_once_with(fresh, session, self.log, ui)
+        collect.assert_called_once_with(ui, self.product, storage=("8", "8"))
         self.assertTrue(plan.configure_https)
         self.assertEqual(plan.domain, "files.example.test")
         apply.assert_not_called()

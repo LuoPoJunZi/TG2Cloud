@@ -6,7 +6,19 @@
 使用 CloudDrive2 的用户跟随 [CloudDrive2 专页](/deploy/clouddrive2/)；使用 OpenList 的用户跟随 [OpenList 专页](/deploy/openlist/)。下面先给出两版共用的完整路线。
 :::
 
-没有 Windows 电脑时，可选用 [VPS 单行入口](/download/)。它先收集信息、确认计划，再复用 Docker 部署资源；脚本的实机验收范围与 EXE 不同，执行前阅读完整指南。下文仍以两个主力 EXE 为例。
+从 v1.3.0 起优先使用 [VPS 单行入口](/download/)，内网使用独立 LAN 入口。向导收集信息、确认计划，再复用 Docker 部署资源；脚本实机验收范围与 EXE 不同。下文保留 v1.2.1 历史图形部署教程。
+
+## v1.3.0 脚本部署路线
+
+1. 通过 SSH 登录自己的 Debian／Ubuntu x86_64 主机，准备 Telegram 配置；公网 VPS 还需正确解析的管理域名。
+2. 从[下载页](/download/)选择公网或内网入口，运行单行命令并选择 CloudDrive2／OpenList。
+3. 首次安装选择流式优先、均衡或手动磁盘预算，填写 Telegram 和专用 WebDAV 信息；已有完整实例升级复用原配置。
+4. 核对计划后确认执行。公网向导配置 HTTPS；可信内网向导使用手填私有 IPv4 和固定管理端口。
+5. 在自己的网关中挂载云存储，配置专用 WebDAV 用户，返回终端确认执行验收，再向 Bot 发送小文件检查实际结果。
+
+新脚本的两 Edition 首次安装、升级和 NAS 兼容仍需独立实机验收。完整参数和中断处理见 [VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)及[内网指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md)。
+
+## v1.2.1 历史图形部署路线
 
 ## 第一步：下载并检查文件
 

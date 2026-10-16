@@ -2,6 +2,17 @@
 
 TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发布说明的整理，不把历史 TG115 的版本号当成 TG2Cloud 发布版本。
 
+## TG2Cloud v1.3.0
+
+待发布，版本日期：2026-10-16。本版以 Linux 一键脚本维护 CloudDrive2 和 OpenList；Windows EXE 停留在 v1.2.1，历史下载继续保留。详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+
+- VPS 与内网首次安装提供流式优先、均衡和手动磁盘预算，复用现有资源算法；升级保留原配置。
+- 执行前在锁内重新检查容量，磁盘条件变化则停止；任务预算不是分区，也不覆盖所有网关缓存。
+- Linux／Docker／WebDAV 回归后生成一次源码包及实际 SHA256，发布任务复用同一 artifact；三个在线入口固定到匹配的辅助源码。
+- 未新增数据库迁移、依赖或配置项，Bot 核心沿用 v1.2.1。
+
+本地完整回归 679 passed、26 skipped、451 子测试通过，网站构建及 15 测试通过。真实两 Edition 首次安装／升级、NAS、Telegram 转存和长期运行仍待独立验收，实际发布状态见[下载页](/download/)。
+
 ## TG2Cloud v1.2.1
 
 本节对应 v1.2.1 正式版本，详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.2.1/CHANGELOG.md)与 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。

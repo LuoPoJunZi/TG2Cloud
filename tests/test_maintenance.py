@@ -458,6 +458,7 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertEqual(release.source_version(ROOT), RELEASE_VERSION)
         metadata = release.release_metadata(ROOT, "v" + RELEASE_VERSION)
         self.assertEqual(metadata["is_prerelease"], "false")
+        self.assertTrue(metadata["release_artifact"].endswith("-source"))
 
     def test_invalid_and_mismatched_tags_are_rejected(self):
         for tag in ("main", "v9.0.0", "v01.1.1", "v1.1.1\nINJECT=1", "v1.1.1-rc.0", "v1.1.1;echo x"):
@@ -479,6 +480,22 @@ class ReleaseMetadataTests(unittest.TestCase):
             self.assertEqual(metadata["is_prerelease"], "true")
             self.assertTrue(metadata["release_title"].endswith("RC1"))
 
+    def test_future_linux_version_does_not_require_new_windows_resources(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            for name in ("payload_clouddrive2/app/version.py", "packaging/windows/TG2Cloud-CloudDrive2.version.txt", "packaging/windows/TG2Cloud-OpenList.version.txt", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((ROOT / name).read_bytes())
+            (root / "payload_clouddrive2/app/version.py").write_text('VERSION = "9.0.0"\n', encoding="utf-8")
+            (root / "CHANGELOG.md").write_text("## TG2Cloud v9.0.0\n", encoding="utf-8")
+            (root / "RELEASE_NOTES.md").write_text("TG2Cloud v9.0.0\n", encoding="utf-8")
+            entry = root / "install.sh"
+            entry.write_text(entry.read_text(encoding="utf-8").replace('installer_version = "' + RELEASE_VERSION + '"', 'installer_version = "9.0.0"'), encoding="utf-8")
+            metadata = release.release_metadata(root, "v9.0.0")
+            self.assertEqual(metadata["release_artifact"], "TG2Cloud-v9.0.0-source")
+            release.windows_resources(root, "1.2.1")
+
     def test_release_rejects_stale_wizard_version_or_disabled_source_pin(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
@@ -496,8 +513,16 @@ class ReleaseMetadataTests(unittest.TestCase):
         self.assertNotIn("RELEASE_TAG: v1.", text)
         self.assertIn('test "${GITHUB_REF_TYPE}" = tag', text)
         self.assertIn("needs.prepare.outputs.release_tag", text)
-        self.assertEqual(text.count("./build.ps1"), 1)
+        self.assertNotIn("./build.ps1", text)
+        self.assertNotIn("windows-build", text)
+        self.assertEqual(text.count("source_release.py build"), 1)
+        self.assertIn("source_release.py verify", text)
+        self.assertNotIn("Deployer.exe", text)
+        self.assertIn("actions/download-artifact@", text)
         self.assertIn("needs.linux-validation.result == 'success'", text)
+        branch = (ROOT / ".github/workflows/tests.yml").read_text(encoding="utf-8")
+        self.assertNotIn("./build.ps1", branch)
+        self.assertNotIn("exe_build_inputs.py", branch)
 
 
 if __name__ == "__main__":

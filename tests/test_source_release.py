@@ -1,0 +1,133 @@
+"""Source release tests in disposable Git repositories; no real tags or network."""
+from __future__ import annotations
+
+import ast
+import hashlib
+import importlib.util
+import io
+import re
+import tarfile
+import tempfile
+import unittest
+import zipfile
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+spec = importlib.util.spec_from_file_location("source_release", ROOT / ".github/scripts/source_release.py")
+package = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(package)
+
+
+class SourceReleaseTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.snapshot = package.git(ROOT, "archive", "--format=zip", "HEAD")
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name) / "repo"
+        self.root.mkdir()
+        with zipfile.ZipFile(io.BytesIO(self.snapshot)) as archive:
+            for member in archive.infolist():
+                if member.is_dir():
+                    continue
+                target = self.root / member.filename
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(archive.read(member))
+        # Isolate fixture history and user identity from the working repository.
+        package.git(self.root, "init", "-q")
+        package.git(self.root, "config", "user.email", "test@example.invalid")
+        package.git(self.root, "config", "user.name", "Offline Test")
+        package.git(self.root, "config", "commit.gpgsign", "false")
+        package.git(self.root, "config", "tag.gpgsign", "false")
+        package.git(self.root, "config", "core.autocrlf", "false")
+        package.git(self.root, "config", "core.hooksPath", str(Path(self.temp.name) / "no-hooks"))
+        self.commit()
+        pin = package.git(self.root, "rev-parse", "HEAD").decode().strip()
+        for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
+            path = self.root / name
+            text = re.sub(r'^(installer_commit\s*=\s*)"[0-9a-f]{40}"$', lambda match: match[1] + f'"{pin}"', path.read_text(encoding="utf-8"), flags=re.MULTILINE)
+            path.write_text(text, encoding="utf-8", newline="\n")
+        self.commit()
+        tree = ast.parse((self.root / "payload_clouddrive2/app/version.py").read_text(encoding="utf-8"))
+        version = next(node.value.value for node in tree.body if hasattr(node, "targets"))
+        self.tag = "v" + version
+        package.git(self.root, "tag", self.tag)
+        self.output = Path(self.temp.name) / "artifacts"
+
+    def commit(self):
+        package.git(self.root, "add", "--all")
+        package.git(self.root, "commit", "-qm", "fixture")
+
+    def build(self):
+        package.build(self.root, self.output, self.tag)
+
+    def test_build_and_verify_exact_source_without_local_outputs(self):
+        (self.root / "private-untracked.txt").write_text("FAKE_OFFLINE_SECRET", encoding="utf-8")
+        self.build()
+        package.verify(self.output, self.tag)
+        with tarfile.open(self.output / package.artifact_name(self.tag)) as archive:
+            self.assertFalse(any("private-untracked" in member.name for member in archive))
+        with self.assertRaisesRegex(ValueError, "refusing to replace"):
+            self.build()
+
+    def test_uncommitted_source_is_rejected(self):
+        with (self.root / "vps_resources.py").open("a", encoding="utf-8") as writer:
+            writer.write("\n# changed\n")
+        with self.assertRaisesRegex(ValueError, "committed"):
+            self.build()
+        self.assertFalse(self.output.exists())
+
+    def test_old_online_helper_pin_blocks_release(self):
+        with (self.root / "vps_resources.py").open("a", encoding="utf-8") as writer:
+            writer.write("\n# changed helper\n")
+        self.commit()
+        commit = package.git(self.root, "rev-parse", "HEAD").decode().strip()
+        with self.assertRaisesRegex(ValueError, "stale bootstrap helper"):
+            package.validate_pins(self.root, commit)
+
+    def test_wrong_checkout_or_invalid_tag_stops_before_output(self):
+        (self.root / "extra.txt").write_text("fixture", encoding="utf-8")
+        self.commit()
+        with self.assertRaisesRegex(ValueError, "checkout must match"):
+            self.build()
+        with self.assertRaises(ValueError):
+            package.build(self.root, self.output, "--help")
+        self.assertFalse(self.output.exists())
+
+    def test_corrupted_checksum_and_extra_asset_are_rejected(self):
+        self.build()
+        sums = self.output / "SHA256SUMS.txt"
+        original = sums.read_bytes()
+        sums.write_bytes(b"0" * 64 + b"\n")
+        with self.assertRaisesRegex(ValueError, "SHA256 mismatch"):
+            package.verify(self.output, self.tag)
+        sums.write_bytes(original)
+        (self.output / "unexpected.exe").write_bytes(b"not-an-executable")
+        with self.assertRaisesRegex(ValueError, "asset set"):
+            package.verify(self.output, self.tag)
+
+    def test_missing_payload_and_unsafe_archive_rejected_even_with_matching_checksum(self):
+        self.build()
+        path = self.output / package.artifact_name(self.tag)
+        original = path.read_bytes()
+        for unsafe in (False, True):
+            with self.subTest(unsafe=unsafe):
+                result = io.BytesIO()
+                with tarfile.open(fileobj=io.BytesIO(original), mode="r:gz") as source, tarfile.open(fileobj=result, mode="w:gz") as dest:
+                    for member in source:
+                        if member.name.endswith("/app/rclone_client.py"):
+                            continue
+                        dest.addfile(member, source.extractfile(member) if member.isfile() else None)
+                    if unsafe:
+                        member = tarfile.TarInfo(f"TG2Cloud-{self.tag}/../../outside")
+                        dest.addfile(member, io.BytesIO())
+                path.write_bytes(result.getvalue())
+                (self.output / "SHA256SUMS.txt").write_text(hashlib.sha256(result.getvalue()).hexdigest() + "  " + path.name + "\n", encoding="ascii")
+                with self.assertRaisesRegex(ValueError, "unsafe|missing Edition"):
+                    package.verify(self.output, self.tag)
+
+
+if __name__ == "__main__":
+    unittest.main()

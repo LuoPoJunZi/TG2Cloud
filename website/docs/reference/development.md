@@ -7,11 +7,11 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.2.1
+git checkout main
 git rev-parse HEAD
 ```
 
-当前正式版本为 v1.2.1。对已发布版本复现问题时使用对应标签；跟随主分支开发时使用 main 并记录提交号，避免把后续未发布修改当成 Release 行为。
+本文档对应待发布的 v1.3.0，已发布基线仍为 v1.2.1。对已发布版本复现问题时使用对应标签；跟随主分支开发时使用 main 并记录提交号，避免把后续未发布修改当成 Release 行为。
 
 ## 关键目录与入口
 
@@ -46,17 +46,19 @@ uv run --with-requirements requirements-build.txt `
 
 仓库说明中 Linux CI 使用 Python 3.12，Windows 使用 Python 3.13；具体以当前 CI 配置为准。
 
-从 v1.1.1 起，Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。Linux 检查包括 Shell、Docker 配置、Bot 镜像和真实本地 WebDAV 集成；正式两个 EXE 仍只在 Windows Build Job 构建一次，发布 Job 仅校验并上传其 artifact。工作流修改不会追溯改变已发布的 v1.1.0 资产。
+v1.1.1 至 v1.2.1 的 Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。历史 EXE 和对应 SHA256 保留，不由新工作流重写。
 
 v1.1.2 进一步核对 Tag、共享版本源、Windows 版本资源、CHANGELOG 和 Release Notes 的一致性；维护助手与备份对话框纳入打包自检。已有 Release 不会被新运行覆盖，本地 EXE 的校验值不作为 Actions 产物校验值。
 
-v1.1.3 的 VPS 入口有独立 Shell/Python 回归检查。仅文档或独立 CLI 变更不要求重建 EXE；共享版本源或正式构建输入变化时，分支 CI 会构建并自检两个 EXE，但不创建 Release。正式发布仍需另外确认 Tag，上传该次 Windows Build Job 的 artifact，不能提交本地 build、dist 或 EXE。
+v1.3.0 停止分支和 Release 自动构建 EXE。Linux 验证保留 Shell、Docker 配置、两 Edition 候选镜像和本地 WebDAV；源码包在验证任务生成一次，发布任务复用同一 artifact 并核对 SHA256。三个在线入口的辅助代码固定 commit 必须与本版辅助代码一致，发布检查拒绝旧向导混入新版本。
 
 v1.1.4 另有真实 Docker 候选启动检查：Linux 分支与 Release Job 显式启用 `TG2CLOUD_TEST_DOCKER=1`，以 UID 10001 验证两 Edition 的公开源码权限及候选配置，不连接 Telegram/云存储。默认离线测试跳过这一用例，不等于镜像验收通过。
 
 v1.1.5 的独立 VPS 脚本 CI 使用真实 Python 3.10/3.13，覆盖标准库维护兼容和终端凭据隐私；共享 HTTPS 增加中断、重复取消及提交一致性回归。这些自动检查不替代真实 VPS 中断/续做或完整转存验收。
 
-## 构建两个部署器
+## 恢复 v1.2.1 历史部署器构建
+
+请使用 v1.2.1 Tag 或独立源码备份，解压到新目录并校验后构建。当前保留桌面源码和兼容测试，等待脚本验收后再清理；共享模块继续用于 Linux 向导。不要在较新版本上更新 Windows 资源再构建旧部署器。
 
 ```powershell
 .\build.ps1 -Edition All

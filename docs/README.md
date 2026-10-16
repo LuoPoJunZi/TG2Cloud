@@ -1,6 +1,6 @@
 # TG2Cloud 文档目录
 
-两个 Windows PySide6 部署器是主力安装方式；公网 VPS 脚本和内网脚本是独立可选入口。请按部署环境选择教程，不把内网 HTTP 管理方式用于公网。
+后续以 Linux 一键脚本为主要维护入口，Windows PySide6 部署器停留在 v1.2.1。请按部署环境选择教程，不把内网 HTTP 管理方式用于公网；旧图形界面教程用于 v1.2.1。
 
 ## 开始使用与安装
 
@@ -22,6 +22,7 @@
 
 - [参与贡献](../CONTRIBUTING.md)：本地检查、CI 与正式发布规则。
 - [仓库结构与维护规范](development/REPOSITORY.md)：源码职责、文档同步与本地产物处理。
+- [脚本优先与桌面版冻结](development/SCRIPT-FIRST.md)：磁盘推荐、源码发布、备份和分阶段清理边界。
 - [品牌规范](development/BRAND-GUIDE.md)：正式 Logo / Icon 的唯一来源与使用规则。
 - [HTTPS 人工验收范围](development/DOMAIN-HTTPS-ACCEPTANCE.md)：按版本理解实机证据，不等于当前所有流程均已验收。
 - [可靠性维护版本验收](development/RELIABILITY-ACCEPTANCE.md)：主分支与正式版差异、自动与人工发布门槛。

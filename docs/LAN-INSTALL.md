@@ -1,8 +1,8 @@
 # 局域网 / NAS 独立安装脚本
 
-TG2Cloud 的主力仍是两个 Windows 部署器，公网 VPS 仍使用 `install.sh` 和强制 HTTPS。本入口单独使用 `install-lan.sh`：手填运行脚本的 Linux 内网 IPv4，用内网 HTTP 管理网关，不收集域名、不申请证书，也不修改原部署器或 VPS 向导。
+TG2Cloud 后续以 Linux 脚本为主要维护入口，Windows 部署器停留在 v1.2.1。公网 VPS 使用 `install.sh` 和强制 HTTPS。本入口单独使用 `install-lan.sh`：手填运行脚本的 Linux 内网 IPv4，用内网 HTTP 管理网关，不收集域名、不申请证书，也不修改原部署器或 VPS 向导。
 
-> 当前为测试阶段。已收到 CloudDrive2 在内网 Debian 实机首次部署和 WebDAV 验收通过的日志；OpenList 实机、不同 NAS 系统、跨版本升级与回退仍需单独验收。公开一行入口固定下载经过 CI 验证的不可变源码 commit，不直接运行 moving main 中的依赖；业务 payload 仍只取最新正式稳定 Release。脚本独立发布于源码仓库，不要求现有 Release 包含它；本次随 v1.2.0 发布；两个原有 PySide6 部署器继续保留，没有新增 EXE 产品，也不改变它们的强制 HTTPS 规则。
+> 当前源码版本为 v1.3.0，内网模式仍需按环境验收。此前收到过 CloudDrive2 在内网 Debian 实机首次部署和 WebDAV 验收通过的日志；本版推荐流程、OpenList 实机、不同 NAS 系统、跨版本升级与回退仍需单独验收。公开一行入口固定下载经过 CI 验证的不可变源码 commit，不直接运行 moving main 中的依赖；业务 payload 仍只取最新正式稳定 Release。历史 PySide6 部署器停留在 v1.2.1，公网 VPS 继续使用强制 HTTPS。
 
 ## 支持范围与边界
 
@@ -78,7 +78,7 @@ bash ./install-lan.sh --edition clouddrive2
 
 首次安装会要求输入内网地址；也可以提前通过 `--lan-ip` 指定。向导随后收集 Telegram 和专用 WebDAV 信息、检查容量、展示 HTTP 风险和安装计划。最终确认默认 **N**：确认前不安装软件、不写入实例或内网模式记录。
 
-首次 `--check` 使用默认 20GB 任务预算与 8GB 最低剩余空间，不收集秘密；自定义预算在交互向导中填写并重新校验。安装目录使用 Edition 的标准 `/opt` 路径，首版不提供自定义目录或迁移功能。
+首次 `--check` 使用默认 20GB 任务预算与 8GB 最低剩余空间，不收集秘密。v1.3.0 交互向导提供流式优先、均衡和手动预算，复用 VPS 推荐算法，执行前重新校验；已有实例升级保留原值。见[切换说明](development/SCRIPT-FIRST.md)。安装目录使用 Edition 的标准 `/opt` 路径，不提供自定义目录或迁移功能。
 
 OpenList 对应命令：
 

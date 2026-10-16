@@ -1,10 +1,10 @@
-# 可选 VPS 安装与升级脚本
+# VPS 安装与升级脚本
 
-TG2Cloud 的主力安装方式仍是两个 PySide6 Windows 部署器。`install.sh` 是没有 Windows 电脑时可用的 Linux 终端入口，复用现有 Docker 安装、配置保留、备份、回退、HTTPS 与 WebDAV 验收流程，不另建一套 Bot 或 Compose 实现。
+TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v1.2.1。`install.sh` 是公网 VPS 入口，复用现有 Docker 安装、配置保留、备份、回退、HTTPS 与 WebDAV 验收流程，不另建一套 Bot 或 Compose 实现。
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本（测试阶段）](LAN-INSTALL.md)。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前源码版本为 v1.2.1。本脚本是独立入口，不依赖本机 EXE；公开向导另行固定到已验证 commit，实际部署目标只取已发布正式稳定版本。CloudDrive2 已完成真实 VPS 的只读预检，首次安装、实际跨版本升级和回退仍未验收，OpenList 脚本实机验收暂缓。下载新版入口或 EXE 不会自动更改已部署实例。
+> 当前源码版本为 v1.3.0。本脚本是独立入口，不依赖本机 EXE；公开向导另行固定到已验证 commit，实际部署目标只取已发布正式稳定版本。CloudDrive2 已完成真实 VPS 的只读预检，首次安装、实际跨版本升级和回退仍未验收，OpenList 脚本实机验收暂缓。下载新版入口或 EXE 不会自动更改已部署实例。
 
 ## 支持范围
 
@@ -17,7 +17,7 @@ TG2Cloud 的主力安装方式仍是两个 PySide6 Windows 部署器。`install.
 | 两个完整 Edition 同时存在 | 明确选择一套；`--edition both` 仅用于显式升级两套，依次执行，不是跨 Edition 原子事务 |
 | TG115、残留目录、部分容器、同名外部容器 | 停止，不覆盖、不自动迁移或接管 |
 | 手工修改过程序、Compose 或 Dockerfile | 停止，请先人工核对；不提供强制覆盖参数 |
-| 新稳定版更换云网关镜像 digest | 停止自动升级；不隐式迁移 OpenList/CloudDrive2 数据库，改用部署器并人工验收 |
+| 新稳定版更换云网关镜像 digest | 停止自动升级；不隐式迁移 OpenList/CloudDrive2 数据库，先备份并在隔离环境验证网关迁移；不使用旧 EXE 绕过检查 |
 
 首版面向 Debian/Ubuntu、x86_64、root、Python 3.10+、Bash 和可交互终端。系统需有可用 CA 根证书和时区数据库。CloudDrive2 仍需 `/dev/fuse`，内存和磁盘条件沿用部署器的资源检查。
 
@@ -112,20 +112,20 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 ## 入口与稳定部署版本
 
-单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到不可变源码 commit，不逐文件追随移动的 `main`。当前向导 pin 为 `d83e37acea5d5ae9d106fb0183b663bbdd7a9bfa`，模块版本源为 `1.2.1`，并包含本版新增运行模块的载荷清单。固定引用与最终提交中的向导文件一致；发布前必须通过 Windows/Linux 和独立脚本 Python 3.10/3.13 CI。业务 payload 仍只取最新正式稳定 Release。
+单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到不可变源码 commit，不逐文件追随移动的 `main`。v1.3.0 向导包含磁盘推荐；准确的辅助源码身份由三个入口中的 `installer_commit` 给出。新向导先经过 CI，再更新三个入口的 pin；源码发布检查会拒绝 pin 与新版本辅助文件不一致的情况。业务 payload 仍只取最新正式稳定 Release。
 
 这是向导源码身份，不是要部署的 Bot 版本。独立脚本另行通过 GitHub `/releases/latest` 排除草稿及预发布，解析正式 Tag 到不可变 commit；所有实际安装的 payload 来自这个正式 commit。向导会核对 Tag、commit 和 payload 版本。Release Tag 在引导后变化、API 限流、辅助模块缺失或版本不匹配时停止；不会退回 `main` 或 RC 的业务代码。
 
 因此已有 `v1.1.2` Release 不必包含新增脚本，单行入口也不需要构建或替换 EXE。仍不要从旧 `v1.1.2` Tag 下载 `install.sh`。从本地源码运行时使用该 checkout 的向导代码，部署目标仍只取正式稳定 Release。
 
-下载使用系统 HTTPS 校验，源码身份固定到 commit。Release 中的 `SHA256SUMS.txt` 是 Windows EXE 校验清单，不用于校验源码归档；本入口不是额外的数字签名验证方案。仓库和发布账号仍是信任边界。
+下载使用系统 HTTPS 校验，源码身份固定到 commit。v1.2.1 的 `SHA256SUMS.txt` 校验 Windows EXE；后续脚本版发布工作流生成源码归档校验清单。当前向导不读取该资产清单，不宣称新增了签名验证。仓库和发布账号仍是信任边界。
 
 ## 首次安装
 
 1. 选择 CloudDrive2 或 OpenList。
 2. 填写管理域名和可选 Let's Encrypt 邮箱。A/AAAA 必须正确直指 VPS，首次签发时 Cloudflare 使用“仅 DNS”。检查 80/443 是否能安全使用；公网防火墙与 ACME 可达性仍需用户确认。
-3. 填写 Telegram API ID、API Hash、Bot Token、允许的 Telegram 用户 ID，以及专用 WebDAV 用户、密码、子目录、任务预算和时区。秘密隐藏输入，WebDAV 密码可留空安全生成。
-4. 默认预算 `20GB`，磁盘最少保留 `8GB`。预算是任务预算而非磁盘分区；不足时停止，不偷偷调整。可以重跑向导明确采用较小预算。
+3. 向导先读取资源，选择流式优先、均衡或手动方案，再收集 Telegram、WebDAV 和时区信息。秘密隐藏输入，WebDAV 密码可留空安全生成。
+4. 任务预算不是磁盘分区，推荐数值由实际可用空间、Docker 分区、内存和 FUSE 条件计算；手动配置仍需通过检查，保留空间不低于 `8GB`。执行前再次探测，条件变化则停止。手动输入默认 `20GB/8GB`；升级保留原配置，不静默应用新推荐。见[切换说明](development/SCRIPT-FIRST.md)。
 5. 查看不含秘密的计划，确认后执行。默认回答为取消。
 6. 基础服务安装完成后使用既有共享 Nginx/Certbot 配置 HTTPS。后端仍仅回环监听，不开放 IP 加端口入口；公网 `/dav` 继续阻断。
 7. 打开自己的 HTTPS 管理页，自行配置云存储，再创建填写过的专用 WebDAV 用户。TG2Cloud 不收集云盘 Cookie、OAuth 或 Token。
@@ -173,7 +173,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 每项默认不显示，仅在确认后写入当前私有终端，不进入普通日志。OpenList 显示的是保存的初始化管理员密码；如果后来在管理页改过密码，这不是当前密码。请避免旁观或录屏，不要把完整 `.env` 贴进日志、聊天或 Issue。该参数不能与 `--check`、`--configure-https` 或 `--verify` 组合。
 
-公开单行入口固定到前文记录的 v1.2.0 向导源码，包含这些修复和新参数；实际 Bot payload 仍只取最新正式稳定 Release。使用已下载的旧入口时，重新下载才能获得新向导；从本地 checkout 使用时，按该 checkout 的参数执行。
+公开单行入口固定到前文说明的不可变向导源码，包含这些修复和新参数；实际 Bot payload 仍只取最新正式稳定 Release。使用已下载的旧入口时，重新下载才能获得新向导；从本地 checkout 使用时，按该 checkout 的参数执行。
 
 HTTPS 配置收到 Ctrl+C、TERM 或 HUP 时会尝试恢复原代理配置；状态提交与回退期间的重复信号会延后处理，保留原有命令超时。请等待退出后核对状态，不用强制杀进程加速；断网、断电、SIGKILL 或回退命令失败时仍可能需要人工恢复。已提交的新路由不会仅因提交结束时收到取消信号而恢复成旧运行配置。
 

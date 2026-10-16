@@ -1,6 +1,6 @@
 # 任务恢复、验证与离线备份
 
-本页描述 **v1.2.1 源码**；v1.2.0 EXE 不含这些改动。下载旧 EXE、重启旧容器或运行只取稳定 Release 的在线安装脚本，不会自动获得这些改动。正式上线前应先在专用环境完成[维护版本验收](development/RELIABILITY-ACCEPTANCE.md)。
+本页恢复能力自 **v1.2.1** 提供，**v1.3.0** 继续保留；v1.2.0 EXE 不含这些改动。下载入口或重启旧容器不会自动升级 Bot；v1.3.0 起使用匹配的 Linux 脚本维护，旧 Windows EXE 停留在 v1.2.1。正式上线前应先在专用环境完成[维护版本验收](development/RELIABILITY-ACCEPTANCE.md)。
 
 ## 取消后重新转存
 
