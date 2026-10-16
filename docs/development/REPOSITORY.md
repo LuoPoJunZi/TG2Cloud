@@ -1,18 +1,18 @@
 # 仓库结构与维护规范
 
-本仓库同时维护两个 PySide6 部署器、共享 Bot 运行代码、Linux 安装 / 卸载入口及静态文档站。目录标准化不意味着迁移运行代码或改变现有安装路径。
+本仓库主要维护共享 Bot 运行代码、两个 Edition 的 Linux 安装／卸载入口及静态文档站。v1.2.1 历史 PySide6 源码暂留用于兼容回归和恢复；目录标准化不意味着迁移运行代码或改变现有安装路径。
 
 ## 目录职责
 
 | 路径 | 职责与维护边界 |
 | --- | --- |
 | 根目录 `installer*.py` 与公共 Python 模块 | 两个部署器入口及共享实现；构建、导入和在线向导依赖现有路径，不随意搬入 `src/` |
-| `build.ps1`、`requirements-build.txt` | Windows EXE 的正式构建入口和固定构建依赖 |
+| `build.ps1`、`requirements-build.txt` | 历史 Windows 构建入口和兼容测试依赖；EXE 冻结在 v1.2.1 |
 | `install.sh`、`install-lan.sh`、`uninstall.sh` | 公开单行命令入口；下载白名单与不可变源码固定值需经过审查和 CI 验证，不为整理目录而改写 |
 | `scripts/` | 独立 Linux 向导和本机执行适配；不得默认操作真实服务器 |
 | `payload_clouddrive2/` | 共享 Bot 应用和 CloudDrive2 Docker / Shell 资源 |
 | `payload_openlist/` | OpenList 专用运行资源；复用共享 Bot 应用，不复制第二套业务核心 |
-| `packaging/windows/` | 两个正式 EXE 的版本资源，属于构建输入 |
+| `packaging/windows/` | v1.2.1 历史 EXE 版本资源，仍用于兼容校验 |
 | `assets/brand/` | 正式品牌资源唯一来源，不自动重绘或覆盖 |
 | `tests/` | 自动回归测试与模拟工具，保留公开 |
 | `.github/workflows/`、`.github/scripts/` | 全仓库 CI、发布与开发检查工具；不在网站子目录再放一套 Workflow |

@@ -29,7 +29,7 @@ CloudDrive2 与 OpenList 在这里充当“存储网关”：TG2Cloud 面向网�
 
 | 能力 | 实际作用 |
 | --- | --- |
-| Windows 图形化部署 | 配置 SSH、Telegram 和 WebDAV，部署 VPS 基础服务 |
+| Linux 一键部署 | 选择 Edition、资源预算，收集 Telegram 和 WebDAV 配置后确认部署 |
 | 持久任务队列 | 将任务保存在 SQLite 中，支持重启后恢复处理 |
 | 资源保护 | 检查安装盘、Docker 数据盘、inode、内存与磁盘安全线 |
 | 普通与流式传输 | 根据文件大小和本地任务预算选择传输方式 |

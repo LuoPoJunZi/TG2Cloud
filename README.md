@@ -3,7 +3,7 @@
 </p>
 
 <p align="center">
-  <strong>Telegram 文件自动转存 · CloudDrive2 / OpenList · Windows 图形化部署</strong>
+  <strong>Telegram 文件自动转存 · CloudDrive2 / OpenList · Linux 一键部署</strong>
 </p>
 
 <p align="center">
@@ -15,7 +15,7 @@
 
 <p align="center">
   <a href="#下载">下载</a> ·
-  <a href="#windows-图形化部署">部署指南</a> ·
+  <a href="docs/VPS-INSTALL.md">部署指南</a> ·
   <a href="#可选-vps-一键脚本">VPS 一键脚本</a> ·
   <a href="docs/UNINSTALL.md">卸载指南</a> ·
   <a href="docs/README.md">文档目录</a> ·
@@ -736,7 +736,7 @@ uv run --with pip-audit==2.10.1 pip-audit -r payload_clouddrive2/requirements.tx
 uv run --with pip-audit==2.10.1 pip-audit -r requirements-build.txt
 ```
 
-CI 还会在 Linux 上运行 ShellCheck、Compose 配置校验、Python 3.12 回归和 Bot 镜像构建，并在 Windows 上构建 CloudDrive2、OpenList 两个 PySide6 部署器并分别执行打包后自检。贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+CI 在 Linux 上运行 ShellCheck、Compose 配置校验、Python 3.12 回归和两 Edition Bot 镜像检查，Windows 保留 Python 3.13 兼容回归。v1.3.0 起不再构建 EXE，Release 复用同一次 Linux 验证生成的源码包与实际 SHA256。贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 如果仓库由 GitHub Fork 创建，首次使用时需进入仓库的 **Actions** 页面，按提示启用工作流。本仓库同时支持 `main` 推送、Pull Request 和页面中的 “Run workflow” 手动触发。GitHub 默认不会在新 Fork 中自动运行工作流，详见 [GitHub 官方说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflows-in-forked-repositories)。
 

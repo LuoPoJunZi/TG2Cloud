@@ -7,11 +7,11 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.3.0
 git rev-parse HEAD
 ```
 
-本文档对应待发布的 v1.3.0，已发布基线仍为 v1.2.1。对已发布版本复现问题时使用对应标签；跟随主分支开发时使用 main 并记录提交号，避免把后续未发布修改当成 Release 行为。
+本文档对应正式 v1.3.0，实际下载见[下载页](/download/)。对已发布版本复现问题时使用对应标签；跟随主分支开发时使用 main 并记录提交号，避免把后续未发布修改当成 Release 行为。
 
 ## 关键目录与入口
 
@@ -21,10 +21,10 @@ git rev-parse HEAD
 | `installer_clouddrive2.py` | CloudDrive2 产品入口 |
 | `installer_openlist.py` | OpenList 产品入口 |
 | `deployer_products.py` | 两版产品名、路径和资源定义，复用共享版本源 |
-| `payload_clouddrive2/app/version.py` | 部署器与 Bot 共用的唯一版本源 |
+| `payload_clouddrive2/app/version.py` | Bot 和脚本的版本源；Windows 资源冻结在 v1.2.1 |
 | `domain_proxy.py`、`proxy_maintenance.py` | 共享 HTTPS 网关与私密维护助手 |
 | `operation_feedback.py` | 真实操作阶段、错误建议与版本摘要 |
-| `install.sh`、`scripts/vps_installer.py`、`scripts/vps_runtime.py` | 可选 VPS 向导、稳定 Release 解析与运行环境适配，不替代 EXE 主入口 |
+| `install.sh`、`scripts/vps_installer.py`、`scripts/vps_runtime.py` | 主要 VPS 向导、稳定 Release 解析与运行环境适配 |
 | `install-lan.sh`、`scripts/lan_installer.py` | 独立内网入口，人工指定私有 IPv4，不修改 EXE 的 HTTPS 规则 |
 | `uninstall.sh`、`scripts/uninstaller.py` | 独立卸载、只读预检；主分支完整清理需双确认，`--keep-data` 保留数据，不卸载系统软件 |
 | `payload_clouddrive2/` | CloudDrive2 部署脚本与共享核心文件来源 |

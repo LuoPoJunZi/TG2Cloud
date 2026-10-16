@@ -2,7 +2,7 @@
 
 TG2Cloud 中文网页文档。包含品牌首页、30 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
-**正文基准：TG2Cloud v1.3.0；资料核对日期：2026-10-16。** 本版以 Linux 一键脚本为主，新增首次安装磁盘推荐，发布源码包及 SHA256；当前待发布，最后已发布版本为 v1.2.1。Windows EXE 停留在 v1.2.1，历史下载继续保留。两 Edition 的新脚本完整实机验收仍需完成。
+**正文基准：TG2Cloud v1.3.0；资料核对日期：2026-10-16。** 本版以 Linux 一键脚本为主，新增首次安装磁盘推荐；Actions 已发布源码包及 SHA256，实际下载摘要与两 Edition 载荷已核对。Windows EXE 停留在 v1.2.1，历史下载继续保留。两 Edition 的新脚本完整实机验收仍需完成。
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 

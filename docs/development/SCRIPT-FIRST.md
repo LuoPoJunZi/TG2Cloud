@@ -2,6 +2,12 @@
 
 从 v1.3.0 起以 Linux 一键脚本为主入口，CloudDrive2 和 OpenList 两个 Edition 继续维护。最后一个 Windows 部署器版本为 v1.2.1，历史 Tag、Release、EXE 和原校验文件保留。
 
+## v1.3.0 发布核对
+
+2026-10-16，[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) 已发布，Tag 指向 `c07734cab666defb6ae5b5351a06361711d24190`。[发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/38892441721) 从该 Tag 校验并生成一次 `TG2Cloud-v1.3.0-source.tar.gz` 与 `SHA256SUMS.txt`；公开下载摘要、两版 payload 与 11 个固定向导文件已核对。首次发布的历史 Windows 入口权限检查由主分支 Workflow 修正后重试，Tag 未移动，资产没有混入 main 的新业务代码。
+
+这些是自动发布结果；下方真实 VPS／NAS 验收门槛仍保留，桌面源码尚未物理删除。
+
 ## 本轮实现与当前上线边界
 
 - VPS 与 LAN 首次安装复用 `vps_resources.py` 的均衡／流式优先推荐，用户明确选择或手动输入；手动输入不能绕过资源校验。

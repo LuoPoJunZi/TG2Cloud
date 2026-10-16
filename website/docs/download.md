@@ -1,10 +1,23 @@
 # 下载与 SHA-256 校验
 
-当前文档对应 **TG2Cloud v1.3.0**（待发布），以 Linux 一键脚本安装和维护两个 Edition。Windows 部署器最后更新到 v1.2.1，以下历史下载继续保留；获取程序请使用项目自己的 GitHub Releases。
+当前文档对应已发布的 **TG2Cloud v1.3.0**，以 Linux 一键脚本安装和维护两个 Edition。Windows 部署器最后更新到 v1.2.1，以下历史下载继续保留；获取程序请使用项目自己的 GitHub Releases。
 
 ## v1.3.0 源码包与脚本
 
-本版待发布，正式资产将由 GitHub Actions 生成：`TG2Cloud-v1.3.0-source.tar.gz` 与 `SHA256SUMS.txt`。确认发布后再下载并执行 `sha256sum -c SHA256SUMS.txt`；该清单校验源码包，不用于历史 EXE。直接安装和升级使用下方 VPS／内网单行入口。
+本版 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) 已由 Actions 从不可变 Tag 验证、打包并发布。源码包实际 SHA256 与公开资产摘要已核对；直接安装和升级使用下方 VPS／内网单行入口。
+
+| 文件 | 用途 |
+| --- | --- |
+| [TG2Cloud-v1.3.0-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.3.0/TG2Cloud-v1.3.0-source.tar.gz) | 同标签源码，包含两 Edition 的运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.3.0/SHA256SUMS.txt) | 本次 Actions 源码包的校验清单 |
+
+将两个文件保存到同一目录，在 Linux 中执行：
+
+```bash
+sha256sum -c SHA256SUMS.txt
+```
+
+此清单不用于历史 EXE。在线向导通过 HTTPS 下载固定 commit 源码，目前不读取 Release 资产清单。
 
 ## 下载 v1.2.1 历史 Windows 部署器
 
@@ -17,7 +30,7 @@
 [查看 v1.2.1 发布页](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) · [查看最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 :::info 固定版本与最新版本
-本页下载按钮固定到已发布 v1.2.1，两个 EXE 与 SHA256SUMS 来自同一次 Actions 构建，不使用旧版本的摘要。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
+本页源码包固定到 v1.3.0，历史 Windows 下载固定到 v1.2.1；分别使用对应 Release 的 SHA256SUMS，不混用校验值。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
 :::
 
 v1.2.1 的两个正式 EXE 由 GitHub Actions 的 Windows Runner 从同一标签构建并自检，Release 复用该次构建产物。校验值来自这次 Actions 实际生成的文件，不要求与本机旧构建一致。

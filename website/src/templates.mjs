@@ -50,7 +50,7 @@ ${!home&&!notFound?`<div class="mobile-doc-toolbar"><button class="mobile-nav-to
 ${main}
 <footer class="site-footer ${home?'':'compact'}"><div class="footer-inner"><div><strong>TG2Cloud</strong><span> From Telegram to Your Cloud.</span></div><div><a href="/reference/credits/">来源与致谢</a><a href="/reference/security/">安全与隐私</a><a href="${c.repo}" ${ext}>GitHub ↗</a></div></div><p>基于 whyhhh20/TG115 演进 · MIT License · 与 Telegram、CloudDrive2、OpenList 及云存储运营方无官方隶属关系。</p></footer>
 <dialog id="search-dialog" aria-labelledby="search-label"><div class="search-head">${icon('search')}<label class="sr-only" id="search-label" for="search-input">搜索 TG2Cloud 文档</label><input id="search-input" type="search" placeholder="搜索部署、WebDAV、401、备份…" autocomplete="off" spellcheck="false"><button class="icon-button" type="button" data-close-search aria-label="关闭搜索">${icon('close')}</button></div><p class="search-status" aria-live="polite"></p><div id="search-results" role="list"></div><div class="search-foot"><span>本地全文搜索 · 不上传搜索内容</span><span><kbd>↑</kbd><kbd>↓</kbd> 选择 <kbd>Enter</kbd> 打开 <kbd>Esc</kbd> 关闭</span></div></dialog>
-<dialog id="mobile-nav-dialog" aria-label="站点导航"><div class="mobile-menu-head">${brand}<button class="icon-button" type="button" data-close-nav aria-label="关闭导航">${icon('close')}</button></div><nav class="mobile-primary">${navLinks}<a href="/download/">部署器下载</a></nav><nav class="mobile-sidebar">${sidebar}</nav></dialog>
+<dialog id="mobile-nav-dialog" aria-label="站点导航"><div class="mobile-menu-head">${brand}<button class="icon-button" type="button" data-close-nav aria-label="关闭导航">${icon('close')}</button></div><nav class="mobile-primary">${navLinks}<a href="/download/">安装与下载</a></nav><nav class="mobile-sidebar">${sidebar}</nav></dialog>
 <button class="back-to-top" type="button" aria-label="回到顶部" hidden>↑</button>
 <div id="toast" role="status" aria-live="polite"></div>
 </body></html>`;
@@ -70,7 +70,7 @@ function homeContent(c) {
 <a class="release-pill" href="/changelog/"><span class="dot"></span> v${e(c.version)} 文档 <span class="pill-divider"></span> 双 Edition ${icon('arrow')}</a>
 <h1><span class="hero-brand">TG2Cloud</span><span>从 Telegram，</span><span>到你的云存储。</span></h1>
 <p class="hero-description">转发给自己的 Bot，剩下的交给 VPS。<br>通过 CloudDrive2 或 OpenList，把文件有序存入<br class="desktop-break">你自己挂载的云端。</p>
-<div class="hero-actions"><a class="button primary" href="/guide/quick-start/">从零开始部署 ${icon('arrow')}</a><a class="button secondary" href="/download/">${icon('download')} 部署器下载</a></div>
+<div class="hero-actions"><a class="button primary" href="/guide/quick-start/">从零开始部署 ${icon('arrow')}</a><a class="button secondary" href="/download/">${icon('download')} 安装与下载</a></div>
 <div class="hero-tags"><span>${icon('code')} 开源自托管</span><span>${icon('shield')} 私人 Bot</span><span>${icon('cloudsmall')} 多云目标</span></div>
 </div><div class="hero-visual">
 <div class="route-card"><div class="route-header"><span class="route-title"><span class="mini-brand">${brandIcon}</span> 你的文件，你的路径</span><span class="route-label">工作原理</span></div>

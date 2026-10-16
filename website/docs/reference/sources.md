@@ -1,12 +1,13 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 16 日**，对应 TG2Cloud **v1.3.0**（待发布）；已发布基线为 v1.2.1。新版本以 Linux 一键脚本维护两个 Edition，发布源码包及 SHA256，历史 EXE 停留在 v1.2.1。真实两 Edition 脚本全流程仍待验收。
+本次内容核对日期为 **2026 年 10 月 16 日**，对应 TG2Cloud **v1.3.0** 正式版本。Actions 源码包、实际 SHA256、不可变 Tag 和两 Edition 载荷已核对；在线入口已解析到最新稳定 v1.3.0。历史 EXE 停留在 v1.2.1，真实两 Edition 脚本全流程仍待验收。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
+| [已发布 v1.3.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) | 同标签源码包与实际 SHA256；历史 Windows EXE 另见 v1.2.1 |
 | [已发布 v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) | 同一次 Actions 构建的实际资产与 SHA256；不是实机验收结论 |
 | [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |

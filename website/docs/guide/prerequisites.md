@@ -1,21 +1,21 @@
 # 部署前准备
 
-准备好一台自己控制的 VPS、一台 Windows 电脑、Telegram Bot 配置，以及一个可写的云存储目标。
+准备好一台自己控制的 Linux 主机、可用的 SSH 终端和浏览器、Telegram Bot 配置，以及一个可写的云存储目标。v1.3.0 的一键脚本不要求 Windows 电脑。
 
 ## 推荐环境与硬门槛
 
 | 项目 | 基础建议 | 说明 |
 | --- | --- | --- |
 | VPS | 2 核 / 4GB 内存 / 50GB SSD | 批量使用可考虑 4 核 / 8GB / 80～100GB |
-| 系统 | Ubuntu 22.04、24.04 或 Debian 12，64 位 | 项目说明支持 x86_64、ARM64 |
-| 登录权限 | root 或可用 sudo | 非免密 sudo 需准备相应密码 |
-| 本地电脑 | Windows 10/11，64 位 | 用于运行部署器和 HTTPS 管理页 |
+| 系统 | Debian／Ubuntu x86_64 | 一键脚本不承诺兼容所有 NAS 或 ARM |
+| 登录权限 | 以 root 运行脚本 | 使用自己的 SSH 终端登录主机 |
+| 本地设备 | 可用的终端和浏览器 | Windows、macOS、Linux 均可；历史 EXE 仅支持 Windows |
 | 网络 | VPS 可达 Telegram、镜像仓库及目的端 | 按实际文件量准备流量 |
 | CloudDrive2 | 受管容器需要 `/dev/fuse` | OpenList Edition 产品配置不要求 FUSE |
 
-受管 CloudDrive2/OpenList 还需要一个指向当前 VPS 的独立域名，并允许公网 TCP 80/443 入站。没有可用 IPv6 时不要配置 AAAA；Cloudflare 首次签发证书时使用“仅 DNS”。
+公网 VPS 的受管 CloudDrive2/OpenList 还需要一个指向当前 VPS 的独立域名，并允许公网 TCP 80/443 入站。没有可用 IPv6 时不要配置 AAAA；Cloudflare 首次签发证书时使用“仅 DNS”。可信内网使用独立 LAN 入口、私有 IPv4 和 HTTP，不对公网开放。
 
-项目安装脚本约以 **1.8GB 内存、安装文件系统至少 8GB 可用空间**作为基础检查之一。50GB 是推荐磁盘容量，不是唯一硬门槛。满足最低检查也不等于可以安全使用默认 20GB 任务预算，最终以部署器实时探测和复检为准。
+脚本资源评估要求 CloudDrive2 至少约 1800MB 内存，OpenList 至少约 900MB；此外还要满足任务预算、保留线、Docker 数据盘和 inode 检查。50GB 是推荐磁盘容量，不是唯一硬门槛。首次安装可选推荐预算，最终以实时探测和执行前复检为准。
 
 ## VPS 信息清单
 
@@ -46,4 +46,4 @@
 
 ## 完成准备后
 
-先 [下载并核对部署器](/download/)，再按 [完整部署流程](/guide/quick-start/) 操作。安装目录或网关管理方式变化后，需要重新探测 VPS 资源。
+先从[下载页选择安装入口](/download/)，再按 [完整部署流程](/guide/quick-start/) 操作。安装目录或网关管理方式变化后，需要重新探测资源。
