@@ -135,6 +135,14 @@ class RepositoryContractTests(unittest.TestCase):
                     self.assertIn(f".github/scripts/check_python.py {task}", text)
                 self.assertNotIn("ruff check installer.py", text)
 
+    def test_certificate_fixtures_have_explicit_non_runtime_dependency(self):
+        requirements = (ROOT / ".github/requirements-test.txt").read_text(encoding="utf-8")
+        self.assertRegex(requirements, r"(?m)^cryptography==[0-9]+\.[0-9]+\.[0-9]+$")
+        self.assertNotIn("cryptography", (ROOT / "payload_clouddrive2/requirements.txt").read_text(encoding="utf-8"))
+        workflow = (ROOT / ".github/workflows/tests.yml").read_text(encoding="utf-8")
+        self.assertIn("--with-requirements .github/requirements-test.txt", workflow)
+        self.assertIn("-r .github/requirements-test.txt", workflow.split("  linux-products:", 1)[1])
+
     def test_consistency_checks_run_when_source_docs_or_brand_change(self):
         website = (ROOT / ".github/workflows/website-docs.yml").read_text(encoding="utf-8")
         for path in ("assets/brand/**", "docs/**", "README.md", "README_EN.md", "payload_clouddrive2/app/version.py"):

@@ -728,6 +728,7 @@ tests/                       单元、场景、部署和 WebDAV 集成测试
 
 ```powershell
 uv run --with-requirements payload_clouddrive2/requirements.txt `
+  --with-requirements .github/requirements-test.txt `
   python -m unittest discover -s tests -v
 ```
 
@@ -737,6 +738,7 @@ uv run --with-requirements payload_clouddrive2/requirements.txt `
 uv run --with ruff==0.16.0 python .github/scripts/check_python.py lint
 uv run --with bandit==1.9.4 bandit -q -r payload_clouddrive2/app scripts
 uv run --with pip-audit==2.10.1 pip-audit -r payload_clouddrive2/requirements.txt
+uv run --with pip-audit==2.10.1 pip-audit -r .github/requirements-test.txt
 ```
 
 CI 在 Linux 上运行 ShellCheck、Compose 配置校验、Python 3.12 回归和两 Edition Bot 镜像检查，Windows 保留 Python 3.13 兼容回归。v1.3.0 起不再构建 EXE，Release 复用同一次 Linux 验证生成的源码包与实际 SHA256。贡献前请阅读 [CONTRIBUTING.md](.github/CONTRIBUTING.md)。

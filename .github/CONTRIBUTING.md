@@ -10,10 +10,11 @@
 
 ## Python 检查
 
-完整检查使用 Python 3.12 / 3.13、Bot requirements 中的依赖和 Ruff 0.16.0，不再需要 PySide6、Paramiko 或 PyInstaller。可以通过 uv 创建临时检查环境，无需改变 Docker 运行依赖：
+完整检查使用 Python 3.12 / 3.13、Bot requirements、`.github/requirements-test.txt` 中的证书夹具依赖和 Ruff 0.16.0，不再需要 PySide6、Paramiko 或 PyInstaller。cryptography 原先由 Paramiko 间接提供，现显式列为测试依赖，不进入 Docker 运行依赖。可以通过 uv 创建临时检查环境：
 
 ```powershell
 uv run --with-requirements payload_clouddrive2/requirements.txt `
+  --with-requirements .github/requirements-test.txt `
   --with ruff==0.16.0 `
   python .github/scripts/check_python.py all
 ```

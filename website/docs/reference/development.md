@@ -15,7 +15,7 @@ git rev-parse HEAD
 
 ## 关键目录与入口
 
-下表为 main 的脚本优先结构。已发布 v1.3.0 Tag 保持原桌面布局；上面的标签命令仅用于复现历史版本。当前公共仓库不再跟踪桌面代码或专用测试，只保留本地恢复备份；完整回归只需 Bot requirements，不依赖 Qt、Paramiko 或 PyInstaller。
+下表为 main 的脚本优先结构。已发布 v1.3.0 Tag 保持原桌面布局；上面的标签命令仅用于复现历史版本。当前公共仓库不再跟踪桌面代码或专用测试，只保留本地恢复备份；完整回归使用 Bot requirements 与独立的证书测试依赖，不需要 Qt、Paramiko 或 PyInstaller。
 
 | 路径 | 用途 |
 | --- | --- |
@@ -38,6 +38,7 @@ git rev-parse HEAD
 ```powershell
 git switch main
 uv run --with-requirements payload_clouddrive2/requirements.txt `
+  --with-requirements .github/requirements-test.txt `
   python -m unittest discover -s tests -v
 ```
 

@@ -17,7 +17,7 @@ BUILD_FILES = (
     "scripts/lan_installer.py", "scripts/uninstaller.py",
     "scripts/lib/deployer_products.py", "scripts/lib/domain_proxy.py",
     "scripts/lib/proxy_maintenance.py", "scripts/lib/vps_resources.py", "scripts/lib/__init__.py",
-    "LICENSE", ".github/CONTRIBUTING.md", ".github/SECURITY.md",
+    "LICENSE", ".github/CONTRIBUTING.md", ".github/SECURITY.md", ".github/requirements-test.txt",
     "assets/brand/tg2cloud.ico", "assets/brand/tg2cloud-logo.svg",
     "assets/brand/tg2cloud-icon-256.png",
 )

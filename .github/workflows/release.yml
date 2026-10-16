@@ -106,6 +106,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y shellcheck rclone
           python -m pip install -r payload_clouddrive2/requirements.txt ruff==0.16.0 bandit==1.9.4 pip-audit==2.10.1
+          if [[ -f .github/requirements-test.txt ]]; then
+            python -m pip install -r .github/requirements-test.txt
+          fi
           # Only immutable historical tags may still need frozen desktop tests.
           if [[ -f legacy/desktop/requirements-build.txt ]]; then
             python -m pip install -r legacy/desktop/requirements-build.txt

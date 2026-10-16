@@ -1,0 +1,2 @@
+# HTTPS certificate fixtures only; never installed into the Bot image or wizard.
+cryptography==50.0.1
