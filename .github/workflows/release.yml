@@ -105,9 +105,13 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck rclone
-          desktop_requirements=legacy/desktop/requirements-build.txt
-          if [[ ! -f "${desktop_requirements}" ]]; then desktop_requirements=requirements-build.txt; fi
-          python -m pip install -r "${desktop_requirements}" -r payload_clouddrive2/requirements.txt ruff==0.16.0 bandit==1.9.4 pip-audit==2.10.1
+          python -m pip install -r payload_clouddrive2/requirements.txt ruff==0.16.0 bandit==1.9.4 pip-audit==2.10.1
+          # Only immutable historical tags may still need frozen desktop tests.
+          if [[ -f legacy/desktop/requirements-build.txt ]]; then
+            python -m pip install -r legacy/desktop/requirements-build.txt
+          elif [[ -f requirements-build.txt ]]; then
+            python -m pip install -r requirements-build.txt
+          fi
 
       - name: ShellCheck
         run: |
@@ -138,7 +142,10 @@ jobs:
           # Keep these exceptions here as well so retries can validate older tags.
           python -m ruff check . --extend-per-file-ignores 'installer.py:EXE001,installer_clouddrive2.py:EXE001,installer_openlist.py:EXE001'
           python .github/scripts/check_python.py compile
-          bandit -q -r scripts payload_clouddrive2/app domain_proxy.py proxy_maintenance.py .github/scripts/source_release.py
+          bandit -q -r scripts payload_clouddrive2/app .github/scripts/source_release.py
+          if [[ -f domain_proxy.py ]]; then
+            bandit -q domain_proxy.py proxy_maintenance.py
+          fi
           pip-audit -r payload_clouddrive2/requirements.txt
 
       - name: Validate edition Compose and build the runtime image

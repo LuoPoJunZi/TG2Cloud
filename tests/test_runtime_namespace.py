@@ -10,8 +10,8 @@ import unittest
 import uuid
 from pathlib import Path
 
-from deployer_products import PRODUCTS
 from scripts import vps_installer as cli
+from scripts.lib.deployer_products import PRODUCTS
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTAINER_CHECK = """

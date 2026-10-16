@@ -18,8 +18,9 @@ LIMIT = 100 * 1024 * 1024
 REQUIRED = {
     "install.sh", "install-lan.sh", "uninstall.sh", "LICENSE",
     "scripts/vps_installer.py", "scripts/lan_installer.py", "scripts/uninstaller.py",
-    "scripts/vps_runtime.py", "scripts/__init__.py", "deployer_products.py",
-    "vps_resources.py", "domain_proxy.py", "proxy_maintenance.py",
+    "scripts/vps_runtime.py", "scripts/__init__.py", "scripts/lib/__init__.py",
+    "scripts/lib/deployer_products.py", "scripts/lib/vps_resources.py",
+    "scripts/lib/domain_proxy.py", "scripts/lib/proxy_maintenance.py",
     "payload_clouddrive2/app/version.py", "payload_clouddrive2/app/main.py",
     "payload_clouddrive2/Dockerfile", "payload_clouddrive2/requirements.txt",
     "payload_clouddrive2/remote_install.sh", "payload_openlist/remote_install.sh",
@@ -97,13 +98,13 @@ def verify(directory: Path, tag: str) -> None:
             if total > LIMIT:
                 raise ValueError("source archive exceeds uncompressed limit")
             relative = member.name[len(prefix):]
-            if relative.lower().endswith((".exe", ".pyc")) or any(part in {"build", "dist", ".venv", "__pycache__"} for part in PurePosixPath(relative).parts):
+            if relative.lower().endswith((".exe", ".pyc")) or any(part in {"build", "dist", ".venv", "__pycache__", "legacy"} for part in PurePosixPath(relative).parts):
                 raise ValueError("build output in source archive")
             files[relative] = bundle.extractfile(member).read()
     if not REQUIRED.issubset(files):
         raise ValueError("source archive missing required Linux inputs")
     # Verify all declared Edition payload inputs, not just a hand-maintained list.
-    tree = ast.parse(files["deployer_products.py"].decode("utf-8"))
+    tree = ast.parse(files["scripts/lib/deployer_products.py"].decode("utf-8"))
     payloads = {node.value for node in ast.walk(tree)
                 if isinstance(node, ast.Constant) and isinstance(node.value, str)
                 and node.value.startswith(("payload_clouddrive2/", "payload_openlist/"))}

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast
-import importlib.util
 import io
 import json
 import os
@@ -18,9 +17,9 @@ from contextlib import ExitStack, nullcontext
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-from deployer_products import PRODUCTS
 from scripts import lan_installer as lan
 from scripts import vps_installer as vps
+from scripts.lib.deployer_products import PRODUCTS
 from scripts.vps_runtime import SafeLog
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -657,7 +656,7 @@ class MainBootstrapTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as private, patch("sys.argv", ["bootstrap", private, "b" * 40]), patch("sys.stdout", io.StringIO()), patch("urllib.request.build_opener", return_value=Mock(open=Mock(side_effect=fetch))):
             exec(compile(embedded, "LAN bootstrap", "exec"), {})  # noqa: S102 - repo-owned code, mocked networking
             self.assertTrue((Path(private) / "scripts/lan_installer.py").is_file())
-        self.assertEqual(len(urls), 10)
+        self.assertEqual(len(urls), 11)
 
     def test_bootstrap_rejects_failed_or_oversized_downloads_without_fallback(self):
         content = (ROOT / "install-lan.sh").read_text(encoding="utf-8")
@@ -709,13 +708,12 @@ export -f python3
                 else:
                     self.assertEqual((fixture / "cli-args").read_text().splitlines(), ["-B", "-m", "scripts.lan_installer", "--edition", "clouddrive2", "--lan-ip", IP, "--check"])
 
-    def test_exe_inputs_are_unaffected_by_lan_sources_and_tests(self):
-        spec = importlib.util.spec_from_file_location("exe_inputs_fixture", ROOT / "legacy/desktop/exe_build_inputs.py")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        self.assertFalse(module.requires_build(["install-lan.sh", "scripts/lan_installer.py", "tests/test_lan_installer.py", "docs/LAN-INSTALL.md"]))
-        for name in ("installer.py", "installer_clouddrive2.py", "installer_openlist.py", "build.ps1"):
-            self.assertNotIn("scripts.lan_installer", (ROOT / "legacy/desktop" / name).read_text(encoding="utf-8"))
+    def test_lan_entry_imports_only_public_linux_helpers(self):
+        tree = ast.parse((ROOT / "scripts/lan_installer.py").read_text(encoding="utf-8"))
+        imports = [node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)]
+        self.assertIn("scripts.lib.deployer_products", imports)
+        self.assertIn("scripts.lib.domain_proxy", imports)
+        self.assertFalse(any(name.startswith(("legacy", "PySide6", "paramiko")) for name in imports))
 
     def test_help_and_shell_syntax_do_not_require_qt_root_or_docker(self):
         result = subprocess.run([sys.executable, "-B", "-m", "scripts.lan_installer", "--help"], cwd=ROOT,

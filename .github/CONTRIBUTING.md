@@ -6,15 +6,14 @@
 4. 不要把 CloudDrive2 WebDAV 接收误写成 115 官方端已经完成；
 5. 不要提交构建目录、缓存、日志、数据库、下载文件或本地配置。
 
-仓库职责、文档同步和本地产物处理见 [仓库维护规范](docs/development/REPOSITORY.md)，用户文档入口见 [文档目录](docs/README.md)。不为了统一目录修改稳定核心或公开安装脚本路径。
+仓库职责、文档同步和本地产物处理见 [仓库维护规范](../docs/development/REPOSITORY.md)，用户文档入口见 [文档目录](../docs/README.md)。不为了统一目录修改稳定核心或公开安装脚本路径。
 
 ## Python 检查
 
-完整检查使用 Python 3.12 / 3.13，以及现有两个 requirements 文件中的依赖和 Ruff 0.16.0。可以通过 uv 创建临时检查环境，无需改变 Docker 运行依赖：
+完整检查使用 Python 3.12 / 3.13、Bot requirements 中的依赖和 Ruff 0.16.0，不再需要 PySide6、Paramiko 或 PyInstaller。可以通过 uv 创建临时检查环境，无需改变 Docker 运行依赖：
 
 ```powershell
-uv run --with-requirements legacy/desktop/requirements-build.txt `
-  --with-requirements payload_clouddrive2/requirements.txt `
+uv run --with-requirements payload_clouddrive2/requirements.txt `
   --with ruff==0.16.0 `
   python .github/scripts/check_python.py all
 ```
@@ -69,14 +68,14 @@ npm run build
 npm test
 ```
 
-版本、品牌副本和公开脚本命令的一致性测试需要完整 TG2Cloud 仓库；不只拷贝 `website/` 来执行仓库级检查。网站与根目录文档允许不同篇幅，但安全边界、操作命令和发布事实必须同步审阅。实际构建/预览方式仍见 [网站维护说明](website/README.md)。
+版本、品牌副本和公开脚本命令的一致性测试需要完整 TG2Cloud 仓库；不只拷贝 `website/` 来执行仓库级检查。网站与根目录文档允许不同篇幅，但安全边界、操作命令和发布事实必须同步审阅。实际构建/预览方式仍见 [网站维护说明](../website/README.md)。
 
 ## 历史 Windows 构建（停留在 v1.2.1）
 
-恢复历史构建请使用 v1.2.1 Tag 或独立源码备份。主分支桌面文件已归档到 [legacy/desktop](legacy/desktop/README.md)，继续参与兼容回归，分支和 Release 不再自动打包 EXE；归档的 build.ps1 拒绝将新版本打成 Windows 产品。后续删除门槛见[脚本优先说明](docs/development/SCRIPT-FIRST.md)。
+恢复历史构建请使用 [v1.2.1 Tag](https://github.com/LuoPoJunZi/TG2Cloud/tree/v1.2.1) 或独立本地源码备份，在新目录中构建。main 不再跟踪桌面源码、Windows 资源、打包依赖或专用测试；Bot、Linux、Docker、网关及备份测试继续公开运行。边界见[脚本优先说明](../docs/development/SCRIPT-FIRST.md)。
 
 ## 版本与 Release
 
-Bot 和脚本版本源为 `payload_clouddrive2/app/version.py`。新版本同步安装入口、网站、CHANGELOG 和 RELEASE_NOTES；Windows 资源固定 1.2.1，不再运行 `--sync-windows` 将它提升到新版本。`python .github/scripts/release_metadata.py --tag vX.Y.Z` 校验版本与发布文档，不创建标签或发布。
+Bot 和脚本版本源为 `payload_clouddrive2/app/version.py`。新版本同步安装入口、网站、CHANGELOG 和 RELEASE_NOTES；历史 Windows 资源只保留在 v1.2.1 Tag／本地备份，当前发布校验不再依赖它们。`python .github/scripts/release_metadata.py --tag vX.Y.Z` 校验版本与发布文档，不创建标签或发布。
 
 Release Workflow 仅接受严格版本标签 `vX.Y.Z` 或 `vX.Y.Z-alpha.N` / `beta.N` / `rc.N`。手动触发也必须选择已有 Tag，不允许把 main 当作发布来源。预发布的 Release Notes 必须写明完整预发布标签；Workflow 自动标记 Pre-release。Linux 检查从同一标签执行，包含完整回归、两 Edition Docker 和本地 WebDAV。`source_release.py build` 从该 Tag 打包一次并校验在线向导 pin；Release Job 下载同一 artifact，再次 verify 后发布源码归档和 SHA256。旧 pin 与本版辅助代码不一致会阻断发布；不替换已有 Release，不上传本机产物。

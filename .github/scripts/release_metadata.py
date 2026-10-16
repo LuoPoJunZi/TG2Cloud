@@ -9,7 +9,6 @@ import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
-LAST_DESKTOP_VERSION = "1.2.1"
 CORE = r"(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)\.(?:0|[1-9][0-9]*)"
 TAG = re.compile(rf"v({CORE})(?:-(alpha|beta|rc)\.([1-9][0-9]*))?")
 
@@ -22,33 +21,6 @@ def source_version(root: Path) -> str:
     if len(values) != 1 or not re.fullmatch(CORE, values[0]):
         raise ValueError("invalid single version source")
     return values[0]
-
-
-def windows_resources(root: Path, version: str, *, sync: bool = False) -> None:
-    numbers = tuple(map(int, version.split("."))) + (0,)
-    for edition in ("CloudDrive2", "OpenList"):
-        path = root / f"legacy/desktop/packaging/windows/TG2Cloud-{edition}.version.txt"
-        text = path.read_text(encoding="utf-8")
-        if sync:
-            for key in ("filevers", "prodvers"):
-                text, count = re.subn(rf"{key}=\([0-9, ]+\)", f"{key}={numbers}", text)
-                if count != 1:
-                    raise ValueError("invalid fixed Windows version resource")
-            for key in ("FileVersion", "ProductVersion"):
-                text, count = re.subn(rf"StringStruct\('{key}', '[^']+'\)", f"StringStruct('{key}', '{version}')", text)
-                if count != 1:
-                    raise ValueError("invalid Windows string version resource")
-            path.write_text(text, encoding="utf-8", newline="\n")
-        tree = ast.parse(text)
-        fixed = {keyword.arg: ast.literal_eval(keyword.value)
-                 for node in ast.walk(tree) if isinstance(node, ast.Call)
-                 for keyword in node.keywords if keyword.arg in {"filevers", "prodvers"}}
-        strings = {node.args[0].value: node.args[1].value
-                   for node in ast.walk(tree) if isinstance(node, ast.Call)
-                   and isinstance(node.func, ast.Name) and node.func.id == "StringStruct"
-                   and len(node.args) == 2 and all(isinstance(arg, ast.Constant) for arg in node.args)}
-        if fixed != {"filevers": numbers, "prodvers": numbers} or any(strings.get(key) != version for key in ("FileVersion", "ProductVersion")):
-            raise ValueError(f"Windows version mismatch: {edition}")
 
 
 def linux_entries(root: Path, version: str) -> None:
@@ -66,7 +38,6 @@ def release_metadata(root: Path, tag: str) -> dict[str, str]:
     version = source_version(root)
     if not match or match[1] != version:
         raise ValueError("release tag must match the source version")
-    windows_resources(root, LAST_DESKTOP_VERSION)
     changelog = (root / "CHANGELOG.md").read_text(encoding="utf-8")
     if not re.search(rf"^## TG2Cloud v{re.escape(version)}\s*$", changelog, re.MULTILINE):
         raise ValueError("current version missing from CHANGELOG")
@@ -84,16 +55,12 @@ def release_metadata(root: Path, tag: str) -> dict[str, str]:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="校验脚本版本/冻结的桌面资源/发布文档；不会创建 Tag 或 Release")
+    parser = argparse.ArgumentParser(description="校验脚本版本和发布文档；不会创建 Tag 或 Release")
     parser.add_argument("--tag")
     parser.add_argument("--github-output", type=Path)
-    parser.add_argument("--sync-windows", action="store_true")
     args = parser.parse_args()
     try:
         version = source_version(ROOT)
-        if args.sync_windows and version != LAST_DESKTOP_VERSION:
-            raise ValueError("Windows deployers are frozen at v1.2.1; do not sync them to a new Linux release")
-        windows_resources(ROOT, LAST_DESKTOP_VERSION, sync=args.sync_windows)
         metadata = release_metadata(ROOT, args.tag) if args.tag else {"version": version}
         if args.github_output:
             with args.github_output.open("a", encoding="utf-8") as handle:

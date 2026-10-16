@@ -50,7 +50,7 @@ Your Cloud
 
 > 当前源码版本：**TG2Cloud v1.3.0**
 >
-> main 分支待发布更新：桌面文件已集中归档至 [legacy/desktop](legacy/desktop/README.md)，视频命名增强支持长描述、引用块与宣传式原名替换。已发布 v1.3.0 和在线稳定业务代码不包含这些新改动。
+> main 分支待发布更新：公共仓库仅维护 Linux 脚本与共享 Bot，旧桌面源码和专用测试只在本地备份中保留；视频命名增强支持长描述、引用块与宣传式原名替换。已发布 v1.3.0 和在线稳定业务代码不包含新的命名改动。
 >
 > Windows 部署器最后更新到 **v1.2.1**；从 v1.3.0 起以 Linux 一键脚本维护两个 Edition。首次安装提供磁盘预算推荐，后续 Release 提供源码包及 SHA256。历史 EXE 下载保留；迁移与验收边界见[脚本优先说明](docs/development/SCRIPT-FIRST.md)。
 
@@ -706,7 +706,7 @@ Docker 数据目录可能和 `/opt/tg2cloud-clouddrive2` 位于不同文件系�
 - Bot 容器使用 UID/GID 10001、只读根文件系统、`no-new-privileges` 并丢弃 capabilities。
 - 发布产物应附 SHA-256；不要运行来源不明或无法核对版本的 EXE、脚本和镜像。
 
-更多说明见 [安全政策](SECURITY.md) 和 [第三方组件说明](docs/第三方组件说明.md)。
+更多说明见 [安全政策](.github/SECURITY.md) 和 [第三方组件说明](docs/第三方组件说明.md)。
 
 ## 本地开发与测试
 
@@ -717,9 +717,7 @@ install.sh                  公网 VPS 一键安装／升级入口
 install-lan.sh              可信内网安装／升级入口
 uninstall.sh                独立卸载入口
 scripts/                    Linux 向导及运行适配
-legacy/desktop/             冻结的桌面源码、构建脚本及资源
-deployer_products.py         两个产品的不可变标识和 payload 清单
-vps_resources.py             VPS 资源探测和实例建议
+scripts/lib/                Edition 定义、HTTPS、代理备份及资源探测
 payload_clouddrive2/         CloudDrive2 部署资源及两版共用 Bot 运行代码
 payload_clouddrive2/app/     Bot 调度、队列和 WebDAV/rclone 适配层
 payload_openlist/            OpenList 专属 Compose、安装和管理脚本
@@ -729,8 +727,7 @@ tests/                       单元、场景、部署和 WebDAV 集成测试
 ### 完整 Python 回归
 
 ```powershell
-uv run --with-requirements legacy/desktop/requirements-build.txt `
-  --with-requirements payload_clouddrive2/requirements.txt `
+uv run --with-requirements payload_clouddrive2/requirements.txt `
   python -m unittest discover -s tests -v
 ```
 
@@ -738,12 +735,11 @@ uv run --with-requirements legacy/desktop/requirements-build.txt `
 
 ```powershell
 uv run --with ruff==0.16.0 python .github/scripts/check_python.py lint
-uv run --with bandit==1.9.4 bandit -q -r payload_clouddrive2/app legacy/desktop/installer.py deployer_products.py vps_resources.py
+uv run --with bandit==1.9.4 bandit -q -r payload_clouddrive2/app scripts
 uv run --with pip-audit==2.10.1 pip-audit -r payload_clouddrive2/requirements.txt
-uv run --with pip-audit==2.10.1 pip-audit -r legacy/desktop/requirements-build.txt
 ```
 
-CI 在 Linux 上运行 ShellCheck、Compose 配置校验、Python 3.12 回归和两 Edition Bot 镜像检查，Windows 保留 Python 3.13 兼容回归。v1.3.0 起不再构建 EXE，Release 复用同一次 Linux 验证生成的源码包与实际 SHA256。贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。
+CI 在 Linux 上运行 ShellCheck、Compose 配置校验、Python 3.12 回归和两 Edition Bot 镜像检查，Windows 保留 Python 3.13 兼容回归。v1.3.0 起不再构建 EXE，Release 复用同一次 Linux 验证生成的源码包与实际 SHA256。贡献前请阅读 [CONTRIBUTING.md](.github/CONTRIBUTING.md)。
 
 如果仓库由 GitHub Fork 创建，首次使用时需进入仓库的 **Actions** 页面，按提示启用工作流。本仓库同时支持 `main` 推送、Pull Request 和页面中的 “Run workflow” 手动触发。GitHub 默认不会在新 Fork 中自动运行工作流，详见 [GitHub 官方说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflows-in-forked-repositories)。
 

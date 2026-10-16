@@ -6,10 +6,10 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from deployer_products import PRODUCTS
 from scripts import vps_installer as cli
+from scripts.lib.deployer_products import PRODUCTS
+from scripts.lib.vps_resources import GIB, VpsResources, recommend_storage
 from scripts.vps_runtime import SafeLog
-from vps_resources import GIB, VpsResources, recommend_storage
 
 
 def resources(**changes):

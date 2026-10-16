@@ -17,9 +17,9 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-import domain_proxy as proxy
-import proxy_maintenance as backups
-from deployer_products import PRODUCTS
+from scripts.lib import domain_proxy as proxy
+from scripts.lib import proxy_maintenance as backups
+from scripts.lib.deployer_products import PRODUCTS
 
 
 class HostCompatibilityTests(unittest.TestCase):

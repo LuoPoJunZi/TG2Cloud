@@ -6,11 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
-from dataclasses import replace
 from pathlib import Path
-
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
-from legacy.desktop.installer import runtime_status_command
 
 SOURCE = Path(__file__).resolve().parents[1]
 git = shutil.which("git")
@@ -108,83 +104,6 @@ class DeploymentShellTests(unittest.TestCase):
         self.assertNotIn(b"alice:private", result.stdout)
         self.assertIn(b"[REDACTED]", result.stdout)
 
-    def test_runtime_status_separates_current_and_legacy(self) -> None:
-        for base_product in (CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT):
-            with self.subTest(edition=base_product.key), tempfile.TemporaryDirectory() as temp:
-                root = Path(temp)
-                current = root / "current"
-                current.mkdir()
-                legacy = root / "legacy"
-                bash_env = root / "bash_env.sh"
-                bash_env.write_text(
-                    """docker() {
-  if [[ "$1 $2" == "container inspect" ]]; then return 1; fi
-  if [[ "$1" == inspect ]]; then
-    if [[ "$4" == *-bot ]]; then printf '%s\\n' "$TG2CLOUD_TEST_BOT";
-    else printf '%s\\n' "$TG2CLOUD_TEST_GATEWAY"; fi
-    return 0
-  fi
-  if [[ "$1 $2" == "network inspect" ]]; then
-    [[ "$TG2CLOUD_TEST_NETWORK" == PRESENT ]]; return
-  fi
-  return 1
-}
-curl() { return 0; }
-""",
-                    encoding="utf-8",
-                )
-                product = replace(
-                    base_product,
-                    legacy_install_dirs=(bash_path(legacy),),
-                    legacy_containers=("not-present-legacy",),
-                )
-                command = runtime_status_command(product, bash_path(current))
-                cases = (
-                    ("not_installed", False, False, "", "", "", "NOT_INSTALLED", "NONE"),
-                    ("legacy_only", False, True, "", "", "", "NOT_INSTALLED", "DETECTED"),
-                    ("stopped", True, True, "exited", "false", "PRESENT", "STOPPED", "DETECTED"),
-                    ("running", True, True, "healthy", "true", "PRESENT", "RUNNING", "DETECTED"),
-                )
-                for name, installed, old, bot, gateway, network, state, legacy_state in cases:
-                    with self.subTest(scenario=name):
-                        compose = current / "docker-compose.yml"
-                        if installed:
-                            compose.write_text(
-                                f"container_name: {product.bot_container}\n"
-                                f"container_name: {product.storage_container}\n",
-                                encoding="utf-8",
-                            )
-                        elif compose.exists():
-                            compose.unlink()
-                        if old:
-                            legacy.mkdir(exist_ok=True)
-                        elif legacy.exists():
-                            legacy.rmdir()
-                        result = subprocess.run(
-                            [BASH, "-c", command],
-                            env=os.environ
-                            | {
-                                "BASH_ENV": bash_path(bash_env),
-                                "TG2CLOUD_TEST_BOT": bot,
-                                "TG2CLOUD_TEST_GATEWAY": gateway,
-                                "TG2CLOUD_TEST_NETWORK": network,
-                            },
-                            capture_output=True,
-                            timeout=20,
-                            check=False,
-                            **(
-                                {"creationflags": subprocess.CREATE_NO_WINDOW}
-                                if os.name == "nt"
-                                else {}
-                            ),
-                        )
-                        self.assertEqual(result.returncode, 0, result.stderr.decode())
-                        self.assertIn(
-                            f"TG2CLOUD_STATUS={state}".encode(), result.stdout
-                        )
-                        self.assertIn(
-                            f"TG2CLOUD_LEGACY={legacy_state}".encode(), result.stdout
-                        )
 
     def test_redeploy_keeps_existing_config_unless_explicitly_replaced(self) -> None:
         secrets = (
@@ -684,91 +603,14 @@ INFO[2026-09-18] password: Reset_2345""",
 
 
 class DeploymentStructureTests(unittest.TestCase):
-    def test_linux_ci_runs_qt_tests_with_offscreen_platform(self) -> None:
+    def test_linux_ci_runs_runtime_tests_without_desktop_dependencies(self) -> None:
         workflow = (SOURCE / ".github" / "workflows" / "tests.yml").read_text(
             encoding="utf-8"
         )
         linux_job = workflow.split("  linux-products:", 1)[1]
-        self.assertIn("QT_QPA_PLATFORM: offscreen", linux_job)
+        self.assertIn(".github/scripts/check_python.py test", linux_job)
+        self.assertNotIn("requirements-build.txt", linux_job)
 
-    def test_windows_build_isolates_dll_dependency_search_path(self) -> None:
-        script = (SOURCE / "legacy/desktop/build.ps1").read_text(encoding="utf-8")
-        self.assertIn("function Get-Tg2CloudIsolatedPath", script)
-        self.assertIn('"$env:SystemRoot\\System32"', script)
-        self.assertIn("$env:Path = Get-Tg2CloudIsolatedPath", script)
-        self.assertIn("$env:Path = $originalPath", script)
-
-    def test_windows_build_supports_only_two_pyside_products(self) -> None:
-        script = (SOURCE / "legacy/desktop/build.ps1").read_text(encoding="utf-8")
-        self.assertFalse((SOURCE / "installer_classic.py").exists())
-        self.assertFalse((SOURCE / "payload").exists())
-        self.assertTrue((SOURCE / "payload_clouddrive2").is_dir())
-        self.assertTrue((SOURCE / "payload_openlist").is_dir())
-        self.assertFalse((SOURCE / "一键部署-Telegram到115.cmd").exists())
-        self.assertFalse(
-            (SOURCE / "一键部署-Telegram到115-OpenList.cmd").exists()
-        )
-        self.assertIn("[ValidateSet('All', 'CloudDrive2', 'OpenList')]", script)
-        self.assertIn("TG2Cloud-CloudDrive2-Deployer", script)
-        self.assertIn("TG2Cloud-OpenList-Deployer", script)
-        self.assertIn("installer_clouddrive2.py", script)
-        self.assertIn("installer_openlist.py", script)
-        self.assertIn("payload_clouddrive2;payload_clouddrive2", script)
-        self.assertIn("assets/brand;assets/brand", script)
-        self.assertIn("assets/brand/tg2cloud.ico", script)
-        self.assertIn("--version-file", script)
-        for version_file in (
-            SOURCE / "legacy/desktop/packaging/windows/TG2Cloud-CloudDrive2.version.txt",
-            SOURCE / "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt",
-        ):
-            self.assertTrue(version_file.is_file())
-            metadata = version_file.read_text(encoding="utf-8")
-            self.assertIn("ProductVersion', '1.2.1'", metadata)
-            self.assertIn("TG2Cloud", metadata)
-        self.assertNotIn("Source = 'installer_classic.py'", script)
-        self.assertNotIn("import tkinter", script)
-        self.assertIn("payload_openlist;payload_openlist", script)
-        for stale_name in (
-            "TG115-Deployer.exe",
-            "TG115-Deployer-Modern.exe",
-            "TG115-Deployer-Classic.exe",
-        ):
-            self.assertIn(stale_name, script)
-
-        workflow = (SOURCE / ".github" / "workflows" / "tests.yml").read_text(
-            encoding="utf-8"
-        )
-        self.assertNotIn("TG2CLOUD_BUILD_PYTHON", workflow)
-        self.assertNotIn("./build.ps1", workflow)
-        self.assertIn("timeout-minutes: 20", workflow)
-        self.assertIn("WaitForExit(120000)", script)
-        self.assertIn("app_version=$ReleaseVersion", script)
-        self.assertIn("payload_clouddrive2/app/version.py", script)
-        self.assertIn("$ProxyMaintenance = Join-Path $SourceDir 'proxy_maintenance.py'", script)
-        self.assertIn("'--add-data', \"$ProxyMaintenance;.\"", script)
-        self.assertIn("Compare-Object $expectedArtifacts $actualArtifacts", script)
-        self.assertNotIn('foreach ($edition in @("Modern", "Classic"))', workflow)
-
-        readme = (SOURCE / "README.md").read_text(encoding="utf-8")
-        self.assertIn('src="assets/brand/tg2cloud-logo.svg"', readme)
-        self.assertIn("From Telegram to Your Cloud", readme)
-        self.assertIn("TG2Cloud-CloudDrive2-Deployer.exe", readme)
-        self.assertIn("TG2Cloud-OpenList-Deployer.exe", readme)
-        self.assertIn("/opt/tg2cloud-clouddrive2/manage.sh", readme)
-        self.assertIn("/opt/tg2cloud-openlist/manage.sh", readme)
-        self.assertIn("docs/MIGRATION_FROM_TG115.md", readme)
-        self.assertTrue((SOURCE / "docs/MIGRATION_FROM_TG115.md").is_file())
-        self.assertNotIn("# TG115", readme)
-
-    def test_windows_deploy_reprobes_resources_before_remote_mutation(self) -> None:
-        source = (SOURCE / "legacy/desktop/installer.py").read_text(encoding="utf-8")
-        deploy = source.split("        def deploy(self, values:", 1)[1].split(
-            "        def open_clouddrive(self, values:", 1
-        )[0]
-        self.assertLess(
-            deploy.index("_probe_and_recommend"), deploy.index("mkdir -m 700")
-        )
-        self.assertIn("assess_storage_choice", deploy)
 
     def test_backup_failure_is_fatal_before_program_replacement(self) -> None:
         script = (SOURCE / "payload_clouddrive2/remote_install.sh").read_text(

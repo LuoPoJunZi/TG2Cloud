@@ -100,7 +100,8 @@ try:
         raise ValueError("tag recursion")
     files = (
         "scripts/__init__.py", "scripts/vps_runtime.py", "scripts/vps_installer.py",
-        "deployer_products.py", "domain_proxy.py", "vps_resources.py", "proxy_maintenance.py",
+        "scripts/lib/__init__.py", "scripts/lib/deployer_products.py", "scripts/lib/domain_proxy.py",
+        "scripts/lib/vps_resources.py", "scripts/lib/proxy_maintenance.py",
         "payload_clouddrive2/app/__init__.py", "payload_clouddrive2/app/version.py",
     )
     for name in files:

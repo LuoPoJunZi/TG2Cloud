@@ -21,15 +21,14 @@ from unittest.mock import AsyncMock, Mock, patch
 
 from test_domain_proxy import TransactionManager
 
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
-from domain_proxy import (
+from scripts.lib.deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
+from scripts.lib.domain_proxy import (
     DomainProxyManager,
     ProxyReport,
     empty_state,
     proxy_lock_command,
     state_with_route,
 )
-from legacy.desktop import installer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "payload_clouddrive2"))
 
@@ -151,106 +150,13 @@ class OpenListReviewTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(service.rclone.probe.await_count, 3)
 
 
-class LockChannel:
-    def __init__(self, output=b"TG2CLOUD_REMOTE_LOCK=ACQUIRED\n"):
-        self.output = output
-        self.sent = []
-        self.closed = False
-        self.exited = False
-
-    def exec_command(self, command):
-        self.command = command
-
-    def sendall(self, value):
-        self.sent.append(value)
-
-    def shutdown_write(self):
-        self.write_closed = True
-
-    def recv_ready(self):
-        return bool(self.output)
-
-    def recv(self, count):
-        result, self.output = self.output[:count], self.output[count:]
-        return result
-
-    def recv_stderr_ready(self):
-        return False
-
-    def exit_status_ready(self):
-        return self.exited
-
-    def close(self):
-        self.closed = True
-
-
 class RemoteLockTests(unittest.TestCase):
-    @staticmethod
-    def session(channel):
-        session = installer.RemoteSession.__new__(installer.RemoteSession)
-        session.values = {"sudo_password": "test-only"}
-        transport = Mock()
-        transport.is_active.return_value = True
-        transport.open_session.return_value = channel
-        session.client = SimpleNamespace(get_transport=lambda: transport)
-        return session, transport
 
-    def test_channel_is_held_and_released_even_after_failure(self):
-        channel = LockChannel()
-        session, _ = self.session(channel)
-        with (
-            self.assertRaisesRegex(RuntimeError, "operation failed"),
-            session.hold_lock(proxy_lock_command(), sudo=True),
-        ):
-            self.assertFalse(channel.closed)
-            self.assertIs(session._transaction_lock_channel, channel)
-            raise RuntimeError("operation failed")
-        self.assertTrue(channel.closed)
-        self.assertIsNone(session._transaction_lock_channel)
-        self.assertEqual(channel.sent, [b"test-only\n", b"TG2CLOUD_REMOTE_LOCK_RELEASE\n"])
-
-    def test_busy_lock_fails_before_transaction(self):
-        channel = LockChannel(b"TG2CLOUD_REMOTE_LOCK=BUSY\n")
-        session, _ = self.session(channel)
-        with (
-            self.assertRaisesRegex(RuntimeError, "另一个部署器"),
-            session.hold_lock(proxy_lock_command()),
-        ):
-            self.fail("must not enter a busy transaction")
-        self.assertTrue(channel.closed)
-
-    def test_missing_flock_is_actionable(self):
-        session, _ = self.session(LockChannel(b"TG2CLOUD_REMOTE_LOCK=UNAVAILABLE\n"))
-        with (
-            self.assertRaisesRegex(RuntimeError, "缺少 flock"),
-            session.hold_lock(proxy_lock_command()),
-        ):
-            self.fail("must not mutate without flock")
-
-    def test_lost_lock_blocks_subsequent_remote_commands(self):
-        channel = LockChannel()
-        session, transport = self.session(channel)
-        with session.hold_lock(proxy_lock_command()):
-            channel.exited = True
-            with self.assertRaisesRegex(RuntimeError, "事务锁已丢失"):
-                session.run("must-not-execute")
-        transport.open_session.assert_called_once()
-
-    def test_acquisition_timeout_closes_channel(self):
-        channel = LockChannel(b"")
-        session, _ = self.session(channel)
-        with (
-            patch("legacy.desktop.installer.time.monotonic", side_effect=[0, 16]),
-            self.assertRaises(TimeoutError),
-            session.hold_lock(proxy_lock_command()),
-        ):
-            self.fail("must not enter without acknowledgment")
-        self.assertTrue(channel.closed)
 
     @unittest.skipUnless(os.name != "nt" and shutil.which("flock"), "live flock test requires Linux")
     def test_real_flock_is_exclusive_and_released_on_ssh_eof(self):
         with tempfile.TemporaryDirectory() as temp:
-            with patch("domain_proxy.PROXY_ROOT", temp):
+            with patch("scripts.lib.domain_proxy.PROXY_ROOT", temp):
                 command = shlex.split(proxy_lock_command())[2]
             holder = subprocess.Popen(
                 ["bash", "-c", command], stdin=subprocess.PIPE, stdout=subprocess.PIPE,

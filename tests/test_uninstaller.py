@@ -15,9 +15,9 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from deployer_products import PRODUCTS
-from domain_proxy import render_compose
 from scripts import uninstaller as uninstall
+from scripts.lib.deployer_products import PRODUCTS
+from scripts.lib.domain_proxy import render_compose
 from scripts.vps_runtime import SafeLog
 
 ROOT = Path(__file__).resolve().parents[1]

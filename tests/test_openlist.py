@@ -3,11 +3,10 @@ from __future__ import annotations
 import base64
 import os
 import sys
-import tarfile
 import tempfile
 import unittest
 from pathlib import Path
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 SOURCE = Path(__file__).resolve().parents[1]
 PAYLOAD = SOURCE / "payload_clouddrive2"
@@ -17,50 +16,20 @@ sys.path.insert(0, str(PAYLOAD))
 
 from app.config import Settings
 
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT, RELEASE_VERSION
-from legacy.desktop import installer
-from legacy.desktop.installer import (
-    InstallerBackend,
-    OperationError,
-    OperationResult,
-    defaults_for,
-    make_app,
-    secure_password,
-    verification_statuses,
+from scripts import vps_installer as cli
+from scripts.lib.deployer_products import (
+    CLOUDDRIVE2_PRODUCT,
+    OPENLIST_PRODUCT,
+    RELEASE_VERSION,
 )
-from vps_resources import GIB, VpsResources, recommend_storage
+from scripts.lib.vps_resources import GIB, VpsResources, recommend_storage
 
 
 def encoded(value: str) -> str:
     return base64.b64encode(value.encode()).decode()
 
 
-def openlist_values() -> dict[str, str]:
-    values = defaults_for(OPENLIST_PRODUCT)
-    values.update(
-        {
-            "vps_host": "203.0.113.10",
-            "vps_port": "22",
-            "vps_user": "root",
-            "vps_password": "test-vps-password",  # pragma: allowlist secret
-            "bot_token": "123456:" + "a" * 30,
-            "telegram_api_id": "12345",
-            "telegram_api_hash": "a" * 32,
-            "allowed_user_id": "987654321",
-        }
-    )
-    return values
-
-
 class OpenListProductTests(unittest.TestCase):
-    def backend(self, **kwargs: object) -> InstallerBackend:
-        return InstallerBackend(
-            log=kwargs.pop("log", Mock()),
-            confirm_host_key=Mock(return_value=True),
-            publish_resources=Mock(),
-            product=OPENLIST_PRODUCT,
-            **kwargs,
-        )
 
     def test_product_runtime_identities_are_isolated(self) -> None:
         self.assertEqual(OPENLIST_PRODUCT.install_dir, "/opt/tg2cloud-openlist")
@@ -92,317 +61,16 @@ class OpenListProductTests(unittest.TestCase):
         self.assertEqual(CLOUDDRIVE2_PRODUCT.app_title, "TG2Cloud · CloudDrive2")
         self.assertEqual(OPENLIST_PRODUCT.app_title, "TG2Cloud · OpenList")
 
-    def test_generated_credentials_are_secure_and_session_scoped(self) -> None:
-        first = secure_password()
-        second = secure_password()
-        self.assertRegex(first, r"^[A-Za-z0-9_-]{28}$")
-        self.assertRegex(second, r"^[A-Za-z0-9_-]{28}$")
-        self.assertNotEqual(first, second)
-        defaults = defaults_for(OPENLIST_PRODUCT)
-        self.assertEqual(defaults["cd2_username"], "tg2cloud")
-        self.assertEqual(defaults["cd2_target"], "")
-        self.assertEqual(defaults["local_budget_gb"], "20")
-        self.assertEqual(defaults["min_free_disk_gb"], "8")
-        self.assertRegex(defaults["cd2_password"], r"^[A-Za-z0-9_-]{28}$")
-        self.assertRegex(
-            defaults["openlist_admin_password"], r"^[A-Za-z0-9_-]{28}$"
-        )
-        self.assertEqual(defaults["preserve_webdav"], "false")
-
-    def test_legacy_openlist_install_dir_is_rejected_before_deploy(self) -> None:
-        values = openlist_values()
-        values["install_dir"] = "/opt/tg115-openlist"
-        with self.assertRaisesRegex(ValueError, "不会静默覆盖"):
-            self.backend()._validate(values)
-
-    @unittest.skipUnless(
-        getattr(installer, "InstallerWindow", None) is not None,
-        "Qt runtime unavailable",
-    )
-    def test_openlist_preview_uses_five_step_shared_pyside_ui(self) -> None:
-        app = make_app()
-        window = installer.InstallerWindow(preview=True, product=OPENLIST_PRODUCT)
-        try:
-            snapshot = window.snapshot()
-            self.assertEqual(set(snapshot), set(defaults_for(OPENLIST_PRODUCT)))
-            self.assertEqual(window.pages.count(), 5)
-            self.assertEqual(window.edits["cd2_url"].text(), OPENLIST_PRODUCT.webdav_url)
-            self.assertTrue(window.edits["cd2_url"].isReadOnly())
-            self.assertFalse(window.managed.isEnabled())
-            self.assertFalse(window.preserve_webdav.isChecked())
-            window.preserve_webdav.setChecked(True)
-            app.processEvents()
-            self.assertEqual(window.snapshot()["preserve_webdav"], "true")
-            self.assertFalse(window.field_boxes["cd2_password"].isEnabled())
-            self.assertIn("OpenList", window.windowTitle())
-            self.assertEqual(window.brand_name_label.text(), "TG2Cloud")
-            self.assertIn("OpenList Edition", window.brand_subtitle_label.text())
-            self.assertFalse(window.windowIcon().isNull())
-            self.assertFalse(window.brand_icon_label.pixmap().isNull())
-            self.assertTrue(hasattr(window, "verification_summary"))
-            self.assertIn("domain_access", window.action_buttons)
-            self.assertNotIn("open_clouddrive", window.action_buttons)
-            self.assertIn("HTTPS", window.action_buttons["domain_access"].text())
-            for operation in (
-                "openlist_status",
-                "openlist_logs",
-                "restart_bot",
-                "restart_openlist",
-                "backup_openlist",
-                "reset_openlist_admin",
-            ):
-                self.assertIn(operation, window.action_buttons)
-            window._set_openlist_instance_state("existing")
-            self.assertTrue(window.openlist_credentials_row.isHidden())
-            self.assertIn("已初始化", window.openlist_instance_notice.text())
-            window._set_openlist_instance_state("new")
-            self.assertFalse(window.openlist_credentials_row.isHidden())
-            self.assertFalse(window.openlist_regenerate_admin.isHidden())
-            window._set_openlist_instance_state("recovered")
-            self.assertFalse(window.openlist_credentials_row.isHidden())
-            self.assertTrue(window.openlist_regenerate_admin.isHidden())
-        finally:
-            window.close()
-            app.processEvents()
-
-    @unittest.skipUnless(
-        getattr(installer, "InstallerWindow", None) is not None,
-        "Qt runtime unavailable",
-    )
-    def test_openlist_management_actions_fit_sidebar_viewport(self) -> None:
-        app = make_app()
-        window = installer.InstallerWindow(preview=True, product=OPENLIST_PRODUCT)
-        try:
-            window.resize(1280, 800)
-            window.show()
-            app.processEvents()
-            sidebar = window.action_scroll
-            content = sidebar.widget()
-            self.assertLessEqual(content.minimumSizeHint().width(), sidebar.viewport().width())
-            for operation in (
-                "openlist_status",
-                "openlist_logs",
-                "restart_bot",
-                "restart_openlist",
-                "backup_openlist",
-                "reset_openlist_admin",
-            ):
-                button = window.action_buttons[operation]
-                with self.subTest(operation=operation):
-                    right = button.mapTo(content, button.rect().topRight()).x()
-                    self.assertLessEqual(right, sidebar.viewport().width())
-        finally:
-            window.close()
-            app.processEvents()
-
-    @unittest.skipUnless(
-        getattr(installer, "InstallerWindow", None) is not None,
-        "Qt runtime unavailable",
-    )
-    def test_managed_deploy_stays_pending_until_https_is_healthy(self) -> None:
-        app = make_app()
-        window = installer.InstallerWindow(preview=True, product=OPENLIST_PRODUCT)
-        try:
-            result = OperationResult(
-                "基础部署完成",
-                "下一步配置 HTTPS。",
-                https_required=True,
-            )
-            with patch("legacy.desktop.installer.QMessageBox.information"):
-                window._operation_success("deploy", result)
-
-            self.assertEqual(window.status.text(), "待配置 HTTPS")
-            self.assertTrue(window._open_required_https_after_worker)
-            self.assertIn("HTTPS 尚未完成", window.footer_state.text())
-            window._worker_finished()
-            app.processEvents()
-            self.assertFalse(window._open_required_https_after_worker)
-        finally:
-            window.close()
-            app.processEvents()
-
-    def test_verification_markers_become_safe_stage_statuses(self) -> None:
-        statuses = dict(
-            verification_statuses(
-                """BOT_HEALTH=healthy
-TG115_OPENLIST=OK
-TG115_WEBDAV_AUTH=OK
-TG115_WEBDAV_LIST=OK
-TG115_WEBDAV_WRITE=OK
-TG115_WEBDAV_SIZE=FAILED
-"""
-            )
-        )
-        self.assertEqual(statuses["Bot 容器"], "通过")
-        self.assertEqual(statuses["OpenList 服务"], "通过")
-        self.assertEqual(statuses["WebDAV 认证"], "通过")
-        self.assertEqual(statuses["测试写入"], "通过")
-        self.assertEqual(statuses["大小校验"], "失败")
-        self.assertEqual(statuses["临时改名"], "未执行")
-        current = dict(verification_statuses("TG2CLOUD_BOT_HEALTH=healthy\nTG2CLOUD_WEBDAV_AUTH=OK\nTG115_WEBDAV_AUTH=FAILED\nTG2CLOUD_UPLOAD=OK\n"))
-        self.assertEqual(current["Bot 容器"], "通过")
-        self.assertEqual(current["WebDAV 认证"], "通过")
-        direct = dict(verification_statuses(
-            "TG2CLOUD_WEBDAV_FINALIZE_MODE=DIRECT\n"
-            "TG2CLOUD_WEBDAV_MOVE=NOT_REQUIRED\n"
-        ))
-        self.assertEqual(direct["最终落盘"], "无需执行")
-
-    def test_openlist_verification_uses_manage_script_and_friendly_auth_error(
-        self,
-    ) -> None:
-        values = openlist_values()
-        session = Mock()
-        session.run.side_effect = [
-            (0, "0\n"),
-            (
-                1,
-                """TG115_OPENLIST=OK
-BOT_HEALTH=healthy
-older unrelated log: 429 Too Many Requests
-TG115_WEBDAV_AUTH=FAILED
-401 Unauthorized
-""",
-            ),
-        ]
-        backend = self.backend(session_factory=Mock(return_value=session))
-
-        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
-            proxy_manager.return_value.status.return_value = Mock(
-                state="healthy", statuses=(), domain="ol.example.com"
-            )
-            with self.assertRaises(OperationError) as raised:
-                backend.verify(values)
-
-        self.assertIn("无法登录 OpenList WebDAV", str(raised.exception))
-        self.assertNotIn("401", str(raised.exception))
-        self.assertEqual(dict(raised.exception.statuses)["WebDAV 认证"], "失败")
-        command = session.run.call_args_list[1].args[0]
-        self.assertIn("bash ./manage.sh verify", command)
-
-    def test_openlist_verification_requires_healthy_https_first(self) -> None:
-        session = Mock()
-        backend = self.backend(session_factory=Mock(return_value=session))
-
-        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
-            proxy_manager.return_value.status.return_value = Mock(
-                state="not_configured", statuses=(), domain=""
-            )
-            with self.assertRaisesRegex(OperationError, "必须先完成 HTTPS"):
-                backend.verify(openlist_values())
-
-        proxy_manager.return_value.prepare.assert_called_once_with()
-        session.run.assert_not_called()
-
-    def test_openlist_webdav_rate_limit_is_not_reported_as_bad_credentials(self) -> None:
-        session = Mock()
-        session.run.side_effect = [
-            (0, "0\n"),
-            (
-                1,
-                (
-                    "TG2CLOUD_OPENLIST=OK\n"
-                    "TG2CLOUD_BOT_HEALTH=healthy\n"
-                    "TG2CLOUD_WEBDAV_AUTH=FAILED\n"
-                    "TG2CLOUD_DESTINATION=FAILED: read metadata failed: 429 Too Many Requests\n"
-                ),
-            ),
-        ]
-        backend = self.backend(session_factory=Mock(return_value=session))
-
-        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
-            proxy_manager.return_value.status.return_value = Mock(
-                state="healthy", statuses=(), domain="ol.example.com"
-            )
-            with self.assertRaises(OperationError) as raised:
-                backend.verify(openlist_values())
-
-        message = str(raised.exception)
-        self.assertIn("429", message)
-        self.assertIn("稍后重试", message)
-        self.assertNotIn("用户名", message)
-        self.assertNotIn("密码", message)
-
-    def test_openlist_unknown_move_is_not_misreported_as_permission_failure(self) -> None:
-        session = Mock()
-        session.run.side_effect = [
-            (0, "0\n"),
-            (1, (
-                "TG2CLOUD_WEBDAV_MOVE=FAILED\n"
-                "TG2CLOUD_DESTINATION=FAILED: MOVE_UNCERTAIN: rename unknown\n"
-            )),
-        ]
-        backend = self.backend(session_factory=Mock(return_value=session))
-        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
-            proxy_manager.return_value.status.return_value = Mock(
-                state="healthy", statuses=(), domain="ol.example.com"
-            )
-            with self.assertRaises(OperationError) as raised:
-                backend.verify(openlist_values())
-        message = str(raised.exception)
-        self.assertIn("状态暂时无法确认", message)
-        self.assertIn("不要重复点击", message)
-        self.assertNotIn("权限", message)
-
-    def test_openlist_management_uses_only_fixed_manage_action(self) -> None:
-        values = openlist_values()
-        session = Mock()
-        session.run.side_effect = [
-            (0, "0\n"),
-            (
-                0,
-                (
-                    "TG2CLOUD_STATUS=RUNNING\nTG2CLOUD_LEGACY=DETECTED\n"
-                    "TG2CLOUD_BOT_HEALTH=healthy\nTG2CLOUD_GATEWAY=RUNNING\n"
-                    "TG2CLOUD_NETWORK=PRESENT\n"
-                ),
-            ),
-        ]
-        backend = self.backend(session_factory=Mock(return_value=session))
-
-        result = backend.openlist_status(values)
-
-        self.assertEqual(result.title, "运行状态")
-        session.connect.assert_called_once_with()
-        command = session.run.call_args_list[1].args[0]
-        self.assertIn("bash -c", command)
-        self.assertIn("tg2cloud-openlist-bot", command)
-        self.assertNotIn("docker compose", command)
-        self.assertNotIn(values["vps_password"], command)
-        session.close.assert_called_once_with()
-
-    def test_admin_password_reset_never_streams_or_returns_secret_in_message(self) -> None:
-        values = openlist_values()
-        new_password = "ResetOnly_23456789"
-        session = Mock()
-        session.run.side_effect = [
-            (0, "0\n"),
-            (
-                0,
-                f"""TG115_OPENLIST_ADMIN_RESET=OK
-TG115_OPENLIST_ADMIN_USERNAME=admin
-TG115_OPENLIST_ADMIN_PASSWORD={new_password}
-""",
-            ),
-        ]
-        log = Mock()
-        backend = self.backend(
-            log=log, session_factory=Mock(return_value=session)
-        )
-
-        result = backend.reset_openlist_admin(values)
-
-        self.assertEqual(result.secret_field, "openlist_admin_password")
-        self.assertEqual(result.secret_value, new_password)
-        self.assertNotIn(new_password, result.message)
-        self.assertNotIn(new_password, repr(result))
-        self.assertIsNone(session.run.call_args_list[1].kwargs["stream"])
-        log.assert_not_called()
 
     def test_openlist_config_contains_neutral_keys_and_no_115_credentials(self) -> None:
-        values = openlist_values()
-        config = self.backend()._build_config(values)
-        pairs = dict(line.split("=", 1) for line in config.splitlines())
+        values = {
+            "api_id": "12345", "api_hash": "a" * 32, "bot_token": "123456:FAKE_LOCAL_TEST_TOKEN_ONLY",
+            "user_id": "987654321", "webdav_user": "tg2cloud", "webdav_password": "FAKE_WEBDAV",
+            "target": "", "budget": "20", "reserve": "8", "timezone": "Asia/Shanghai",
+            "admin_password": "FAKE_ADMIN_PASSWORD",
+        }
+        pairs = cli.new_config(OPENLIST_PRODUCT, values)
+        config = "\n".join(f"{key}={value}" for key, value in pairs.items())
         self.assertEqual(pairs["TG2CLOUD_STORAGE_BACKEND"], "openlist")
         self.assertEqual(pairs["TG2CLOUD_RCLONE_REMOTE_NAME"], "openlist")
         self.assertEqual(pairs["TG115_STORAGE_BACKEND"], "openlist")
@@ -416,36 +84,12 @@ TG115_OPENLIST_ADMIN_PASSWORD={new_password}
             OPENLIST_PRODUCT.webdav_url,
         )
         self.assertEqual(
-            pairs["OPENLIST_ADMIN_PASSWORD"], values["openlist_admin_password"]
+            pairs["OPENLIST_ADMIN_PASSWORD"], values["admin_password"]
         )
         self.assertEqual(pairs["TG2CLOUD_PRESERVE_WEBDAV"], "false")
         self.assertEqual(pairs["TG115_PRESERVE_WEBDAV"], "false")
         self.assertNotRegex(config, r"(?i)(115_cookie|115_token|cookie_115)")
 
-    def test_openlist_management_uses_fixed_5244_tunnel(self) -> None:
-        values = openlist_values()
-        session = Mock()
-        session.run.return_value = (0, "")
-        tunnel = Mock()
-        tunnel.url = "http://127.0.0.1:5244"
-        factory = Mock(return_value=tunnel)
-        browser = Mock()
-        backend = self.backend(
-            session_factory=Mock(return_value=session),
-            tunnel_factory=factory,
-            browser_open=browser,
-        )
-
-        backend.open_clouddrive(values)
-
-        self.assertIn("127.0.0.1:5244", session.run.call_args.args[0])
-        factory.assert_called_once_with(
-            session,
-            local_port=5244,
-            remote_port=5244,
-            product_name="OpenList",
-        )
-        browser.assert_called_once_with("http://127.0.0.1:5244")
 
     def test_openlist_resource_advice_does_not_require_fuse(self) -> None:
         resources = VpsResources(
@@ -484,21 +128,12 @@ TG115_OPENLIST_ADMIN_PASSWORD={new_password}
 
 class OpenListPayloadTests(unittest.TestCase):
     def test_openlist_archive_replaces_only_backend_specific_payload(self) -> None:
-        backend = InstallerBackend(
-            log=Mock(),
-            confirm_host_key=Mock(return_value=True),
-            publish_resources=Mock(),
-            product=OPENLIST_PRODUCT,
-        )
         with tempfile.TemporaryDirectory() as temp:
-            archive_path = Path(temp) / "openlist-payload.tar.gz"
-            with tarfile.open(archive_path, "w:gz") as archive:
-                backend._add_payload_to_archive(archive)
-            with tarfile.open(archive_path, "r:gz") as archive:
-                names = set(archive.getnames())
-                compose = archive.extractfile("payload/docker-compose.yml")
-                self.assertIsNotNone(compose)
-                compose_text = compose.read().decode()  # type: ignore[union-attr]
+            payload = Path(temp) / "payload"
+            cli.build_payload(SOURCE, OPENLIST_PRODUCT, payload)
+            names = {"payload/" + path.relative_to(payload).as_posix()
+                     for path in payload.rglob("*") if path.is_file()}
+            compose_text = (payload / "docker-compose.yml").read_text(encoding="utf-8")
 
         self.assertIn("payload/app/main.py", names)
         self.assertIn("payload/openlist_admin.sh", names)

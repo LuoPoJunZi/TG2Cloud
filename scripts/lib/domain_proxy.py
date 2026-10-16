@@ -23,7 +23,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Protocol
 
-from deployer_products import PRODUCTS, ProductProfile
+from scripts.lib.deployer_products import PRODUCTS, ProductProfile
 
 PROXY_ROOT = "/opt/tg2cloud-proxy"
 PROXY_NGINX_CONTAINER = "tg2cloud-proxy-nginx"

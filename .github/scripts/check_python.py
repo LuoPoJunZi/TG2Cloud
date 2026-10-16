@@ -13,8 +13,7 @@ CLI_TESTS = (
     "test_proxy_host_compat.py", "test_repository.py", "test_storage_wizard.py", "test_source_release.py",
 )
 CLI_PATHS = (
-    "scripts", "deployer_products.py", "domain_proxy.py", "proxy_maintenance.py",
-    "vps_resources.py", ".github/scripts/check_python.py", ".github/scripts/check_repository.py",
+    "scripts", ".github/scripts/check_python.py", ".github/scripts/check_repository.py",
     ".github/scripts/source_release.py",
     *(f"tests/{name}" for name in CLI_TESTS),
     "tests/test_lan_gateway_docker.py",
@@ -26,7 +25,7 @@ def source_paths(scope: str) -> tuple[str, ...]:
         return CLI_PATHS
     return (
         *(path.name for path in sorted(ROOT.glob("*.py"))),
-        ".github/scripts", "payload_clouddrive2/app", "scripts", "tests", "legacy",
+        ".github/scripts", "payload_clouddrive2/app", "scripts", "tests",
     )
 
 

@@ -18,9 +18,9 @@ import urllib.request
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from deployer_products import PRODUCTS, ProductProfile
-from domain_proxy import NGINX_IMAGE
 from scripts import vps_installer as vps
+from scripts.lib.deployer_products import PRODUCTS, ProductProfile
+from scripts.lib.domain_proxy import NGINX_IMAGE
 from scripts.vps_runtime import LocalSession, SafeLog, edition_lock
 
 LAN_ROOT = Path("/opt/tg2cloud-lan")

@@ -13,10 +13,10 @@ import unittest
 from contextlib import nullcontext
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
-from domain_proxy import (
+from scripts.lib.deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
+from scripts.lib.domain_proxy import (
     _CERTIFICATE_CHECK_SCRIPT,
     CERTBOT_IMAGE,
     NGINX_IMAGE,
@@ -48,7 +48,6 @@ from domain_proxy import (
     validate_email,
     verification_statuses,
 )
-from legacy.desktop import installer as installer_module
 
 
 class DomainValidationTests(unittest.TestCase):
@@ -869,36 +868,7 @@ class GeneratedArtifactTests(unittest.TestCase):
 
 
 class RegressionBoundaryTests(unittest.TestCase):
-    def test_ssh_tunnel_implementation_remains_present(self) -> None:
-        source = (Path(__file__).resolve().parents[1] / "legacy/desktop/installer.py").read_text(encoding="utf-8")
-        self.assertIn("def open_clouddrive(self, values:", source)
-        self.assertIn("self._tunnel_factory(", source)
 
-    def test_normal_workbench_requires_https_and_hides_tunnel_button(self) -> None:
-        source = (Path(__file__).resolve().parents[1] / "legacy/desktop/installer.py").read_text(
-            encoding="utf-8"
-        )
-        actions = source.split("        def _actions_card(self)", 1)[1].split(
-            "        def show_domain_access(self)", 1
-        )[0]
-        self.assertIn('(\"domain_access\", \"shield\", \"Primary\"', actions)
-        self.assertNotIn('(\"open_clouddrive\",', actions)
-        self.assertIn("必需：证书和 HTTPS 自检通过后部署才算完成", actions)
-
-    def test_external_clouddrive_webdav_does_not_require_local_https(self) -> None:
-        backend = installer_module.InstallerBackend(
-            log=Mock(),
-            confirm_host_key=Mock(return_value=True),
-            publish_resources=Mock(),
-            product=CLOUDDRIVE2_PRODUCT,
-        )
-        values = installer_module.defaults_for(CLOUDDRIVE2_PRODUCT)
-        values["deploy_clouddrive2"] = "false"
-
-        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
-            backend._require_healthy_https(Mock(), values)
-
-        proxy_manager.assert_not_called()
 
     def test_internal_webdav_bindings_remain_loopback_only(self) -> None:
         root = Path(__file__).resolve().parents[1]
@@ -918,55 +888,6 @@ class RegressionBoundaryTests(unittest.TestCase):
         self.assertNotIn("PRIVATE KEY", rendered)
         self.assertNotIn("password", rendered.lower())
         self.assertNotIn("ops@example.com", rendered)
-
-
-@unittest.skipUnless(
-    hasattr(installer_module, "DomainAccessDialog"),
-    "PySide6 Qt runtime is unavailable",
-)
-class QtLayoutTests(unittest.TestCase):
-    def test_both_domain_dialogs_fit_at_supported_scale_factors(self) -> None:
-        root = Path(__file__).resolve().parents[1]
-        program = r"""
-import sys
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
-from legacy.desktop.installer import DomainAccessDialog, InstallerWindow, make_app
-
-app = make_app()
-product = OPENLIST_PRODUCT if sys.argv[1] == "openlist" else CLOUDDRIVE2_PRODUCT
-window = InstallerWindow(preview=True, product=product)
-window.backend = object()
-dialog = DomainAccessDialog(window)
-dialog.show()
-app.processEvents()
-hint = dialog.layout().minimumSize()
-assert hint.width() <= dialog.width(), (hint.width(), dialog.width())
-assert hint.height() <= dialog.height(), (hint.height(), dialog.height())
-assert not dialog.buttons["proxy_configure"].text().endswith("…")
-assert dialog.domain_edit.isVisible()
-assert dialog.email_edit.isVisible()
-assert dialog.status_text.objectName() == "DomainStatus"
-assert dialog.status_text.isReadOnly()
-assert dialog.status_text.height() == 112
-dialog.close()
-window.close()
-"""
-        for scale in ("1", "1.25", "1.5"):
-            for edition in ("clouddrive2", "openlist"):
-                with self.subTest(scale=scale, edition=edition):
-                    environment = dict(os.environ)
-                    environment["QT_QPA_PLATFORM"] = "offscreen"
-                    environment["QT_SCALE_FACTOR"] = scale
-                    result = subprocess.run(
-                        [sys.executable, "-c", program, edition],
-                        cwd=root,
-                        env=environment,
-                        capture_output=True,
-                        text=True,
-                        timeout=30,
-                        check=False,
-                    )
-                    self.assertEqual(result.returncode, 0, result.stderr)
 
 
 if __name__ == "__main__":

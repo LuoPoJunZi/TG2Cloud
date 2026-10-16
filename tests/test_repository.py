@@ -40,9 +40,9 @@ class PythonCheckEntryTests(unittest.TestCase):
 
     def test_compile_scope_covers_formal_python_but_not_generated_trees(self):
         paths = checks.source_paths("all")
-        for path in ("legacy", "deployer_products.py", ".github/scripts", "payload_clouddrive2/app", "scripts", "tests"):
+        for path in (".github/scripts", "payload_clouddrive2/app", "scripts", "tests"):
             self.assertIn(path, paths)
-        for path in ("build", "dist", ".venv", "website"):
+        for path in ("build", "dist", ".venv", "website", "legacy"):
             self.assertNotIn(path, paths)
         command = checks.commands("compile", "cli")[0]
         self.assertEqual(command[6:], list(checks.CLI_PATHS))
@@ -74,13 +74,17 @@ class PythonCheckEntryTests(unittest.TestCase):
 
 
 class RepositoryContractTests(unittest.TestCase):
-    def test_desktop_sources_are_archived_without_root_duplicates(self):
+    def test_public_sources_are_script_only_without_root_duplicates(self):
         for name in ("installer.py", "installer_clouddrive2.py", "installer_openlist.py",
                      "operation_feedback.py", "build.ps1", "requirements-build.txt"):
             with self.subTest(name=name):
                 self.assertFalse((ROOT / name).exists())
-                self.assertTrue((ROOT / "legacy/desktop" / name).is_file())
-        code = "import sys; from scripts import vps_installer, lan_installer; assert 'legacy.desktop.installer' not in sys.modules; assert 'PySide6' not in sys.modules"
+        files = repository.public_files(ROOT)
+        self.assertFalse(any(name.startswith("legacy/") for name in files))
+        for name in ("deployer_products.py", "domain_proxy.py", "proxy_maintenance.py", "vps_resources.py"):
+            self.assertFalse((ROOT / name).exists())
+            self.assertIn("scripts/lib/" + name, files)
+        code = "import sys; from scripts import vps_installer, lan_installer, uninstaller; assert not any(name.split('.')[0] in {'legacy', 'PySide6', 'paramiko'} for name in sys.modules)"
         result = subprocess.run([sys.executable, "-B", "-c", code], cwd=ROOT, capture_output=True,
                                 text=True, timeout=15, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -175,14 +179,16 @@ class PublicFileTests(unittest.TestCase):
             "tasks.db", "tasks.sqlite3", "tasks.sqlite-wal", "tasks.sqlite3-shm", "run.log",
             ".coverage.host.123", "coverage.xml", "draft.tmp", "draft.bak", "Thumbs.db",
             "../outside.md", "/outside.md", "C:/local.md", "docs\\local.md",
+            "legacy/desktop/installer.py", "legacy/desktop/tests/test_core.py",
+            "installer.py", "build.ps1", "requirements-build.txt",
         ):
             with self.subTest(name=name):
                 self.assertIsNotNone(repository.forbidden_reason(name))
 
     def test_public_sources_resources_and_example_config_are_allowed(self):
         for name in (
-            "installer.py", "install.sh", "tests/test_repository.py", ".github/workflows/release.yml",
-            "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt", "assets/brand/tg2cloud.ico",
+            "scripts/lib/deployer_products.py", "install.sh", "tests/test_repository.py", ".github/workflows/release.yml",
+            ".github/CONTRIBUTING.md", ".github/SECURITY.md", "assets/brand/tg2cloud.ico",
             "website/public/favicon.ico", "docs/填写信息清单.md", "docs/development/BRAND-GUIDE.md",
             "docs/development/DOMAIN-HTTPS-ACCEPTANCE.md", "LICENSE", "payload_clouddrive2/.env.example",
         ):
@@ -238,13 +244,13 @@ class RepositoryGuardrailTests(unittest.TestCase):
     def build_fixture(self):
         for name in repository.BUILD_FILES:
             self.put(name)
-        self.put("deployer_products.py", 'FILES = ("payload_clouddrive2/app/bot.py", "payload_openlist/compose.yaml")\n')
+        self.put("scripts/lib/deployer_products.py", 'FILES = ("payload_clouddrive2/app/bot.py", "payload_openlist/compose.yaml")\n')
         self.put("payload_clouddrive2/app/bot.py")
         self.put("payload_openlist/compose.yaml")
         return list(repository.BUILD_FILES) + sorted(repository.payload_files(self.root))
 
     def test_payload_inspection_collects_both_editions_without_execution(self):
-        self.put("deployer_products.py", 'raise RuntimeError("must not execute")\n'
+        self.put("scripts/lib/deployer_products.py", 'raise RuntimeError("must not execute")\n'
                  'FILES = ("payload_clouddrive2/app/bot.py", "payload_openlist/compose.yaml", "README.md")\n')
         self.assertEqual(repository.payload_files(self.root), {
             "payload_clouddrive2/app/bot.py", "payload_openlist/compose.yaml",
@@ -263,19 +269,19 @@ class RepositoryGuardrailTests(unittest.TestCase):
 
     def test_directory_cannot_replace_build_file(self):
         files = self.build_fixture()
-        path = self.root / "legacy/desktop/build.ps1"
+        path = self.root / "install.sh"
         path.unlink()
         path.mkdir()
-        self.assertTrue(any("build.ps1: required build input missing" in error
+        self.assertTrue(any("install.sh: required build input missing" in error
                             for error in repository.check_build_inputs(self.root, files)))
 
     def test_missing_edition_or_invalid_manifest_fails_without_echoing_code(self):
         files = self.build_fixture()
         for text in ('FILES = ("payload_clouddrive2/app/bot.py",)\n', 'invalid syntax PRIVATE_MARKER !\n'):
             with self.subTest(text=text):
-                self.put("deployer_products.py", text)
+                self.put("scripts/lib/deployer_products.py", text)
                 errors = repository.check_build_inputs(self.root, files)
-                self.assertIn("deployer_products.py: cannot inspect both payload manifests", errors)
+                self.assertIn("scripts/lib/deployer_products.py: cannot inspect both payload manifests", errors)
                 self.assertNotIn("PRIVATE_MARKER", " ".join(errors))
 
     def test_document_index_resolves_chinese_spaces_and_encoded_paths(self):

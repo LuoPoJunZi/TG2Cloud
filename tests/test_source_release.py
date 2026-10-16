@@ -78,14 +78,14 @@ class SourceReleaseTests(unittest.TestCase):
             self.build()
 
     def test_uncommitted_source_is_rejected(self):
-        with (self.root / "vps_resources.py").open("a", encoding="utf-8") as writer:
+        with (self.root / "scripts/lib/vps_resources.py").open("a", encoding="utf-8") as writer:
             writer.write("\n# changed\n")
         with self.assertRaisesRegex(ValueError, "committed"):
             self.build()
         self.assertFalse(self.output.exists())
 
     def test_old_online_helper_pin_blocks_release(self):
-        with (self.root / "vps_resources.py").open("a", encoding="utf-8") as writer:
+        with (self.root / "scripts/lib/vps_resources.py").open("a", encoding="utf-8") as writer:
             writer.write("\n# changed helper\n")
         self.commit()
         commit = package.git(self.root, "rev-parse", "HEAD").decode().strip()
@@ -117,20 +117,23 @@ class SourceReleaseTests(unittest.TestCase):
         self.build()
         path = self.output / package.artifact_name(self.tag)
         original = path.read_bytes()
-        for unsafe in (False, True):
-            with self.subTest(unsafe=unsafe):
+        for case in ("missing", "unsafe", "desktop"):
+            with self.subTest(case=case):
                 result = io.BytesIO()
                 with tarfile.open(fileobj=io.BytesIO(original), mode="r:gz") as source, tarfile.open(fileobj=result, mode="w:gz") as dest:
                     for member in source:
-                        if member.name.endswith("/app/rclone_client.py"):
+                        if case != "desktop" and member.name.endswith("/app/rclone_client.py"):
                             continue
                         dest.addfile(member, source.extractfile(member) if member.isfile() else None)
-                    if unsafe:
+                    if case == "unsafe":
                         member = tarfile.TarInfo(f"TG2Cloud-{self.tag}/../../outside")
+                        dest.addfile(member, io.BytesIO())
+                    if case == "desktop":
+                        member = tarfile.TarInfo(f"TG2Cloud-{self.tag}/legacy/desktop/installer.py")
                         dest.addfile(member, io.BytesIO())
                 path.write_bytes(result.getvalue())
                 (self.output / "SHA256SUMS.txt").write_text(hashlib.sha256(result.getvalue()).hexdigest() + "  " + path.name + "\n", encoding="ascii")
-                with self.assertRaisesRegex(ValueError, "unsafe|missing Edition"):
+                with self.assertRaisesRegex(ValueError, "unsafe|missing Edition|build output"):
                     package.verify(self.output, self.tag)
 
 

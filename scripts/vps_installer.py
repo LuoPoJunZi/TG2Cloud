@@ -25,15 +25,14 @@ from dataclasses import dataclass, field
 from pathlib import Path, PurePosixPath
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from deployer_products import PRODUCTS, ProductProfile
-from domain_proxy import (
+from scripts.lib.deployer_products import PRODUCTS, ProductProfile
+from scripts.lib.domain_proxy import (
     DomainProxyManager,
     dns_matches_environment,
     validate_domain,
     validate_email,
 )
-from scripts.vps_runtime import LocalSession, SafeLog, edition_lock
-from vps_resources import (
+from scripts.lib.vps_resources import (
     GIB,
     assess_storage_choice,
     build_probe_command,
@@ -41,6 +40,7 @@ from vps_resources import (
     recommend_storage,
     validate_install_dir,
 )
+from scripts.vps_runtime import LocalSession, SafeLog, edition_lock
 
 API = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 TAG = re.compile(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")

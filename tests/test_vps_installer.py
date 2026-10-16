@@ -21,11 +21,11 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from deployer_products import PRODUCTS
-from domain_proxy import ProxyEnvironment, ProxyReport
 from scripts import vps_installer as cli
+from scripts.lib.deployer_products import PRODUCTS
+from scripts.lib.domain_proxy import ProxyEnvironment, ProxyReport
+from scripts.lib.vps_resources import StorageAssessment
 from scripts.vps_runtime import LocalFiles, LocalSession, SafeLog, edition_lock
-from vps_resources import StorageAssessment
 
 ROOT = Path(__file__).resolve().parents[1]
 _major, _minor, _patch = cli.version_tuple(PRODUCTS["clouddrive2"].app_version)
@@ -339,7 +339,8 @@ class StandaloneBootstrapTests(unittest.TestCase):
             name = url.removeprefix(prefix)
             self.assertIn(name, {
                 "scripts/__init__.py", "scripts/vps_runtime.py", "scripts/vps_installer.py",
-                "deployer_products.py", "domain_proxy.py", "vps_resources.py", "proxy_maintenance.py",
+                "scripts/lib/deployer_products.py", "scripts/lib/domain_proxy.py", "scripts/lib/vps_resources.py", "scripts/lib/proxy_maintenance.py",
+                "scripts/lib/__init__.py",
                 "payload_clouddrive2/app/__init__.py", "payload_clouddrive2/app/version.py",
             })
             if missing_helper:
@@ -377,7 +378,7 @@ class StandaloneBootstrapTests(unittest.TestCase):
             })
             if os.name == "posix":
                 self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
-            self.assertEqual(len(self.urls), 11)
+            self.assertEqual(len(self.urls), 12)
             self.assertFalse(any("/main/" in url or "/heads/" in url for url in self.urls))
 
     def test_rc_draft_bad_tag_and_commit_stop_before_helpers(self):
@@ -643,24 +644,12 @@ class ConfigPayloadTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as private, self.assertRaises(ValueError):
             cli.payload_sources(Path(private), PRODUCTS["openlist"])
 
-    def test_config_matches_existing_gui_without_importing_qt(self):
-        tree = ast.parse((ROOT / "legacy/desktop/installer.py").read_text(encoding="utf-8"))
-        function = next(node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == "_build_config")
-        namespace = {"b64": cli.encoded}
-        module = ast.Module(body=[function], type_ignores=[])
-        exec(compile(ast.fix_missing_locations(module), "<existing-config-contract>", "exec"), namespace)  # noqa: S102 - trusted repository AST, no external input
-        gui_values = {
-            "telegram_api_id": VALUES["api_id"], "telegram_api_hash": VALUES["api_hash"],
-            "bot_token": VALUES["bot_token"], "allowed_user_id": VALUES["user_id"],
-            "cd2_username": VALUES["webdav_user"], "cd2_password": VALUES["webdav_password"],
-            "cd2_target": VALUES["target"], "local_budget_gb": VALUES["budget"],
-            "min_free_disk_gb": VALUES["reserve"], "timezone": VALUES["timezone"],
-            "deploy_clouddrive2": "true", "openlist_admin_password": VALUES["admin_password"],
-        }
+    def test_config_matches_saved_environment_contract_without_desktop(self):
+        fixture = json.loads((ROOT / "tests/fixtures/deployment-config.json").read_text(encoding="utf-8"))
+        self.assertEqual(VALUES, fixture["values"])
         for product in PRODUCTS.values():
-            fake = SimpleNamespace(product=product, _effective_webdav_url=lambda _values, product=product: product.webdav_url)
-            expected = cli.parse_config(namespace["_build_config"](fake, gui_values).encode())
-            self.assertEqual(cli.new_config(product, VALUES), expected)
+            with self.subTest(edition=product.key):
+                self.assertEqual(cli.new_config(product, VALUES), fixture["expected"][product.key])
 
     def test_shell_characters_in_password_stay_encoded(self):
         config = cli.new_config(PRODUCTS["openlist"], VALUES)
@@ -1156,9 +1145,11 @@ export -f python3
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("--configure-https", result.stdout)
 
-    def test_existing_build_has_no_cli_dependency(self):
-        for name in ("installer.py", "build.ps1", "installer_clouddrive2.py", "installer_openlist.py"):
-            self.assertNotIn("scripts.vps_installer", (ROOT / "legacy/desktop" / name).read_text(encoding="utf-8"))
+    def test_cli_does_not_import_desktop_dependencies(self):
+        source = (ROOT / "scripts/vps_installer.py").read_text(encoding="utf-8")
+        for module in ("legacy", "PySide6", "paramiko"):
+            self.assertNotIn(module, [node.name for node in ast.walk(ast.parse(source))
+                                     if isinstance(node, ast.alias)])
 
     def test_bootstrap_python_is_syntactically_valid(self):
         content = (ROOT / "install.sh").read_text(encoding="utf-8")

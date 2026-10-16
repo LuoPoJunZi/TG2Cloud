@@ -1,3 +1,5 @@
+"""VPS resource probes, storage recommendations and capacity safeguards."""
+
 from __future__ import annotations
 
 import math

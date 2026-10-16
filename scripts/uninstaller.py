@@ -14,8 +14,9 @@ from contextlib import ExitStack
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from deployer_products import PRODUCTS, ProductProfile
-from domain_proxy import (
+from scripts import vps_installer as vps
+from scripts.lib.deployer_products import PRODUCTS, ProductProfile
+from scripts.lib.domain_proxy import (
     PROXY_CERTBOT_CONTAINER,
     PROXY_NGINX_CONTAINER,
     PROXY_ROOT,
@@ -25,9 +26,8 @@ from domain_proxy import (
     normalize_state,
     proxy_lock_command,
 )
-from proxy_maintenance import ARCHIVE_NAME
-from proxy_maintenance import BACKUP_ROOT as PROXY_BACKUP_ROOT
-from scripts import vps_installer as vps
+from scripts.lib.proxy_maintenance import ARCHIVE_NAME
+from scripts.lib.proxy_maintenance import BACKUP_ROOT as PROXY_BACKUP_ROOT
 from scripts.vps_runtime import LocalSession, SafeLog, edition_lock
 
 LAN_ROOT = Path("/opt/tg2cloud-lan")

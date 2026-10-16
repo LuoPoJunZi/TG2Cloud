@@ -1,4 +1,4 @@
-"""Immutable product definitions shared by the two PySide6 deployer entries."""
+"""Immutable Edition identities and payload manifests for Linux deployment."""
 
 from __future__ import annotations
 
