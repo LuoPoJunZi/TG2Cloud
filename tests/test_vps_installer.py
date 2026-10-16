@@ -644,7 +644,7 @@ class ConfigPayloadTests(unittest.TestCase):
             cli.payload_sources(Path(private), PRODUCTS["openlist"])
 
     def test_config_matches_existing_gui_without_importing_qt(self):
-        tree = ast.parse((ROOT / "installer.py").read_text(encoding="utf-8"))
+        tree = ast.parse((ROOT / "legacy/desktop/installer.py").read_text(encoding="utf-8"))
         function = next(node for node in ast.walk(tree) if isinstance(node, ast.FunctionDef) and node.name == "_build_config")
         namespace = {"b64": cli.encoded}
         module = ast.Module(body=[function], type_ignores=[])
@@ -1158,7 +1158,7 @@ export -f python3
 
     def test_existing_build_has_no_cli_dependency(self):
         for name in ("installer.py", "build.ps1", "installer_clouddrive2.py", "installer_openlist.py"):
-            self.assertNotIn("scripts.vps_installer", (ROOT / name).read_text(encoding="utf-8"))
+            self.assertNotIn("scripts.vps_installer", (ROOT / "legacy/desktop" / name).read_text(encoding="utf-8"))
 
     def test_bootstrap_python_is_syntactically_valid(self):
         content = (ROOT / "install.sh").read_text(encoding="utf-8")

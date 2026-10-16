@@ -1,4 +1,4 @@
-"""Small, deterministic presentation helpers; no network or deployment actions."""
+"""Archived desktop presentation helpers; no network or deployment actions."""
 
 from __future__ import annotations
 

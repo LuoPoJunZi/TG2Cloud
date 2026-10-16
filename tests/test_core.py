@@ -35,8 +35,8 @@ from app.rclone_client import RcloneClient, RcloneError
 from app.resources import AdaptiveWindow, ResourceSnapshot
 from app.verify_destination import DestinationVerificationError, verify_destination
 
-import installer as modern_installer
-from installer import (
+from legacy.desktop import installer as modern_installer
+from legacy.desktop.installer import (
     APP_VERSION,
     BRAND_ICON_ASSET,
     BRAND_LOGO_ASSET,
@@ -532,7 +532,7 @@ class InstallerHelpersTests(unittest.TestCase):
     def test_packaged_self_test_rejects_broken_qt(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             result = Path(temp) / "result.txt"
-            with patch("installer.make_app", side_effect=RuntimeError("test-only")):
+            with patch("legacy.desktop.installer.make_app", side_effect=RuntimeError("test-only")):
                 self.assertEqual(packaged_self_test(result), 1)
             self.assertIn("gui_runtime=FAILED", result.read_text(encoding="utf-8"))
 
@@ -552,18 +552,18 @@ class InstallerHelpersTests(unittest.TestCase):
             backup_dialog.buttons = {"proxy_backup_prune": Mock()}
             backup_dialog.buttons["proxy_backup_prune"].isEnabled.return_value = False
             with (
-                patch("installer.make_app", return_value=app),
+                patch("legacy.desktop.installer.make_app", return_value=app),
                 patch(
-                    "installer.InstallerWindow", return_value=window, create=True
+                    "legacy.desktop.installer.InstallerWindow", return_value=window, create=True
                 ) as window_class,
                 patch(
-                    "installer.DomainAccessDialog",
+                    "legacy.desktop.installer.DomainAccessDialog",
                     return_value=domain_dialog,
                     create=True,
                 ) as dialog_class,
-                patch("installer.ProxyBackupDialog", return_value=backup_dialog, create=True) as backup_class,
+                patch("legacy.desktop.installer.ProxyBackupDialog", return_value=backup_dialog, create=True) as backup_class,
                 patch(
-                    "installer.dependency_report",
+                    "legacy.desktop.installer.dependency_report",
                     return_value={
                         "modules": {
                             "PySide6": True,
@@ -2083,7 +2083,7 @@ class PayloadTests(unittest.TestCase):
             self.assertTrue((PAYLOAD / relative).is_file(), relative)
 
     def test_real_verification_command_is_wired_into_installer(self) -> None:
-        installer = (SOURCE / "installer.py").read_text(encoding="utf-8")
+        installer = (SOURCE / "legacy/desktop/installer.py").read_text(encoding="utf-8")
         self.assertIn("python -m app.verify_destination", installer)
         self.assertIn('markers.get("DESTINATION") != "OK"', installer)
         self.assertIn("lookup tg2cloud-clouddrive2", installer)
@@ -2109,7 +2109,7 @@ class PayloadTests(unittest.TestCase):
         self.assertIn("download.docker.com/linux/${ID}", remote_install)
 
     def test_existing_clouddrive_is_migrated_and_hard_checked(self) -> None:
-        installer = (SOURCE / "installer.py").read_text(encoding="utf-8")
+        installer = (SOURCE / "legacy/desktop/installer.py").read_text(encoding="utf-8")
         remote_install = (PAYLOAD / "remote_install.sh").read_text(encoding="utf-8")
         repair = (PAYLOAD / "repair_clouddrive_network.sh").read_text(
             encoding="utf-8"

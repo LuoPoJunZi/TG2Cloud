@@ -185,10 +185,10 @@ class TransferService(CommandMixin):
         messages = sorted({message.id: message for message in messages}.values(), key=lambda item: item.id)
         title = ""
         if len(messages) > 1:
-            for message in messages:
-                title = caption_title(message.raw_text or "", message.entities)
-                if title:
-                    break
+            # Prefer the fuller visible description when an earlier group member
+            # only carries a short category label. Existing tasks remain unchanged.
+            titles = (caption_title(message.raw_text or "", message.entities) for message in messages)
+            title = max(titles, key=len, default="")
         numbers = {"视频": 0, "图片": 0}
         deliveries = []
         for message in messages:

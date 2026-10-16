@@ -1,18 +1,18 @@
 # 仓库结构与维护规范
 
-本仓库主要维护共享 Bot 运行代码、两个 Edition 的 Linux 安装／卸载入口及静态文档站。v1.2.1 历史 PySide6 源码暂留用于兼容回归和恢复；目录标准化不意味着迁移运行代码或改变现有安装路径。
+本仓库主要维护共享 Bot 运行代码、两个 Edition 的 Linux 安装／卸载入口及静态文档站。主分支已把历史 PySide6 文件集中归档至 `legacy/desktop/`，继续保留兼容回归和恢复能力；目录整理不改变现有 VPS 安装路径。已发布 Tag 的目录布局不变。
 
 ## 目录职责
 
 | 路径 | 职责与维护边界 |
 | --- | --- |
-| 根目录 `installer*.py` 与公共 Python 模块 | 两个部署器入口及共享实现；构建、导入和在线向导依赖现有路径，不随意搬入 `src/` |
-| `build.ps1`、`requirements-build.txt` | 历史 Windows 构建入口和兼容测试依赖；EXE 冻结在 v1.2.1 |
+| `legacy/desktop/` | 冻结的 PySide6 入口、界面、展示助手、构建脚本、固定依赖和 Windows 资源；不再占根目录 |
+| 根目录四个共享 Python 模块 | `deployer_products.py`、`domain_proxy.py`、`proxy_maintenance.py`、`vps_resources.py` 仍为 Linux 安装／维护所需，保留原路径 |
 | `install.sh`、`install-lan.sh`、`uninstall.sh` | 公开单行命令入口；下载白名单与不可变源码固定值需经过审查和 CI 验证，不为整理目录而改写 |
 | `scripts/` | 独立 Linux 向导和本机执行适配；不得默认操作真实服务器 |
 | `payload_clouddrive2/` | 共享 Bot 应用和 CloudDrive2 Docker / Shell 资源 |
 | `payload_openlist/` | OpenList 专用运行资源；复用共享 Bot 应用，不复制第二套业务核心 |
-| `packaging/windows/` | v1.2.1 历史 EXE 版本资源，仍用于兼容校验 |
+| `legacy/desktop/packaging/windows/` | v1.2.1 历史 EXE 版本资源，仍用于兼容校验 |
 | `assets/brand/` | 正式品牌资源唯一来源，不自动重绘或覆盖 |
 | `tests/` | 自动回归测试与模拟工具，保留公开 |
 | `.github/workflows/`、`.github/scripts/` | 全仓库 CI、发布与开发检查工具；不在网站子目录再放一套 Workflow |
@@ -20,6 +20,8 @@
 | `website/` | 独立静态文档站，使用自己的 Node 构建与测试，不改变主程序构建方式 |
 
 根目录保留 README、许可证、版本历史、正式入口和必要模块。新增用户文档先加入文档目录；新文档优先使用清楚的英文大写短横线文件名，网站文章沿用现有小写短横线与分类目录。现有中英文文件名不批量重命名，避免破坏链接。
+
+桌面文件的归档说明见 [legacy/desktop/README.md](../../legacy/desktop/README.md)。独立本地恢复 ZIP 与 v1.2.1 历史 Tag 保留；本轮没有删除桌面实现或把本地 ZIP 提交到 Git。
 
 ## 编辑与检查规范
 
@@ -31,7 +33,7 @@
 
 `.github/scripts/check_repository.py` 是只读约束检查，可独立运行，不需要第三方 Python 依赖。它通过 Git 获取已跟踪文件与未被忽略的新文件，检查常见产物 / 缓存 / 私有配置 / 内部记录是否混入候选公共文件集合；已经跟踪的文件不能仅靠 `.gitignore` 消除报错。只在本地忽略的资料不属于候选集合，不会被扫描内容或自动清理。
 
-构建约束保留正式入口、共享模块、Windows 资源及品牌输入，并以 AST 读取 `deployer_products.py` 中两 Edition 的 payload 字面量路径，不导入或执行运行代码。它验证文件存在、是仓库内普通文件且未被排除，但不是所有动态依赖的解析器，也不能代替 `build.ps1` 的实际打包自检。文档约束检查索引中的本地文件链接，并要求每个公开 `docs/` Markdown 文件被索引收录；不检查网页链接是否在线，不自动修改文章或导航。
+输入约束保留正式脚本、共享模块、归档的桌面资源及品牌输入，并以 AST 读取 `deployer_products.py` 中两 Edition 的 payload 字面量路径，不导入或执行运行代码。它验证文件存在、是仓库内普通文件且未被排除，但不是所有动态依赖的解析器，也不能代替真实部署验收。文档约束检查索引中的本地文件链接，并要求每个公开 `docs/` Markdown 文件被索引收录；不检查网页链接是否在线，不自动修改文章或导航。
 
 这些检查需要完整 Git checkout，不能在源码 ZIP 中推断跟踪状态。公共文件 Workflow 对 main 的 Push / PR 全部运行；Release 的 prepare 阶段也在 Linux 验证和源码打包前检查。检查只显示问题路径 / 索引行号及原因，不读取或打印凭据文件内容，不扫描 Git 历史；通过不代表不存在真实 Secret。
 

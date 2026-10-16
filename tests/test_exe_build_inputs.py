@@ -6,7 +6,7 @@ from pathlib import Path
 from unittest.mock import Mock, patch
 
 ROOT = Path(__file__).resolve().parents[1]
-spec = importlib.util.spec_from_file_location("exe_build_inputs", ROOT / ".github/scripts/exe_build_inputs.py")
+spec = importlib.util.spec_from_file_location("exe_build_inputs", ROOT / "legacy/desktop/exe_build_inputs.py")
 inputs = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(inputs)
 
@@ -16,7 +16,7 @@ class ExeBuildInputTests(unittest.TestCase):
         paths = ["install.sh", "scripts/vps_installer.py", "scripts/vps_runtime.py", "README.md",
                  "README_EN.md", "docs/VPS-INSTALL.md", "tests/test_vps_installer.py",
                  "tests/test_exe_build_inputs.py", ".github/workflows/vps-installer.yml",
-                 ".github/workflows/tests.yml", ".github/scripts/exe_build_inputs.py",
+                 ".github/workflows/tests.yml", "legacy/desktop/exe_build_inputs.py",
                  ".editorconfig", ".ruff.toml", ".github/scripts/check_python.py",
                  "docs/README.md", "docs/development/REPOSITORY.md", "tests/test_repository.py",
                  ".gitignore", ".github/scripts/check_repository.py", ".github/workflows/repository.yml"]

@@ -710,12 +710,12 @@ export -f python3
                     self.assertEqual((fixture / "cli-args").read_text().splitlines(), ["-B", "-m", "scripts.lan_installer", "--edition", "clouddrive2", "--lan-ip", IP, "--check"])
 
     def test_exe_inputs_are_unaffected_by_lan_sources_and_tests(self):
-        spec = importlib.util.spec_from_file_location("exe_inputs_fixture", ROOT / ".github/scripts/exe_build_inputs.py")
+        spec = importlib.util.spec_from_file_location("exe_inputs_fixture", ROOT / "legacy/desktop/exe_build_inputs.py")
         module = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(module)
         self.assertFalse(module.requires_build(["install-lan.sh", "scripts/lan_installer.py", "tests/test_lan_installer.py", "docs/LAN-INSTALL.md"]))
         for name in ("installer.py", "installer_clouddrive2.py", "installer_openlist.py", "build.ps1"):
-            self.assertNotIn("scripts.lan_installer", (ROOT / name).read_text(encoding="utf-8"))
+            self.assertNotIn("scripts.lan_installer", (ROOT / "legacy/desktop" / name).read_text(encoding="utf-8"))
 
     def test_help_and_shell_syntax_do_not_require_qt_root_or_docker(self):
         result = subprocess.run([sys.executable, "-B", "-m", "scripts.lan_installer", "--help"], cwd=ROOT,

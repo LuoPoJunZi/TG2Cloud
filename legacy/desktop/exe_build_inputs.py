@@ -1,4 +1,4 @@
-"""Skip branch-only EXE builds when their inputs did not change (stdlib only)."""
+"""Archived EXE input classifier; current workflows do not build EXEs."""
 
 from __future__ import annotations
 

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """TG2Cloud desktop deployer using a single-file PySide6 interface.
 
-Keep ``vps_resources.py`` and both product payload directories beside this file, install the
-versions pinned in ``requirements-build.txt``, then run ``python installer.py``.
+Run from the repository root with ``python -m legacy.desktop.installer``.
+Desktop build dependencies are archived in ``legacy/desktop/requirements-build.txt``.
 Local diagnostics and preview commands do not connect to a VPS::
 
     python installer.py --preview
@@ -63,7 +63,8 @@ from domain_proxy import (
     validate_domain,
     validate_email,
 )
-from operation_feedback import STAGES, failure_details, stage_from_log, version_summary
+
+from .operation_feedback import STAGES, failure_details, stage_from_log, version_summary
 
 # ============================================================================
 # 1. Constants, original configuration fields and payload manifest
@@ -139,7 +140,7 @@ OPENLIST_ADMIN_SECRET_FIELD = SECRET_FIELDS[-1]
 
 def resource_path(name: str) -> Path:
     # Resolve relative to THIS file (or the frozen bundle), not the working directory.
-    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    base = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parents[2]))
     return base / name
 
 

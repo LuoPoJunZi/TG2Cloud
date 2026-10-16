@@ -5,6 +5,6 @@ extend-exclude = ["website"]
 
 # Frozen Windows entry points are launched with Python and need no Unix exec bit.
 [lint.per-file-ignores]
-"installer.py" = ["EXE001"]
-"installer_clouddrive2.py" = ["EXE001"]
-"installer_openlist.py" = ["EXE001"]
+"legacy/desktop/installer.py" = ["EXE001"]
+"legacy/desktop/installer_clouddrive2.py" = ["EXE001"]
+"legacy/desktop/installer_openlist.py" = ["EXE001"]

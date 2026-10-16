@@ -17,11 +17,39 @@ from telethon.tl.types import MessageEntityHashtag, MessageEntityTextUrl
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "payload_clouddrive2"))
 from app.db import TaskDB
-from app.naming import album_file_name, video_file_name
+from app.naming import album_file_name, caption_title, video_file_name
 from test_scenarios import make_service, make_settings
 
 
 class VideoNameTests(unittest.TestCase):
+    def test_promotional_filename_uses_substantive_caption_without_contact_or_tags(self):
+        original = "精选资源关注TG频道@sample_G01_S01.mp4"
+        description = "青海湖环线自驾实拍，沿途记录清晨湖岸和高原天气，完整路线与补给点介绍"
+        caption = f"资源分享\n\n🏕️“{description}”\n\n#旅行 #户外 @sample_channel\n关注频道获取更多 https://example.test"
+        self.assertEqual(video_file_name(original, caption, "f.mp4"), description.replace("，", ",") + ".mp4")
+        for text in ("", "#旅行 @sample_channel https://example.test", "关注频道 @sample_channel"):
+            self.assertEqual(video_file_name(original, text, "f.mp4"), original)
+
+    def test_long_description_and_wrapped_prose_are_preferred_over_short_heading(self):
+        caption = "本期推荐\n\n视频说明：青海湖环线自驾实拍，沿途记录清晨湖岸\n以及高原天气变化和路线补给点。\n\n大小：377MB\n#旅行"
+        self.assertEqual(caption_title(caption), "青海湖环线自驾实拍,沿途记录清晨湖岸 以及高原天气变化和路线补给点。")
+        self.assertEqual(caption_title(caption.replace("本期推荐\n\n", "本期推荐\n")), caption_title(caption))
+        self.assertEqual(caption_title("标题：指定短标题\n\n这是一段很长的补充背景说明，不应覆盖明确指定的标题"), "指定短标题")
+        for original in ("青海湖2026实拍.mp4", "频道管理教程 @example.mp4"):
+            self.assertEqual(video_file_name(original, caption, "f.mp4"), original)
+
+    def test_telegram_quote_prefers_description_and_keeps_hidden_link_labels_masked(self):
+        description = "青海湖环线自驾实拍，清晨湖岸与沿途补给点完整记录"
+        caption = "😀 本期推荐\n不可信入口\n" + description + "\n#旅行 @sample_channel"
+        offset = lambda index: len(caption[:index].encode("utf-16-le")) // 2
+        link_start = caption.index("不可信入口")
+        quote_end = caption.index("\n#旅行")
+        entities = [
+            types.MessageEntityBlockquote(offset=offset(link_start), length=offset(quote_end) - offset(link_start)),
+            MessageEntityTextUrl(offset=offset(link_start), length=5, url="https://example.test"),
+        ]
+        self.assertEqual(video_file_name("123.mp4", caption, "f.mp4", entities), description.replace("，", ",") + ".mp4")
+
     def test_caption_filters_noise_but_preserves_episode_numbers(self):
         cases = [
             ("https://example.test/x\n#课程 #视频\n标题：家庭 NAS 部署 第01集", "家庭 NAS 部署 第01集.mp4"),
@@ -103,6 +131,26 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.db.get(1)["original_file_name"], "原本有意义的视频.mp4")
         for message in (video, photo, second):
             message.reply.assert_awaited_once()
+
+    async def test_album_prefers_full_description_over_an_earlier_category(self):
+        photo = self.album_message(1, "photo", "旅行实拍")
+        description = "青海湖环线自驾实拍，清晨湖岸与沿途补给点完整记录"
+        video = self.album_message(2, "video", description, name="精选资源关注频道@sample.mp4")
+        await self.service._on_album(self.album_event([photo, video]))
+        self.assertEqual(self.db.get(1)["file_name"], description.replace("，", ",") + "-图片01.jpg")
+        self.assertEqual(self.db.get(2)["file_name"], description.replace("，", ",") + "-视频01.mp4")
+
+    async def test_single_promotional_video_preserves_original_name_and_existing_task(self):
+        original = "精选资源关注TG频道@sample_G01_S01.mp4"
+        description = "青海湖环线自驾实拍，清晨湖岸与沿途补给点完整记录"
+        video = self.album_message(1, "video", description, group=None, name=original)
+        await self.service._on_message(self.single_event(video))
+        self.assertEqual(self.db.get(1)["file_name"], description.replace("，", ",") + ".mp4")
+        self.assertEqual(self.db.get(1)["original_file_name"], original)
+        video.raw_text = "另一次转发的说明不能修改已经接收的任务"
+        await self.service._on_message(self.single_event(video))
+        self.assertEqual(self.db.get(1)["file_name"], description.replace("，", ",") + ".mp4")
+        self.assertEqual(len(self.db.list_recent()), 1)
 
     async def test_real_telethon_album_photo_caption_and_video_properties(self):
         stamp = datetime(2026, 10, 14, tzinfo=timezone.utc)

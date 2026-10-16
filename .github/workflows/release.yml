@@ -105,7 +105,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y shellcheck rclone
-          python -m pip install -r requirements-build.txt -r payload_clouddrive2/requirements.txt ruff==0.16.0 bandit==1.9.4 pip-audit==2.10.1
+          desktop_requirements=legacy/desktop/requirements-build.txt
+          if [[ ! -f "${desktop_requirements}" ]]; then desktop_requirements=requirements-build.txt; fi
+          python -m pip install -r "${desktop_requirements}" -r payload_clouddrive2/requirements.txt ruff==0.16.0 bandit==1.9.4 pip-audit==2.10.1
 
       - name: ShellCheck
         run: |

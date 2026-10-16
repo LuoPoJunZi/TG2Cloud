@@ -17,9 +17,9 @@ sys.path.insert(0, str(PAYLOAD))
 
 from app.config import Settings
 
-import installer
 from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT, RELEASE_VERSION
-from installer import (
+from legacy.desktop import installer
+from legacy.desktop.installer import (
     InstallerBackend,
     OperationError,
     OperationResult,
@@ -208,7 +208,7 @@ class OpenListProductTests(unittest.TestCase):
                 "下一步配置 HTTPS。",
                 https_required=True,
             )
-            with patch("installer.QMessageBox.information"):
+            with patch("legacy.desktop.installer.QMessageBox.information"):
                 window._operation_success("deploy", result)
 
             self.assertEqual(window.status.text(), "待配置 HTTPS")
@@ -267,7 +267,7 @@ TG115_WEBDAV_AUTH=FAILED
         ]
         backend = self.backend(session_factory=Mock(return_value=session))
 
-        with patch("installer.DomainProxyManager") as proxy_manager:
+        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
             proxy_manager.return_value.status.return_value = Mock(
                 state="healthy", statuses=(), domain="ol.example.com"
             )
@@ -284,7 +284,7 @@ TG115_WEBDAV_AUTH=FAILED
         session = Mock()
         backend = self.backend(session_factory=Mock(return_value=session))
 
-        with patch("installer.DomainProxyManager") as proxy_manager:
+        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
             proxy_manager.return_value.status.return_value = Mock(
                 state="not_configured", statuses=(), domain=""
             )
@@ -310,7 +310,7 @@ TG115_WEBDAV_AUTH=FAILED
         ]
         backend = self.backend(session_factory=Mock(return_value=session))
 
-        with patch("installer.DomainProxyManager") as proxy_manager:
+        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
             proxy_manager.return_value.status.return_value = Mock(
                 state="healthy", statuses=(), domain="ol.example.com"
             )
@@ -333,7 +333,7 @@ TG115_WEBDAV_AUTH=FAILED
             )),
         ]
         backend = self.backend(session_factory=Mock(return_value=session))
-        with patch("installer.DomainProxyManager") as proxy_manager:
+        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
             proxy_manager.return_value.status.return_value = Mock(
                 state="healthy", statuses=(), domain="ol.example.com"
             )

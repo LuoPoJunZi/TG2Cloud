@@ -40,7 +40,7 @@ class PythonCheckEntryTests(unittest.TestCase):
 
     def test_compile_scope_covers_formal_python_but_not_generated_trees(self):
         paths = checks.source_paths("all")
-        for path in ("installer.py", "deployer_products.py", ".github/scripts", "payload_clouddrive2/app", "scripts", "tests"):
+        for path in ("legacy", "deployer_products.py", ".github/scripts", "payload_clouddrive2/app", "scripts", "tests"):
             self.assertIn(path, paths)
         for path in ("build", "dist", ".venv", "website"):
             self.assertNotIn(path, paths)
@@ -74,6 +74,17 @@ class PythonCheckEntryTests(unittest.TestCase):
 
 
 class RepositoryContractTests(unittest.TestCase):
+    def test_desktop_sources_are_archived_without_root_duplicates(self):
+        for name in ("installer.py", "installer_clouddrive2.py", "installer_openlist.py",
+                     "operation_feedback.py", "build.ps1", "requirements-build.txt"):
+            with self.subTest(name=name):
+                self.assertFalse((ROOT / name).exists())
+                self.assertTrue((ROOT / "legacy/desktop" / name).is_file())
+        code = "import sys; from scripts import vps_installer, lan_installer; assert 'legacy.desktop.installer' not in sys.modules; assert 'PySide6' not in sys.modules"
+        result = subprocess.run([sys.executable, "-B", "-c", code], cwd=ROOT, capture_output=True,
+                                text=True, timeout=15, check=False)
+        self.assertEqual(result.returncode, 0, result.stderr)
+
     def test_document_index_links_exist_and_stay_within_repository(self):
         index = ROOT / "docs/README.md"
         links = re.findall(r"\]\(([^)]+)\)", index.read_text(encoding="utf-8"))
@@ -171,7 +182,7 @@ class PublicFileTests(unittest.TestCase):
     def test_public_sources_resources_and_example_config_are_allowed(self):
         for name in (
             "installer.py", "install.sh", "tests/test_repository.py", ".github/workflows/release.yml",
-            "packaging/windows/TG2Cloud-OpenList.version.txt", "assets/brand/tg2cloud.ico",
+            "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt", "assets/brand/tg2cloud.ico",
             "website/public/favicon.ico", "docs/填写信息清单.md", "docs/development/BRAND-GUIDE.md",
             "docs/development/DOMAIN-HTTPS-ACCEPTANCE.md", "LICENSE", "payload_clouddrive2/.env.example",
         ):
@@ -252,7 +263,7 @@ class RepositoryGuardrailTests(unittest.TestCase):
 
     def test_directory_cannot_replace_build_file(self):
         files = self.build_fixture()
-        path = self.root / "build.ps1"
+        path = self.root / "legacy/desktop/build.ps1"
         path.unlink()
         path.mkdir()
         self.assertTrue(any("build.ps1: required build input missing" in error

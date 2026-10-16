@@ -26,7 +26,7 @@ def source_paths(scope: str) -> tuple[str, ...]:
         return CLI_PATHS
     return (
         *(path.name for path in sorted(ROOT.glob("*.py"))),
-        ".github/scripts", "payload_clouddrive2/app", "scripts", "tests",
+        ".github/scripts", "payload_clouddrive2/app", "scripts", "tests", "legacy",
     )
 
 

@@ -15,22 +15,24 @@ git rev-parse HEAD
 
 ## 关键目录与入口
 
+下表为主分支整理后的结构。已发布 v1.3.0 Tag 仍使用原根目录桌面布局；本页的标签复现命令对应那个历史布局。main 的完整回归依赖改用 `legacy/desktop/requirements-build.txt`，不要把两种 checkout 的路径混用。
+
 | 路径 | 用途 |
 | --- | --- |
-| `installer.py` | 共享部署器界面与逻辑 |
-| `installer_clouddrive2.py` | CloudDrive2 产品入口 |
-| `installer_openlist.py` | OpenList 产品入口 |
+| `legacy/desktop/installer.py` | 冻结的共享部署器界面与逻辑 |
+| `legacy/desktop/installer_clouddrive2.py` | 历史 CloudDrive2 产品入口 |
+| `legacy/desktop/installer_openlist.py` | 历史 OpenList 产品入口 |
 | `deployer_products.py` | 两版产品名、路径和资源定义，复用共享版本源 |
 | `payload_clouddrive2/app/version.py` | Bot 和脚本的版本源；Windows 资源冻结在 v1.2.1 |
 | `domain_proxy.py`、`proxy_maintenance.py` | 共享 HTTPS 网关与私密维护助手 |
-| `operation_feedback.py` | 真实操作阶段、错误建议与版本摘要 |
+| `legacy/desktop/operation_feedback.py` | 历史桌面展示助手 |
 | `install.sh`、`scripts/vps_installer.py`、`scripts/vps_runtime.py` | 主要 VPS 向导、稳定 Release 解析与运行环境适配 |
 | `install-lan.sh`、`scripts/lan_installer.py` | 独立内网入口，人工指定私有 IPv4，不修改 EXE 的 HTTPS 规则 |
 | `uninstall.sh`、`scripts/uninstaller.py` | 独立卸载、只读预检；主分支完整清理需双确认，`--keep-data` 保留数据，不卸载系统软件 |
 | `payload_clouddrive2/` | CloudDrive2 部署脚本与共享核心文件来源 |
 | `payload_openlist/` | OpenList 部署脚本 |
 | `tests/` | 自动化回归 |
-| `build.ps1` | Windows 打包与自检 |
+| `legacy/desktop/build.ps1` | 冻结的 Windows 打包与自检入口 |
 
 ## 执行自动测试
 

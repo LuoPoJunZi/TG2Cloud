@@ -21,7 +21,6 @@ from unittest.mock import AsyncMock, Mock, patch
 
 from test_domain_proxy import TransactionManager
 
-import installer
 from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
 from domain_proxy import (
     DomainProxyManager,
@@ -30,6 +29,7 @@ from domain_proxy import (
     proxy_lock_command,
     state_with_route,
 )
+from legacy.desktop import installer
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "payload_clouddrive2"))
 
@@ -240,7 +240,7 @@ class RemoteLockTests(unittest.TestCase):
         channel = LockChannel(b"")
         session, _ = self.session(channel)
         with (
-            patch("installer.time.monotonic", side_effect=[0, 16]),
+            patch("legacy.desktop.installer.time.monotonic", side_effect=[0, 16]),
             self.assertRaises(TimeoutError),
             session.hold_lock(proxy_lock_command()),
         ):

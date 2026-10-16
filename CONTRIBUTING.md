@@ -13,7 +13,7 @@
 完整检查使用 Python 3.12 / 3.13，以及现有两个 requirements 文件中的依赖和 Ruff 0.16.0。可以通过 uv 创建临时检查环境，无需改变 Docker 运行依赖：
 
 ```powershell
-uv run --with-requirements requirements-build.txt `
+uv run --with-requirements legacy/desktop/requirements-build.txt `
   --with-requirements payload_clouddrive2/requirements.txt `
   --with ruff==0.16.0 `
   python .github/scripts/check_python.py all
@@ -73,7 +73,7 @@ npm test
 
 ## 历史 Windows 构建（停留在 v1.2.1）
 
-恢复历史构建请使用 v1.2.1 Tag 或独立源码备份。桌面源码暂时保留用于兼容回归，分支和 Release 不再自动打包 EXE；当前 build.ps1 拒绝将新版本打成 Windows 产品。物理清理门槛见[脚本优先说明](docs/development/SCRIPT-FIRST.md)。
+恢复历史构建请使用 v1.2.1 Tag 或独立源码备份。主分支桌面文件已归档到 [legacy/desktop](legacy/desktop/README.md)，继续参与兼容回归，分支和 Release 不再自动打包 EXE；归档的 build.ps1 拒绝将新版本打成 Windows 产品。后续删除门槛见[脚本优先说明](docs/development/SCRIPT-FIRST.md)。
 
 ## 版本与 Release
 

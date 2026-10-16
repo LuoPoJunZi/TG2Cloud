@@ -10,7 +10,7 @@ from dataclasses import replace
 from pathlib import Path
 
 from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
-from installer import runtime_status_command
+from legacy.desktop.installer import runtime_status_command
 
 SOURCE = Path(__file__).resolve().parents[1]
 git = shutil.which("git")
@@ -692,14 +692,14 @@ class DeploymentStructureTests(unittest.TestCase):
         self.assertIn("QT_QPA_PLATFORM: offscreen", linux_job)
 
     def test_windows_build_isolates_dll_dependency_search_path(self) -> None:
-        script = (SOURCE / "build.ps1").read_text(encoding="utf-8")
+        script = (SOURCE / "legacy/desktop/build.ps1").read_text(encoding="utf-8")
         self.assertIn("function Get-Tg2CloudIsolatedPath", script)
         self.assertIn('"$env:SystemRoot\\System32"', script)
         self.assertIn("$env:Path = Get-Tg2CloudIsolatedPath", script)
         self.assertIn("$env:Path = $originalPath", script)
 
     def test_windows_build_supports_only_two_pyside_products(self) -> None:
-        script = (SOURCE / "build.ps1").read_text(encoding="utf-8")
+        script = (SOURCE / "legacy/desktop/build.ps1").read_text(encoding="utf-8")
         self.assertFalse((SOURCE / "installer_classic.py").exists())
         self.assertFalse((SOURCE / "payload").exists())
         self.assertTrue((SOURCE / "payload_clouddrive2").is_dir())
@@ -718,8 +718,8 @@ class DeploymentStructureTests(unittest.TestCase):
         self.assertIn("assets/brand/tg2cloud.ico", script)
         self.assertIn("--version-file", script)
         for version_file in (
-            SOURCE / "packaging/windows/TG2Cloud-CloudDrive2.version.txt",
-            SOURCE / "packaging/windows/TG2Cloud-OpenList.version.txt",
+            SOURCE / "legacy/desktop/packaging/windows/TG2Cloud-CloudDrive2.version.txt",
+            SOURCE / "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt",
         ):
             self.assertTrue(version_file.is_file())
             metadata = version_file.read_text(encoding="utf-8")
@@ -761,7 +761,7 @@ class DeploymentStructureTests(unittest.TestCase):
         self.assertNotIn("# TG115", readme)
 
     def test_windows_deploy_reprobes_resources_before_remote_mutation(self) -> None:
-        source = (SOURCE / "installer.py").read_text(encoding="utf-8")
+        source = (SOURCE / "legacy/desktop/installer.py").read_text(encoding="utf-8")
         deploy = source.split("        def deploy(self, values:", 1)[1].split(
             "        def open_clouddrive(self, values:", 1
         )[0]

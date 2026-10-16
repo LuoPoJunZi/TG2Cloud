@@ -12,12 +12,12 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_FILES = (
-    "build.ps1", "requirements-build.txt", ".github/scripts/release_metadata.py",
-    "installer.py", "installer_clouddrive2.py", "installer_openlist.py",
-    "deployer_products.py", "domain_proxy.py", "operation_feedback.py",
+    "legacy/desktop/build.ps1", "legacy/desktop/requirements-build.txt", ".github/scripts/release_metadata.py",
+    "legacy/desktop/installer.py", "legacy/desktop/installer_clouddrive2.py", "legacy/desktop/installer_openlist.py",
+    "deployer_products.py", "domain_proxy.py", "legacy/desktop/operation_feedback.py",
     "proxy_maintenance.py", "vps_resources.py",
-    "packaging/windows/TG2Cloud-CloudDrive2.version.txt",
-    "packaging/windows/TG2Cloud-OpenList.version.txt",
+    "legacy/desktop/packaging/windows/TG2Cloud-CloudDrive2.version.txt",
+    "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt",
     "assets/brand/tg2cloud.ico", "assets/brand/tg2cloud-logo.svg",
     "assets/brand/tg2cloud-icon-256.png",
 )

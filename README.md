@@ -50,6 +50,8 @@ Your Cloud
 
 > 当前源码版本：**TG2Cloud v1.3.0**
 >
+> main 分支待发布更新：桌面文件已集中归档至 [legacy/desktop](legacy/desktop/README.md)，视频命名增强支持长描述、引用块与宣传式原名替换。已发布 v1.3.0 和在线稳定业务代码不包含这些新改动。
+>
 > Windows 部署器最后更新到 **v1.2.1**；从 v1.3.0 起以 Linux 一键脚本维护两个 Edition。首次安装提供磁盘预算推荐，后续 Release 提供源码包及 SHA256。历史 EXE 下载保留；迁移与验收边界见[脚本优先说明](docs/development/SCRIPT-FIRST.md)。
 
 > 仅转存你有权保存、备份和使用的内容，并遵守 Telegram、所用云存储、CloudDrive2/OpenList、内容来源平台及所在地的法律法规和服务条款。
@@ -199,6 +201,8 @@ Telegram：
 
 ## Windows 图形化部署
 
+以下仅为 v1.2.1 历史教程。当前 main 的桌面文件已归档；恢复构建须先在独立目录切换到 v1.2.1 Tag，后续版本不生成新版 EXE。
+
 ### 1. 获取并校验部署器
 
 正式版本优先从本仓库的 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 下载 EXE 和 `SHA256SUMS.txt`。也可在 Windows PowerShell 中从源码构建：
@@ -206,6 +210,7 @@ Telegram：
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
+git checkout v1.2.1
 .\build.ps1
 ```
 
@@ -708,9 +713,11 @@ Docker 数据目录可能和 `/opt/tg2cloud-clouddrive2` 位于不同文件系�
 ### 项目结构
 
 ```text
-installer.py                 两个产品共用的 PySide6 界面及 SSH/部署后端
-installer_clouddrive2.py     CloudDrive2 PySide6 产品入口
-installer_openlist.py        OpenList PySide6 产品入口
+install.sh                  公网 VPS 一键安装／升级入口
+install-lan.sh              可信内网安装／升级入口
+uninstall.sh                独立卸载入口
+scripts/                    Linux 向导及运行适配
+legacy/desktop/             冻结的桌面源码、构建脚本及资源
 deployer_products.py         两个产品的不可变标识和 payload 清单
 vps_resources.py             VPS 资源探测和实例建议
 payload_clouddrive2/         CloudDrive2 部署资源及两版共用 Bot 运行代码
@@ -722,7 +729,7 @@ tests/                       单元、场景、部署和 WebDAV 集成测试
 ### 完整 Python 回归
 
 ```powershell
-uv run --with-requirements requirements-build.txt `
+uv run --with-requirements legacy/desktop/requirements-build.txt `
   --with-requirements payload_clouddrive2/requirements.txt `
   python -m unittest discover -s tests -v
 ```
@@ -730,10 +737,10 @@ uv run --with-requirements requirements-build.txt `
 ### 静态和依赖检查
 
 ```powershell
-uv run --with ruff==0.16.0 ruff check installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py vps_resources.py payload_clouddrive2/app tests
-uv run --with bandit==1.9.4 bandit -q -r payload_clouddrive2/app installer.py installer_clouddrive2.py installer_openlist.py deployer_products.py vps_resources.py
+uv run --with ruff==0.16.0 python .github/scripts/check_python.py lint
+uv run --with bandit==1.9.4 bandit -q -r payload_clouddrive2/app legacy/desktop/installer.py deployer_products.py vps_resources.py
 uv run --with pip-audit==2.10.1 pip-audit -r payload_clouddrive2/requirements.txt
-uv run --with pip-audit==2.10.1 pip-audit -r requirements-build.txt
+uv run --with pip-audit==2.10.1 pip-audit -r legacy/desktop/requirements-build.txt
 ```
 
 CI 在 Linux 上运行 ShellCheck、Compose 配置校验、Python 3.12 回归和两 Edition Bot 镜像检查，Windows 保留 Python 3.13 兼容回归。v1.3.0 起不再构建 EXE，Release 复用同一次 Linux 验证生成的源码包与实际 SHA256。贡献前请阅读 [CONTRIBUTING.md](CONTRIBUTING.md)。

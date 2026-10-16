@@ -27,7 +27,7 @@ def source_version(root: Path) -> str:
 def windows_resources(root: Path, version: str, *, sync: bool = False) -> None:
     numbers = tuple(map(int, version.split("."))) + (0,)
     for edition in ("CloudDrive2", "OpenList"):
-        path = root / f"packaging/windows/TG2Cloud-{edition}.version.txt"
+        path = root / f"legacy/desktop/packaging/windows/TG2Cloud-{edition}.version.txt"
         text = path.read_text(encoding="utf-8")
         if sync:
             for key in ("filevers", "prodvers"):

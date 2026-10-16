@@ -4,7 +4,7 @@
 from __future__ import annotations
 
 from deployer_products import OPENLIST_PRODUCT
-from installer import _startup_error, main
+from legacy.desktop.installer import _startup_error, main
 
 APP_TITLE = OPENLIST_PRODUCT.app_title
 APP_VERSION = OPENLIST_PRODUCT.app_version

@@ -28,6 +28,8 @@ v1.2.1 的 SHA256SUMS 校验两个 EXE。后续脚本版的 SHA256SUMS 校验该
 
 本阶段暂时保留桌面源码及相关回归测试，Windows 版本资源固定为 1.2.1。共享的 `deployer_products.py`、`domain_proxy.py`、`proxy_maintenance.py`、`vps_resources.py` 仍被脚本使用，不可按文件名删除。PySide6 等依赖目前仅为现有桌面兼容测试保留，Linux 安装向导不安装它们。
 
+主分支后续整理已将桌面源码、依赖、构建脚本和版本资源归档到 `legacy/desktop/`，原根目录不再保留重复入口；测试和 CI 使用归档路径，资源仍从项目根目录读取。归档不等于删除实现，也不表示下方实机清理门槛已通过。已发布 v1.3.0 Tag 仍保持原目录布局。
+
 ## 后续验收和清理门槛
 
 - 在专用测试环境分别验收 CloudDrive2/OpenList 的首次安装、保留配置升级、HTTPS 续做和 WebDAV 操作；另验收内网模式。

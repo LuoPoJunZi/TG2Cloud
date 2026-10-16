@@ -22,7 +22,6 @@ from unittest.mock import AsyncMock, Mock, patch
 import test_review_regressions as review
 from test_deployment import BASH, bash_path
 
-import installer
 import proxy_maintenance as backups
 from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT, RELEASE_VERSION
 from domain_proxy import (
@@ -35,7 +34,12 @@ from domain_proxy import (
     renewal_warnings,
     state_with_route,
 )
-from operation_feedback import failure_details, stage_from_log, version_summary
+from legacy.desktop import installer
+from legacy.desktop.operation_feedback import (
+    failure_details,
+    stage_from_log,
+    version_summary,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("release_metadata", ROOT / ".github/scripts/release_metadata.py")
@@ -469,7 +473,7 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_rc_requires_exact_notes_identity(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for path in ("payload_clouddrive2/app/version.py", "packaging/windows/TG2Cloud-CloudDrive2.version.txt", "packaging/windows/TG2Cloud-OpenList.version.txt", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
+            for path in ("payload_clouddrive2/app/version.py", "legacy/desktop/packaging/windows/TG2Cloud-CloudDrive2.version.txt", "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / path).read_bytes())
@@ -484,7 +488,7 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_future_linux_version_does_not_require_new_windows_resources(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for name in ("payload_clouddrive2/app/version.py", "packaging/windows/TG2Cloud-CloudDrive2.version.txt", "packaging/windows/TG2Cloud-OpenList.version.txt", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
+            for name in ("payload_clouddrive2/app/version.py", "legacy/desktop/packaging/windows/TG2Cloud-CloudDrive2.version.txt", "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
                 target = root / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / name).read_bytes())

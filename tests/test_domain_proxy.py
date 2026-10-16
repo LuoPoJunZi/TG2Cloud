@@ -15,7 +15,6 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-import installer as installer_module
 from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
 from domain_proxy import (
     _CERTIFICATE_CHECK_SCRIPT,
@@ -49,6 +48,7 @@ from domain_proxy import (
     validate_email,
     verification_statuses,
 )
+from legacy.desktop import installer as installer_module
 
 
 class DomainValidationTests(unittest.TestCase):
@@ -870,12 +870,12 @@ class GeneratedArtifactTests(unittest.TestCase):
 
 class RegressionBoundaryTests(unittest.TestCase):
     def test_ssh_tunnel_implementation_remains_present(self) -> None:
-        source = (Path(__file__).resolve().parents[1] / "installer.py").read_text(encoding="utf-8")
+        source = (Path(__file__).resolve().parents[1] / "legacy/desktop/installer.py").read_text(encoding="utf-8")
         self.assertIn("def open_clouddrive(self, values:", source)
         self.assertIn("self._tunnel_factory(", source)
 
     def test_normal_workbench_requires_https_and_hides_tunnel_button(self) -> None:
-        source = (Path(__file__).resolve().parents[1] / "installer.py").read_text(
+        source = (Path(__file__).resolve().parents[1] / "legacy/desktop/installer.py").read_text(
             encoding="utf-8"
         )
         actions = source.split("        def _actions_card(self)", 1)[1].split(
@@ -895,7 +895,7 @@ class RegressionBoundaryTests(unittest.TestCase):
         values = installer_module.defaults_for(CLOUDDRIVE2_PRODUCT)
         values["deploy_clouddrive2"] = "false"
 
-        with patch("installer.DomainProxyManager") as proxy_manager:
+        with patch("legacy.desktop.installer.DomainProxyManager") as proxy_manager:
             backend._require_healthy_https(Mock(), values)
 
         proxy_manager.assert_not_called()
@@ -930,7 +930,7 @@ class QtLayoutTests(unittest.TestCase):
         program = r"""
 import sys
 from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
-from installer import DomainAccessDialog, InstallerWindow, make_app
+from legacy.desktop.installer import DomainAccessDialog, InstallerWindow, make_app
 
 app = make_app()
 product = OPENLIST_PRODUCT if sys.argv[1] == "openlist" else CLOUDDRIVE2_PRODUCT

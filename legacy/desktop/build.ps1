@@ -6,7 +6,8 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-$SourceDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$DesktopDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$SourceDir = (Resolve-Path -LiteralPath (Join-Path $DesktopDir '../..')).Path
 $VersionSource = Get-Content -LiteralPath (Join-Path $SourceDir 'payload_clouddrive2/app/version.py') -Raw
 $VersionMatch = [regex]::Match($VersionSource, '(?m)^VERSION = "([0-9]+\.[0-9]+\.[0-9]+)"\r?$')
 if (-not $VersionMatch.Success) { throw '无法读取唯一版本源' }
@@ -21,6 +22,7 @@ $PyInstallerArgs = @(
     '--clean'
     '--onefile'
     '--windowed'
+    '--paths', $SourceDir
     '--collect-all', 'paramiko'
     '--icon', $BrandIcon
     '--specpath', 'build/spec'
@@ -33,8 +35,8 @@ if ($Edition -in @('All', 'CloudDrive2')) {
     $BuildTargets += [PSCustomObject]@{
         Key = 'clouddrive2'
         Name = 'TG2Cloud-CloudDrive2-Deployer'
-        Source = 'installer_clouddrive2.py'
-        VersionFile = 'packaging/windows/TG2Cloud-CloudDrive2.version.txt'
+        Source = 'legacy/desktop/installer_clouddrive2.py'
+        VersionFile = 'legacy/desktop/packaging/windows/TG2Cloud-CloudDrive2.version.txt'
         AddData = @(
             'payload_clouddrive2;payload_clouddrive2'
             'assets/brand;assets/brand'
@@ -45,8 +47,8 @@ if ($Edition -in @('All', 'OpenList')) {
     $BuildTargets += [PSCustomObject]@{
         Key = 'openlist'
         Name = 'TG2Cloud-OpenList-Deployer'
-        Source = 'installer_openlist.py'
-        VersionFile = 'packaging/windows/TG2Cloud-OpenList.version.txt'
+        Source = 'legacy/desktop/installer_openlist.py'
+        VersionFile = 'legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt'
         AddData = @(
             'payload_clouddrive2;payload_clouddrive2'
             'payload_openlist;payload_openlist'
@@ -128,7 +130,7 @@ function Invoke-Tg2CloudUvBuild {
         $env:Path = Get-Tg2CloudIsolatedPath -ToolPath $UvExecutable
         foreach ($target in $BuildTargets) {
             Write-Host "Building $($target.Name) with PySide6..."
-            & $UvExecutable run --with-requirements requirements-build.txt `
+            & $UvExecutable run --with-requirements legacy/desktop/requirements-build.txt `
                 python -c 'from PySide6.QtWidgets import QApplication; assert QApplication'
             if ($LASTEXITCODE -ne 0) {
                 throw 'PySide6 GUI 运行时不可用，停止生成无法启动的部署器'
@@ -145,7 +147,7 @@ function Invoke-Tg2CloudUvBuild {
             $targetArgs += @(
                 '--name', $target.Name, (Join-Path $SourceDir $target.Source)
             )
-            & $UvExecutable run --with-requirements requirements-build.txt `
+            & $UvExecutable run --with-requirements legacy/desktop/requirements-build.txt `
                 python -m PyInstaller @targetArgs
             if ($LASTEXITCODE -ne 0) {
                 throw "$($target.Name) 构建失败"
@@ -220,7 +222,7 @@ try {
         }
     }
     if ($env:TG2CLOUD_BUILD_PYTHON) {
-        & $env:TG2CLOUD_BUILD_PYTHON -m pip install -r requirements-build.txt
+        & $env:TG2CLOUD_BUILD_PYTHON -m pip install -r legacy/desktop/requirements-build.txt
         if ($LASTEXITCODE -ne 0) {
             throw '构建依赖安装失败'
         }
@@ -230,7 +232,7 @@ try {
         Invoke-Tg2CloudUvBuild -UvExecutable $uvCommand.Source
     }
     else {
-        & python -m pip install -r requirements-build.txt
+        & python -m pip install -r legacy/desktop/requirements-build.txt
         if ($LASTEXITCODE -ne 0) {
             throw '构建依赖安装失败；请安装 uv 或提供 TG2CLOUD_BUILD_PYTHON'
         }
