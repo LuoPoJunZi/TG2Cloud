@@ -24,7 +24,8 @@ updates:
           - version-update:semver-major
           - version-update:semver-minor
 
-  # Both gateway images live in Compose; the shared Bot image has its Dockerfile above.
+  # Gateway manifests use docker-compose.<edition>.yml so the Compose scanner finds them.
+  # The shared Bot image has its Dockerfile above; no duplicate Dockerfile is needed here.
   - package-ecosystem: docker-compose
     directory: /packaging/compose
     schedule:
