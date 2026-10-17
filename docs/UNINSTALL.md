@@ -6,6 +6,8 @@
 
 ## 在线一键入口
 
+待发布源码的本地帮助入口为 `python3 scripts/run_source.py uninstall --help`，业务位于公共 `deployment/uninstall.py`。在线 URL 和已验证 pin 保持不动，确认、归属检查、保留数据和共享资源保护不因目录整理改变；本轮未执行真实卸载。详见[Linux 重构说明](development/LINUX-REFACTOR.md)。
+
 先以只读方式检查；要求信任本仓库，可以先下载检查脚本：
 
 ```bash

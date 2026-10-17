@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import sys
 import tempfile
 import unittest
 from datetime import datetime, timezone
@@ -16,10 +15,9 @@ from telethon.sessions import MemorySession, SQLiteSession
 from telethon.tl import functions, types
 
 SOURCE = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(SOURCE / "payload_clouddrive2"))
 
-from app.bot_commands import CommandMixin
-from app.main import TransferService
+from tg2cloud.app import TransferService
+from tg2cloud.telegram.views import TaskViews as CommandMixin
 
 
 def callback_data(button: object) -> bytes:

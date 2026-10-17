@@ -9,6 +9,7 @@ install() {
   command install "$@"
 }
 mktemp() { command mktemp "$TG115_TEST_DIR/backup-XXXXXXXX"; }
+python3() { "$TG2CLOUD_TEST_PYTHON" "$@"; }
 docker() {
   printf '%s\n' "$*" >> "$TG115_TEST_DIR/calls"
   case "$*" in
@@ -17,7 +18,7 @@ docker() {
       [[ "$TG115_TEST_MODE" != invalid ]] || return 1
       ;;
     'compose config --format json') printf '%s\n' '{}' ;;
-    'compose exec -T tg2cloud-clouddrive2-bot python -m app.deployment_check'*)
+    'compose exec -T tg2cloud-'*'-bot python -m app.deployment_check'*)
       command cat >/dev/null
       ;;
     inspect*)

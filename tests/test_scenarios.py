@@ -14,14 +14,16 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
+from payload_fixture import payload
+
 SOURCE = Path(__file__).resolve().parents[1]
-PAYLOAD = SOURCE / "payload_clouddrive2"
+PAYLOAD = payload("clouddrive2")
 sys.path.insert(0, str(PAYLOAD))
 
-from app.config import Settings
-from app.db import TaskDB
-from app.main import TransferService
-from app.resources import ResourceSnapshot
+from tg2cloud.app import TransferService
+from tg2cloud.config import Settings
+from tg2cloud.monitoring.resources import ResourceSnapshot
+from tg2cloud.persistence.sqlite import TaskDB
 
 
 def encoded(value: str) -> str:
@@ -411,7 +413,7 @@ class EndToEndSimulationTests(unittest.TestCase):
             async def no_wait(_: float) -> None:
                 return None
 
-            with patch("app.main.asyncio.sleep", new=no_wait):
+            with patch("tg2cloud.app.asyncio.sleep", new=no_wait):
                 asyncio.run(service._download_one(task["id"]))
             recovered = db.get(task["id"])
             self.assertEqual(client.calls, 2)
@@ -659,7 +661,7 @@ class QueueAndResourceSimulationTests(unittest.TestCase):
                 try:
                     # This scenario controls capacity through the snapshot. Keep
                     # the live check consistent, including on small CI tmpfs.
-                    with patch("app.main.shutil.disk_usage", return_value=SimpleNamespace(
+                    with patch("tg2cloud.transfer.scheduler.shutil.disk_usage", return_value=SimpleNamespace(
                         free=service.snapshot.disk_free,
                     )):
                         await service._start_downloads()

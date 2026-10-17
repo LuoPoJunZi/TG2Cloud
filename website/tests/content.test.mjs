@@ -21,7 +21,7 @@ test('documented version and verification date are valid',()=>{
 test('package and shared product versions match the documented source',async()=>{
   const pkg=JSON.parse(await read('package.json'));
   const lock=JSON.parse(await read('package-lock.json'));
-  const source=await readFile(new URL('../../payload_clouddrive2/app/version.py',import.meta.url),'utf8');
+  const source=await readFile(new URL('../../src/tg2cloud/version.py',import.meta.url),'utf8');
   assert.deepEqual([...source.matchAll(/^VERSION\s*=\s*"([^"]+)"\r?$/gm)].map(match=>match[1]),[config.version]);
   assert.equal(pkg.version,config.version);
   assert.equal(lock.version,config.version);
@@ -52,8 +52,26 @@ test('downloads point to published assets and source checkout respects release s
   for(const path of ['docs/download.md','docs/reference/development.md']){
     const content=await read(path);
     const checkout=path==='docs/download.md'?'v1.2.1':(config.releaseStatus==='released'?`v${config.version}`:'main');
-    assert.deepEqual([...content.matchAll(/^git checkout (\S+)\r?$/gm)].map(match=>match[1]),[checkout]);
+    const sections=content.split('## 恢复 v1.2.1 历史部署器构建');
+    assert.deepEqual([...sections[0].matchAll(/^git checkout (\S+)\r?$/gm)].map(match=>match[1]),[checkout]);
+    if(path==='docs/reference/development.md'){
+      assert.equal(sections.length,2);
+      assert.deepEqual([...sections[1].matchAll(/^git checkout (\S+)\r?$/gm)].map(match=>match[1]),['v1.2.1']);
+      assert.ok(sections[0].includes('git switch main'));
+      assert.ok(!sections[0].includes('requirements-build.txt'));
+    }
   }
+});
+
+test('developer source links follow the public script-only layout',async()=>{
+  const template=await read('src/templates.mjs');
+  const guide=await read('docs/reference/development.md');
+  for(const path of ['src/tg2cloud/deployment/profiles.py','.github/CONTRIBUTING.md','.github/SECURITY.md']){
+    assert.ok(template.includes(`'${path}'`));
+    assert.ok(await readFile(new URL('../../'+path,import.meta.url),'utf8'));
+  }
+  assert.ok(guide.includes('src/tg2cloud/deployment/resources.py'));
+  assert.ok(!guide.includes('legacy/desktop/'));
 });
 
 test('latest changelog entry matches source version without claiming an unpublished release',async()=>{

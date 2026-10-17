@@ -86,6 +86,7 @@ jobs:
     permissions:
       contents: read
     env:
+      PYTHONPATH: src
       QT_QPA_PLATFORM: offscreen
       RELEASE_TAG: ${{ needs.prepare.outputs.release_tag }}
       RELEASE_ARTIFACT: ${{ needs.prepare.outputs.release_artifact }}
@@ -103,51 +104,96 @@ jobs:
 
       - name: Install Linux validation tools
         run: |
-          sudo apt-get update
-          sudo apt-get install -y shellcheck rclone
-          desktop_requirements=legacy/desktop/requirements-build.txt
-          if [[ ! -f "${desktop_requirements}" ]]; then desktop_requirements=requirements-build.txt; fi
-          python -m pip install -r "${desktop_requirements}" -r payload_clouddrive2/requirements.txt ruff==0.16.0 bandit==1.9.4 pip-audit==2.10.1
+          if [[ -f src/tg2cloud/version.py ]]; then
+            sudo apt-get update
+            sudo apt-get install -y shellcheck rclone
+            python -m pip install -r requirements/dev.lock.txt
+          else
+            sudo apt-get update
+            sudo apt-get install -y shellcheck rclone
+            python -m pip install -r payload_clouddrive2/requirements.txt ruff==0.16.0 bandit==1.9.4 pip-audit==2.10.1
+            if [[ -f .github/requirements-test.txt ]]; then
+              python -m pip install -r .github/requirements-test.txt
+            fi
+            # Only immutable historical tags may still need frozen desktop tests.
+            if [[ -f legacy/desktop/requirements-build.txt ]]; then
+              python -m pip install -r legacy/desktop/requirements-build.txt
+            elif [[ -f requirements-build.txt ]]; then
+              python -m pip install -r requirements-build.txt
+            fi
+          fi
 
       - name: ShellCheck
         run: |
-          bash -n install.sh
-          bash -n install-lan.sh
-          bash -n uninstall.sh
-          shellcheck install.sh install-lan.sh uninstall.sh
-          shellcheck -x \
-            payload_clouddrive2/backup_retention.sh \
-            payload_clouddrive2/preserve_runtime_config.sh \
-            payload_clouddrive2/remote_install.sh \
-            payload_clouddrive2/repair_clouddrive_network.sh \
-            payload_clouddrive2/manage.sh \
-            payload_openlist/remote_install.sh \
-            payload_openlist/manage.sh \
-            payload_openlist/openlist_admin.sh \
-            payload_openlist/preserve_webdav_config.sh \
-            tests/manage_harness.sh \
-            tests/maintenance_docker_stub.sh
+          if [[ -f src/tg2cloud/version.py ]]; then
+            bash -n install.sh
+            bash -n install-lan.sh
+            bash -n uninstall.sh
+            shellcheck install.sh install-lan.sh uninstall.sh
+            shellcheck -x packaging/hooks/clouddrive2/*.sh packaging/hooks/openlist/*.sh tests/manage_harness.sh tests/maintenance_docker_stub.sh
+          else
+            bash -n install.sh
+            bash -n install-lan.sh
+            bash -n uninstall.sh
+            shellcheck install.sh install-lan.sh uninstall.sh
+            shellcheck -x \
+              payload_clouddrive2/backup_retention.sh \
+              payload_clouddrive2/preserve_runtime_config.sh \
+              payload_clouddrive2/remote_install.sh \
+              payload_clouddrive2/repair_clouddrive_network.sh \
+              payload_clouddrive2/manage.sh \
+              payload_openlist/remote_install.sh \
+              payload_openlist/manage.sh \
+              payload_openlist/openlist_admin.sh \
+              payload_openlist/preserve_webdav_config.sh \
+              tests/manage_harness.sh \
+              tests/maintenance_docker_stub.sh
+          fi
 
       - name: Linux runtime, gateway and real WebDAV regression
         run: |
-          command -v bash shellcheck rclone docker
-          docker info >/dev/null
-          python .github/scripts/check_python.py test
-          python .github/scripts/check_python.py lint --scope cli
-          # Historical desktop entry points are launched with Python, not ./file.
-          # Keep these exceptions here as well so retries can validate older tags.
-          python -m ruff check . --extend-per-file-ignores 'installer.py:EXE001,installer_clouddrive2.py:EXE001,installer_openlist.py:EXE001'
-          python .github/scripts/check_python.py compile
-          bandit -q -r scripts payload_clouddrive2/app domain_proxy.py proxy_maintenance.py .github/scripts/source_release.py
-          pip-audit -r payload_clouddrive2/requirements.txt
+          if [[ -f src/tg2cloud/version.py ]]; then
+            command -v bash shellcheck rclone docker
+            docker info >/dev/null
+            export PYTHONPATH=src
+            python .github/scripts/check_python.py test
+            python .github/scripts/check_python.py lint
+            python .github/scripts/check_python.py compile
+            python .github/scripts/prepare_bootstrap.py
+            bandit -q -r src scripts .github/scripts/source_release.py
+            pip-audit -r requirements/bot.lock.txt
+            pip-audit -r requirements/dev.lock.txt
+          else
+            command -v bash shellcheck rclone docker
+            docker info >/dev/null
+            python .github/scripts/check_python.py test
+            python .github/scripts/check_python.py lint --scope cli
+            # Historical desktop entry points are launched with Python, not ./file.
+            # Keep these exceptions here as well so retries can validate older tags.
+            python -m ruff check . --extend-per-file-ignores 'installer.py:EXE001,installer_clouddrive2.py:EXE001,installer_openlist.py:EXE001'
+            python .github/scripts/check_python.py compile
+            bandit -q -r scripts payload_clouddrive2/app .github/scripts/source_release.py
+            if [[ -f domain_proxy.py ]]; then
+              bandit -q domain_proxy.py proxy_maintenance.py
+            fi
+            pip-audit -r payload_clouddrive2/requirements.txt
+          fi
 
       - name: Validate edition Compose and build the runtime image
         run: |
-          touch payload_clouddrive2/.env
-          docker compose -f payload_clouddrive2/docker-compose.yml config --quiet
-          cp payload_clouddrive2/.env payload_openlist/.env
-          OPENLIST_ADMIN_PASSWORD=ci-only-placeholder docker compose -f payload_openlist/docker-compose.yml config --quiet
-          docker build -t tg2cloud-bot:release-test payload_clouddrive2
+          if [[ -f src/tg2cloud/version.py ]]; then
+            python .github/scripts/build_payload.py --edition all --directory build/release-contexts
+            touch build/release-contexts/clouddrive2/.env build/release-contexts/openlist/.env
+            docker compose -f build/release-contexts/clouddrive2/docker-compose.yml config --quiet
+            OPENLIST_ADMIN_PASSWORD=ci-only-placeholder docker compose -f build/release-contexts/openlist/docker-compose.yml config --quiet
+            docker build -t tg2cloud-bot:release-test build/release-contexts/clouddrive2
+          else
+            touch payload_clouddrive2/.env
+            docker compose -f payload_clouddrive2/docker-compose.yml config --quiet
+            cp payload_clouddrive2/.env payload_openlist/.env
+            OPENLIST_ADMIN_PASSWORD=ci-only-placeholder docker compose -f payload_openlist/docker-compose.yml config --quiet
+            docker build -t tg2cloud-bot:release-test payload_clouddrive2
+          fi
 
       - name: Run both Edition candidate images as non-root
         timeout-minutes: 20

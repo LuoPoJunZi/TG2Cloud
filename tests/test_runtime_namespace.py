@@ -10,8 +10,9 @@ import unittest
 import uuid
 from pathlib import Path
 
-from deployer_products import PRODUCTS
-from scripts import vps_installer as cli
+import tg2cloud.deployment.configuration as tgdep_configuration
+import tg2cloud.deployment.payload as tgdep_payload
+from tg2cloud.deployment.profiles import PRODUCTS
 
 ROOT = Path(__file__).resolve().parents[1]
 CONTAINER_CHECK = """
@@ -19,14 +20,14 @@ import os
 import pwd
 import sys
 from pathlib import Path
-from app.main import TransferService
-from app.deployment_check import code_fingerprint, main
+from tg2cloud.app import TransferService
+from tg2cloud.deployment.check import code_fingerprint, main
 
 assert os.getuid() == 10001 and os.getgid() == 10001
 assert pwd.getpwuid(os.getuid()).pw_name == 'tg2cloud'
 assert pwd.getpwuid(os.getuid()).pw_dir == '/nonexistent'
 assert Path.cwd() == Path('/opt/tg2cloud')
-assert os.environ['PYTHONPATH'] == '/opt/tg2cloud'
+assert os.environ['PYTHONPATH'] == '/opt/tg2cloud:/opt/tg2cloud/app'
 for path in Path('app').rglob('*'):
     assert path.stat().st_uid == 0, str(path)
     assert os.access(path, os.R_OK), str(path)
@@ -35,7 +36,7 @@ for path in Path('app').rglob('*'):
         assert os.access(path, os.X_OK), str(path)
 assert not Path('config.env').exists()
 assert not Path('.env').exists()
-assert len(code_fingerprint()) == 64
+assert code_fingerprint().startswith('tg2cloud-code-v2:sha256:') and len(code_fingerprint().rsplit(':',1)[1]) == 64
 assert TransferService is not None
 sys.argv = ['deployment_check', '--validate-only']
 assert main() == 0
@@ -68,7 +69,7 @@ class RuntimeImageTests(unittest.TestCase):
             for private_app in (False, True):
                 with self.subTest(edition=product.key, private_app=private_app), tempfile.TemporaryDirectory() as private:
                     context = Path(private) / "payload"
-                    cli.build_payload(ROOT, product, context)
+                    tgdep_payload.build_payload(ROOT, product, context)
                     if private_app:
                         # Also exercise Dockerfile hardening for callers that
                         # supply restrictive source modes, independent of CLI.
@@ -76,7 +77,7 @@ class RuntimeImageTests(unittest.TestCase):
                             path.chmod(0o700 if path.is_dir() else 0o600)
                         (context / "app").chmod(0o700)
                     candidate = Path(private) / "config.env"
-                    config = cli.new_config(product, values)
+                    config = tgdep_configuration.new_config(product, values)
                     candidate.write_text("".join(f"{key}={value}\n" for key, value in config.items()), encoding="utf-8")
                     candidate.chmod(0o600)
                     identifier = uuid.uuid4().hex

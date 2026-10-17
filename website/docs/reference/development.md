@@ -15,38 +15,42 @@ git rev-parse HEAD
 
 ## 关键目录与入口
 
-下表为主分支整理后的结构。已发布 v1.3.0 Tag 仍使用原根目录桌面布局；本页的标签复现命令对应那个历史布局。main 的完整回归依赖改用 `legacy/desktop/requirements-build.txt`，不要把两种 checkout 的路径混用。
+下表为当前工作树的待发布 Linux / Python + Bash 结构；产品版本仍为 1.3.0，正式 Tag 保持原布局。上面的标签命令仅用于复现已发布版本。桌面源码及专用测试仅在本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
 | 路径 | 用途 |
 | --- | --- |
-| `legacy/desktop/installer.py` | 冻结的共享部署器界面与逻辑 |
-| `legacy/desktop/installer_clouddrive2.py` | 历史 CloudDrive2 产品入口 |
-| `legacy/desktop/installer_openlist.py` | 历史 OpenList 产品入口 |
-| `deployer_products.py` | 两版产品名、路径和资源定义，复用共享版本源 |
-| `payload_clouddrive2/app/version.py` | Bot 和脚本的版本源；Windows 资源冻结在 v1.2.1 |
-| `domain_proxy.py`、`proxy_maintenance.py` | 共享 HTTPS 网关与私密维护助手 |
-| `legacy/desktop/operation_feedback.py` | 历史桌面展示助手 |
-| `install.sh`、`scripts/vps_installer.py`、`scripts/vps_runtime.py` | 主要 VPS 向导、稳定 Release 解析与运行环境适配 |
-| `install-lan.sh`、`scripts/lan_installer.py` | 独立内网入口，人工指定私有 IPv4，不修改 EXE 的 HTTPS 规则 |
-| `uninstall.sh`、`scripts/uninstaller.py` | 独立卸载、只读预检；主分支完整清理需双确认，`--keep-data` 保留数据，不卸载系统软件 |
-| `payload_clouddrive2/` | CloudDrive2 部署脚本与共享核心文件来源 |
-| `payload_openlist/` | OpenList 部署脚本 |
+| `src/tg2cloud/deployment/profiles.py` | 两 Edition 的标识、路径和载荷清单 |
+| `src/tg2cloud/version.py` | Bot、包和脚本唯一版本源；Windows 冻结在 v1.2.1 |
+| `src/tg2cloud/deployment/proxy/` | HTTPS、证书、状态、私密备份与 LAN 网关 |
+| `src/tg2cloud/deployment/resources.py` | 资源探测、磁盘推荐与容量校验 |
+| `scripts/run_source.py`、`src/tg2cloud/cli/` | 标准库宿主 CLI、终端、参数与三个公开 Shell 入口 |
+| `src/tg2cloud/transfer/`、`storage/`、`persistence/` | 共享任务核心、两后端提交策略、SQLite 与备份 |
+| `packaging/Dockerfile`、`packaging/compose/` | 共享 Bot 镜像与两 Edition 编排 |
+| `packaging/hooks/`、`packaging/compat/app/` | 安装/管理钩子和旧运行命令的薄兼容入口 |
+| `pyproject.toml`、`requirements/` | 依赖分组与统一 uv 工具生成的两份哈希锁文件 |
 | `tests/` | 自动化回归 |
-| `legacy/desktop/build.ps1` | 冻结的 Windows 打包与自检入口 |
+| `.github/CONTRIBUTING.md`、`.github/SECURITY.md` | 贡献规范、安全政策和公共 CI 规则 |
 
 ## 执行自动测试
 
-按仓库 CONTRIBUTING 的命令：
+开发当前 main 时先切回分支，再按贡献指南检查；不要把历史 Tag 和 main 的命令混用：
 
-```powershell
-uv run --with-requirements requirements-build.txt `
-  --with-requirements payload_clouddrive2/requirements.txt `
-  python -m unittest discover -s tests -v
+```bash
+git switch main
+python -m pip install -r requirements/dev.lock.txt
+python .github/scripts/check_python.py all
+python scripts/run_source.py install --help
+python scripts/run_source.py lan --help
+python scripts/run_source.py uninstall --help
 ```
 
 真实本地 WebDAV 集成测试需要 `rclone` 在 PATH 中；Shell 回归需要 Bash。缺少依赖时的跳过不能写成“所有集成测试均通过”。
 
-仓库说明中 Linux CI 使用 Python 3.12，Windows 使用 Python 3.13；具体以当前 CI 配置为准。
+公共 CI 仅维护 Linux：Bot 使用 Python 3.12，宿主标准库 CLI 使用 3.10 / 3.13。不在新 CI 构建 Windows；历史 EXE 仍可下载。测试需完整 Git 历史以读取固定公开旧版本夹具，不依赖本地归档。
+
+新 Docker 上下文由 `python .github/scripts/build_payload.py --edition all --directory build/local-contexts` 组装，不直接在 packaging 目录构建。部署后仍保留外层 `app/`、`data/tg115.db`、`data/bot.session` 和旧 `app.*` 维护命令。递归指纹使用显式 v2 协议；不确定的旧代码拒绝自动覆盖。
+
+在线 helper 仍固定到原已验证提交。新布局只完成本地候选准备，必须先公开辅助提交 A 并通过 CI，再在入口提交 B 更新清单和 pin；不能为了本地发布检查通过而改成 moving main。完整步骤见[重构与兼容说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LINUX-REFACTOR.md)。
 
 v1.1.1 至 v1.2.1 的 Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。历史 EXE 和对应 SHA256 保留，不由新工作流重写。
 
@@ -60,9 +64,10 @@ v1.1.5 的独立 VPS 脚本 CI 使用真实 Python 3.10/3.13，覆盖标准库�
 
 ## 恢复 v1.2.1 历史部署器构建
 
-请使用 v1.2.1 Tag 或独立源码备份，解压到新目录并校验后构建。当前保留桌面源码和兼容测试，等待脚本验收后再清理；共享模块继续用于 Linux 向导。不要在较新版本上更新 Windows 资源再构建旧部署器。
+请使用 v1.2.1 Tag 或独立本地源码备份，在新目录校验后构建。main 不再包含桌面入口、构建资源或专用测试；共享模块继续用于 Linux 向导。不要在较新版本上更新 Windows 资源再构建旧部署器。
 
 ```powershell
+git checkout v1.2.1
 .\build.ps1 -Edition All
 ```
 

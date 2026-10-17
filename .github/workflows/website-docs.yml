@@ -11,7 +11,7 @@ on:
       - "docs/**"
       - "README.md"
       - "README_EN.md"
-      - "payload_clouddrive2/app/version.py"
+      - "src/tg2cloud/version.py"
       - ".github/workflows/website-docs.yml"
   pull_request:
     branches:
@@ -22,11 +22,14 @@ on:
       - "docs/**"
       - "README.md"
       - "README_EN.md"
-      - "payload_clouddrive2/app/version.py"
+      - "src/tg2cloud/version.py"
       - ".github/workflows/website-docs.yml"
 
 permissions:
   contents: read
+
+env:
+  PYTHONPATH: src
 
 jobs:
   build-and-check:

@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import sys
 import tempfile
 import time
 import unittest
@@ -13,14 +12,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "payload_clouddrive2"))
-
-from app.db import TaskDB
-from app.rclone_client import RcloneClient, RcloneError
-from app.recovery import StagingScan, failure_kind
-from app.resources import ResourceSnapshot
 from test_scenarios import FakeRclone, make_service, make_settings
 from test_telethon_compat import callback_data
+
+from tg2cloud.domain.errors import StagingScan, failure_kind
+from tg2cloud.monitoring.resources import ResourceSnapshot
+from tg2cloud.persistence.sqlite import TaskDB
+from tg2cloud.storage.rclone import RcloneClient, RcloneError
 
 
 class RecoveryTests(unittest.IsolatedAsyncioTestCase):
@@ -97,7 +95,7 @@ class RecoveryTests(unittest.IsolatedAsyncioTestCase):
             self.service.rclone.files[remote] = b"te"
             raise RcloneError("connection reset secret-value")
         self.service.rclone.upload = AsyncMock(side_effect=interrupted)
-        with patch("app.main.asyncio.sleep", new=AsyncMock()):
+        with patch("tg2cloud.app.asyncio.sleep", new=AsyncMock()):
             await self.service._upload_one(task["id"])
         held = self.db.get(task["id"])
         self.assertEqual(held["failure_kind"], "remote_conflict")
@@ -228,7 +226,7 @@ class RecoveryTests(unittest.IsolatedAsyncioTestCase):
         self.assertFalse(self.service.download_tasks)
         self.assertIn("安全线", self.service._resource_pause_reason)
         self.service.snapshot = replace(self.service.snapshot, filesystems=(("database", 100 * 1024**3),))
-        with patch("app.main.shutil.disk_usage", return_value=SimpleNamespace(free=100 * 1024**3)):
+        with patch("tg2cloud.transfer.scheduler.shutil.disk_usage", return_value=SimpleNamespace(free=100 * 1024**3)):
             await self.service._start_downloads()
         await asyncio.gather(*self.service.download_tasks.values())
         self.service._download_one.assert_awaited_once()
@@ -275,7 +273,7 @@ class RecoveryTests(unittest.IsolatedAsyncioTestCase):
             self.service.rclone = fake
             self.service._source = SimpleNamespace(get_messages=AsyncMock(return_value=SimpleNamespace(media=True)),
                                                    download_media=interrupted)
-            with patch("app.main.asyncio.sleep", new=AsyncMock()):
+            with patch("tg2cloud.app.asyncio.sleep", new=AsyncMock()):
                 await self.service._stream_one(task["id"])
             self.assertEqual(self.db.get(task["id"])["failure_kind"], "remote_conflict")
             self.assertEqual(list(fake.files.values()), [b"pa"])
@@ -321,7 +319,7 @@ class ScanTests(unittest.IsolatedAsyncioTestCase):
             stderr.feed_eof()
             process = SimpleNamespace(stderr=stderr, returncode=None, wait=AsyncMock(return_value=1), kill=lambda: None)
             client._read_staging = AsyncMock(side_effect=TimeoutError())
-            with patch("app.rclone_client.asyncio.create_subprocess_exec", new=AsyncMock(return_value=process)), \
+            with patch("tg2cloud.storage.rclone.asyncio.create_subprocess_exec", new=AsyncMock(return_value=process)), \
                     patch.object(process, "kill") as kill:
                 result = await client.list_staging_objects()
             self.assertFalse(result.complete)

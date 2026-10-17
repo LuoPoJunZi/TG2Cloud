@@ -39,6 +39,7 @@ clouddrive/
 # Python and test caches
 __pycache__/
 *.py[cod]
+*.egg-info/
 .pytest_cache/
 .ruff_cache/
 .coverage

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import json
-import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -12,10 +11,12 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 SOURCE = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(SOURCE / "payload_clouddrive2"))
 
-from app.rclone_client import MoveUncertainError, RcloneClient, RcloneError
-from app.verify_destination import DestinationVerificationError, verify_destination
+from tg2cloud.storage.rclone import MoveUncertainError, RcloneClient, RcloneError
+from tg2cloud.storage.verify_destination import (
+    DestinationVerificationError,
+    verify_destination,
+)
 
 
 class OpenListMoveTests(unittest.IsolatedAsyncioTestCase):
@@ -52,7 +53,7 @@ class OpenListMoveTests(unittest.IsolatedAsyncioTestCase):
         client._run = AsyncMock(side_effect=RcloneError(
             "rclone 退出码 4：Copy NewObject failed: object not found"
         ))
-        with patch("app.rclone_client.asyncio.sleep", new_callable=AsyncMock) as sleep:
+        with patch("tg2cloud.storage.rclone.asyncio.sleep", new_callable=AsyncMock) as sleep:
             await client.move("test.uploading", "test.ok")
         self.assertEqual(client._run.await_count, 1)
         sleep.assert_awaited_once_with(2)
@@ -76,7 +77,7 @@ class OpenListMoveTests(unittest.IsolatedAsyncioTestCase):
                 client._listed_file_sizes = AsyncMock(return_value=listed)
                 client._run = AsyncMock(side_effect=RcloneError("MOVE failed"))
                 with (
-                    patch("app.rclone_client.asyncio.sleep", new_callable=AsyncMock),
+                    patch("tg2cloud.storage.rclone.asyncio.sleep", new_callable=AsyncMock),
                     self.assertRaises(MoveUncertainError),
                 ):
                     await client.move("test.uploading", "test.ok")
