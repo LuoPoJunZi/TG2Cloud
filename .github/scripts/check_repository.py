@@ -97,7 +97,7 @@ def payload_files(root: Path) -> set[str]:
         and node.value.startswith(("packaging/", "requirements/"))
         and (PurePosixPath(node.value).suffix or PurePosixPath(node.value).name == ".dockerignore")
     }
-    if not {"packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml"} <= paths:
+    if not {"packaging/compose/docker-compose.clouddrive2.yml", "packaging/compose/docker-compose.openlist.yml"} <= paths:
         raise ValueError("both product payload manifests must contain literal paths")
     paths.update(path.relative_to(root).as_posix() for path in (root / "src/tg2cloud").rglob("*.py"))
     return paths

@@ -154,7 +154,13 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertEqual(openlist[0].splitlines()[0], "docker-compose")
         self.assertIn("interval: monthly", openlist[0])
         self.assertIn("open-pull-requests-limit: 5", openlist[0])
-        self.assertTrue((ROOT / "packaging/compose/openlist.yml").is_file())
+        compose_files = sorted((ROOT / "packaging/compose").glob("*.yml"))
+        self.assertEqual({path.name for path in compose_files},
+                         {"docker-compose.clouddrive2.yml", "docker-compose.openlist.yml"})
+        # Upstream DockerCompose::FileFetcher matches compose-prefixed names,
+        # not arbitrary YAML: docker/lib/dependabot/docker_compose/file_fetcher.rb.
+        for path in compose_files:
+            self.assertRegex(path.name, r"^(docker-)?compose(-[\w]+)?(?:\.[\w-]+)?\.ya?ml$")
 
     def test_dependabot_shared_bot_image_keeps_docker_scanner_and_version_limits(self):
         config = (ROOT / ".github/dependabot.yml").read_text(encoding="utf-8")
@@ -166,6 +172,12 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertTrue((ROOT / "packaging/Dockerfile").is_file())
         for rule in ("dependency-name: python", "version-update:semver-major", "version-update:semver-minor"):
             self.assertIn(rule, docker[0])
+
+    def test_shellcheck_source_annotations_resolve_public_helpers(self):
+        for script in sorted((ROOT / "packaging/hooks").rglob("*.sh")):
+            for name in re.findall(r"(?m)^# shellcheck source=(\S+)$", script.read_text(encoding="utf-8")):
+                with self.subTest(script=script.relative_to(ROOT).as_posix(), source=name):
+                    self.assertTrue((ROOT / name).is_file(), "ShellCheck source annotation points to a missing helper")
 
     def test_consistency_checks_run_when_source_docs_or_brand_change(self):
         website = (ROOT / ".github/workflows/website-docs.yml").read_text(encoding="utf-8")
@@ -276,16 +288,16 @@ class RepositoryGuardrailTests(unittest.TestCase):
     def build_fixture(self):
         for name in repository.BUILD_FILES:
             self.put(name)
-        self.put("src/tg2cloud/deployment/profiles.py", 'FILES = ("packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml")\n')
-        self.put("packaging/compose/clouddrive2.yml")
-        self.put("packaging/compose/openlist.yml")
+        self.put("src/tg2cloud/deployment/profiles.py", 'FILES = ("packaging/compose/docker-compose.clouddrive2.yml", "packaging/compose/docker-compose.openlist.yml")\n')
+        self.put("packaging/compose/docker-compose.clouddrive2.yml")
+        self.put("packaging/compose/docker-compose.openlist.yml")
         return list(repository.BUILD_FILES) + sorted(repository.payload_files(self.root))
 
     def test_payload_inspection_collects_both_editions_without_execution(self):
         self.put("src/tg2cloud/deployment/profiles.py", 'raise RuntimeError("must not execute")\n'
-                 'FILES = ("packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml", "README.md")\n')
+                 'FILES = ("packaging/compose/docker-compose.clouddrive2.yml", "packaging/compose/docker-compose.openlist.yml", "README.md")\n')
         self.assertEqual(repository.payload_files(self.root), {
-            "packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml", "src/tg2cloud/deployment/profiles.py",
+            "packaging/compose/docker-compose.clouddrive2.yml", "packaging/compose/docker-compose.openlist.yml", "src/tg2cloud/deployment/profiles.py",
         })
 
     def test_build_contract_includes_all_public_regular_inputs(self):
@@ -293,10 +305,10 @@ class RepositoryGuardrailTests(unittest.TestCase):
 
     def test_missing_payload_and_excluded_brand_resource_are_reported(self):
         files = self.build_fixture()
-        (self.root / "packaging/compose/openlist.yml").unlink()
+        (self.root / "packaging/compose/docker-compose.openlist.yml").unlink()
         files.remove("assets/brand/tg2cloud.ico")
         errors = repository.check_build_inputs(self.root, files)
-        self.assertTrue(any("packaging/compose/openlist.yml: required build input missing" in error for error in errors))
+        self.assertTrue(any("packaging/compose/docker-compose.openlist.yml: required build input missing" in error for error in errors))
         self.assertTrue(any("assets/brand/tg2cloud.ico: required build input excluded" in error for error in errors))
 
     def test_directory_cannot_replace_build_file(self):
@@ -309,7 +321,7 @@ class RepositoryGuardrailTests(unittest.TestCase):
 
     def test_missing_edition_or_invalid_manifest_fails_without_echoing_code(self):
         files = self.build_fixture()
-        for text in ('FILES = ("packaging/compose/clouddrive2.yml",)\n', 'invalid syntax PRIVATE_MARKER !\n'):
+        for text in ('FILES = ("packaging/compose/docker-compose.clouddrive2.yml",)\n', 'invalid syntax PRIVATE_MARKER !\n'):
             with self.subTest(text=text):
                 self.put("src/tg2cloud/deployment/profiles.py", text)
                 errors = repository.check_build_inputs(self.root, files)

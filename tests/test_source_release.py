@@ -169,7 +169,10 @@ class SourceReleaseTests(unittest.TestCase):
 class HistoricalSourceReleaseTests(unittest.TestCase):
     def test_immutable_previous_layout_still_verifies(self):
         tag = "v1.3.0"
-        for commit in ("e673cdb0683e2d02b0c3fd35b96143164392b898", "v1.3.0"):
+        # Both hashes are public main ancestors. The root-layout fixture must
+        # not depend on a maintainer-local tag absent from a fresh checkout.
+        for commit in ("e673cdb0683e2d02b0c3fd35b96143164392b898",
+                       "c07734cab666defb6ae5b5351a06361711d24190"):
             with self.subTest(historical_layout=commit), tempfile.TemporaryDirectory() as private:
                 archive = gzip.compress(package.git(ROOT, "archive", "--format=tar", f"--prefix=TG2Cloud-{tag}/", commit), mtime=0)
                 root = Path(private)
