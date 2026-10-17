@@ -31,7 +31,7 @@ python .github/scripts/check_python.py all
 独立 Linux 向导的无桌面依赖检查使用 Python 3.10 / 3.13，只需要现有 Ruff 工具，不要求 PySide6、Paramiko 或 Bot 依赖：
 
 ```bash
-uv run --with ruff==0.16.0 python .github/scripts/check_python.py all --scope cli
+uv run --no-project --with ruff==0.17.0 python .github/scripts/check_python.py all --scope cli
 ```
 
 `.ruff.toml` 统一原有 lint 规则；全范围自动发现 Python 文件，CLI 范围集中在检查入口。不要用 `ruff format .` 或 `--fix` 对稳定源码进行无关批量改写。
