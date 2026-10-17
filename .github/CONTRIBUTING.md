@@ -76,7 +76,7 @@ npm test
 
 ## Dependabot 镜像检查
 
-`packaging/Dockerfile` 的共享 Bot 基础镜像使用 `docker` 更新器；`packaging/compose/` 的两个网关使用 `docker-compose` 更新器。不要给 OpenList 复制一个独立 Dockerfile 来满足错误扫描配置。回归测试核对更新器与实际清单，并保留 Python 基础镜像禁止自动跨主/次版本升级的保护。pip 更新器读取根 `pyproject.toml`，依赖升级后仍需用统一工具重新生成并审阅两份锁文件。
+`packaging/Dockerfile` 的共享 Bot 基础镜像使用 `docker` 更新器；`packaging/compose/` 的两个网关使用 `docker-compose` 更新器。清单采用 `docker-compose.clouddrive2.yml` 和 `docker-compose.openlist.yml`，匹配更新器的文件名规则；部署时仍组装成实例内的 `docker-compose.yml`。不要给 OpenList 复制一个独立 Dockerfile 来满足错误扫描配置。回归测试核对更新器与实际清单，并保留 Python 基础镜像禁止自动跨主/次版本升级的保护。pip 更新器读取根 `pyproject.toml`，依赖升级后仍需用统一工具重新生成并审阅两份锁文件。
 
 更新器只检查依赖并提出 PR，不会自动合并、发布或更新 VPS。镜像 digest 变化仍需单独审查和测试；修正更新器类型本身不修改运行镜像。Dependabot 的历史失败记录不会消失，修复是否在 GitHub 生效应以推送后的新检查结果为准。
 

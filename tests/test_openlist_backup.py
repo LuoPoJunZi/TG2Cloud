@@ -31,7 +31,7 @@ MANUAL = "create_backup() (" + MANAGE_SCRIPT.split("create_backup() (", 1)[1].sp
     "\napply_config() {", 1,
 )[0]
 DIGEST = re.search(
-    r"(?m)^    image: (.+)$", (ROOT / "packaging/compose/openlist.yml").read_text(encoding="utf-8"),
+    r"(?m)^    image: (.+)$", (ROOT / "packaging/compose/docker-compose.openlist.yml").read_text(encoding="utf-8"),
 ).group(1)
 
 HARNESS = r'''
