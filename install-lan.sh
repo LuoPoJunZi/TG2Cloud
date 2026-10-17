@@ -12,6 +12,9 @@ python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 2)' || {
   exit 2
 }
 script_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+if [[ -f "$script_root/src/tg2cloud/cli/commands.py" && -f "$script_root/scripts/run_source.py" ]]; then
+  exec python3 -B "$script_root/scripts/run_source.py" lan "$@"
+fi
 if [[ -f "$script_root/scripts/lan_installer.py" && -f "$script_root/scripts/vps_installer.py" ]]; then
   cd -- "$script_root"
   exec python3 -B -m scripts.lan_installer "$@"
@@ -19,7 +22,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this reviewed immutable pin only after the LAN module passes CI/review.
-installer_commit="fb37e5f0d6b4dfaed95eafafa08ef95faf33ca25"
+installer_commit="acce0f887c543b6df633727d1769753f328c6601"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '内网向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2
@@ -63,7 +66,8 @@ class Redirect(HTTPRedirectHandler):
 
 files = (
     "scripts/__init__.py", "scripts/lan_installer.py", "scripts/vps_installer.py", "scripts/vps_runtime.py",
-    "deployer_products.py", "domain_proxy.py", "proxy_maintenance.py", "vps_resources.py",
+    "scripts/lib/__init__.py", "scripts/lib/deployer_products.py", "scripts/lib/domain_proxy.py",
+    "scripts/lib/proxy_maintenance.py", "scripts/lib/vps_resources.py",
     "payload_clouddrive2/app/__init__.py", "payload_clouddrive2/app/version.py",
 )
 try:

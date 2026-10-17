@@ -13,6 +13,9 @@ python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 2)' || {
 }
 
 script_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+if [[ -f "$script_root/src/tg2cloud/cli/commands.py" && -f "$script_root/scripts/run_source.py" ]]; then
+  exec python3 -B "$script_root/scripts/run_source.py" install "$@"
+fi
 if [[ -f "$script_root/scripts/vps_installer.py" && -f "$script_root/scripts/vps_runtime.py" ]]; then
   cd -- "$script_root"
   exec python3 -B -m scripts.vps_installer "$@"
@@ -55,7 +58,7 @@ root = Path(sys.argv[1])
 api = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 # Update this pin only after the helper revision passes its CI and review.
 # It is independent of the target Release, which need not contain the CLI.
-installer_commit = "fb37e5f0d6b4dfaed95eafafa08ef95faf33ca25"
+installer_commit = "acce0f887c543b6df633727d1769753f328c6601"
 installer_version = "1.3.0"
 
 def validate_url(url):
@@ -100,7 +103,8 @@ try:
         raise ValueError("tag recursion")
     files = (
         "scripts/__init__.py", "scripts/vps_runtime.py", "scripts/vps_installer.py",
-        "deployer_products.py", "domain_proxy.py", "vps_resources.py", "proxy_maintenance.py",
+        "scripts/lib/__init__.py", "scripts/lib/deployer_products.py", "scripts/lib/domain_proxy.py",
+        "scripts/lib/vps_resources.py", "scripts/lib/proxy_maintenance.py",
         "payload_clouddrive2/app/__init__.py", "payload_clouddrive2/app/version.py",
     )
     for name in files:

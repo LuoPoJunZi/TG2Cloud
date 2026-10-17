@@ -9,6 +9,9 @@ on:
       - "install-lan.sh"
       - "uninstall.sh"
       - "scripts/**"
+      - "src/**"
+      - "pyproject.toml"
+      - "requirements/**"
       - "tests/test_vps_installer.py"
       - "tests/test_lan*.py"
       - "tests/test_uninstaller.py"
@@ -20,12 +23,7 @@ on:
       - ".github/scripts/check_python.py"
       - ".github/scripts/check_repository.py"
       - ".ruff.toml"
-      - "proxy_maintenance.py"
-      - "deployer_products.py"
-      - "domain_proxy.py"
-      - "vps_resources.py"
-      - "payload_clouddrive2/**"
-      - "payload_openlist/**"
+      - "packaging/**"
       - ".github/workflows/vps-installer.yml"
   pull_request:
     branches: [main]
@@ -34,6 +32,9 @@ on:
       - "install-lan.sh"
       - "uninstall.sh"
       - "scripts/**"
+      - "src/**"
+      - "pyproject.toml"
+      - "requirements/**"
       - "tests/test_vps_installer.py"
       - "tests/test_lan*.py"
       - "tests/test_uninstaller.py"
@@ -45,16 +46,14 @@ on:
       - ".github/scripts/check_python.py"
       - ".github/scripts/check_repository.py"
       - ".ruff.toml"
-      - "proxy_maintenance.py"
-      - "deployer_products.py"
-      - "domain_proxy.py"
-      - "vps_resources.py"
-      - "payload_clouddrive2/**"
-      - "payload_openlist/**"
+      - "packaging/**"
       - ".github/workflows/vps-installer.yml"
 
 permissions:
   contents: read
+
+env:
+  PYTHONPATH: src
 
 jobs:
   offline-linux:
@@ -68,6 +67,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
         with:

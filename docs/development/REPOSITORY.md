@@ -1,67 +1,61 @@
 # 仓库结构与维护规范
 
-本仓库主要维护共享 Bot 运行代码、两个 Edition 的 Linux 安装／卸载入口及静态文档站。主分支已把历史 PySide6 文件集中归档至 `legacy/desktop/`，继续保留兼容回归和恢复能力；目录整理不改变现有 VPS 安装路径。已发布 Tag 的目录布局不变。
+公共仓库以 Linux 一键脚本、共享 Telegram Bot、两 Edition Docker 资源和文档站为主。目录整理不改变现有 VPS 安装目录、数据库、配置或公开的一键命令 URL；历史 Tag 的布局保持不变。
 
 ## 目录职责
 
 | 路径 | 职责与维护边界 |
 | --- | --- |
-| `legacy/desktop/` | 冻结的 PySide6 入口、界面、展示助手、构建脚本、固定依赖和 Windows 资源；不再占根目录 |
-| 根目录四个共享 Python 模块 | `deployer_products.py`、`domain_proxy.py`、`proxy_maintenance.py`、`vps_resources.py` 仍为 Linux 安装／维护所需，保留原路径 |
-| `install.sh`、`install-lan.sh`、`uninstall.sh` | 公开单行命令入口；下载白名单与不可变源码固定值需经过审查和 CI 验证，不为整理目录而改写 |
-| `scripts/` | 独立 Linux 向导和本机执行适配；不得默认操作真实服务器 |
-| `payload_clouddrive2/` | 共享 Bot 应用和 CloudDrive2 Docker / Shell 资源 |
-| `payload_openlist/` | OpenList 专用运行资源；复用共享 Bot 应用，不复制第二套业务核心 |
-| `legacy/desktop/packaging/windows/` | v1.2.1 历史 EXE 版本资源，仍用于兼容校验 |
-| `assets/brand/` | 正式品牌资源唯一来源，不自动重绘或覆盖 |
-| `tests/` | 自动回归测试与模拟工具，保留公开 |
-| `.github/workflows/`、`.github/scripts/` | 全仓库 CI、发布与开发检查工具；不在网站子目录再放一套 Workflow |
-| `docs/`、`docs/development/` | 用户文档与公开开发规范；入口见 [文档目录](../README.md) |
-| `website/` | 独立静态文档站，使用自己的 Node 构建与测试，不改变主程序构建方式 |
+| `install.sh`、`install-lan.sh`、`uninstall.sh` | 保留根目录的公开单行命令入口 |
+| `src/tg2cloud/` | 共享 Bot、CLI、公共部署、存储、持久化及监测 |
+| `scripts/run_source.py` | 不依赖当前目录或 Bot 依赖的受控源码入口 |
+| `packaging/` | 共用 Dockerfile、两版 Compose、Shell 钩子和 `app.*` 兼容入口 |
+| `requirements/`、`pyproject.toml` | 包元数据、依赖分组及同一 uv 工具生成的哈希锁文件 |
+| `assets/brand/` | 正式 Logo／Icon 唯一来源，不自动重绘或覆盖 |
+| `tests/` | Bot、Linux、资源、Docker、网关、备份和协议兼容回归 |
+| `.github/` | Workflow、检查工具、Dependabot、贡献指南和安全政策 |
+| `docs/` | 用户指南与公开开发规范，入口见[文档目录](../README.md) |
+| `website/` | 独立静态文档站，沿用现有 Node 构建与部署方式 |
 
-根目录保留 README、许可证、版本历史、正式入口和必要模块。新增用户文档先加入文档目录；新文档优先使用清楚的英文大写短横线文件名，网站文章沿用现有小写短横线与分类目录。现有中英文文件名不批量重命名，避免破坏链接。
+根目录只保留标准配置、README／英文版、许可证、版本记录及三个 Shell 入口。本轮重构不迁移运行数据或提升版本；兼容及未公开 helper 的发布步骤见[Linux 重构说明](LINUX-REFACTOR.md)。
 
-桌面文件的归档说明见 [legacy/desktop/README.md](../../legacy/desktop/README.md)。独立本地恢复 ZIP 与 v1.2.1 历史 Tag 保留；本轮没有删除桌面实现或把本地 ZIP 提交到 Git。
+## 桌面源码只在本地保留
+
+Windows EXE 停留在 v1.2.1。main 不再跟踪旧部署器、PySide6 界面、桌面 SSH／Tunnel、Windows 资源、打包脚本或专用测试，公共 CI 不再安装 Qt、Paramiko、PyInstaller。
+
+维护者本地的 `legacy/` 和独立恢复 ZIP 由 `.git/info/exclude` 排除，不作为公共依赖。恢复请使用完整备份或 [v1.2.1 Tag](https://github.com/LuoPoJunZi/TG2Cloud/tree/v1.2.1)，在新目录中校验和构建，不覆盖当前工作树。历史 Release、EXE、SHA256 和 Git 历史不重写。
+
+混合测试中的非桌面检查必须保留。历史配置输出使用仅含合成数据的 `tests/fixtures/deployment-config.json` 固定协议快照回归，不再导入旧 GUI；载荷组装直接测试公开 Linux 接口。旧完整测试与代码保存在本地恢复归档，不能把本地专用测试算作当前公共 CI 已执行。
 
 ## 编辑与检查规范
 
-`.editorconfig` 约定 UTF-8、空格缩进、文件末尾换行；Shell 为 LF，PowerShell 为 CRLF，与 `.gitattributes` 保持一致。Markdown 不自动删除有语义的末尾双空格，不强制将自然段折成多行。正式 SVG / PNG / ICO 不作为格式化输入。
+`.editorconfig` 和 `.gitattributes` 约定 UTF-8、换行与缩进；不自动重绘品牌资源或破坏 Markdown 有语义的末尾空格。现有中英文文档不做无关批量重命名；新用户文档加入[文档目录](../README.md)。
 
-`.ruff.toml` 统一文件发现与忽略策略，保持现有 Ruff 的隐式默认规则，不额外设置 `select` / `ignore` 或批量格式化。显式列出规则组可能启用原默认没有启用的规则，因此不为标准化调整规则范围。全仓库检查通过 `ruff check .` 自动发现 Python 源文件，遵守 Git 忽略规则；CLI 检查使用独立范围，保持 Python 3.10 / 3.13 无桌面依赖测试。
+`.ruff.toml` 保留原有隐式规则和文件发现策略。统一检查入口为 `.github/scripts/check_python.py`；环境准备见[贡献指南](../../.github/CONTRIBUTING.md)。`all` 依次运行公共文件检查、unittest、Ruff、compileall，不安装依赖、不构建 EXE、不部署或推送。CLI 范围继续在 Python 3.10／3.13 下只用标准库运行。
 
-统一 Python 检查入口为 `.github/scripts/check_python.py`；具体环境准备和命令见 [贡献指南](../../CONTRIBUTING.md)。`all` 依次运行仓库约束、测试、Ruff 和 compileall，不安装依赖，不打包 EXE，不部署，不提交或推送。缺少依赖或检查失败直接返回非零退出码。
+`.github/scripts/check_repository.py` 使用 Git 枚举 tracked／未被忽略的新文件，禁止构建产物、缓存、私有配置、内部记录及本地桌面归档进入公共集合。已跟踪文件不能仅通过 ignore 移除，必须取消跟踪。它不读取或显示凭据内容，不是完整 Secret／历史扫描。
 
-`.github/scripts/check_repository.py` 是只读约束检查，可独立运行，不需要第三方 Python 依赖。它通过 Git 获取已跟踪文件与未被忽略的新文件，检查常见产物 / 缓存 / 私有配置 / 内部记录是否混入候选公共文件集合；已经跟踪的文件不能仅靠 `.gitignore` 消除报错。只在本地忽略的资料不属于候选集合，不会被扫描内容或自动清理。
+输入检查保留三个入口、Linux 共用模块、两 Edition 资源及品牌资源，以 AST 读取 `src/tg2cloud/deployment/profiles.py` 静态清单并检查递归源码，不执行模块。公开 `docs/` Markdown 必须有有效索引链接；它不是动态依赖解析器，也不验证公网。公共检查需要完整 Git checkout；源码 ZIP 可运行测试和语法检查，但不能推断跟踪状态。
 
-输入约束保留正式脚本、共享模块、归档的桌面资源及品牌输入，并以 AST 读取 `deployer_products.py` 中两 Edition 的 payload 字面量路径，不导入或执行运行代码。它验证文件存在、是仓库内普通文件且未被排除，但不是所有动态依赖的解析器，也不能代替真实部署验收。文档约束检查索引中的本地文件链接，并要求每个公开 `docs/` Markdown 文件被索引收录；不检查网页链接是否在线，不自动修改文章或导航。
-
-这些检查需要完整 Git checkout，不能在源码 ZIP 中推断跟踪状态。公共文件 Workflow 对 main 的 Push / PR 全部运行；Release 的 prepare 阶段也在 Linux 验证和源码打包前检查。检查只显示问题路径 / 索引行号及原因，不读取或打印凭据文件内容，不扫描 Git 历史；通过不代表不存在真实 Secret。
-
-网站继续使用 `npm run build` 与 `npm test`。文档 CI 检查索引链接和仓库规范；网站测试检查公开命令、版本和品牌副本。自动检查只验证明确列出的约束，不能代替语义审阅、浏览器检查和真实 VPS/NAS 验收。
+完整回归还应在不含本地 `legacy/` 的干净副本运行，确保新克隆可独立工作。缺少 Bash、rclone 或显式 Docker 条件时如实记录跳过；不增加 skip 来掩盖失败。
 
 ## 仓库文档与网站同步
 
 | 事实来源 | 需要同步审阅的网页文章 |
 | --- | --- |
-| `README.md`、`README_EN.md`、`docs/VPS-INSTALL.md` | `website/docs/download.md`、`guide/quick-start.md`、`operations/update.md` |
-| `docs/LAN-INSTALL.md`、`docs/UNINSTALL.md` | `website/docs/download.md`；内网与卸载命令、安全边界必须一致 |
-| `docs/OPERATIONS.md` | `website/docs/operations/maintenance.md`、`backup.md`、`update.md`及相关故障排查 |
-| `docs/MIGRATION_FROM_TG115.md` | `website/docs/operations/migration.md` |
-| 唯一版本源、CHANGELOG 与 RELEASE_NOTES | `website/site.config.json`、包版本、下载页、更新日志与资料来源 |
-| `assets/brand/` | `website/public/assets/` 中的正式图标副本，以及 `website/public/favicon.ico` |
+| README、VPS 安装指南 | 下载、快速开始、升级 |
+| 内网与卸载指南 | 下载页中的命令及安全边界 |
+| 运维与恢复指南 | 维护、备份、升级及故障排查 |
+| TG115 迁移指南 | 网站迁移文章 |
+| 唯一版本源、CHANGELOG、RELEASE_NOTES | 网站版本、发布状态、下载与来源 |
+| `assets/brand/` | 网站实际静态图标副本 |
 
-网页文章是面向浏览器的整理版，不要求全文逐字相同。修改安装、升级、卸载或安全行为时，同时审阅对应来源和摘要；发布状态与 main 分支行为不同必须明确区分，不能仅统一版本数字。
+网站仍执行 `npm run build` 和 `npm test`，不更改主题、导航、搜索或部署方式。文章可有不同篇幅，但命令、边界和发布事实必须一致。main 待发布行为与稳定 Release 必须区分。自动检查不替代浏览器、VPS／NAS 或真实网盘验收。
 
-网站品牌副本需要独立静态部署，因此保留实际文件而非符号链接。测试逐字节比较五个正式图标副本；更新品牌时手动复制已有正式资源，不生成新图形。
+## 本地资料与发布边界
 
-## 本地文件与生成产物
+`build/`、`dist/`、`website/dist/`、测试缓存是可重建输出；`.venv/`、个人 AI 指令、内部审计、工作记录及恢复 ZIP 不属于可随意删除的垃圾。本地独有资料优先使用 `.git/info/exclude`，不作为公共文档；通用产物和秘密由 `.gitignore` 排除。
 
-`build/`、`dist/`、`website/dist/`、Python / 测试缓存是生成或本地工作目录，不提交到 Git。`.venv/` 是开发环境，不属于应自动删除的垃圾。现有 `.gitignore` 已排除这些内容及秘密、运行数据库和日志。
+目录标准化不提升版本、不创建 Tag、不替换已有 Release。在线入口的下载白名单、包结构和不可变 helper pin 必须配套：先在隔离分支提交辅助代码并验证，再把三个入口固定到通过的同一提交。正式业务 payload 仍来自稳定 Release，不改用 main／RC。
 
-`build/` 下的依赖验证副本、回归检查缓存、历史发布辅助文件应先确认是否仍需复用，再逐项清理。不能仅凭目录名就递归删除整个工作区或删除可能用于未完成验收的材料；本轮标准化不执行清理。
-
-个人 AI 指令、内部审计与开发记录继续由 `.git/info/exclude` 本地排除，不加入公共开发文档。内部记录不替代 CHANGELOG；不要把账号、密码、Token、生产配置或实际数据库写入任何文档。
-
-## 发布边界
-
-整理规范和文档不提升产品版本、不创建 Tag、不替换已有 Release。Windows EXE 停留在 v1.2.1；后续 Release 从同一 Tag 验证并打包 Linux 源码一次，发布 Job 复用其 artifact 和实际 SHA256。桌面相关文件暂留用于兼容测试，后续清理和备份要求见[脚本优先说明](SCRIPT-FIRST.md)。
+Release 继续从同一 Tag 验证并打包源码一次，发布 Job 复用 artifact 和实际 SHA256。历史 Tag 的重试按历史布局验证，不要求本地桌面资料。更多边界见[脚本优先说明](SCRIPT-FIRST.md)。

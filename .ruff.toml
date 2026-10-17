@@ -2,9 +2,3 @@
 # Explicitly selecting rule groups can opt into additional rules.
 respect-gitignore = true
 extend-exclude = ["website"]
-
-# Frozen Windows entry points are launched with Python and need no Unix exec bit.
-[lint.per-file-ignores]
-"legacy/desktop/installer.py" = ["EXE001"]
-"legacy/desktop/installer_clouddrive2.py" = ["EXE001"]
-"legacy/desktop/installer_openlist.py" = ["EXE001"]

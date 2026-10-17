@@ -16,11 +16,13 @@ import unittest
 from contextlib import closing
 from pathlib import Path
 
+from payload_fixture import payload
 from test_deployment import BASH, bash_path
 
 ROOT = Path(__file__).resolve().parents[1]
-INSTALL_SCRIPT = (ROOT / "payload_openlist/remote_install.sh").read_text(encoding="utf-8")
-MANAGE_SCRIPT = (ROOT / "payload_openlist/manage.sh").read_text(encoding="utf-8")
+PAYLOAD = payload("clouddrive2")
+INSTALL_SCRIPT = (ROOT / "packaging/hooks/openlist/remote_install.sh").read_text(encoding="utf-8")
+MANAGE_SCRIPT = (ROOT / "packaging/hooks/openlist/manage.sh").read_text(encoding="utf-8")
 PREFIX = INSTALL_SCRIPT.split('[[ "$(id -u)" -eq 0 ]]', 1)[0]
 UPGRADE = 'if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then\n  BACKUP=' + INSTALL_SCRIPT.split(
     'if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then\n  BACKUP=', 1,
@@ -29,7 +31,7 @@ MANUAL = "create_backup() (" + MANAGE_SCRIPT.split("create_backup() (", 1)[1].sp
     "\napply_config() {", 1,
 )[0]
 DIGEST = re.search(
-    r"(?m)^    image: (.+)$", (ROOT / "payload_openlist/docker-compose.yml").read_text(encoding="utf-8"),
+    r"(?m)^    image: (.+)$", (ROOT / "packaging/compose/docker-compose.openlist.yml").read_text(encoding="utf-8"),
 ).group(1)
 
 HARNESS = r'''
@@ -88,7 +90,7 @@ docker() {
 import sys
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
-from app.backup_database import backup_database
+from tg2cloud.persistence.backup import backup_database
 backup_database(Path(sys.argv[2]), Path(sys.argv[3]))
 PY
   fi
@@ -156,7 +158,7 @@ class OpenListBackupTests(unittest.TestCase):
             input=PREFIX + HARNESS + before + action,
             env=os.environ | {
                 "TG2CLOUD_TEST_PYTHON": bash_path(Path(sys.executable)),
-                "TG2CLOUD_TEST_PAYLOAD": bash_path(ROOT / "payload_clouddrive2"),
+                "TG2CLOUD_TEST_PAYLOAD": bash_path(PAYLOAD),
                 "TG2CLOUD_TEST_DIGEST": DIGEST,
                 "TG2CLOUD_TEST_MODE": mode,
                 "TG2CLOUD_TEST_WINDOWS": "1" if os.name == "nt" else "0",

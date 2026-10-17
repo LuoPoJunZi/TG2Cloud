@@ -6,10 +6,12 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from deployer_products import PRODUCTS
-from scripts import vps_installer as cli
-from scripts.vps_runtime import SafeLog
-from vps_resources import GIB, VpsResources, recommend_storage
+import tg2cloud.cli.terminal as tgdep_terminal
+import tg2cloud.deployment.instances as tgdep_instances
+import tg2cloud.deployment.preflight as tgdep_preflight
+from tg2cloud.deployment.host import SafeLog
+from tg2cloud.deployment.profiles import PRODUCTS
+from tg2cloud.deployment.resources import GIB, VpsResources, recommend_storage
 
 
 def resources(**changes):
@@ -30,22 +32,22 @@ def resources(**changes):
 class StorageWizardTests(unittest.TestCase):
     def setUp(self):
         self.product = PRODUCTS["clouddrive2"]
-        self.instance = cli.Instance(self.product, Path(self.product.install_dir), False)
+        self.instance = tgdep_instances.Instance(self.product, Path(self.product.install_dir), False)
         self.messages = []
         self.log = SafeLog(self.messages.append)
         self.ui = Mock()
         self.ui.ask.side_effect = lambda prompt, **kwargs: kwargs["default"]
 
     def choose(self, sample):
-        with patch.object(cli, "probe_resources", return_value=sample):
-            return cli.choose_storage(self.instance, Mock(), self.log, self.ui)
+        with patch.object(tgdep_preflight, "probe_resources", return_value=sample):
+            return tgdep_preflight.choose_storage(self.instance, Mock(), self.log, self.ui)
 
     def test_small_disk_default_matches_existing_recommendation(self):
         sample = resources()
         for product in PRODUCTS.values():
             with self.subTest(edition=product.key):
-                self.instance = cli.Instance(product, Path(product.install_dir), False)
-                expected = recommend_storage(sample, **cli.storage_options(product)).preferred
+                self.instance = tgdep_instances.Instance(product, Path(product.install_dir), False)
+                expected = recommend_storage(sample, **tgdep_preflight.storage_options(product)).preferred
                 self.assertEqual(self.choose(sample), (str(expected.budget_gb), str(expected.reserve_gb)))
                 self.assertEqual(self.ui.ask.call_args.kwargs["default"], "1")
         self.assertIn("（推荐）", "\n".join(self.messages))
@@ -63,7 +65,7 @@ class StorageWizardTests(unittest.TestCase):
             with self.subTest(budget=budget, reserve=reserve):
                 self.ui.ask.side_effect = ["3", budget, reserve]
                 self.ui.confirm.return_value = False
-                with patch.object(cli, "collect_config") as collect, self.assertRaisesRegex(ValueError, "未写入配置"):
+                with patch.object(tgdep_terminal, "collect_config") as collect, self.assertRaisesRegex(ValueError, "未写入配置"):
                     self.choose(resources())
                 collect.assert_not_called()
 
@@ -86,15 +88,15 @@ class StorageWizardTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             self.choose(sample)
         product = PRODUCTS["openlist"]
-        self.instance = cli.Instance(product, Path(product.install_dir), False)
+        self.instance = tgdep_instances.Instance(product, Path(product.install_dir), False)
         self.ui.ask.side_effect = ["1"]
         self.assertEqual(self.choose(sample), ("8", "8"))
 
     def test_existing_instance_cannot_be_reconfigured_by_recommendation(self):
         self.instance.present = True
         self.instance.config = {"LOCAL_TEMP_BUDGET_GB": "13", "MIN_FREE_DISK_GB": "9"}
-        with patch.object(cli, "probe_resources") as probe, self.assertRaisesRegex(ValueError, "保留磁盘配置"):
-            cli.choose_storage(self.instance, Mock(), self.log, self.ui)
+        with patch.object(tgdep_preflight, "probe_resources") as probe, self.assertRaisesRegex(ValueError, "保留磁盘配置"):
+            tgdep_preflight.choose_storage(self.instance, Mock(), self.log, self.ui)
         probe.assert_not_called()
         self.ui.ask.assert_not_called()
         self.assertEqual(self.instance.config, {"LOCAL_TEMP_BUDGET_GB": "13", "MIN_FREE_DISK_GB": "9"})
@@ -104,7 +106,7 @@ class StorageWizardTests(unittest.TestCase):
             session = Mock()
             session.run.return_value = result
             with self.subTest(result=result), self.assertRaises(ValueError):
-                cli.choose_storage(self.instance, session, self.log, self.ui)
+                tgdep_preflight.choose_storage(self.instance, session, self.log, self.ui)
         self.ui.ask.assert_not_called()
 
 

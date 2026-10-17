@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import asyncio
-import sys
 import tempfile
 import time
 import unittest
@@ -14,11 +13,10 @@ from unittest.mock import AsyncMock, patch
 from telethon import events
 from telethon.tl import types
 from telethon.tl.types import MessageEntityHashtag, MessageEntityTextUrl
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "payload_clouddrive2"))
-from app.db import TaskDB
-from app.naming import album_file_name, caption_title, video_file_name
 from test_scenarios import make_service, make_settings
+
+from tg2cloud.domain.naming import album_file_name, caption_title, video_file_name
+from tg2cloud.persistence.sqlite import TaskDB
 
 
 class VideoNameTests(unittest.TestCase):
@@ -181,7 +179,7 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
             started.set()
             await release.wait()
 
-        with patch("app.main.asyncio.sleep", side_effect=wait_for_album):
+        with patch("tg2cloud.app.asyncio.sleep", side_effect=wait_for_album):
             fallback = asyncio.create_task(self.service._on_message(self.single_event(video)))
             await started.wait()
             await asyncio.gather(self.service._on_album(self.album_event([video, photo])),
@@ -195,7 +193,7 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_grouped_single_video_falls_back_without_guessing(self):
         video = self.album_message(1, "video", name="123456.mp4")
-        with patch("app.main.asyncio.sleep", new=AsyncMock()) as wait:
+        with patch("tg2cloud.app.asyncio.sleep", new=AsyncMock()) as wait:
             await self.service._on_message(self.single_event(video))
         wait.assert_awaited_once_with(2)
         self.assertEqual(self.db.get(1)["file_name"], "123456.mp4")
@@ -203,7 +201,7 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_late_caption_does_not_rename_an_existing_task(self):
         video = self.album_message(1, "video", name="123456.mp4")
-        with patch("app.main.asyncio.sleep", new=AsyncMock()):
+        with patch("tg2cloud.app.asyncio.sleep", new=AsyncMock()):
             await self.service._on_message(self.single_event(video))
         photo = self.album_message(2, "photo", "迟到的标题")
         await self.service._on_album(self.album_event([video, photo]))
@@ -285,13 +283,13 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
     def test_monday_reset_survives_restart_without_changing_history(self):
         monday = time.mktime((2026, 10, 12, 0, 0, 0, 0, 0, -1))
         old = self.make_task()
-        with patch("app.db.time.time", return_value=monday - 1):
+        with patch("tg2cloud.persistence.sqlite.time.time", return_value=monday - 1):
             self.db.update(old["id"], state="upload_failed_retained", error="old")
         before = self.db.get(old["id"])
         events = self.db.events(old["id"])
         self.assertEqual(self.db.weekly_failed_count(now=monday - 1), 1)
         self.assertEqual(self.db.weekly_failed_count(now=monday), 0)
-        with patch("app.db.time.time", return_value=monday + 3600):
+        with patch("tg2cloud.persistence.sqlite.time.time", return_value=monday + 3600):
             self.db.update(old["id"], error="progress edit is not a fresh failure")
         self.db.close()
         self.db = TaskDB(self.settings.data_dir / "metadata.db")
@@ -303,7 +301,7 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
     def test_retries_count_once_and_resolved_tasks_leave_display(self):
         monday = time.mktime((2026, 10, 12, 0, 0, 0, 0, 0, -1))
         task = self.make_task()
-        with patch("app.db.time.time", return_value=monday):
+        with patch("tg2cloud.persistence.sqlite.time.time", return_value=monday):
             self.db.update(task["id"], state="download_failed")
             self.db.update(task["id"], state="queued")
             self.db.update(task["id"], state="download_failed")
@@ -314,7 +312,7 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
     def test_year_boundary_and_legacy_failure_timestamp(self):
         task = self.make_task()
         sunday = time.mktime((2028, 12, 31, 23, 59, 59, 0, 0, -1))
-        with patch("app.db.time.time", return_value=sunday):
+        with patch("tg2cloud.persistence.sqlite.time.time", return_value=sunday):
             self.db.update(task["id"], state="download_failed")
         self.db._conn.execute("DELETE FROM task_events")  # synthetic legacy fixture only
         self.db.close()
@@ -322,7 +320,7 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.db.weekly_failed_count(now=sunday), 1)
         monday = sunday + 1
         self.assertEqual(self.db.weekly_failed_count(now=monday), 0)
-        with patch("app.db.time.time", return_value=monday):
+        with patch("tg2cloud.persistence.sqlite.time.time", return_value=monday):
             self.db.update(task["id"], error="updated legacy detail")
         self.assertEqual(self.db.weekly_failed_count(now=monday), 0)
 
@@ -335,7 +333,7 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
     def test_week_boundary_uses_local_calendar_not_a_fixed_seven_days(self):
         # A mocked local Wednesday; mktime must resolve Monday's timezone/DST.
         local = time.struct_time((2026, 10, 14, 12, 0, 0, 2, 287, 1))
-        with patch("app.db.time.localtime", return_value=local), patch("app.db.time.mktime", return_value=100) as convert:
+        with patch("tg2cloud.persistence.sqlite.time.localtime", return_value=local), patch("tg2cloud.persistence.sqlite.time.mktime", return_value=100) as convert:
             self.assertEqual(self.db.weekly_failed_count(now=1000), 0)
             convert.assert_called_once_with((2026, 10, 12, 0, 0, 0, 0, 0, -1))
 

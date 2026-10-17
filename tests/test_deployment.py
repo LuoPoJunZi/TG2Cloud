@@ -4,13 +4,12 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
-from dataclasses import replace
 from pathlib import Path
 
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
-from legacy.desktop.installer import runtime_status_command
+from payload_fixture import payload
 
 SOURCE = Path(__file__).resolve().parents[1]
 git = shutil.which("git")
@@ -45,7 +44,7 @@ class DeploymentShellTests(unittest.TestCase):
             ),
         )
         for script_name in ("remote_install.sh", "repair_clouddrive_network.sh"):
-            script = (SOURCE / "payload_clouddrive2" / script_name).read_text(
+            script = (SOURCE / "packaging/hooks/clouddrive2" / script_name).read_text(
                 encoding="utf-8"
             )
             match = re.search(
@@ -79,7 +78,7 @@ class DeploymentShellTests(unittest.TestCase):
                     self.assertEqual(tuple(result.stdout.decode().splitlines()), expected)
 
     def test_clouddrive_diagnostic_logs_redact_secrets(self) -> None:
-        script = (SOURCE / "payload_clouddrive2/manage.sh").read_text(
+        script = (SOURCE / "packaging/hooks/clouddrive2/manage.sh").read_text(
             encoding="utf-8"
         )
         function = "redact_runtime_logs() {" + script.split(
@@ -108,83 +107,6 @@ class DeploymentShellTests(unittest.TestCase):
         self.assertNotIn(b"alice:private", result.stdout)
         self.assertIn(b"[REDACTED]", result.stdout)
 
-    def test_runtime_status_separates_current_and_legacy(self) -> None:
-        for base_product in (CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT):
-            with self.subTest(edition=base_product.key), tempfile.TemporaryDirectory() as temp:
-                root = Path(temp)
-                current = root / "current"
-                current.mkdir()
-                legacy = root / "legacy"
-                bash_env = root / "bash_env.sh"
-                bash_env.write_text(
-                    """docker() {
-  if [[ "$1 $2" == "container inspect" ]]; then return 1; fi
-  if [[ "$1" == inspect ]]; then
-    if [[ "$4" == *-bot ]]; then printf '%s\\n' "$TG2CLOUD_TEST_BOT";
-    else printf '%s\\n' "$TG2CLOUD_TEST_GATEWAY"; fi
-    return 0
-  fi
-  if [[ "$1 $2" == "network inspect" ]]; then
-    [[ "$TG2CLOUD_TEST_NETWORK" == PRESENT ]]; return
-  fi
-  return 1
-}
-curl() { return 0; }
-""",
-                    encoding="utf-8",
-                )
-                product = replace(
-                    base_product,
-                    legacy_install_dirs=(bash_path(legacy),),
-                    legacy_containers=("not-present-legacy",),
-                )
-                command = runtime_status_command(product, bash_path(current))
-                cases = (
-                    ("not_installed", False, False, "", "", "", "NOT_INSTALLED", "NONE"),
-                    ("legacy_only", False, True, "", "", "", "NOT_INSTALLED", "DETECTED"),
-                    ("stopped", True, True, "exited", "false", "PRESENT", "STOPPED", "DETECTED"),
-                    ("running", True, True, "healthy", "true", "PRESENT", "RUNNING", "DETECTED"),
-                )
-                for name, installed, old, bot, gateway, network, state, legacy_state in cases:
-                    with self.subTest(scenario=name):
-                        compose = current / "docker-compose.yml"
-                        if installed:
-                            compose.write_text(
-                                f"container_name: {product.bot_container}\n"
-                                f"container_name: {product.storage_container}\n",
-                                encoding="utf-8",
-                            )
-                        elif compose.exists():
-                            compose.unlink()
-                        if old:
-                            legacy.mkdir(exist_ok=True)
-                        elif legacy.exists():
-                            legacy.rmdir()
-                        result = subprocess.run(
-                            [BASH, "-c", command],
-                            env=os.environ
-                            | {
-                                "BASH_ENV": bash_path(bash_env),
-                                "TG2CLOUD_TEST_BOT": bot,
-                                "TG2CLOUD_TEST_GATEWAY": gateway,
-                                "TG2CLOUD_TEST_NETWORK": network,
-                            },
-                            capture_output=True,
-                            timeout=20,
-                            check=False,
-                            **(
-                                {"creationflags": subprocess.CREATE_NO_WINDOW}
-                                if os.name == "nt"
-                                else {}
-                            ),
-                        )
-                        self.assertEqual(result.returncode, 0, result.stderr.decode())
-                        self.assertIn(
-                            f"TG2CLOUD_STATUS={state}".encode(), result.stdout
-                        )
-                        self.assertIn(
-                            f"TG2CLOUD_LEGACY={legacy_state}".encode(), result.stdout
-                        )
 
     def test_redeploy_keeps_existing_config_unless_explicitly_replaced(self) -> None:
         secrets = (
@@ -200,7 +122,7 @@ curl() { return 0; }
             candidate = root / "candidate.env"
             existing.write_text(secrets, encoding="utf-8")
             helper = bash_path(
-                SOURCE / "payload_clouddrive2/preserve_runtime_config.sh"
+                SOURCE / "packaging/hooks/clouddrive2/preserve_runtime_config.sh"
             )
             for apply_config, expected in (
                 (False, secrets),
@@ -270,7 +192,7 @@ curl() { return 0; }
             with self.subTest(edition=edition), tempfile.TemporaryDirectory() as temp:
                 legacy_dir = Path(temp) / "legacy"
                 legacy_dir.mkdir()
-                script = (SOURCE / f"payload_{edition}/remote_install.sh").read_text(
+                script = (SOURCE / f"packaging/hooks/{edition}/remote_install.sh").read_text(
                     encoding="utf-8"
                 )
                 snippet = script.split(f"[[ ! -e {legacy_path} ]]", 1)[1].split(
@@ -305,7 +227,7 @@ curl() { return 0; }
             ("clouddrive2", 19798, "tg115-clouddrive2"),
             ("openlist", 5244, "tg115-openlist"),
         ):
-            script = (SOURCE / f"payload_{edition}/remote_install.sh").read_text(
+            script = (SOURCE / f"packaging/hooks/{edition}/remote_install.sh").read_text(
                 encoding="utf-8"
             )
             preflight = "for target_container in " + script.split(
@@ -353,7 +275,7 @@ curl() { return 0; }
                     self.assertEqual(result.returncode == 0, allowed, result.stderr)
 
     def test_openlist_port_discovery_does_not_confuse_bot_with_gateway(self) -> None:
-        script = (SOURCE / "payload_openlist/remote_install.sh").read_text(
+        script = (SOURCE / "packaging/hooks/openlist/remote_install.sh").read_text(
             encoding="utf-8"
         )
         preflight = "PORT_5244_OWNER=" + script.split("PORT_5244_OWNER=", 1)[1].split(
@@ -404,7 +326,7 @@ curl() { return 0; }
                 "-c",
                 command,
                 "--",
-                bash_path(SOURCE / "payload_openlist/openlist_admin.sh"),
+                bash_path(SOURCE / "packaging/hooks/openlist/openlist_admin.sh"),
             ],
             env=os.environ | {"TG115_TEST_ADMIN_OUTPUT": command_output},
             capture_output=True,
@@ -465,7 +387,7 @@ INFO[2026-09-18] password: Reset_2345""",
                     "-c",
                     'source "$1"; tg115_preserve_existing_webdav_config "$2" "$3"',
                     "--",
-                    bash_path(SOURCE / "payload_openlist/preserve_webdav_config.sh"),
+                    bash_path(SOURCE / "packaging/hooks/openlist/preserve_webdav_config.sh"),
                     bash_path(candidate),
                     bash_path(existing),
                 ],
@@ -504,7 +426,7 @@ INFO[2026-09-18] password: Reset_2345""",
                 "-c",
                 command,
                 "--",
-                bash_path(SOURCE / "payload_clouddrive2/backup_retention.sh"),
+                bash_path(SOURCE / "packaging/hooks/clouddrive2/backup_retention.sh"),
                 bash_path(root),
                 action,
                 keep,
@@ -525,16 +447,16 @@ INFO[2026-09-18] password: Reset_2345""",
             (root / ".env").write_text("old", encoding="utf-8")
             candidate = root / "candidate.env"
             candidate.write_text("new", encoding="utf-8")
-            (root / "app").mkdir()
-            (root / "app" / "placeholder.py").write_text("# test fixture\n", encoding="utf-8")
+            shutil.copytree(payload("clouddrive2") / "app", root / "app")
             shutil.copyfile(
-                SOURCE / "payload_clouddrive2/backup_retention.sh",
+                SOURCE / "packaging/hooks/clouddrive2/backup_retention.sh",
                 root / "backup_retention.sh",
             )
             env = os.environ | {
                 "TG115_TEST_DIR": bash_path(root), "TG115_TEST_MODE": mode,
+                "TG2CLOUD_TEST_PYTHON": bash_path(Path(sys.executable)),
                 "TG115_TEST_SCRIPT": bash_path(
-                    SOURCE / "payload_clouddrive2/manage.sh"
+                    SOURCE / "packaging/hooks/clouddrive2/manage.sh"
                 ),
                 "TG115_TEST_CANDIDATE": bash_path(candidate),
             }
@@ -556,14 +478,13 @@ INFO[2026-09-18] password: Reset_2345""",
                     "LOCAL_TEMP_BUDGET_GB=37\nMIN_FREE_DISK_GB=12\n"
                 )
                 (root / ".env").write_text(old_config, encoding="utf-8")
-                (root / "app").mkdir()
-                (root / "app/placeholder.py").write_text("# fixture\n", encoding="utf-8")
+                shutil.copytree(payload(edition) / "app", root / "app")
                 (root / "data").mkdir()
                 (root / "data/tg115.db").write_bytes(b"database-stays")
                 (root / "config/rclone").mkdir(parents=True)
                 (root / "config/rclone/rclone.conf").write_bytes(b"rclone-stays")
                 shutil.copyfile(
-                    SOURCE / "payload_clouddrive2/backup_retention.sh",
+                    SOURCE / "packaging/hooks/clouddrive2/backup_retention.sh",
                     root / "backup_retention.sh",
                 )
                 for mode in ("ok", "invalid"):
@@ -576,10 +497,11 @@ INFO[2026-09-18] password: Reset_2345""",
                             env=os.environ
                             | {
                                 "TG115_TEST_DIR": bash_path(root),
+                                "TG2CLOUD_TEST_PYTHON": bash_path(Path(sys.executable)),
                                 "TG115_TEST_MODE": mode,
                                 "TG115_TEST_ACTION": "update",
                                 "TG115_TEST_SCRIPT": bash_path(
-                                    SOURCE / f"payload_{edition}/manage.sh"
+                                    SOURCE / "packaging/hooks" / edition / "manage.sh"
                                 ),
                                 "TG115_TEST_CANDIDATE": bash_path(root / ".env"),
                             },
@@ -604,6 +526,8 @@ INFO[2026-09-18] password: Reset_2345""",
                             b"rclone-stays",
                         )
                         self.assertIn(f"tg2cloud-{edition}-bot", calls)
+                        if mode == "ok":
+                            self.assertIn("--expected-code tg2cloud-code-v2:sha256:", calls)
                         self.assertNotIn("tg115-", calls)
                         self.assertNotIn("compose down", calls)
 
@@ -634,13 +558,13 @@ INFO[2026-09-18] password: Reset_2345""",
         self.assertEqual(code, 0)
         self.assertEqual(config, "new")
         self.assertNotIn("compose up -d clouddrive2", calls)
-        self.assertIn("--expected-code", calls)
+        self.assertIn("--expected-code tg2cloud-code-v2:sha256:", calls)
 
     def test_unsafe_install_path_is_rejected_before_commands(self) -> None:
         result = subprocess.run(
             [
                 BASH,
-                (SOURCE / "payload_clouddrive2/manage.sh").as_posix(),
+                (SOURCE / "packaging/hooks/clouddrive2/manage.sh").as_posix(),
                 "status",
             ],
             env=os.environ | {"INSTALL_DIR": "/opt/tg2cloud;false"},
@@ -684,94 +608,17 @@ INFO[2026-09-18] password: Reset_2345""",
 
 
 class DeploymentStructureTests(unittest.TestCase):
-    def test_linux_ci_runs_qt_tests_with_offscreen_platform(self) -> None:
+    def test_linux_ci_runs_runtime_tests_without_desktop_dependencies(self) -> None:
         workflow = (SOURCE / ".github" / "workflows" / "tests.yml").read_text(
             encoding="utf-8"
         )
         linux_job = workflow.split("  linux-products:", 1)[1]
-        self.assertIn("QT_QPA_PLATFORM: offscreen", linux_job)
+        self.assertIn(".github/scripts/check_python.py test", linux_job)
+        self.assertNotIn("requirements-build.txt", linux_job)
 
-    def test_windows_build_isolates_dll_dependency_search_path(self) -> None:
-        script = (SOURCE / "legacy/desktop/build.ps1").read_text(encoding="utf-8")
-        self.assertIn("function Get-Tg2CloudIsolatedPath", script)
-        self.assertIn('"$env:SystemRoot\\System32"', script)
-        self.assertIn("$env:Path = Get-Tg2CloudIsolatedPath", script)
-        self.assertIn("$env:Path = $originalPath", script)
-
-    def test_windows_build_supports_only_two_pyside_products(self) -> None:
-        script = (SOURCE / "legacy/desktop/build.ps1").read_text(encoding="utf-8")
-        self.assertFalse((SOURCE / "installer_classic.py").exists())
-        self.assertFalse((SOURCE / "payload").exists())
-        self.assertTrue((SOURCE / "payload_clouddrive2").is_dir())
-        self.assertTrue((SOURCE / "payload_openlist").is_dir())
-        self.assertFalse((SOURCE / "一键部署-Telegram到115.cmd").exists())
-        self.assertFalse(
-            (SOURCE / "一键部署-Telegram到115-OpenList.cmd").exists()
-        )
-        self.assertIn("[ValidateSet('All', 'CloudDrive2', 'OpenList')]", script)
-        self.assertIn("TG2Cloud-CloudDrive2-Deployer", script)
-        self.assertIn("TG2Cloud-OpenList-Deployer", script)
-        self.assertIn("installer_clouddrive2.py", script)
-        self.assertIn("installer_openlist.py", script)
-        self.assertIn("payload_clouddrive2;payload_clouddrive2", script)
-        self.assertIn("assets/brand;assets/brand", script)
-        self.assertIn("assets/brand/tg2cloud.ico", script)
-        self.assertIn("--version-file", script)
-        for version_file in (
-            SOURCE / "legacy/desktop/packaging/windows/TG2Cloud-CloudDrive2.version.txt",
-            SOURCE / "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt",
-        ):
-            self.assertTrue(version_file.is_file())
-            metadata = version_file.read_text(encoding="utf-8")
-            self.assertIn("ProductVersion', '1.2.1'", metadata)
-            self.assertIn("TG2Cloud", metadata)
-        self.assertNotIn("Source = 'installer_classic.py'", script)
-        self.assertNotIn("import tkinter", script)
-        self.assertIn("payload_openlist;payload_openlist", script)
-        for stale_name in (
-            "TG115-Deployer.exe",
-            "TG115-Deployer-Modern.exe",
-            "TG115-Deployer-Classic.exe",
-        ):
-            self.assertIn(stale_name, script)
-
-        workflow = (SOURCE / ".github" / "workflows" / "tests.yml").read_text(
-            encoding="utf-8"
-        )
-        self.assertNotIn("TG2CLOUD_BUILD_PYTHON", workflow)
-        self.assertNotIn("./build.ps1", workflow)
-        self.assertIn("timeout-minutes: 20", workflow)
-        self.assertIn("WaitForExit(120000)", script)
-        self.assertIn("app_version=$ReleaseVersion", script)
-        self.assertIn("payload_clouddrive2/app/version.py", script)
-        self.assertIn("$ProxyMaintenance = Join-Path $SourceDir 'proxy_maintenance.py'", script)
-        self.assertIn("'--add-data', \"$ProxyMaintenance;.\"", script)
-        self.assertIn("Compare-Object $expectedArtifacts $actualArtifacts", script)
-        self.assertNotIn('foreach ($edition in @("Modern", "Classic"))', workflow)
-
-        readme = (SOURCE / "README.md").read_text(encoding="utf-8")
-        self.assertIn('src="assets/brand/tg2cloud-logo.svg"', readme)
-        self.assertIn("From Telegram to Your Cloud", readme)
-        self.assertIn("TG2Cloud-CloudDrive2-Deployer.exe", readme)
-        self.assertIn("TG2Cloud-OpenList-Deployer.exe", readme)
-        self.assertIn("/opt/tg2cloud-clouddrive2/manage.sh", readme)
-        self.assertIn("/opt/tg2cloud-openlist/manage.sh", readme)
-        self.assertIn("docs/MIGRATION_FROM_TG115.md", readme)
-        self.assertTrue((SOURCE / "docs/MIGRATION_FROM_TG115.md").is_file())
-        self.assertNotIn("# TG115", readme)
-
-    def test_windows_deploy_reprobes_resources_before_remote_mutation(self) -> None:
-        source = (SOURCE / "legacy/desktop/installer.py").read_text(encoding="utf-8")
-        deploy = source.split("        def deploy(self, values:", 1)[1].split(
-            "        def open_clouddrive(self, values:", 1
-        )[0]
-        self.assertLess(
-            deploy.index("_probe_and_recommend"), deploy.index("mkdir -m 700")
-        )
-        self.assertIn("assess_storage_choice", deploy)
 
     def test_backup_failure_is_fatal_before_program_replacement(self) -> None:
-        script = (SOURCE / "payload_clouddrive2/remote_install.sh").read_text(
+        script = (SOURCE / "packaging/hooks/clouddrive2/remote_install.sh").read_text(
             encoding="utf-8"
         )
         self.assertLess(
@@ -781,7 +628,7 @@ class DeploymentStructureTests(unittest.TestCase):
         self.assertIn('. || fail "配置备份失败', script)
 
     def test_upgrade_is_preflighted_and_has_database_rollback(self) -> None:
-        script = (SOURCE / "payload_clouddrive2/remote_install.sh").read_text(
+        script = (SOURCE / "packaging/hooks/clouddrive2/remote_install.sh").read_text(
             encoding="utf-8"
         )
         commit = script.index('log "提交已预检的程序和配置"')
@@ -797,7 +644,7 @@ class DeploymentStructureTests(unittest.TestCase):
         self.assertNotIn('tg115_prune_backups "$BACKUP_DIR"', script)
 
     def test_docker_filesystem_is_rechecked_after_docker_start(self) -> None:
-        script = (SOURCE / "payload_clouddrive2/remote_install.sh").read_text(
+        script = (SOURCE / "packaging/hooks/clouddrive2/remote_install.sh").read_text(
             encoding="utf-8"
         )
         docker_ready = script.index("docker compose version >/dev/null 2>&1 || fail")
@@ -811,7 +658,7 @@ class DeploymentStructureTests(unittest.TestCase):
         for name in ("remote_install.sh", "repair_clouddrive_network.sh"):
             self.assertNotIn(
                 'source "$INSTALL_DIR/.env"',
-                (SOURCE / "payload_clouddrive2" / name).read_text(
+                (SOURCE / "packaging/hooks/clouddrive2" / name).read_text(
                     encoding="utf-8"
                 ),
             )

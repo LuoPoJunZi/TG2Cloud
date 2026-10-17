@@ -17,9 +17,10 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-import domain_proxy as proxy
-import proxy_maintenance as backups
-from deployer_products import PRODUCTS
+from tg2cloud.deployment.profiles import PRODUCTS
+from tg2cloud.deployment.proxy import certificates
+from tg2cloud.deployment.proxy import maintenance as backups
+from tg2cloud.deployment.proxy import manager as proxy
 
 
 class HostCompatibilityTests(unittest.TestCase):
@@ -61,7 +62,7 @@ class HostCompatibilityTests(unittest.TestCase):
     def test_certificate_and_renewal_dates_do_not_require_datetime_utc_alias(self):
         api = SimpleNamespace(datetime=dt.datetime, timedelta=dt.timedelta, timezone=dt.timezone)
         now = dt.datetime(2026, 10, 9, tzinfo=dt.timezone.utc)
-        with patch.object(proxy, "dt", api):
+        with patch.object(certificates, "dt", api):
             for stamp in ("2026-10-23T00:00:00Z", "notAfter=Oct 23 00:00:00 2026 GMT"):
                 self.assertEqual(proxy.parse_certificate_enddate(stamp, now=now), ("2026-10-23", 14))
                 self.assertEqual(proxy.parse_certificate_enddate(stamp)[0], "2026-10-23")
@@ -118,7 +119,7 @@ getent() {{ printf 'UNEXPECTED_DNS_CALL\\n'; }}
     def test_both_installers_include_host_dependencies(self):
         root = Path(__file__).resolve().parents[1]
         for edition in PRODUCTS:
-            text = (root / ("payload_" + edition) / "remote_install.sh").read_text(encoding="utf-8")
+            text = (root / "packaging/hooks" / edition / "remote_install.sh").read_text(encoding="utf-8")
             packages = text.split("install -y --no-install-recommends \\\n", 1)[1].splitlines()[0].split()
             self.assertIn("iproute2", packages)
             self.assertIn("python3", packages)

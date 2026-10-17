@@ -22,11 +22,13 @@ from unittest.mock import AsyncMock, Mock, patch
 import test_review_regressions as review
 from test_deployment import BASH, bash_path
 
-import proxy_maintenance as backups
-from deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT, RELEASE_VERSION
-from domain_proxy import (
+from tg2cloud.deployment.profiles import (
+    OPENLIST_PRODUCT,
+    RELEASE_VERSION,
+)
+from tg2cloud.deployment.proxy import maintenance as backups
+from tg2cloud.deployment.proxy.manager import (
     DomainProxyManager,
-    ProxyReport,
     empty_state,
     render_certbot_loop,
     renewal_dry_run_command,
@@ -34,140 +36,12 @@ from domain_proxy import (
     renewal_warnings,
     state_with_route,
 )
-from legacy.desktop import installer
-from legacy.desktop.operation_feedback import (
-    failure_details,
-    stage_from_log,
-    version_summary,
-)
 
 ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("release_metadata", ROOT / ".github/scripts/release_metadata.py")
 assert spec and spec.loader
 release = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(release)
-
-
-class FeedbackTests(unittest.TestCase):
-    def test_versions_are_distinct_and_unknown_is_not_latest(self):
-        self.assertIn("版本较旧", version_summary("1.1.1", "1.1.0"))
-        self.assertIn("版本较新", version_summary("1.1.1", "1.10.0"))
-        self.assertIn("版本一致", version_summary("1.1.1", "1.1.1"))
-        for unknown in ("", "secret\nTG2CLOUD_STATUS=RUNNING", "1.1", "v1.1.1"):
-            text = version_summary("1.1.1", unknown)
-            self.assertIn("未获取", text)
-            self.assertNotIn("secret", text)
-            self.assertNotIn("版本一致", text)
-        self.assertIn("未安装", version_summary("1.1.1", "", installed=False))
-
-    def test_stage_markers_are_whitelisted(self):
-        self.assertEqual(stage_from_log("TG2CLOUD_STAGE=CERTIFICATE\n"), "CERTIFICATE")
-        self.assertEqual(stage_from_log("TG2CLOUD_STAGE=SECRET"), "")
-        self.assertEqual(stage_from_log("prefix TG2CLOUD_STAGE=BOT"), "")
-        detail = failure_details(RuntimeError("原因未确定"), "CERTIFICATE")
-        self.assertIn("失败阶段：申请或复用证书", detail)
-        self.assertIn("原因未确定", detail)
-        self.assertNotIn("连接超时", detail)
-
-    def test_self_test_requires_bundled_private_backup_helper(self):
-        resolve = installer.resource_path
-        for product in (CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT):
-            with self.subTest(product=product.key):
-                self.assertNotIn("proxy_maintenance.py", installer.dependency_report(product)["payload_missing"])
-                with patch.object(installer, "resource_path", side_effect=lambda name: Path("/not-a-bundle/proxy_maintenance.py") if name == "proxy_maintenance.py" else resolve(name)):
-                    report = installer.dependency_report(product)
-                self.assertIn("proxy_maintenance.py", report["payload_missing"])
-                self.assertFalse(report["ready"])
-
-    def test_runtime_status_reports_actual_bot_version(self):
-        for product in (CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT):
-            with self.subTest(product=product.key):
-                session = Mock()
-                session.run.side_effect = [(0, "0"), (0,
-                    "TG2CLOUD_STATUS=RUNNING\nTG2CLOUD_BOT_HEALTH=healthy\nTG2CLOUD_VERSION=1.0.4\n")]
-                backend = installer.InstallerBackend(Mock(), Mock(), Mock(), session_factory=Mock(return_value=session), product=product)
-                values = installer.defaults_for(product) | {"vps_host": "example.invalid", "vps_password": "test-only"}
-                result = backend.runtime_status(values)
-                self.assertIn("VPS Bot 版本：v1.0.4", result.message)
-                self.assertIn("部署器版本：v" + RELEASE_VERSION, result.message)
-                self.assertIn("不代表 WebDAV", result.message)
-                session.close.assert_called_once()
-
-    @unittest.skipUnless(hasattr(installer, "InstallerWindow"), "Qt unavailable")
-    def test_shared_ui_reuses_progress_and_maintenance_cannot_mark_https_passed(self):
-        app = installer.make_app()
-        for product in (CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT):
-            window = installer.InstallerWindow(preview=True, product=product)
-            dialog = installer.DomainAccessDialog(window)
-            try:
-                window.append_log("TG2CLOUD_STAGE=BOT")
-                self.assertIn("构建并启动 Bot", window.step_summary.text())
-                self.assertIn("阶段：", window.console.toPlainText())
-                dialog._success("proxy_backup", installer.OperationResult("备份完成", "私密备份已保留"))
-                self.assertEqual(dialog.configured_state, "not_configured")
-                self.assertEqual(dialog.configured_domain, "")
-                self.assertEqual(dialog.status_text.height(), 112)
-                self.assertTrue(any(action.text() == "管理历史代理备份…" for action in dialog.maintenance_button.menu().actions()))
-                app.processEvents()
-            finally:
-                dialog.close()
-                window.close()
-
-    @unittest.skipUnless(os.name == "nt" and hasattr(installer, "InstallerWindow"), "Windows CJK font QA only")
-    def test_real_windows_cjk_font_does_not_squeeze_domain_actions(self):
-        from PySide6.QtGui import QFont, QFontDatabase
-        font = Path(os.environ.get("WINDIR", "C:/Windows")) / "Fonts/msyh.ttc"
-        if not font.is_file():
-            self.skipTest("Windows system CJK font unavailable")
-        app = installer.make_app()
-        font_id = QFontDatabase.addApplicationFont(str(font))
-        if font_id < 0:
-            self.skipTest("Qt cannot load system CJK font")
-        previous = app.font()
-        app.setFont(QFont("Microsoft YaHei UI", 10))
-        try:
-            for product in (CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT):
-                window = installer.InstallerWindow(preview=True, product=product)
-                dialog = installer.DomainAccessDialog(window)
-                dialog.show()
-                app.processEvents()
-                self.assertLessEqual(dialog.layout().minimumSize().height(), dialog.height())
-                self.assertEqual(dialog.status_text.height(), 112)
-                dialog.close()
-                window.close()
-        finally:
-            app.setFont(previous)
-            QFontDatabase.removeApplicationFont(font_id)
-
-    @unittest.skipUnless(hasattr(installer, "InstallerWindow"), "Qt unavailable")
-    def test_backup_cleanup_requires_preview_and_defaults_to_cancel(self):
-        installer.make_app()
-        window = installer.InstallerWindow(preview=True)
-        owner = installer.DomainAccessDialog(window)
-        dialog = installer.ProxyBackupDialog(owner)
-        item = {"name": "proxy-20261008T000000Z-" + "a" * 32 + ".tar.gz", "created_utc": "2026-10-08 00:00:00 UTC", "size_bytes": 1024, "integrity": "OK"}
-        plan = {"keep": 5, "retain": [item["name"].replace("a" * 32, "b" * 32)], "remove": [item], "plan_id": "f" * 64}
-        try:
-            dialog.backend = Mock()
-            window.preview = False  # Do not schedule the initial SSH inventory timer.
-            dialog._success("proxy_backup_list", installer.OperationResult("清单", "", backup_data={"items": [item]}))
-            dialog._set_busy(False)
-            self.assertEqual(dialog.archives.currentData(), item["name"])
-            self.assertFalse(dialog.buttons["proxy_backup_prune"].isEnabled())
-            dialog._success("proxy_backup_preview", installer.OperationResult("预览", "", backup_data={"plan": plan}))
-            dialog._set_busy(False)
-            self.assertTrue(dialog.buttons["proxy_backup_prune"].isEnabled())
-            with patch.object(installer.QMessageBox, "question", return_value=installer.QMessageBox.StandardButton.No) as question, patch.object(installer, "OperationThread") as worker:
-                dialog._run("proxy_backup_prune")
-                self.assertEqual(question.call_args.args[-1], installer.QMessageBox.StandardButton.No)
-                worker.assert_not_called()
-            dialog.keep.setValue(6)
-            self.assertIsNone(dialog.plan)
-            self.assertFalse(dialog.buttons["proxy_backup_prune"].isEnabled())
-        finally:
-            dialog.close()
-            owner.close()
-            window.close()
 
 
 class PrivateBackupTests(unittest.TestCase):
@@ -372,22 +246,6 @@ class RenewalTests(unittest.TestCase):
                 with self.assertRaisesRegex(RuntimeError, "保留有效备份"):
                     manager.manage_backups("prune-preview")
 
-    @unittest.skipUnless(hasattr(installer, "InstallerWindow"), "Qt unavailable")
-    def test_renewal_warning_keeps_https_gate_and_open_action_usable(self):
-        installer.make_app()
-        window = installer.InstallerWindow(preview=True)
-        dialog = installer.DomainAccessDialog(window)
-        report = ProxyReport("test.example.com", "healthy", "可用，续期待检查", (), warnings=("续期失败",))
-        try:
-            dialog._success("proxy_status", installer.OperationResult("检查状态", report.message, proxy_report=report))
-            self.assertEqual(dialog.configured_state, "healthy")
-            self.assertEqual(dialog.configured_domain, report.domain)
-            self.assertIn("续期待检查", dialog.state_badge.text())
-            self.assertEqual(dialog.state_badge.property("state"), "pending")
-            self.assertIn("可用", window.footer_state.text())
-        finally:
-            dialog.close()
-            window.close()
 
     @unittest.skipUnless(BASH, "Bash unavailable")
     def test_real_deadline_removes_only_owned_container_and_refuses_foreign_label(self):
@@ -436,7 +294,7 @@ class RenewalTests(unittest.TestCase):
 
 class ProbeVisibilityTests(unittest.IsolatedAsyncioTestCase):
     async def test_doctor_cooldown_time_is_actual_probe_not_message_refresh(self):
-        from app.interfaces import DestinationProbe
+        from tg2cloud.transfer.ports import DestinationProbe
         service = review.OpenListReviewTests.service(DestinationProbe(False, "root", "limited", "rate_limited"))
         service.settings.destination_label = "OpenList"
         service.db = SimpleNamespace(is_paused=lambda: False)
@@ -473,7 +331,7 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_rc_requires_exact_notes_identity(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for path in ("payload_clouddrive2/app/version.py", "legacy/desktop/packaging/windows/TG2Cloud-CloudDrive2.version.txt", "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
+            for path in ("src/tg2cloud/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / path).read_bytes())
@@ -485,21 +343,21 @@ class ReleaseMetadataTests(unittest.TestCase):
             self.assertEqual(metadata["is_prerelease"], "true")
             self.assertTrue(metadata["release_title"].endswith("RC1"))
 
-    def test_future_linux_version_does_not_require_new_windows_resources(self):
+    def test_future_linux_version_does_not_require_any_desktop_files(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for name in ("payload_clouddrive2/app/version.py", "legacy/desktop/packaging/windows/TG2Cloud-CloudDrive2.version.txt", "legacy/desktop/packaging/windows/TG2Cloud-OpenList.version.txt", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
+            for name in ("src/tg2cloud/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
                 target = root / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / name).read_bytes())
-            (root / "payload_clouddrive2/app/version.py").write_text('VERSION = "9.0.0"\n', encoding="utf-8")
+            (root / "src/tg2cloud/version.py").write_text('VERSION = "9.0.0"\n', encoding="utf-8")
             (root / "CHANGELOG.md").write_text("## TG2Cloud v9.0.0\n", encoding="utf-8")
             (root / "RELEASE_NOTES.md").write_text("TG2Cloud v9.0.0\n", encoding="utf-8")
             entry = root / "install.sh"
             entry.write_text(entry.read_text(encoding="utf-8").replace('installer_version = "' + RELEASE_VERSION + '"', 'installer_version = "9.0.0"'), encoding="utf-8")
             metadata = release.release_metadata(root, "v9.0.0")
             self.assertEqual(metadata["release_artifact"], "TG2Cloud-v9.0.0-source")
-            release.windows_resources(root, "1.2.1")
+            self.assertFalse((root / "legacy").exists())
 
     def test_release_rejects_stale_wizard_version_or_disabled_source_pin(self):
         with tempfile.TemporaryDirectory() as temp:

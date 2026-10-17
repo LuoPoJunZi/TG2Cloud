@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "tg2cloud"
+dynamic = ["version"]
+description = "Self-hosted Telegram to cloud transfers and Linux deployment tools"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = []
+
+[project.optional-dependencies]
+bot = ["Telethon==1.45.0", "cryptg==0.6.0", "psutil==7.2.2"]
+dev = ["pytest==9.1.1", "ruff==0.16.0", "bandit==1.9.4", "cryptography==50.0.1", "pip-audit==2.10.1", "uv==0.11.28"]
+
+[project.scripts]
+tg2cloud = "tg2cloud.cli.commands:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "tg2cloud.version.VERSION"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
