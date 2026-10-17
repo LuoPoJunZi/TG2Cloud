@@ -74,7 +74,7 @@ CLOUDDRIVE2_PRODUCT = ProductProfile(
         "packaging/hooks/clouddrive2/remote_install.sh",
         "packaging/hooks/clouddrive2/manage.sh",
         "packaging/hooks/clouddrive2/repair_clouddrive_network.sh",
-        "packaging/compose/clouddrive2.yml",
+        "packaging/compose/docker-compose.clouddrive2.yml",
     ),
 )
 
@@ -107,7 +107,7 @@ OPENLIST_PRODUCT = ProductProfile(
         "packaging/hooks/openlist/manage.sh",
         "packaging/hooks/openlist/openlist_admin.sh",
         "packaging/hooks/openlist/preserve_webdav_config.sh",
-        "packaging/compose/openlist.yml",
+        "packaging/compose/docker-compose.openlist.yml",
     ),
 )
 

@@ -146,7 +146,7 @@ SOURCE_DIR="$(realpath -e -- "$SOURCE_DIR")"
 CONFIG_FILE="$(realpath -e -- "$CONFIG_FILE")"
 [[ -f "$SOURCE_DIR/preserve_runtime_config.sh" ]] \
   || fail "部署包缺少现有配置保护脚本"
-# shellcheck source=payload_clouddrive2/preserve_runtime_config.sh
+# shellcheck source=packaging/hooks/clouddrive2/preserve_runtime_config.sh
 # shellcheck disable=SC1090
 source "$SOURCE_DIR/preserve_runtime_config.sh"
 [[ "$SOURCE_DIR/" != "$INSTALL_DIR/"* && "$INSTALL_DIR/" != "$SOURCE_DIR/"* ]] \

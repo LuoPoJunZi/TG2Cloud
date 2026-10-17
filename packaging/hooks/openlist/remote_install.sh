@@ -189,7 +189,7 @@ PRESERVE_CONFIG_HELPER="$SOURCE_DIR/preserve_webdav_config.sh"
   || fail "部署包缺少现有配置保护脚本"
 # shellcheck disable=SC1090
 source "$PRESERVE_CONFIG_HELPER"
-# shellcheck source=payload_clouddrive2/preserve_runtime_config.sh
+# shellcheck source=packaging/hooks/clouddrive2/preserve_runtime_config.sh
 # shellcheck disable=SC1090
 source "$SOURCE_DIR/preserve_runtime_config.sh"
 [[ "$SOURCE_DIR/" != "$INSTALL_DIR/"* && "$INSTALL_DIR/" != "$SOURCE_DIR/"* ]] \

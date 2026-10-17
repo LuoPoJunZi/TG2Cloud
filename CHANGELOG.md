@@ -2,6 +2,7 @@
 
 ## 未发布
 
+- 修复 Linux 重构后的 CI：更新 ShellCheck 辅助文件路径；Compose 清单使用 Dependabot 可发现的标准前缀文件名，运行配置不变；历史布局回归固定到公开提交，不依赖维护者本地 Tag。
 - Linux 渐进式重构：`src/tg2cloud` 为共享源码，拆分 CLI/部署、Telegram 展示、任务阶段、SQLite 迁移和后端策略；Docker/Compose/Shell 资源归入 `packaging/`，依赖由 pyproject 和统一 uv 锁文件维护。Bot 依赖、网关镜像和产品版本不随目录调整升级。
 - 保留旧实例身份、`app/` 外层程序目录、`data/tg115.db`、`bot.session` 及 `app.*` 运维命令；新递归指纹显式使用 v2 协议，历史平铺布局、静态版本读取和 CRLF 校验继续支持。不新增数据库结构变更。
 - 新布局的离线载荷组装、helper 候选及源码清单检查独立可用；正式在线 helper pin 暂不改动，必须先公开辅助代码提交 A、通过 CI，再更新入口提交 B。此次工作不创建发布、不操作真实实例；验收门槛见[重构说明](docs/development/LINUX-REFACTOR.md)。
