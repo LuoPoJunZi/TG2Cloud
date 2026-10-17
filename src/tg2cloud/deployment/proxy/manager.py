@@ -27,9 +27,11 @@ from .state import (
     ProxyEnvironment,
     ProxyReport,
     _marker_addresses,
+    certificate_domains,
     dns_diagnostic,
     dns_matches_environment,
     empty_state,
+    has_routes,
     normalize_state,
     parse_environment,
     parse_markers,
@@ -203,9 +205,10 @@ def render_certbot_loop() -> str:
     )
 
 
-def render_compose(active_domains: tuple[str, ...] = ()) -> str:
+def render_compose(active_domains: tuple[str, ...] = (), *, external_auth: bool = False) -> str:
     certificate_names = " ".join(validate_domain(domain) for domain in active_domains)
     certbot_command = render_certbot_loop().replace("$", "$$")
+    auth_mount = "      - ./external-auth:/etc/nginx/external-auth:ro\n" if external_auth else ""
     return f"""services:
   nginx:
     image: {NGINX_IMAGE}
@@ -235,6 +238,7 @@ def render_compose(active_domains: tuple[str, ...] = ()) -> str:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./certbot/www:/var/www/certbot:ro
       - ./certbot/letsencrypt:/etc/letsencrypt:ro
+{auth_mount}\
     command:
       - /bin/sh
       - -c
@@ -387,13 +391,18 @@ def render_config_set(
     routes = routes_from_state(state)
     files = {
         "nginx.conf": render_nginx_conf(),
-        "conf.d/00-default.conf": render_default_conf(tls_enabled=bool(routes)),
+        "conf.d/00-default.conf": render_default_conf(tls_enabled=has_routes(state)),
     }
+    if state.get("version") == 2:
+        files["nginx.conf"] = "worker_shutdown_timeout 10s;\n" + files["nginx.conf"]
     for route in routes:
         files[f"conf.d/20-{route.edition}.conf"] = render_route_conf(route)
+    for edition, route in normalize_state(json.dumps(state)).get("external_webdav", {}).items():
+        from tg2cloud.addons.external_webdav.nginx import render_route
+        files[f"conf.d/30-external-webdav-{edition}.conf"] = render_route(route)
     if candidate_domain:
         candidate = validate_domain(candidate_domain)
-        if candidate not in {route.domain for route in routes}:
+        if candidate not in certificate_domains(state):
             files["conf.d/10-acme-bootstrap.conf"] = render_bootstrap_conf(candidate)
     return files
 
@@ -565,13 +574,14 @@ def verification_statuses(markers: dict[str, str]) -> tuple[tuple[str, str], ...
     return tuple((title, "通过" if markers.get(key) == "OK" else "失败") for title, key in mapping)
 
 
-def install_config_command(remote: str) -> str:
+def install_config_command(remote: str, *, external_auth: bool = False) -> str:
     """Render the privileged, syntax-checkable config installation transaction."""
     # The remote path is random, privately created with mode 0700, and never user supplied.
     if not re.fullmatch(  # nosec B108
         r"/tmp/tg2cloud-proxy-[0-9a-f]{32}", remote
     ):
         raise ValueError("共享代理临时目录格式不正确。")
+    auth_mount = '-v "$root/external-auth:/etc/nginx/external-auth:ro"' if external_auth else ""
     script = f"""
 set -e
 root={shlex.quote(PROXY_ROOT)}
@@ -592,6 +602,7 @@ docker run --rm --network host --read-only \
   -v "$root/nginx/conf.d.next:/etc/nginx/conf.d:ro" \
   -v "$root/certbot/www:/var/www/certbot:ro" \
   -v "$root/certbot/letsencrypt:/etc/letsencrypt:ro" \
+  {auth_mount} \
   {NGINX_IMAGE} nginx -t
 rm -rf "$root/nginx/conf.d.previous"
 install -d -m 700 "$root/nginx/conf.d.previous"
@@ -753,11 +764,12 @@ fi
 
     def _install_config(self, state: dict[str, Any], *, candidate: str = "") -> None:
         files = render_config_set(state, candidate_domain=candidate)
-        active_domains = tuple(route.domain for route in routes_from_state(state))
-        files["docker-compose.yml"] = render_compose(active_domains)
+        active_domains = certificate_domains(state)
+        external_auth = state.get("version") == 2
+        files["docker-compose.yml"] = render_compose(active_domains, external_auth=external_auth)
         remote = self._upload_files(files)
         try:
-            code, _ = self._run(install_config_command(remote), timeout=180)
+            code, _ = self._run(install_config_command(remote, external_auth=external_auth), timeout=180)
             if code != 0:
                 raise RuntimeError("无法安装共享代理配置。")
         finally:
@@ -1003,7 +1015,7 @@ fi
                 raise
             try:
                 with defer_interruptions():
-                    if previous["domains"]:
+                    if has_routes(previous):
                         try:
                             self._activate(previous)
                         except Exception:
@@ -1031,6 +1043,58 @@ fi
                 raise RuntimeError(
                     f"剩余 {PRODUCTS[edition].display_name} 的 HTTPS 自检未通过；已开始回退。"
                 )
+        if state.get("external_webdav"):
+            from tg2cloud.addons.external_webdav.verification import (
+                check_public_denials,
+            )
+            for route in state["external_webdav"].values():
+                check_public_denials(route)
+
+    def apply_shared_state_locked(self, target: dict[str, Any], *, domain: str = "", email: str = "", verify=None,
+                                  verify_remaining: bool = True) -> None:
+        """Called under the existing proxy lock; preserve every other owner.
+
+        External callers revoke authentication before changing credentials. A
+        failed activation never restores an enabled external route.
+        """
+        target = normalize_state(json.dumps(target))
+        previous = self.read_state()
+        fallback = normalize_state(json.dumps(previous))
+        key = self.product.key
+        if key in fallback.get("external_webdav", {}):
+            fallback["external_webdav"][key]["enabled"] = False
+        self._ensure_state_file(previous)
+        committed = False
+        try:
+            if domain and not self._certificate_valid(domain):
+                self._validate_environment(self.probe(domain))
+                self._activate(previous, candidate=domain)
+                self._obtain_certificate(domain, validate_email(email))
+            self._activate(target)
+            code, _ = self._compose("up -d certbot", timeout=180)
+            if code:
+                raise RuntimeError("共享续期配置未启动。")
+            if verify_remaining:
+                self._verify_remaining_routes(target)
+            if verify:
+                verify()
+            with defer_interruptions():
+                self._commit_state(target)
+                committed = True
+        except (Exception, KeyboardInterrupt):
+            if not committed:
+                with defer_interruptions():
+                    try:
+                        if has_routes(fallback):
+                            self._activate(fallback)
+                            self._compose("up -d certbot", timeout=180)
+                        else:
+                            self._install_config(fallback)
+                            self._compose("stop nginx certbot", timeout=60)
+                        self._commit_state(fallback)
+                    except Exception:  # noqa: BLE001 - rollback failure must not mask original error
+                        self.log("外部入口变更失败且代理回退未确认；认证已撤销，请核对共享代理。")
+            raise
 
     def _backup_helper(self, action: str, *, archive: str = "", keep: int = 5, plan: str = "") -> dict[str, str]:
         if action not in {"backup", "check", "drill", "list", "prune-preview", "prune"}:
@@ -1158,7 +1222,7 @@ fi
             return ProxyReport("", "not_configured", "当前 Edition 没有可移除的域名路由。", ())
         removed = previous["domains"][self.product.key]["domain"]
         try:
-            if target["domains"]:
+            if has_routes(target):
                 self._activate(target)
                 code, _ = self._compose("up -d certbot", timeout=180)
                 if code != 0:
@@ -1172,7 +1236,7 @@ fi
                     raise RuntimeError("最后一个域名已移除，但共享代理容器停止失败。")
                 self._commit_state(target)
         except Exception:
-            if previous["domains"]:
+            if has_routes(previous):
                 self._activate(previous)
                 self._compose("up -d certbot", timeout=120)
             raise

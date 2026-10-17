@@ -382,7 +382,8 @@ class StandaloneBootstrapTests(unittest.TestCase):
             })
             if os.name == "posix":
                 self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
-            helpers = json.loads((ROOT / "packaging/bootstrap-manifest.json").read_text())["files"]
+            from payload_fixture import historical_file
+            helpers = json.loads(historical_file(self.pin, "packaging/bootstrap-manifest.json"))["files"]
             self.assertEqual(len(self.urls), 2 + len(helpers))
             self.assertFalse(any("/main/" in url or "/heads/" in url for url in self.urls))
 

@@ -668,7 +668,7 @@ class MainBootstrapTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as private, patch("sys.argv", ["bootstrap", private, pin]), patch("sys.stdout", io.StringIO()), patch("urllib.request.build_opener", return_value=Mock(open=Mock(side_effect=fetch))):
             exec(compile(embedded, "LAN bootstrap", "exec"), {})  # noqa: S102 - repo-owned code, mocked networking
             self.assertTrue((Path(private) / "src/tg2cloud/deployment/proxy/lan.py").is_file())
-        helpers = json.loads((ROOT / "packaging/bootstrap-manifest.json").read_text())["files"]
+        helpers = json.loads(historical_file(pin, "packaging/bootstrap-manifest.json"))["files"]
         self.assertEqual({url.rsplit(pin + "/", 1)[1] for url in urls}, set(helpers))
         self.assertEqual(len(urls), len(helpers))
 

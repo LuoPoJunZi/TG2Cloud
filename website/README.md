@@ -1,6 +1,6 @@
 # TG2Cloud Docs
 
-TG2Cloud 中文网页文档。包含品牌首页、30 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
+TG2Cloud 中文网页文档。包含品牌首页、31 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
 **正文基准：TG2Cloud v1.3.0；资料核对日期：2026-10-17。** 本版以 Linux 一键脚本为主，包含模块化源码、长描述命名增强及首次安装磁盘推荐；源码包及 SHA256 的实际发布状态以 GitHub Release 和对应 Actions 为准。Windows EXE 停留在 v1.2.1。CloudDrive2 旧候选已在授权备份后人工迁移到正式版，用户确认升级后使用验收完成；OpenList 脚本实机验收暂缓，首次安装、标准自动升级、故障回退和 NAS 等另行验证，见[验收记录](../docs/development/V130-ACCEPTANCE.md)。
 
@@ -85,7 +85,7 @@ npm run dev
 
 ```text
 TG2Cloud-Docs/
-├── docs/                    # 30 篇中文 Markdown 正文
+├── docs/                    # 31 篇中文 Markdown 正文
 ├── public/
 │   ├── assets/
 │   │   ├── style.css        # 全站样式、响应式与主题

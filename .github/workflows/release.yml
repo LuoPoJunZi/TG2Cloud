@@ -130,6 +130,10 @@ jobs:
             bash -n install-lan.sh
             bash -n uninstall.sh
             shellcheck install.sh install-lan.sh uninstall.sh
+            if [[ -f install-webdav.sh ]]; then
+              bash -n install-webdav.sh
+              shellcheck install-webdav.sh
+            fi
             shellcheck -x packaging/hooks/clouddrive2/*.sh packaging/hooks/openlist/*.sh tests/manage_harness.sh tests/maintenance_docker_stub.sh
           else
             bash -n install.sh
@@ -205,6 +209,12 @@ jobs:
         env:
           TG2CLOUD_TEST_LAN_DOCKER: "1"
         run: python -m unittest discover -s tests -p test_lan_gateway_docker.py -v
+
+      - name: Isolated external WebDAV Nginx, authentication and Range
+        if: hashFiles('install-webdav.sh') != ''
+        env:
+          TG2CLOUD_TEST_EXTERNAL_WEBDAV_DOCKER: "1"
+        run: python -B -m unittest discover -s tests -p test_docker.py -v
 
       - name: Package immutable source once and verify bootstrap pins and SHA256
         run: python .github/scripts/source_release.py build --tag "${RELEASE_TAG}" --directory build/source-release

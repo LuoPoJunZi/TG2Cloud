@@ -76,6 +76,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 使用文档
 
+可选附加功能：[外部 WebDAV（待发布）](docs/external-webdav.md)。独立安装，通过新 HTTPS 域名只读访问已有上传目录；不复用 Bot/管理员账号，不加入主安装流程。当前 v1.3.0 尚不包含此功能。
+
 按主题查阅仓库内文档；全部文档见[仓库文档目录](docs/README.md)，网页版见[文档网站](https://tg2cloud.pages.dev/)。
 
 | 主题 | 仓库文档 |

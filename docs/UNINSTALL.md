@@ -6,6 +6,8 @@
 
 ## 在线一键入口
 
+待发布外部 WebDAV 安装后，先用 `tg2cloud-webdav uninstall --edition openlist`（或 `clouddrive2`）解除对应网关依赖，再主卸载；仅 disable 不解除依赖。附加卸载不删除云端数据或人工原生账号，见[独立功能指南](external-webdav.md)。
+
 源码的本地帮助入口为 `python3 scripts/run_source.py uninstall --help`，业务位于公共 `deployment/uninstall.py`。在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交；确认、归属检查、保留数据和共享资源保护不因目录整理改变。本轮未执行真实卸载。详见[Linux 重构说明](development/LINUX-REFACTOR.md)。
 
 先以只读方式检查；要求信任本仓库，可以先下载检查脚本：

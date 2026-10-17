@@ -76,6 +76,8 @@ This command only previews; it does not uninstall. Actual complete removal delet
 
 ## Documentation
 
+Optional add-on: [External WebDAV (unreleased)](docs/external-webdav.md). Separately installed, read-only HTTPS access to an existing upload directory with an independent native account. It is not part of the main wizard or stable v1.3.0.
+
 Browse the repository guides by topic below. Most are in Chinese; see the [full documentation index](docs/README.md) or the [documentation website](https://tg2cloud.pages.dev/).
 
 | Topic | Repository documents |

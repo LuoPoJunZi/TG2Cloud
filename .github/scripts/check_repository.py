@@ -12,7 +12,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_FILES = (
-    "install.sh", "install-lan.sh", "uninstall.sh", ".github/scripts/release_metadata.py",
+    "install.sh", "install-lan.sh", "uninstall.sh", "install-webdav.sh", "packaging/external-webdav.json", ".github/scripts/release_metadata.py",
     "scripts/run_source.py", "pyproject.toml", "requirements/bot.lock.txt", "requirements/dev.lock.txt",
     "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/app.py",
     "src/tg2cloud/deployment/profiles.py", "src/tg2cloud/deployment/fingerprints.py",

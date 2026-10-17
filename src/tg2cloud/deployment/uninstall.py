@@ -39,7 +39,7 @@ COMPOSE = "com.docker.compose."
 MANAGED = "com.tg2cloud.managed"
 ROLE = "com.tg2cloud.role"
 HEX_ID = re.compile(r"[0-9a-f]{64}")
-PROXY_CHILDREN = frozenset({"state", "nginx", "certbot", "docker-compose.yml"})
+PROXY_CHILDREN = frozenset({"state", "nginx", "certbot", "docker-compose.yml", "external-auth"})
 
 
 class UninstallError(ValueError):
@@ -183,7 +183,7 @@ def lan_identity(product: ProductProfile, item: dict) -> None:
         raise UninstallError("内网入口身份或挂载不符")
 
 
-def proxy_identity(name: str, item: dict) -> None:
+def proxy_identity(name: str, item: dict, *, state: dict | None = None) -> None:
     labels = item.get("labels") or {}
     service = labels.get(COMPOSE + "service")
     expected_service = "nginx" if name == PROXY_NGINX_CONTAINER else "certbot"
@@ -201,6 +201,8 @@ def proxy_identity(name: str, item: dict) -> None:
     paths = {"/var/www/certbot": "/certbot/www", "/etc/letsencrypt": "/certbot/letsencrypt"}
     if expected_service == "nginx":
         paths.update({"/etc/nginx/nginx.conf": "/nginx/nginx.conf", "/etc/nginx/conf.d": "/nginx/conf.d"})
+        if state and state.get("version") == 2:
+            paths["/etc/nginx/external-auth"] = "/external-auth"
     else:
         paths.update({"/var/lib/letsencrypt": "/certbot/lib", "/var/log/letsencrypt": "/certbot/log", "/status": "/certbot/status"})
     if bind_map(item) != {destination: PROXY_ROOT + suffix for destination, suffix in paths.items()}:
@@ -263,6 +265,8 @@ def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: 
     purge_data = purge_data or purge_backups
     containers, networks = docker_snapshot(session)
     state = read_state()
+    if any(key in state.get("external_webdav", {}) or (Path("/opt/tg2cloud-webdav") / key / "config.json").exists() for key in editions):
+        raise UninstallError("所选网关仍被外部 WebDAV 依赖；请先运行 tg2cloud-webdav uninstall，不静默中断外部入口。")
     selected = {}
     selected_networks = {}
     for key in editions:
@@ -308,11 +312,11 @@ def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: 
                 raise UninstallError("项目网络有外部容器连接；停止，不强制断开")
             selected_networks[product.docker_network] = network
     remaining = set(state["domains"]) - set(editions)
-    remove_proxy = not remaining
+    remove_proxy = not remaining and not state.get("external_webdav")
     for name, item in containers.items():
         labels = item.get("labels") or {}
         if name in {PROXY_NGINX_CONTAINER, PROXY_CERTBOT_CONTAINER} or labels.get(COMPOSE + "project") == PROXY_PROJECT:
-            proxy_identity(name, item)
+            proxy_identity(name, item, state=state)
             if remove_proxy:
                 selected[name] = item
         if labels.get(ROLE) == "maintenance-dry-run":

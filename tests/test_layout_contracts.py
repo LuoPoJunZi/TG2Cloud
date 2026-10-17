@@ -203,8 +203,10 @@ class BootstrapLayoutTests(unittest.TestCase):
     def test_pinned_helper_bundle_runs_without_checkout_or_bot_packages(self):
         # Only the online allowlist from public commit A is available here.
         # Importing from the full checkout could conceal a missing helper file.
-        manifest = bootstrap.helper_files(ROOT)
         pin = "ee6feef5cfd35e50c315cddf91ab0cb35c40a384"
+        manifest = json.loads(subprocess.check_output(
+            ["git", "show", f"{pin}:packaging/bootstrap-manifest.json"], cwd=ROOT,
+        ))["files"]
         with tempfile.TemporaryDirectory() as private:
             root = Path(private)
             for name in manifest:

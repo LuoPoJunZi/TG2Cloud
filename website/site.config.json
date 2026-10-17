@@ -64,6 +64,10 @@
         {
           "title": "WebDAV 验收",
           "slug": "deploy/verification"
+        },
+        {
+          "title": "外部 WebDAV（待发布）",
+          "slug": "deploy/external-webdav"
         }
       ]
     },

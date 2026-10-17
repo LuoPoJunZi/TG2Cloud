@@ -24,7 +24,7 @@ from typing import BinaryIO
 
 PROXY_ROOT = Path("/opt/tg2cloud-proxy")
 BACKUP_ROOT = Path("/opt/tg2cloud-proxy-backups")
-SELECTION = ("state/domains.json", "docker-compose.yml", "nginx", "certbot/letsencrypt", "certbot/status")
+SELECTION = ("state/domains.json", "docker-compose.yml", "nginx", "certbot/letsencrypt", "certbot/status", "external-auth")
 ARCHIVE_NAME = re.compile(r"proxy-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{32}\.tar\.gz")
 MAX_BYTES = 512 * 1024 * 1024
 MAX_ENTRIES = 20000
@@ -66,6 +66,21 @@ def safe_link(name: str, target: str) -> bool:
     return bool(parts) and parts[0] == "proxy"
 
 
+def validate_auth_records(state: dict, records: dict) -> None:
+    """Standalone helper: never silently omit schema-2 authentication."""
+    if not isinstance(state, dict) or state.get("version") not in {1, 2} or not isinstance(state.get("domains"), dict):
+        raise ValueError("unrecognized proxy state")
+    if state["version"] == 2:
+        entries = state.get("external_webdav")
+        if not isinstance(entries, dict) or set(entries) - {"clouddrive2", "openlist"}:
+            raise ValueError("invalid addon routes")
+        for edition, route in entries.items():
+            if (not isinstance(route, dict) or route.get("owner") != "tg2cloud.external_webdav"
+                    or route.get("auth_file") != f"external-auth/{edition}.htpasswd"
+                    or records.get(f"proxy/external-auth/{edition}.htpasswd", {}).get("kind") != "file"):
+                raise ValueError("missing addon authentication in backup")
+
+
 def snapshot(root: Path) -> dict[str, dict]:
     if root.is_symlink() or not root.is_dir():
         raise ValueError("invalid proxy root")
@@ -74,7 +89,7 @@ def snapshot(root: Path) -> dict[str, dict]:
     for relative in SELECTION:
         start = root / relative
         if not start.exists() and not start.is_symlink():
-            if relative == "certbot/status":  # Existing installations have no renewal history yet.
+            if relative in {"certbot/status", "external-auth"}:  # Older installations have neither.
                 continue
             raise ValueError("required proxy resource missing")
         for path in (start, *sorted(start.rglob("*"))):
@@ -103,6 +118,10 @@ def snapshot(root: Path) -> dict[str, dict]:
             records[name] = record
             if len(records) > MAX_ENTRIES:
                 raise ValueError("too many backup entries")
+    state = root / "state/domains.json"
+    if state.stat().st_size > 65536:
+        raise ValueError("state too large")
+    validate_auth_records(json.loads(state.read_text(encoding="utf-8")), records)
     return records
 
 
@@ -116,6 +135,7 @@ def verify_backup(archive: Path) -> dict[str, dict]:
         raise ValueError("archive checksum mismatch")
     records: dict[str, dict] = {}
     manifest = None
+    state = None
     total = 0
     with tarfile.open(archive, "r:gz") as tar:
         for member in tar:
@@ -139,7 +159,14 @@ def verify_backup(archive: Path) -> dict[str, dict]:
                             raise ValueError("invalid manifest")
                         manifest = json.load(handle)
                         continue
-                    content_hash = stream_digest(handle)
+                    if name == "proxy/state/domains.json":
+                        if member.size > 65536:
+                            raise ValueError("state too large")
+                        content = handle.read()
+                        state = json.loads(content)
+                        content_hash = hashlib.sha256(content).hexdigest()
+                    else:
+                        content_hash = stream_digest(handle)
                 record.update(kind="file", size=member.size, sha256=content_hash)
             elif member.isdir():
                 record.update(kind="directory")
@@ -157,6 +184,7 @@ def verify_backup(archive: Path) -> dict[str, dict]:
     required = ("proxy/state/domains.json", "proxy/docker-compose.yml", "proxy/nginx/nginx.conf")
     if any(records.get(name, {}).get("kind") != "file" for name in required):
         raise ValueError("required resources missing")
+    validate_auth_records(state, records)
     return records
 
 
@@ -214,8 +242,7 @@ def recovery_drill(archive: Path, backup_root: Path) -> int:
                 if record["kind"] == "symlink":
                     destination.joinpath(*PurePosixPath(name).parts).symlink_to(record["target"])
         state = json.loads((destination / "proxy/state/domains.json").read_text(encoding="utf-8"))
-        if state.get("version") != 1 or not isinstance(state.get("domains"), dict):
-            raise ValueError("unrecognized recovered state")
+        validate_auth_records(state, records)
         return len(records)
     finally:
         # Exact newly-created child, never a caller supplied recursive target.

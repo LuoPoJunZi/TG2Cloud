@@ -7,6 +7,7 @@
 | 路径 | 职责与维护边界 |
 | --- | --- |
 | `install.sh`、`install-lan.sh`、`uninstall.sh` | 保留根目录的公开单行命令入口 |
+| `install-webdav.sh`、`src/tg2cloud/addons/external_webdav/` | 待发布独立只读附加功能，不加入主安装或 Bot 菜单 |
 | `src/tg2cloud/` | 共享 Bot、CLI、公共部署、存储、持久化及监测 |
 | `scripts/run_source.py` | 不依赖当前目录或 Bot 依赖的受控源码入口 |
 | `packaging/` | 共用 Dockerfile、两版 Compose、Shell 钩子和 `app.*` 兼容入口 |
@@ -17,7 +18,7 @@
 | `docs/` | 用户指南与公开开发规范，入口见[文档目录](../README.md) |
 | `website/` | 独立静态文档站，沿用现有 Node 构建与部署方式 |
 
-根目录只保留标准配置、README／英文版、许可证、版本记录及三个 Shell 入口。本轮重构不迁移运行数据或提升版本；兼容及未公开 helper 的发布步骤见[Linux 重构说明](LINUX-REFACTOR.md)。
+根目录只保留标准配置、README／英文版、许可证、版本记录及轻量 Shell 入口；附加入口不复制主安装逻辑。目录整理不迁移运行数据或提升版本；兼容及未公开 helper 的发布步骤见[Linux 重构说明](LINUX-REFACTOR.md)。
 
 ## 桌面源码只在本地保留
 

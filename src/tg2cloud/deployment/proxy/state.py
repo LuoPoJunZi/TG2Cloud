@@ -9,6 +9,7 @@ from typing import Any
 from tg2cloud.deployment.profiles import ProductProfile
 
 STATE_VERSION = 1
+EXTERNAL_STATE_VERSION = 2
 
 SUPPORTED_EDITIONS = ("clouddrive2", "openlist")
 
@@ -95,16 +96,25 @@ def normalize_state(raw: str | bytes | None) -> dict[str, Any]:
         value = json.loads(raw)
     except (TypeError, json.JSONDecodeError) as exc:
         raise ValueError("共享代理状态文件不是有效 JSON；请先检查 VPS 上的状态。") from exc
-    if not isinstance(value, dict) or value.get("version") != STATE_VERSION:
+    if (not isinstance(value, dict) or type(value.get("version")) is not int
+            or value.get("version") not in {STATE_VERSION, EXTERNAL_STATE_VERSION}):
         raise ValueError("共享代理状态版本无法识别；不会自动覆盖。")
     domains = value.get("domains")
     if not isinstance(domains, dict) or set(domains) - set(SUPPORTED_EDITIONS):
         raise ValueError("共享代理状态包含未知 Edition；不会自动覆盖。")
     normalized = empty_state()
+    if value["version"] == EXTERNAL_STATE_VERSION:
+        if set(value) != {"version", "domains", "external_webdav"}:
+            raise ValueError("共享代理状态含未知资源；拒绝覆盖。")
+        normalized.update(version=EXTERNAL_STATE_VERSION, external_webdav={})
+    elif set(value) - {"version", "domains"}:
+        raise ValueError("旧状态含未声明资源；拒绝丢弃或降级。")
     seen: set[str] = set()
     for edition, item in domains.items():
         if not isinstance(item, dict):
             raise TypeError("共享代理域名状态格式不正确。")
+        if set(item) != {"domain", "backend_port"}:
+            raise ValueError("管理路由含未知字段；拒绝丢弃资源。")
         domain = validate_domain(str(item.get("domain", "")))
         if domain in seen:
             raise ValueError("同一个域名不能同时分配给两个 Edition。")
@@ -119,6 +129,27 @@ def normalize_state(raw: str | bytes | None) -> dict[str, Any]:
             "domain": domain,
             "backend_port": port,
         }
+    if value["version"] == EXTERNAL_STATE_VERSION:
+        entries = value.get("external_webdav")
+        if not isinstance(entries, dict) or set(entries) - set(SUPPORTED_EDITIONS):
+            raise ValueError("外部 WebDAV 路由清单无法识别。")
+        for edition, item in entries.items():
+            required = {"kind", "owner", "edition", "instance_dir", "domain", "enabled", "backend_port", "auth_file"}
+            if not isinstance(item, dict) or set(item) != required:
+                raise ValueError("外部 WebDAV 路由字段不完整或未知。")
+            if (item["kind"] != "external_webdav" or item["owner"] != "tg2cloud.external_webdav"
+                    or item["edition"] != edition or type(item["enabled"]) is not bool
+                    or item["backend_port"] != EDITION_BACKEND_PORTS[edition]
+                    or item["auth_file"] != f"external-auth/{edition}.htpasswd"
+                    or not isinstance(item["instance_dir"], str)
+                    or not re.fullmatch(r"/opt/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*", item["instance_dir"])
+                    or any(part in {".", ".."} for part in item["instance_dir"].split("/"))):
+                raise ValueError("外部 WebDAV 路由归属不符。")
+            domain = validate_domain(item["domain"])
+            if domain in seen:
+                raise ValueError("外部域名与已有路由冲突。")
+            seen.add(domain)
+            normalized["external_webdav"][edition] = dict(item, domain=domain)
     return normalized
 
 def state_with_route(
@@ -129,6 +160,8 @@ def state_with_route(
     for edition, item in result["domains"].items():
         if edition != product.key and item["domain"] == domain:
             raise ValueError("该域名已分配给另一个 TG2Cloud Edition。")
+    if any(item["domain"] == domain for item in result.get("external_webdav", {}).values()):
+        raise ValueError("该域名已由外部 WebDAV 使用。")
     result["domains"][product.key] = {
         "domain": domain,
         "backend_port": product.management_port,
@@ -146,6 +179,16 @@ def routes_from_state(state: dict[str, Any]) -> tuple[DomainRoute, ...]:
         DomainRoute(edition, item["domain"], item["backend_port"])
         for edition, item in sorted(normalized["domains"].items())
     )
+
+
+def has_routes(state: dict[str, Any]) -> bool:
+    return bool(state["domains"] or state.get("external_webdav"))
+
+
+def certificate_domains(state: dict[str, Any]) -> tuple[str, ...]:
+    current = normalize_state(json.dumps(state))
+    return tuple(sorted(item["domain"] for group in (current["domains"], current.get("external_webdav", {}))
+                        for item in group.values()))
 
 def parse_markers(output: str) -> dict[str, str]:
     markers: dict[str, str] = {}

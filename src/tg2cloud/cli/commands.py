@@ -12,7 +12,7 @@ def interrupted(_signal, _frame):
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="TG2Cloud Linux 安装与维护入口")
-    parser.add_argument("command", choices=("install", "lan", "uninstall"))
+    parser.add_argument("command", choices=("install", "lan", "uninstall", "webdav"))
     # Leave every existing Edition-specific option to its original parser.
     arguments = list(sys.argv[1:] if argv is None else argv)
     if not arguments:
@@ -24,6 +24,8 @@ def main(argv: list[str] | None = None) -> int:
         from .vps import main as operation
     elif args.command == "lan":
         from tg2cloud.deployment.proxy.lan import main as operation
+    elif args.command == "webdav":
+        from tg2cloud.addons.external_webdav.cli import main as operation
     else:
         from tg2cloud.deployment.uninstall import main as operation
     signal.signal(signal.SIGTERM, interrupted)

@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def helper_files(root: Path) -> list[str]:
     paths = ["scripts/run_source.py", "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/config.py"]
-    for directory in ("cli", "deployment"):
+    for directory in ("cli", "deployment", "addons"):
         for path in (root / "src/tg2cloud" / directory).rglob("*.py"):
             if path.is_symlink() or path.absolute() != path.resolve():
                 raise ValueError("helper source contains a link")

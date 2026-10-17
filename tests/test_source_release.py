@@ -6,6 +6,7 @@ import gzip
 import hashlib
 import importlib.util
 import io
+import json
 import re
 import tarfile
 import tempfile
@@ -29,7 +30,7 @@ class SourceReleaseTests(unittest.TestCase):
     def setUpClass(cls):
         # Validate public release inputs in a disposable two-commit A/B history.
         # Copy only explicit public runtime/build inputs, never private archives.
-        names = set(package.REQUIRED)
+        names = set(package.REQUIRED) | {"install-webdav.sh", "packaging/external-webdav.json"}
         for product in PRODUCTS.values():
             names.update(path.relative_to(ROOT).as_posix() for path in payload_sources(ROOT, product).values())
         cls.snapshot = {name: (ROOT / name).read_bytes() for name in names}
@@ -159,9 +160,25 @@ class SourceReleaseTests(unittest.TestCase):
                     package.validate_pins(self.root, commit)
         path.write_bytes(original)
 
-    def test_current_online_entries_match_reviewed_new_helper_layout(self):
+    def test_live_entries_keep_their_actual_published_helper_contract(self):
+        # Local unreleased additions must not manufacture a remote SHA or make
+        # historical bootstrap tests compare against an unpublished manifest.
+        # validate_pins still rejects these old lists for the NEW release below.
         for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
-            self.assertEqual((ROOT / name).read_text(encoding="utf-8"), bootstrap.render_entry(ROOT, name))
+            text = (ROOT / name).read_text(encoding="utf-8")
+            pin = re.search(r'^installer_commit\s*=\s*"([0-9a-f]{40})"$', text, re.MULTILINE)[1]
+            block = text.split("<<'PY' &\n", 1)[1].split("\nPY\n", 1)[0]
+            paths = [ast.literal_eval(node.value) for node in ast.walk(ast.parse(block))
+                     if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "files" for t in node.targets)]
+            published = json.loads(package.git(ROOT, "show", f"{pin}:packaging/bootstrap-manifest.json"))["files"]
+            self.assertEqual(paths, [tuple(published)])
+
+    def test_unpublished_addon_cannot_ship_with_existing_old_helper_list(self):
+        (self.root / "install.sh").write_bytes(package.git(ROOT, "show", "83cabf8c734aa98f8475b0e6cdb18a4bea8469b3:install.sh"))
+        self.commit()
+        commit = package.git(self.root, "rev-parse", "HEAD").decode().strip()
+        with self.assertRaisesRegex(ValueError, "stale bootstrap helper layout"):
+            package.validate_pins(self.root, commit)
 
     def test_old_download_list_cannot_pass_new_layout_release_checks(self):
         path = self.root / "install.sh"

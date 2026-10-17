@@ -16,6 +16,7 @@ dev = ["pytest==9.1.1", "ruff==0.17.0", "bandit==1.9.4", "cryptography==50.0.2",
 
 [project.scripts]
 tg2cloud = "tg2cloud.cli.commands:main"
+tg2cloud-webdav = "tg2cloud.addons.external_webdav.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -54,7 +54,7 @@ def manifest_files(content: bytes, expected: set[str]) -> list[str]:
 
 def helpers_in_tree(files: set[str]) -> set[str]:
     return {"scripts/run_source.py", "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/config.py"} | {
-        path for path in files if path.endswith(".py") and path.startswith(("src/tg2cloud/cli/", "src/tg2cloud/deployment/"))
+        path for path in files if path.endswith(".py") and path.startswith(("src/tg2cloud/cli/", "src/tg2cloud/deployment/", "src/tg2cloud/addons/"))
     }
 
 
@@ -143,6 +143,12 @@ def verify(directory: Path, tag: str) -> None:
     if not required.issubset(files):
         raise ValueError("source archive missing required Linux inputs")
     if modern:
+        if any(path.startswith("src/tg2cloud/addons/external_webdav/") for path in files):
+            needed = {"install-webdav.sh", "packaging/external-webdav.json",
+                      "src/tg2cloud/addons/external_webdav/cli.py", "src/tg2cloud/addons/external_webdav/service.py"}
+            if not needed <= files.keys() or json.loads(files["packaging/external-webdav.json"]) != {
+                    "api": 1, "proxy_schema": 2, "owner": "tg2cloud.external_webdav"}:
+                raise ValueError("incomplete external WebDAV release contract")
         runtime = {path for path in files if path.startswith("src/tg2cloud/") and path.endswith(".py")}
         manifest_files(files["packaging/runtime-manifest.json"], runtime)
         manifest_files(files["packaging/bootstrap-manifest.json"], helpers_in_tree(set(files)))

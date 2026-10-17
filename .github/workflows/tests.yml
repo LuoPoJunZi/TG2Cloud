@@ -46,6 +46,8 @@ jobs:
             packaging/hooks/openlist/preserve_webdav_config.sh \
             tests/manage_harness.sh \
             tests/maintenance_docker_stub.sh
+          bash -n install-webdav.sh
+          shellcheck install-webdav.sh
 
       - name: Set up runtime Python
         uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
@@ -77,6 +79,11 @@ jobs:
 
       - name: Build Linux Bot image
         run: docker build -t tg2cloud-bot:test build/ci-contexts/clouddrive2
+
+      - name: Isolated external WebDAV Nginx, authentication and Range
+        env:
+          TG2CLOUD_TEST_EXTERNAL_WEBDAV_DOCKER: "1"
+        run: python -B -m unittest discover -s tests -p test_docker.py -v
 
       - name: Run both Edition candidate images as non-root
         timeout-minutes: 20

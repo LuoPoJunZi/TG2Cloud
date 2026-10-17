@@ -8,6 +8,8 @@ on:
       - "install.sh"
       - "install-lan.sh"
       - "uninstall.sh"
+      - "install-webdav.sh"
+      - "tests/addons/**"
       - "scripts/**"
       - "src/**"
       - "pyproject.toml"
@@ -30,6 +32,8 @@ on:
       - "install.sh"
       - "install-lan.sh"
       - "uninstall.sh"
+      - "install-webdav.sh"
+      - "tests/addons/**"
       - "scripts/**"
       - "src/**"
       - "pyproject.toml"
@@ -81,7 +85,8 @@ jobs:
           bash -n install.sh
           bash -n install-lan.sh
           bash -n uninstall.sh
-          shellcheck install.sh install-lan.sh uninstall.sh
+          bash -n install-webdav.sh
+          shellcheck install.sh install-lan.sh uninstall.sh install-webdav.sh
       - name: Offline tests (no VPS or Docker calls)
         run: |
           python .github/scripts/check_python.py test --scope cli
