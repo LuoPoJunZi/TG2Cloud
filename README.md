@@ -10,754 +10,91 @@
   <a href="https://github.com/LuoPoJunZi/TG2Cloud/releases/latest"><img alt="最新版本" src="https://img.shields.io/github/v/release/LuoPoJunZi/TG2Cloud?style=flat-square&amp;label=release&amp;color=1677ff"></a>
   <a href="https://github.com/LuoPoJunZi/TG2Cloud/actions/workflows/tests.yml"><img alt="自动测试" src="https://img.shields.io/github/actions/workflow/status/LuoPoJunZi/TG2Cloud/tests.yml?branch=main&amp;style=flat-square&amp;label=tests"></a>
   <a href="LICENSE"><img alt="MIT License" src="https://img.shields.io/github/license/LuoPoJunZi/TG2Cloud?style=flat-square&amp;color=22a06b"></a>
-  <img alt="Python 3.12+" src="https://img.shields.io/badge/Python-3.12%2B-3776ab?style=flat-square&amp;logo=python&amp;logoColor=white">
 </p>
 
 <p align="center">
-  <a href="#下载">下载</a> ·
-  <a href="docs/VPS-INSTALL.md">部署指南</a> ·
-  <a href="#可选-vps-一键脚本">VPS 一键脚本</a> ·
-  <a href="docs/UNINSTALL.md">卸载指南</a> ·
-  <a href="docs/README.md">文档目录</a> ·
-  <a href="#bot-命令">Bot 命令</a> ·
-  <a href="#常见问题">常见问题</a> ·
-  <a href="RELEASE_NOTES.md">发布说明</a>
+  <a href="docs/VPS-INSTALL.md"><strong>安装指南</strong></a> ·
+  <a href="docs/README.md">仓库文档</a> ·
+  <a href="https://github.com/LuoPoJunZi/TG2Cloud/releases">版本下载</a> ·
+  <a href="https://tg2cloud.pages.dev/">文档网站</a> ·
+  <a href="README_EN.md">English</a>
 </p>
 
-<p align="center">
-  <strong>简体中文</strong> · <a href="README_EN.md">English</a>
-</p>
+TG2Cloud 是一个自托管的个人文件转存工具：把文件发送或转发给自己的 Telegram Bot，由 Linux 主机自动排队、下载并写入你挂载的云存储。
 
----
-
-TG2Cloud 是一个自托管的个人文件转存工具：把文件提交给自己的 Telegram Bot，由 VPS 持久排队，再通过 rclone 和 CloudDrive2 或 OpenList WebDAV 写入用户自行挂载的云存储。
-
-v1.2.1 增加取消任务确认恢复、远端冲突换名重传、视频标题提取与离线备份预检，详见[恢复指南](docs/RECOVERY.md)。下载新版 EXE 不会自动升级运行中的 Bot；实际发布文件以 GitHub Release 为准。
-
-```text
-Telegram
-    ↓
-TG2Cloud
-    ↓
-CloudDrive2 / OpenList
-    ↓
-Your Cloud
-```
-
-115 是主要测试和文档示例之一，并不是唯一目标网盘。最终可用的云存储取决于用户在 CloudDrive2 或 OpenList 中自行挂载的存储。
-
-本仓库是在原作者 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 基础上的二次开发版本，重点加强了任务恢复、磁盘保护、流式传输、状态语义、升级回退、VPS 资源建议和日常诊断。
-
-> 当前源码版本：**TG2Cloud v1.3.0**
->
-> v1.3.0 包含 Linux 模块化源码和增强的视频命名，支持长描述、引用块与宣传式原名替换；旧桌面源码和专用测试仅在历史版本及本地备份中保留。具体发布状态以 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) 为准，在线业务代码只安装正式稳定版本。
->
-> Windows 部署器最后更新到 **v1.2.1**；从 v1.3.0 起以 Linux 一键脚本维护两个 Edition。首次安装提供磁盘预算推荐，后续 Release 提供源码包及 SHA256。历史 EXE 下载保留；迁移与验收边界见[脚本优先说明](docs/development/SCRIPT-FIRST.md)。
-
-> 仅转存你有权保存、备份和使用的内容，并遵守 Telegram、所用云存储、CloudDrive2/OpenList、内容来源平台及所在地的法律法规和服务条款。
-
-## 下载
-
-Linux 安装／升级使用下方单行入口；v1.3.0 的 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) 提供 `TG2Cloud-v1.3.0-source.tar.gz` 和对应的 `SHA256SUMS.txt`。该清单校验源码包，历史 EXE 请使用 v1.2.1 自己的清单。
-
-历史 Windows 图形部署器请从 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 下载所需 Edition 和该版本的 `SHA256SUMS.txt`；后续版本不再提供新版 EXE：
-
-- **CloudDrive2 Edition** — `TG2Cloud-CloudDrive2-Deployer.exe`
-
-  适合已经使用或希望使用 CloudDrive2 管理云存储，并将其作为 WebDAV Storage Gateway 的用户。
-
-- **OpenList Edition** — `TG2Cloud-OpenList-Deployer.exe`
-
-  适合希望使用 OpenList 统一挂载和管理云存储，并将其作为 WebDAV Storage Gateway 的用户。
-
-下载后可在 Windows PowerShell 中核对完整性：
-
-```powershell
-Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
-Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
-```
-
-已发布的 Windows EXE 当前未提供商业代码签名，首次运行时 Windows SmartScreen 可能显示“未知发布者”；请从本仓库 Release 下载并核对 SHA-256，不要关闭 Defender 或 Windows Security。
-
-后续安装和升级主要使用 Linux 向导。在 Debian/Ubuntu x86_64 VPS 上以 root 运行（需 Python 3.10+、curl 和可交互终端）：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
-```
-
-安装向导先收集信息、预检和确认，实际部署代码只取最新正式稳定 Release。2026-10-17，CloudDrive2 测试实例已迁移到 v1.3.0，用户确认升级后使用验收通过；本次旧候选经人工核对、备份后迁移，不代表脚本会自动覆盖自定义代码。首次安装、自动跨版本升级、故障回退和 OpenList 实机升级仍需独立验证，见[验收记录](docs/development/V130-ACCEPTANCE.md)。Windows EXE 固定保留 v1.2.1；已升级的实例不要用旧 EXE 再部署。
-
-## 目录
-
-- [下载](#下载)
-- [工作原理](#工作原理)
-- [主要能力](#主要能力)
-- [重要边界](#重要边界)
-- [部署前准备](#部署前准备)
-- [Windows 图形化部署](#windows-图形化部署)
-- [可选 VPS 一键脚本](#可选-vps-一键脚本)
-- [卸载指南](docs/UNINSTALL.md)
-- [强制 HTTPS 管理入口](#强制-https-管理入口)
-- [CloudDrive2 配置](#clouddrive2-配置)
-- [OpenList 与云存储配置](#openlist-与云存储配置)
-- [真实 WebDAV 验收](#真实-webdav-验收)
-- [日常使用](#日常使用)
-- [Bot 命令](#bot-命令)
-- [VPS 运维与升级](#vps-运维与升级)
-- [常见问题](#常见问题)
-- [安全说明](#安全说明)
-- [本地开发与测试](#本地开发与测试)
-- [致谢与项目来源](#致谢与项目来源)
-
-## 工作原理
-
-```text
-Telegram 私聊 Bot
-        ↓
-SQLite 持久任务队列
-        ↓
-普通文件：先完整下载到 VPS
-大文件：Telegram → rclone 流式管道
-        ↓
-CloudDrive2 WebDAV 或 OpenList WebDAV
-        ↓
-用户挂载的云存储
-```
-
-TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑选文件并转发给私人 Bot，后续排队、下载、上传、校验和本地清理由 VPS 自动完成。当前版本不自动监听频道，也不批量抓取频道历史。
+Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云存储
 
 ## 主要能力
 
-- Linux 公网 VPS / 可信内网的一键安装、保留配置升级和独立卸载入口；
-- v1.2.1 历史 Windows 图形部署器支持密码/密钥登录及首次 SSH 指纹确认，后续不再更新；
-- 只读探测 CPU、内存、安装盘、Docker 数据盘、inode 和 FUSE；
-- 根据当前 VPS 提供“均衡模式”和“流式优先”两套存储建议；
-- Telegram 私聊 Bot 鉴权，只允许配置的数字 ID 使用；
-- SQLite 持久队列、原子磁盘额度预留、去重和重启恢复；
-- 普通下载与流式任务共享真实上传并发窗口；
-- 按 CPU、内存、磁盘、阶段吞吐、错误率和队列积压动态调节并发；
-- 单文件超过本地任务预算时自动使用流式模式；
-- CloudDrive2 使用临时文件、安全改名和正式文件复验；OpenList 直接写入预留的最终文件名；两版均执行远端大小校验和本地清理；
-- 上传失败保留普通模式的完整本地文件；
-- 持久暂停、批量重试、任务进度订阅、只读诊断和遗留临时文件巡检；
-- 部署前预检、SQLite 一致性快照、代码和配置指纹核验、失败自动回退；
-- 历史备份只读盘点和显式保留，不在部署时自动删除回退点；
-- Bot 容器以非 root、只读根文件系统、无 capabilities 方式运行。
+- 两个 Edition 共用 Bot 核心，各自保留配置、任务数据库与 Session。
+- 持久队列、去重、取消恢复、失败保留及视频说明命名。
+- 普通下载与大文件流式传输，配合动态并发和磁盘保护。
+- 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-## 重要边界
+当前版本 **v1.3.0**，后续以 Linux 脚本维护；Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 本次升级及用户验收范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表所有部署与恢复场景均已通过。
 
-- 当前只支持配置用户与 Bot 的一对一私聊；群组和频道消息不会创建任务。
-- TG2Cloud 只验证所选 WebDAV 目的端已收到同样大小的文件，不接入上游云存储的官方完成接口。
-- Bot 日常界面统一显示“Bot 完成”，不再要求或提示用户逐个执行人工确认。
-- 远端目前以文件大小为主要完整性依据，不提供内容哈希保证。
-- 流式模式不在 VPS 保存完整副本，传输中断后通常需要从头重试。
-- CloudDrive2 与 OpenList 自身的缓存不受 Bot 本地任务预算直接控制。
+## 开始使用
 
-## 当前版本
+1. 按[填写信息清单](docs/填写信息清单.md)准备 Telegram Bot、API 信息和服务器环境；不要把真实凭据填写到公共文档。
+2. 选择 CloudDrive2 或 OpenList，以及公网 VPS 或可信内网入口，按向导核对安装计划后执行。
+3. 在自己的网关中挂载云存储，按安装指南完成 WebDAV 配置与验收；网盘账号授权由你自行管理。
+4. 向 Bot 发送或转发文件，查看接收结果；任务查询、失败恢复及验证含义见[任务使用与恢复指南](docs/RECOVERY.md)。
 
-当前产品版本为 `TG2Cloud v1.3.0`，Linux 脚本提供两个 Edition；下文保留 v1.2.1 历史图形部署教程：
+两个 Edition 共用转存能力，但网关配置不同；各自的实例数据互相独立。已有实例升级使用对应入口并保留配置，不需要先卸载。
 
-- `TG2Cloud · CloudDrive2`
-- `TG2Cloud · OpenList`
+## 快速安装
 
-两版共用稳定任务核心，使用各自的存储网关、安装目录和部署资源。历史 PySide6 UI 不再随新版本构建。
+要求 Debian / Ubuntu x86_64、root、Python 3.10+、curl 和可交互终端；主机需能访问 GitHub、Telegram、镜像仓库及目的端。CloudDrive2 还需要 `/dev/fuse`。
 
-## 部署前准备
+### 公网 VPS
 
-### 推荐环境
-
-| 项目 | 基础建议 | 批量使用建议 | 说明 |
-| --- | --- | --- | --- |
-| VPS | 2 核、4GB 内存、50GB SSD | 4 核、8GB 内存、80～100GB SSD | 最终以部署器实时探测为准 |
-| 系统 | Debian / Ubuntu x86_64 | 同左 | 当前 Linux 入口仅支持 x86_64，不宣称 ARM64 已验收 |
-| 权限 | 以 root 运行脚本 | 同左 | 受管 CloudDrive2 需要 `/dev/fuse` |
-| 网络 | 可访问 Telegram、Docker 镜像仓库和目的端 | 100Mbps 以上并准备足够流量 | 公网测速不能代表到目标云存储的真实速度 |
-| 本地设备 | SSH 终端和浏览器 | 同左 | Windows / macOS / Linux 均可；历史 EXE 仅支持 Windows |
-
-脚本按 Edition 检查内存：CloudDrive2 至少约 1800MB，OpenList 至少约 900MB；还需满足安装文件系统的保留空间、任务预算、Docker 分区和 inode 检查。50GB 是推荐容量，不是简单的硬门槛；最终以实时探测和执行前复检为准。
-
-### 需要准备的信息
-
-VPS：
-
-- IP 地址或域名、SSH 端口、SSH 用户名；
-- VPS 密码，或者 SSH 私钥和可选私钥口令；
-- 非 root 用户的 sudo 密码，免密 sudo 时可留空。
-
-Telegram：
-
-- 从 `@BotFather` 获取的 Bot Token；
-- 从 [my.telegram.org](https://my.telegram.org) 获取的 API ID 和 API Hash；
-- 你自己的 Telegram 数字 ID。
-
-存储网关：
-
-- 选择 CloudDrive2 Edition 或 OpenList Edition；
-- 在所选网关中准备专用的 WebDAV 用户名和密码；
-- 由本人在 CloudDrive2 或 OpenList 中登录、授权或挂载目标云存储；
-- 目标云存储具有足够的剩余空间。
-
-部署器不需要云盘账号密码、Cookie、OAuth Token、CloudDrive2 会员密码、Telegram 私人账号密码或验证码。更完整的准备清单见 [一键部署前填写信息清单](docs/填写信息清单.md)。
-
-## Windows 图形化部署
-
-以下仅为 v1.2.1 历史教程。当前 main 的桌面文件已归档；恢复构建须先在独立目录切换到 v1.2.1 Tag，后续版本不生成新版 EXE。
-
-### 1. 获取并校验部署器
-
-正式版本优先从本仓库的 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 下载 EXE 和 `SHA256SUMS.txt`。也可在 Windows PowerShell 中从源码构建：
-
-```powershell
-git clone https://github.com/LuoPoJunZi/TG2Cloud.git
-cd TG2Cloud
-git checkout v1.2.1
-.\build.ps1
-```
-
-默认同时构建两个 PySide6 产品，也可以只构建其中一个：
-
-```powershell
-.\build.ps1 -Edition All
-.\build.ps1 -Edition CloudDrive2
-.\build.ps1 -Edition OpenList
-```
-
-构建结果位于：
-
-```text
-dist/TG2Cloud-CloudDrive2-Deployer.exe
-dist/TG2Cloud-OpenList-Deployer.exe
-```
-
-两个 EXE 均使用同一套 PySide6 界面和安全连接基础设施，但不在程序内提供后端切换。原 Tkinter Classic 入口、源码和 CMD 启动器已从当前项目清理，不再参与构建、CI 或发布。
-
-`build.ps1` 会按照 `requirements-build.txt` 自动准备依赖，验证 Qt GUI 运行时，并在打包时隔离第三方 DLL 搜索路径，避免构建机上其他软件的运行库污染成品。
-
-运行部署器前应核对 Release 提供的 SHA-256；未签名的 PyInstaller 单文件程序可能触发部分安全软件的启发式提示。
-
-### 2. 填写 VPS 页面
-
-1. 填写 VPS IP 或域名、SSH 端口和用户名；
-2. 选择密码或 SSH 私钥登录；
-3. 非 root 且不是免密 sudo 时填写 sudo 密码；
-4. 点击“测试 SSH”；
-5. 首次连接时，将弹出的主机密钥指纹与 VPS 服务商控制台核对。
-
-SSH 测试成功后，部署器会同时读取 VPS 资源，并生成当前实例的存储建议。
-
-### 3. 填写 Telegram 页面
-
-填写 Bot Token、API ID、API Hash 和本人 Telegram 数字 ID。只有这个数字 ID 能在私聊中使用 Bot；同一个人从群组或频道发送消息也不会被接受。
-
-### 4. 填写 CloudDrive2 页面
-
-本节和后续第 5～7 步说明 CloudDrive2 版。使用 OpenList 版时，请按 [OpenList 与云存储配置](#openlist-与云存储配置) 中的流程操作。
-
-由部署器在同一 VPS 管理 CloudDrive2 时，保持 WebDAV 地址为：
-
-```text
-http://tg2cloud-clouddrive2:19798/dav
-```
-
-第 3 页各项按下表填写：
-
-| 项目 | 是否必填 | 填写方法 |
-| --- | --- | --- |
-| WebDAV 地址 | 是 | 同机受管 CloudDrive2 保持默认内网地址；不要填写 VPS 公网地址 |
-| WebDAV 用户名 | 是 | 填写准备在 CloudDrive2 中创建的 TG2Cloud 专用用户名 |
-| WebDAV 密码 | 是 | 填写准备给上述 WebDAV 用户设置的密码 |
-| WebDAV 根目录后的子目录 | 否 | WebDAV 用户根目录已经指向目标文件夹时留空；根目录在更上层时才填相对路径 |
-
-这里不是填写 CloudDrive2 会员密码或云盘账号密码。部署前先确定一组 WebDAV 用户名和密码，基础环境部署完成后，再到 CloudDrive2 管理页创建完全相同的 WebDAV 用户。Bot 与同机 CloudDrive2 通过 Docker 内网通信。
-
-如果取消第 4 页的“在 VPS 上安装并管理 CloudDrive2 容器”，表示使用已经存在的外部 CloudDrive2；此时第 3 页必须填写 Bot 容器实际能够访问的 WebDAV 地址和现有账号。
-
-### 5. 选择存储方案
-
-第 4 页各项按下表确认：
-
-| 项目 | 建议 |
-| --- | --- |
-| 在 VPS 上安装并管理 CloudDrive2 容器 | CloudDrive2 与 Bot 部署在同一台 VPS 时保持勾选 |
-| 安装目录 | 一般保持 `/opt/tg2cloud-clouddrive2` |
-| 本地任务预算 | 先检测 VPS，再应用均衡或流式优先建议 |
-| 磁盘最少保留 | 采用检测结果，不要为了放入更多文件盲目调低 |
-| 时区 | 中国大陆一般保持 `Asia/Shanghai` |
-
-源码默认值保持为：
-
-```text
-安装目录：/opt/tg2cloud-clouddrive2
-本地任务预算：20GB
-磁盘最少保留：8GB
-时区：Asia/Shanghai
-```
-
-可以点击：
-
-- “检测 VPS 并推荐”：只读重新探测，不修改表单；
-- “应用均衡值”：给普通落盘和失败保留留出更多空间；
-- “应用流式优先值”：减少完整落盘额度，更适合小硬盘 VPS。
-
-建议不会静默覆盖默认值。安装目录或 CloudDrive2 管理方式变化后必须重新检测。程序不会自动分区、格式化、扩容、挂载或迁移 Docker 数据目录。
-
-例如检测结果为约 2 核、1.9GB 内存、33GB 可用磁盘，并推荐“流式优先 8GB/8GB”时，点击“应用流式优先值”，确认本地任务预算和磁盘最少保留都变成 `8`。这种配置属于保守运行，不要未经检测就改回默认 `20GB/8GB`。
-
-### 6. 开始部署
-
-点击“一键部署基础环境”。正常可能需要 5～15 分钟，期间会安装或检查 Docker、构建 Bot 镜像、启动服务并执行健康检查。正式写入前会再次检查资源；条件不安全时会停止，不会强行部署。
-
-日志显示正在下载依赖或构建 Docker 镜像时只需等待，不要重复点击“一键部署基础环境”、“修复 CloudDrive2 网络”或“WebDAV 验收”。基础容器健康后，部署器会自动打开 HTTPS 配置；必须等 HTTPS 全部自检通过并明确显示“部署完成”后再继续。
-
-部署脚本识别到当前 Edition 的既有 TG2Cloud 安装后，重新部署默认保留 VPS 当前 `.env`，并继续保留 SQLite、`rclone.conf`、下载目录、日志以及 CloudDrive2 配置和挂载数据。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”才应用本次表单值；升级前请先备份。升级会先在隔离目录构建候选镜像，并为旧代码、配置和数据库创建回退点；新版本未通过健康核验时只使用原有的有限内部回退逻辑，TG2Cloud v1.2.1 不提供正式自动 Restore。
-
-### 7. 完整按钮顺序
-
-首次安装可直接按下面顺序操作：
-
-1. 第 1 页填写 VPS 连接信息，点击“测试 SSH”，首次连接时核对主机密钥指纹；
-2. 第 2 页填写 Bot Token、Telegram API ID、API Hash 和本人数字 ID；
-3. 第 3 页填写计划使用的 WebDAV 用户名、密码，按目标目录规则决定是否填写子目录；
-4. 第 4 页确认 CloudDrive2 管理方式，点击“检测 VPS 并推荐”，再主动应用合适的存储建议；
-5. 点击“一键部署基础环境”；基础容器健康后，部署器会自动打开“HTTPS 管理入口”对话框，此时主界面保持“待配置 HTTPS”；
-6. 为当前 Edition 配置独立域名，等待证书、HTTPS、HTTP 跳转、公开 `/dav` 阻断和后端回环监听全部通过；
-7. 点击“打开 CloudDrive2 域名”，由本人登录 CloudDrive2、挂载目标云存储并开启 WebDAV；
-8. 在 CloudDrive2 中创建与第 3 页完全相同的 WebDAV 用户，关闭只读并授予读取、写入、改名和删除权限；
-9. 点击“WebDAV 验收”，等待出现 `TG2CLOUD_DESTINATION=OK`；
-10. 只有验收因容器网络问题失败时，才点击“修复 CloudDrive2 网络”，修复后重新验收；
-11. 在 Telegram 中私聊自己的 Bot，先发送一个小文件验证完整链路。
-
-## 可选 VPS 一键脚本
-
-后续使用脚本维护。在 Debian/Ubuntu x86_64 VPS 上以 root 运行以下命令；需要 Python 3.10+、curl 和可交互终端。它复用现有 Docker 部署资源；Windows 用户可先通过 SSH 登录服务器。以下旧图形化教程仍对应 v1.2.1。
+准备指向 VPS 的域名，并允许 TCP 80/443；向导中选择 CloudDrive2 或 OpenList：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-不带参数会先选择 Edition。CloudDrive2 可以先只读检查，再运行安装／升级向导：
+脚本先收集信息、检查并等待确认，业务代码只安装正式稳定 Release。已有实例建议先追加 `--edition clouddrive2 --check`（OpenList 使用 `openlist`）；只读检查不执行升级，核对后去掉 `--check` 再确认执行。完整参数见 [VPS 指南](docs/VPS-INSTALL.md)。
 
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2
-```
+### 可信内网 / NAS
 
-OpenList 先只读检查，不安装／升级：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --check
-```
-
-检查通过后，再运行 OpenList 安装／升级向导；写入前仍需预检与最终确认：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist
-```
-
-入口从 `main` 下载，但必要的向导模块固定到已验证的不可变 commit；安装目标仍只取最新正式稳定 Release，不安装 `main` 或 RC 的未发布业务代码。下载失败会停止。此命令会执行仓库提供的代码，只应在信任本仓库时使用；如需先检查脚本或从本地源码运行，见完整指南。不要使用 `curl | bash`，秘密输入通过当前终端读取。
-
-全新 VPS 先收集配置、预检和确认再安装；完整已有实例复用配置，目标源码固定到 GitHub 最新正式稳定 Release 的 commit。已是最新版不重建、不重启。旧 TG115、部分容器、手改程序、冲突目录及网关镜像迁移均停止，不自动覆盖。`manage.sh update` 仍只重建本机已有 payload，与此入口不同。
-
-源码、Bot 和脚本版本为 **v1.3.0**；Windows 构建资源与最后发布的 EXE 固定为 **v1.2.1**。首次交互安装会读取资源，提供流式优先、均衡和手动预算，执行前再次校验；已有实例升级保留原值。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。CloudDrive2 v1.3.0 的本次升级后使用验收已获用户确认，完整范围见[验收记录](docs/development/V130-ACCEPTANCE.md)；OpenList 脚本实机验收暂缓。
-
-HTTPS 续做成功后可再次确认显示已有凭据。也可单独在私有终端运行以下命令，每项默认不显示；此操作不会安装、升级或改密，不能与 `--check`、`--configure-https` 或 `--verify` 组合：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --show-credentials
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --show-credentials
-```
-
-OpenList 显示的是保存的初始化管理员密码，可能已在管理页更改；请避免录屏或旁观。精简系统缺少 HTTPS 预检工具时，向导列出工具和安装命令，预检阶段不自动安装软件。
-
-本次 CloudDrive2 旧测试候选先被官方基线检查安全拦截，再经授权备份并人工迁移到正式 v1.3.0。历史任务、配置和 Session 保留，Bot、HTTPS、代码指纹及只读 WebDAV 检查通过；升级后再次运行 `--check` 显示已是最新、不重建。用户随后确认使用验收完成；这不包含所有恢复场景或首次安装验收。
-
-完整说明与安全边界见 [VPS 安装与升级脚本](docs/VPS-INSTALL.md)。不要在脚本和 EXE 中同时操作同一实例；WebDAV 写入验收需另行确认，云盘账号与授权仍只在自己的 CloudDrive2/OpenList 中配置。
-
-## 局域网 / NAS 独立脚本（测试阶段）
-
-内网 Linux 不需要为了安装而申请公网域名。新增的 `install-lan.sh` 手工收集本机内网 IPv4，通过独立 Docker Nginx 提供内网 HTTP 管理入口；不改变两个 EXE、原 `install.sh` 或 Bot 传输流程。首版支持 Debian/Ubuntu x86_64、root、Python 3.10+ 和本机 rootful Docker 28+，不承诺直接支持所有 NAS 系统或 ARM。
-
-在目标 Linux 上以 root 运行，无需手动下载完整源码：
+无公网域名时使用独立入口，按提示填写本机私有 IPv4；仅支持符合上述环境的 Linux 主机，不保证所有 NAS 系统兼容：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
 ```
 
-向导先选择 CloudDrive2 / OpenList，首次安装手填实际 Linux / 虚拟机的内网 IP（例如 `192.168.26.5`），随后收集 Telegram、WebDAV 等配置并展示计划，最终确认后才安装。不会要求 HTTPS 域名。也可直接指定 Edition：
+内网 HTTP 不加密，禁止公网端口转发；不要用此入口绕过公网 HTTPS。详见[内网指南](docs/LAN-INSTALL.md)。
 
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition clouddrive2
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh) --edition openlist
-```
-
-在线引导固定到经 CI 验证的不可变源码，业务容器使用最新正式稳定 Release。需要联网，不是离线安装。已收到 CloudDrive2 在内网 Debian 实机首次部署及 WebDAV 验收通过的日志；OpenList、不同 NAS 系统、升级/回退与真实 Telegram 转存仍需单独验收。
-
-入口只监听指定内网地址，不占用 80/443、不签发证书，不接管已有 HTTPS 实例。HTTP 不加密，仅用于可信内网，禁止公网端口转发。升级保留原配置与已保存 IP；网关后端和 Bot 内部 WebDAV 不变。详见 [内网安装与安全边界](docs/LAN-INSTALL.md)。以下强制 HTTPS 规则仍适用于原 EXE / 公网 VPS 安装。
-
-## 独立卸载脚本
-
-[查看卸载脚本](uninstall.sh) · [卸载使用说明](docs/UNINSTALL.md)
-
-`uninstall.sh` 可统一移除标准部署的所选 Bot、云网关、项目网络、HTTPS 路由和内网入口；没有剩余 HTTPS 路由时才移除 TG2Cloud 自己的 Nginx/Certbot 容器。当前主分支的增强版默认完整清理所选配置、数据库、下载及可识别历史备份，需要确认并输入 `DELETE ALL <edition/all>`；`--keep-data` 明确保留数据，原 `--purge-data` 仍保留备份。不卸载系统 Docker/Nginx，不清理其他容器、命名卷、镜像缓存或旧 TG115，也不删除云端文件。
-
-在线一键卸载命令：
-
-> 用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍待实机验证**。v1.3.0 在线入口固定到不可变向导源码 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`；历史 EXE 仅从 v1.2.1 Release 获取。先结束任务、把备份保存到清理范围之外并只读预检；本次升级验收不扩大卸载结论，也没有无人值守强制删除。
+### 卸载预检
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
 ```
 
-核对预检范围后，运行交互向导：
+这条命令只预览，不卸载。实际完整卸载会删除所选实例的数据和可识别备份；需保留数据时使用 `--keep-data`，先保存清理范围之外的独立备份。详见[卸载指南](docs/UNINSTALL.md)。
 
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
-```
+## 使用文档
 
-在目标 Linux 的当前主分支源码根目录以 root 运行，先预览，再双重确认完整清理：
+按主题查阅仓库内文档；全部文档见[仓库文档目录](docs/README.md)，网页版见[文档网站](https://tg2cloud.pages.dev/)。
 
-```bash
-bash ./uninstall.sh --edition all --check
-bash ./uninstall.sh --edition all
-```
-
-也可选择 `--edition clouddrive2` 或 `--edition openlist`；保留配置和备份请加 `--keep-data`。`--check` 通过不是卸载成功；共享证书仍被另一 Edition 使用时不删除。“完整清理”不保证回滚系统包、镜像缓存或 Cloudflare DNS 到安装前，详细边界见 [卸载说明](docs/UNINSTALL.md)。
-
-## 强制 HTTPS 管理入口
-
-受管 CloudDrive2/OpenList 的基础容器健康后，部署器自动打开“HTTPS 管理入口”对话框。当前 Edition 必须完成域名证书与全部安全自检，主界面才显示“部署完成”，WebDAV 最终验收才会继续。两个 Edition 共用 VPS 上的一套 Dockerized Nginx/Certbot，并分别使用独立域名。底层固定端口 SSH 隧道仅保留兼容和故障恢复能力，不再显示为普通工作台按钮。
-
-使用前必须把域名的全部 A/AAAA 记录直接指向当前 VPS，并在安全组或防火墙中开放 TCP 80/443。首次签发证书时，Cloudflare 用户应先使用“仅 DNS”，不需要向 TG2Cloud 提供 Cloudflare API Token。部署器会拒绝 URL、IP、通配符、错误 AAAA、重复域名，以及被其他 Nginx/Caddy/Apache/Traefik 或进程占用的 80/443；它不会自动停止或修改外部服务。
-
-域名入口只代理 CloudDrive2/OpenList 管理界面。`/dav` 与 `/dav/` 会在公网入口返回 403；Bot 与 rclone 继续通过原 Docker 内网 WebDAV 传输。配置过程中会依次执行 DNS、端口、证书、`nginx -t`、HTTPS、HTTP 跳转、`/dav` 阻断和后端回环监听检查，全部通过后才提交状态。证书签发或自检失败时会回退，更新一个 Edition 不会替换另一个 Edition 的已有域名。
-
-远端共享目录为 `/opt/tg2cloud-proxy`，容器为 `tg2cloud-proxy-nginx` 与 `tg2cloud-proxy-certbot`。移除最后一个域名后共享代理会停止，但证书文件默认保留，避免误删和不必要的重复签发。
-
-## CloudDrive2 配置
-
-HTTPS 配置通过后，点击“打开 CloudDrive2 域名”，通过当前 Edition 的 HTTPS 管理入口访问：
-
-```text
-https://cloud.example.com
-```
-
-示例域名应替换为你自己的域名。CloudDrive2 的 19798 端口仍只绑定 VPS 回环地址，不暴露到公网；共享 Nginx 是唯一监听公网 80/443 的 TG2Cloud 组件，且公网 `/dav` 与 `/dav/` 固定返回 403。不要把管理域名填入 Bot 的 WebDAV 地址。
-
-在 CloudDrive2 中依次完成：
-
-1. 登录 CloudDrive2；
-2. 添加并登录自己的目标云存储；
-3. 确认可以浏览目标文件；
-4. 开启 WebDAV；
-5. 创建 TG2Cloud 专用 WebDAV 用户；
-6. 关闭“只读”，确保它拥有读取、写入、改名和删除权限。
-
-目标目录有两种配置方式，二选一。下表以 115 为示例；使用其他云存储时，请替换为对应挂载路径：
-
-| CloudDrive2 WebDAV 用户根目录 | 部署器“根目录后的子目录” | 最终位置示例 |
-| --- | --- | --- |
-| `/115open/Telegram` | 留空 | `/115open/Telegram/文件名` |
-| `/` 或更上层目录 | `115open/Telegram` | `/115open/Telegram/文件名` |
-
-不要同时在 WebDAV 根目录和部署器子目录中重复填写 `115open/Telegram`，否则会出现套娃目录。
-
-## OpenList 与云存储配置
-
-OpenList 版使用独立的 `/opt/tg2cloud-openlist` 安装目录、`tg2cloud-openlist` 容器和 `tg2cloud-openlist-net` 网络，可与 CloudDrive2 版共存；但不要让两个实例同时长期使用同一个 Telegram Bot Token。
-
-新安装只使用 TG2Cloud 运行命名。若 VPS 上有同 Edition 的旧 TG115 安装目录或已停容器，部署器提示后继续；不会接管、移动、覆盖、停止或删除旧资源。若旧服务仍占用固定端口 `19798` 或 `5244`，则明确停止，请自行处理后重新检测。目标新目录或容器名冲突也会停止。旧 Docker Network 只会触发提示；新部署使用自己的网络，不修改旧网络。详见 [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md)。
-
-首次安装按以下顺序操作：
-
-1. 填写 VPS 与 Telegram 信息，测试 SSH，并应用适合当前 VPS 的存储建议。OpenList 默认本地任务预算为 `20GB`，磁盘最少保留为 `8GB`。
-2. “部署 OpenList”页会生成首次管理员密码。密码默认遮罩，可显示、复制或在部署前明确重新生成；它只在全新 OpenList 数据目录首次初始化时生效。已有实例会保留原管理员凭据，部署器不会自动重置。部署完成后若检测到已有实例，首次密码区域会自动隐藏，并明确提示使用原凭据。
-3. 点击“一键部署基础环境”。OpenList、Bot 和内部网络健康后会自动打开 HTTPS 配置；尚未添加目标云存储或尚未创建 WebDAV 用户属于正常中间状态，但 HTTPS 未完成前不会显示“部署完成”。
-4. 为 OpenList Edition 配置独立域名并通过全部自检，然后点击“打开 OpenList 域名”。OpenList 的 5244 端口仍只绑定 VPS 回环地址，公网仅由共享 Nginx 提供 80/443 HTTPS 管理入口。
-5. 登录 OpenList，由本人在后台添加并授权目标云存储，例如 `115 Open`。Cookie、Token、OAuth 凭据和登录信息只交给你自己的 OpenList，TG2Cloud 部署器不会读取或收集。
-6. 按“配置 WebDAV”页显示的同一组值创建专用普通用户。用户名、部署器本地生成的 28 位随机密码和建议基本路径均可直接复制；只有点击“重新生成 WebDAV 密码”才会改变当前会话中的密码。
-7. 为该用户授予目录列表、读取、创建／写入和删除权限。当前 OpenList Edition 直接写入预留的最终文件名，不依赖 WebDAV MOVE；不同 OpenList 版本的权限名称可能不同，但必须具备前述实际能力。
-8. 回到部署器点击“WebDAV 验收”。只有认证、目录访问、写入、大小检查、最终落盘和删除全部完成，并出现 `TG2CLOUD_DESTINATION=OK`，才表示 TG2Cloud 到 OpenList WebDAV 的链路可用。
-
-OpenList 新装建议 WebDAV 用户名为 `tg2cloud`，目标子目录默认留空：文件直接写入该用户的 WebDAV 根目录。若需要子目录，可填写 `Telegram` 或 `Media/Telegram` 等相对路径；已有实例的 `tg115` 用户及显式目标路径仍可继续使用，不会被静默改写。
-
-关闭部署器后，本地生成的密码不会保存。已有 TG2Cloud 实例重新部署时默认保留 VPS 当前完整 `.env`。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”时才使用本次表单；此时还可勾选“仍保留 VPS 当前 WebDAV 与管理员配置”，让旧凭据只在 VPS 内合并，不会读取回 Windows 或输出到日志。需要更换 WebDAV 凭据时不要勾选第二项，并确保 OpenList 中填写的值与界面一致。管理员密码恢复属于有影响的高级操作，必须明确确认后使用 VPS 上的官方管理命令。
-
-右侧“OpenList 日常管理”区域提供运行状态、最近脱敏日志、分别重启 Bot／OpenList、创建安全备份和管理员密码恢复。安全备份包含程序配置、TG2Cloud SQLite 一致性快照与 OpenList 状态；为避免复制到不一致的 OpenList 数据，操作期间会短暂停止两个服务，完成后自动启动并检查健康。管理员密码恢复需要两次确认，新密码只写回当前窗口的遮罩输入框，不进入普通日志。
-
-## 真实 WebDAV 验收
-
-CloudDrive2 或 OpenList 与目标云存储配置完成后，点击“WebDAV 验收”。该操作会从 Bot 容器内使用实际运行配置：
-
-```text
-生成 256 字节随机文件
-→ 写入当前产品的 WebDAV
-→ 检查远端大小
-→ CloudDrive2：远端改名并复验
-→ OpenList：直接最终落盘（无需 MOVE）
-→ 删除远端与本地测试文件
-```
-
-只有出现 `TG2CLOUD_DESTINATION=OK` 才算通过。该结果证明当前 Bot 配置具备所需 WebDAV 读取、写入、最终落盘和删除能力，但仍应在所用云存储的官方客户端验证真实文件大小及可打开性。OpenList 版会在“配置 WebDAV”页按 Bot、OpenList 服务、认证、目标目录、写入、大小、最终落盘、清理逐项显示“通过／失败／未执行”，失败后的后续步骤不会被误标为通过。常见的认证失败、目录错误、写入权限、大小校验、最终落盘和删除失败会先显示普通用户可理解的处理建议；原始 rclone／HTTP 细节只保留在下方脱敏日志中。
-
-建议正式批量使用前依次测试：
-
-1. 一个 5～20MB 小文件；
-2. 一个普通落盘文件；
-3. 一个超过本地预算或手动 `/stream` 的流式文件；
-4. 传输后的 Bot 重启恢复；
-5. 一个测试任务的 `/cancel` 远端清理。
-
-## 日常使用
-
-1. 在 Telegram 中选择有权保存的文件；
-2. 转发到自己与 TG2Cloud Bot 的一对一私聊；
-3. Bot 返回任务编号并持久化排队；
-4. 普通文件完整下载到 VPS 后再上传；
-5. 超过预算的单文件自动流式写入；
-6. WebDAV 临时文件验证成功后改成正式名称；
-7. Bot 先记录清理状态，再删除本地副本；
-8. Bot 显示“Bot 传输已完成（CloudDrive2 已接收）”；
-9. 按自己的使用需要在 CloudDrive2、OpenList 或云存储官方客户端查看文件。
-
-### 状态含义
-
-| 状态 | 含义 |
+| 主题 | 仓库文档 |
 | --- | --- |
-| 在排队 | 任务已保存，等待资源和目的端允许放行 |
-| 正在从 Telegram 下载 | 普通模式正在写入 VPS 临时文件 |
-| 正在从 Telegram 流式写入 CloudDrive2 | 文件直接进入上传管道，进度不是上游云存储的入库进度 |
-| 正在写入 CloudDrive2 | VPS 本地完整文件正在上传 WebDAV |
-| CloudDrive2 已接收，正在清理 VPS 本地文件 | 远端已经复验，本地清理尚未完成 |
-| Bot 传输已完成（CloudDrive2 已接收） | Bot 流程结束，不代表上游云存储官方端已核验 |
-
-## Bot 命令
-
-| 命令 | 用途 |
-| --- | --- |
-| `/start` | 打开 TG2Cloud 状态首页和快捷按钮 |
-| `/help` | 查看帮助 |
-| `/queue [页码]` | 每页查看 5 个最近任务；省略页码时打开第 1 页 |
-| `/status`、`/performance` | 查看 TG2Cloud 状态首页、实时速度和任务统计 |
-| `/doctor` | 只读诊断，不创建远端测试文件 |
-| `/task <编号>` | 查看单个任务详情 |
-| `/watch <编号>` | 每 5 秒编辑同一条消息展示进度，重启后需重新订阅 |
-| `/pause`、`/resume` | 持久暂停或恢复新任务调度；不打断活动传输 |
-| `/retry <编号>` | 重试一个失败任务 |
-| `/retry all` | 一次重排最多 100 个可重试任务 |
-| `/cancel <编号>` | 先清理并复查本任务远端文件，再删除本地副本 |
-| `/stream <编号>` | 将排队或下载失败任务改成流式模式 |
-| `/orphans` | 只读巡检疑似遗留的 `.uploading-*` 临时文件 |
-| `/orphans clean` | 获取一次性确认码后显式清理遗留临时文件 |
-
-### Telegram 原生命令菜单
-
-Bot 启动时会自动注册 Telegram 输入框左侧的原生命令菜单，7 项说明统一使用 6 个中文字符：
-
-```text
-/status   查看系统状态
-/queue    查看最近任务
-/pause    暂停任务调度
-/resume   恢复任务调度
-/doctor   运行系统诊断
-/orphans  检查临时文件
-/help     查看使用帮助
-```
-
-`/start`、`/status` 和 `/performance` 会打开 TG2Cloud 状态首页，下面依次提供 `📋` 任务列表、`🖥` VPS 资源和 `🔄` 原地刷新三个按钮。VPS 资源页使用 `🔄` 刷新当前采样、使用 `↩️` 返回最新首页；callback 会编辑同一条消息，不会反复发送新状态消息。完整参数命令仍可手动输入。`/queue` 默认每页显示 5 项，使用 `/queue 2`、`/queue 3` 翻页；查看、重试、切换流式和取消任务分别使用 `/task <编号>`、`/retry <编号>`、`/stream <编号>` 和 `/cancel <编号>`。取消继续遵守远端先删除并复查、再删除本地副本的失败关闭规则。
-
-菜单注册失败不会阻止 Bot 启动，仍可直接输入全部文字命令；启动日志会记录失败原因。升级前已经存在的旧快捷按钮消息仅为兼容保留，不会出现在新的 Bot 回复中。
-
-TG2Cloud 首页显示排队、活动下载、活动上传与失败数量；四项即使为零也继续显示。实时速度分别来自现有 Telegram 下载、WebDAV 上传与 VPS 网络采样；流式速度同时计入下载和上传方向。历史完成数量不在首页展示。示例：
-
-```text
-☁️ TG2Cloud
-🟢 正常运行 · OpenList
-
-📋 任务
-⏳ 2　⬇️ 1　⬆️ 0　❌ 0
-
-📊 实时状态
-⬇️ 8.25 MB/s
-⬆️ 3.60 MB/s
-🌐 11.85 MB/s
-
-🕐 更新于 21:35:08
-```
-
-`🖥` 打开的“VPS 资源”页单独显示 CPU、可用内存、TG2Cloud 数据目录所在分区的可用磁盘，以及本地缓存已用额度／配置额度。这样不会再把 TG2Cloud 运行状态与 Linux 主机资源混为同一概念。
-
-`/cancel` 采用失败关闭策略：只有确认本任务的临时和正式远端路径均已删除，才会删除 VPS 本地副本并标记取消。清理失败时会保留数据，便于再次取消或人工处理。
-
-## VPS 运维与升级
-
-CloudDrive2 默认安装目录为 `/opt/tg2cloud-clouddrive2`。通过 SSH 登录 VPS 后可使用：
-
-| 命令 | 用途 |
-| --- | --- |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh status` | 查看容器状态 |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh logs` | 查看近期 Bot 日志 |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh check` | 核对配置、代码指纹和基础心跳 |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh verify` | 执行真实 WebDAV 写入、改名和删除验收 |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh restart` | 仅重启 Bot，不应用配置变化 |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh stop` | 停止 Bot |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh start` | 启动并等待 Bot 健康 |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh update` | 使用已安装 payload 重建 Bot；不下载新代码、不替换 `.env` |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh backups` | 只读统计升级备份数量和占用 |
-| `sudo /opt/tg2cloud-clouddrive2/manage.sh prune-backups 5` | 明确删除旧回退点，每类保留最新 5 份 |
-
-OpenList 使用同名管理脚本，路径为 `/opt/tg2cloud-openlist/manage.sh`；其 `update` 还会拉取当前 Compose 已固定的 OpenList 镜像并核验两个服务。两版只操作各自 TG2Cloud 安装目录和容器，不把旧 TG115 当作更新目标。桌面端“查看运行状态”会分别报告运行中、已安装但未正常运行、未安装，并把检测到的旧 TG115 单独列为提示。
-
-### 修改配置
-
-把新配置文件放在安装目录之外，再执行：
-
-```bash
-sudo /opt/tg2cloud-clouddrive2/manage.sh apply-config /absolute/new-config.env
-sudo /opt/tg2cloud-clouddrive2/manage.sh check
-sudo /opt/tg2cloud-clouddrive2/manage.sh verify
-```
-
-`apply-config` 会先备份和预检，再重建 Bot 并核对实际环境；失败时恢复旧配置。更换目的账号或目标目录前，应先处理完已有队列和失败保留任务。
-
-### 升级程序
-
-后续推荐使用 [VPS 安装／升级脚本](docs/VPS-INSTALL.md) 检查并保留配置升级；内网实例使用 [LAN 脚本](docs/LAN-INSTALL.md)。`manage.sh update` 只会使用 VPS 已经安装的 payload 重建 Bot，不会自动从 GitHub 拉取新代码。
-
-CloudDrive2 没有手动“创建备份”UI；重新部署前的内部备份包含程序/`.env`/配置（含现有 `rclone.conf`）和可用时的 SQLite 一致性快照，不包含下载、日志及 CloudDrive2 状态目录。OpenList 的手动安全备份包含程序配置归档（含 `.env`、`rclone.conf`）、可用时的 SQLite 快照，以及已初始化的 OpenList 状态（排除其临时文件和日志）；不包含下载、TG2Cloud 日志或云端文件。备份文件含敏感凭据，目录权限为 `700`、文件尽量为 `600`，不得公开上传。
-
-CloudDrive2 升级备份位于 `/opt/tg2cloud-clouddrive2-backups`，OpenList 升级/手动备份位于 `/opt/tg2cloud-openlist-backups`。部署只统计占用，超过 5GB 时提醒，不自动删除。第一次升级并完成真实文件验证之前，不要急于清理旧回退点。`prune-backups` 只处理程序生成的 `config-*`、`database-*`、`env-*` 和 `openlist-state-*` 普通文件，不越过本 Edition 的 TG2Cloud 备份目录，也不清理 TG115 备份。TG2Cloud v1.2.1 仍不提供正式自动 Restore；卸载使用独立的 [卸载脚本](docs/UNINSTALL.md)，不是升级步骤。当前主分支及在线完整清理会删除所选备份，需要保留时明确使用 `--keep-data`；旧 v1.2.0 Tag 中的卸载仍保持原行为。
-
-## 常见问题
-
-### SSH 连接失败
-
-检查 VPS 地址、端口、用户名、密码或私钥，以及服务商安全组。首次连接应核对主机密钥指纹，不要在指纹变化原因不明时直接接受。
-
-如果提示 `Host key for server ... does not match`，表示部署器保存的旧 SSH 主机密钥与服务器本次返回的密钥不同。这不是用户名或密码错误，常见于 VPS 重装、恢复快照、SSH 主机密钥重新生成或 IP 被重新分配；原因不明时也可能存在连接到错误服务器或中间人攻击的风险。
-
-新版 Windows 部署器会直接显示服务器地址、旧／新密钥类型和两组 SHA-256 指纹。此时：
-
-1. 优先从服务商网页控制台／VNC 登录 VPS，查看当前 SSH 主机指纹：
-
-   ```bash
-   sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256
-   sudo ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub -E sha256
-   ```
-
-2. 如果新指纹与控制台不一致，或无法解释变化原因，点击“取消”。部署器不会修改原记录，也不会继续连接。
-3. 如果完全一致，点击“更新并重新连接”。部署器只替换当前主机与当前端口对应的旧密钥，保留其他 VPS 记录，然后自动重新执行原操作一次；无需手动编辑或清空 `known_hosts`。
-4. 如果更新后提示“身份认证失败”，说明新的服务器身份已经核验，但用户名、密码、私钥或私钥口令仍不正确；这与主机密钥变化是两个独立问题。
-
-如果 VPS 没有重装、换机、恢复快照或调整 SSH 配置，不要直接删除旧记录，应先在服务商控制台确认当前 IP 和服务器身份。部署器仍采用严格 Host Key 校验，不会静默接受变化，也不会清空当前主机记录目录为 `%APPDATA%\TG2Cloud-Deployer\known_hosts`。如果只存在旧 `%APPDATA%\TG115-Deployer\known_hosts`，TG2Cloud 会提示重新核对指纹，不自动导入或覆盖。不要删除其中其他服务器的记录，也不要把错误窗口中的真实 IP、主机公钥或登录资料提交到 Issue。
-
-### 提示没有 `/dev/fuse`
-
-受管 CloudDrive2 Docker 挂载需要 FUSE。请在 VPS 控制台开启，或联系服务商确认虚拟化类型是否允许 `/dev/fuse`。
-
-### Bot 一直排队
-
-依次检查：
-
-1. `/status` 顶部是否提示资源或存储异常，并用 `🖥` 打开 VPS 资源；
-2. 本地额度是否已满、磁盘是否接近安全线；
-3. CloudDrive2 是否已登录并挂载目标云存储；
-4. WebDAV 是否开启且用户不是只读；
-5. 用户名、密码和目标目录是否与部署器一致；
-6. 执行 `sudo /opt/tg2cloud-clouddrive2/manage.sh verify`。
-
-### 日志出现 `401 Unauthorized`
-
-通常表示运行中的 Bot WebDAV 凭据与 CloudDrive2 用户不一致。修改部署器中的值后，必须重新执行基础部署，或者使用 `apply-config`；单纯 `restart` 不会应用新配置。之后运行 `check` 和 `verify`，不要只根据历史日志判断当前状态。
-
-### HTTPS 管理页打不开
-
-先在“HTTPS 管理入口”中点击“检查状态”，核对 DNS、证书、Nginx、80/443、HTTP 跳转和后端回环监听。首次签发时 Cloudflare 应使用“仅 DNS”；错误 AAAA、端口被其他 Web 服务占用或安全组未开放 80/443 都会导致失败。TG2Cloud 不会自动停止外部 Nginx、Caddy、Apache 或 Traefik。
-
-HTTPS 管理页错误和 `401 Unauthorized` 是两件事：前者发生在域名、证书或反向代理层，后者表示 CloudDrive2/OpenList 中的 WebDAV 用户名、密码或权限与 Bot 当前配置不一致。“修复 CloudDrive2 网络”不能修复 401；应先进入管理页完成 WebDAV 配置，再执行“WebDAV 验收”。
-
-### 日志出现 `lookup tg2cloud-clouddrive2`
-
-先在部署器中点击“修复 CloudDrive2 网络”。该操作会保留 CloudDrive2 登录和挂载数据，修复容器网络别名后执行真实 WebDAV 验收。若 19798 端口由未知程序占用，脚本会拒绝自动修改。
-
-### Bot 显示 healthy，为什么仍不能上传
-
-健康状态只检查当前容器的调度和资源心跳，不代表 WebDAV 可写，更不代表上游云存储已完成同步。`manage.sh verify` 才会用实际配置测试 WebDAV 写入、大小检查、改名和删除。
-
-### 单文件超过本地预算
-
-系统会自动使用流式模式，不需要把预算调整到文件大小。流式任务仍受共享上传窗口和真实磁盘安全线限制，中断后通常从头重传。对于因总预算不足而长期等待、但本身没有超过单文件预算的任务，可以使用 `/stream <编号>` 手动切换。
-
-### 磁盘空间看起来足够，部署器仍拒绝
-
-Docker 数据目录可能和 `/opt/tg2cloud-clouddrive2` 位于不同文件系统。部署器会分别检查安装盘、Docker 盘、已有下载、备份、保留线和 inode；任一关键文件系统不安全都会停止部署。
-
-### 文件很多，是否必须逐个确认
-
-不需要。当前 Bot 不再要求或提示逐个确认；完成传输并通过 WebDAV 远端大小复验后，状态统一显示为“Bot 完成”。`/status` 会把历史兼容状态一并合并统计，不增加额外操作。
-
-## 安全说明
-
-- 不要把 VPS 密码、SSH 私钥、Bot Token、API Hash、WebDAV 密码、云存储登录信息、日志、数据库或 Telegram Session 提交到仓库、Issue、截图和聊天记录。
-- 部署器不保存表单密码，只保存用户确认过的 SSH 主机密钥。
-- Base64 和 rclone obscure 只是编码或混淆，不是加密；VPS root 能读取服务配置。
-- CloudDrive2 为使用 FUSE 需要较高容器权限，建议部署在不承载钱包、数据库等重要业务的独立 VPS 上。
-- CloudDrive2 管理端口只绑定 `127.0.0.1`，受管部署通过强制 HTTPS 管理入口访问；不要直接公开 19798。
-- OpenList 管理端口同样只绑定 `127.0.0.1:5244`，通过强制 HTTPS 管理入口访问；云存储授权由用户直接在自己的后台完成，部署器没有凭据遥测或第三方回传功能。
-- Bot 容器使用 UID/GID 10001、只读根文件系统、`no-new-privileges` 并丢弃 capabilities。
-- 发布产物应附 SHA-256；不要运行来源不明或无法核对版本的 EXE、脚本和镜像。
-
-更多说明见 [安全政策](.github/SECURITY.md) 和 [第三方组件说明](docs/第三方组件说明.md)。
-
-## 本地开发与测试
-
-Linux / Python + Bash 源码位于 `src/tg2cloud/`，产品版本为 v1.3.0。新布局、本地入口、兼容边界和 helper 两步发布规则见[Linux 重构说明](docs/development/LINUX-REFACTOR.md)。公开一键入口固定到已公开且 CI 通过的不可变向导提交，不执行本地未发布代码。
-
-### 项目结构
-
-```text
-install.sh                  公网 VPS 一键安装／升级入口
-install-lan.sh              可信内网安装／升级入口
-uninstall.sh                独立卸载入口
-src/tg2cloud/               共享 Bot 核心、CLI、部署、存储和持久化
-scripts/run_source.py       不依赖当前目录的受控源码入口
-packaging/                  Dockerfile、两版 Compose、Shell 钩子及兼容入口
-requirements/               从 pyproject.toml 统一生成的哈希锁文件
-tests/                       单元、场景、部署和 WebDAV 集成测试
-```
-
-### 完整 Python 回归
-
-```bash
-python -m pip install -r requirements/dev.lock.txt
-python .github/scripts/check_python.py all
-python scripts/run_source.py install --help
-python scripts/run_source.py lan --help
-python scripts/run_source.py uninstall --help
-```
-
-### 静态和依赖检查
-
-```bash
-python .github/scripts/check_python.py lint
-python -m bandit -q -r src scripts
-python -m pip_audit -r requirements/bot.lock.txt
-python -m pip_audit -r requirements/dev.lock.txt
-```
-
-CI 只维护 Linux：Python 3.12 运行 Bot 回归、ShellCheck、Compose 和两 Edition 镜像检查；Python 3.10 / 3.13 单独验证仅标准库的宿主 CLI。历史 EXE、归档和用户数据不参与新构建。Release 继续复用一次验证生成的源码包与实际 SHA256。贡献前请阅读 [CONTRIBUTING.md](.github/CONTRIBUTING.md)。
-
-如果仓库由 GitHub Fork 创建，首次使用时需进入仓库的 **Actions** 页面，按提示启用工作流。本仓库同时支持 `main` 推送、Pull Request 和页面中的 “Run workflow” 手动触发。GitHub 默认不会在新 Fork 中自动运行工作流，详见 [GitHub 官方说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflows-in-forked-repositories)。
-
-## 更多文档
-
-- [小白使用说明](docs/README-小白使用说明.md)
-- [部署前填写信息清单](docs/填写信息清单.md)
-- [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md)
-- [运行状态与 HTTPS 维护](docs/OPERATIONS.md)
-- [品牌使用规范](docs/development/BRAND-GUIDE.md)
-- [第三方组件说明](docs/第三方组件说明.md)
-- [更新记录](CHANGELOG.md)
-- [发布说明](RELEASE_NOTES.md)
+| 安装与配置 | [公网 VPS 安装 / 升级](docs/VPS-INSTALL.md) · [局域网 / NAS 安装](docs/LAN-INSTALL.md) · [填写信息清单](docs/填写信息清单.md) |
+| 运行与故障排查 | [日志、状态与 HTTPS 维护](docs/OPERATIONS.md) · [Bot 命令、任务恢复与备份](docs/RECOVERY.md) |
+| 升级验收 | [v1.3.0 CloudDrive2 升级记录与未验证范围](docs/development/V130-ACCEPTANCE.md) |
+| 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
+| 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |
+| 版本与发布 | [CHANGELOG](CHANGELOG.md) · [发布说明](RELEASE_NOTES.md) |
+| 历史 Windows 版 | [v1.2.1 图形部署教程](docs/README-小白使用说明.md) · [脚本优先与桌面版冻结](docs/development/SCRIPT-FIRST.md) |
+| 品牌与第三方组件 | [品牌使用规范](docs/development/BRAND-GUIDE.md) · [第三方组件说明](docs/第三方组件说明.md) |
+
+## 使用边界
+
+- 仅转存你有权保存的内容；不自动监听频道、不绕过内容保护。115 只是示例，不是唯一目标网盘。
+- 云存储登录与授权在你自己的 CloudDrive2 / OpenList 中完成；TG2Cloud 无遥测或凭据回传。
+- WebDAV 大小验证不等于内容哈希校验或云盘官方最终完成；重要文件需自行复核。
+- 不公开 Token、密码、Session、数据库、配置或备份；升级前备份，不用旧 EXE 覆盖新实例。详见[安全政策](.github/SECURITY.md)。
 
 ## 致谢与项目来源
 

@@ -180,12 +180,59 @@ test('current helper identity in installation docs matches every public entry',a
     pins.push(matches[0][1]);
   }
   assert.equal(new Set(pins).size,1);
-  for(const [name,content] of [['VPS guide',guide],['uninstall',removal],['English README',english],
-    ['Chinese README',chinese],['website development',development]]){
+  // Exact helper identities belong in the full guides. Landing pages must link
+  // to both guides instead of copying internal commit details into the overview.
+  for(const [name,content] of [['VPS guide',guide],['uninstall',removal],['website development',development]]){
     assert.ok(content.includes('`'+pins[0]+'`'),name);
+  }
+  for(const [name,content] of [['English README',english],['Chinese README',chinese]]){
+    for(const guide of ['VPS-INSTALL.md','UNINSTALL.md']){
+      assert.ok(content.includes('](docs/'+guide+')'),name+': '+guide);
+    }
   }
   const recovery=await readFile(new URL('../../docs/RECOVERY.md',import.meta.url),'utf8');
   assert.ok(!guide.includes('新布局尚未发布'));
   assert.ok(!development.includes('新布局只完成本地候选准备'));
   assert.ok(!recovery.includes('尚未进入 v1.3.0 Release'));
+});
+
+test('root READMEs keep repository-first documentation and the original attribution layout',async()=>{
+  const base='https://tg2cloud.pages.dev/';
+  for(const name of ['README.md','README_EN.md']){
+    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
+    assert.ok(content.includes(base),name+': documentation home');
+    assert.ok(content.includes('href="docs/README.md"'),name+': repository index');
+    assert.ok(content.includes('assets/brand/tg2cloud-logo.svg'),name+': canonical brand');
+    assert.ok(content.includes('https://github.com/whyhhh20/TG115'),name+': upstream credit');
+    for(const target of ['LICENSE','.github/CONTRIBUTING.md','.github/SECURITY.md',
+      'docs/VPS-INSTALL.md','docs/LAN-INSTALL.md','docs/填写信息清单.md','docs/OPERATIONS.md',
+      'docs/RECOVERY.md','docs/UNINSTALL.md','docs/MIGRATION_FROM_TG115.md',
+      'docs/development/REPOSITORY.md','docs/development/LINUX-REFACTOR.md','CHANGELOG.md','RELEASE_NOTES.md']){
+      assert.ok(content.includes('('+target+')'),name+': direct repository link '+target);
+    }
+    const attribution=name==='README.md'?'## 致谢与项目来源':'## Acknowledgements and Project Origin';
+    const license=name==='README.md'?'## 许可证与免责声明':'## License and Disclaimer';
+    const credits=content.slice(content.indexOf(attribution),content.indexOf(license));
+    assert.ok(content.includes(attribution),name+': attribution heading');
+    assert.ok(content.includes(license),name+': separate license section');
+    assert.match(credits,/<table>[\s\S]*<\/table>/,name+': author table');
+    assert.equal([...credits.matchAll(/<td align="center" width="50%">/g)].length,2,name+': two author columns');
+    for(const author of ['LuoPoJunZi','whyhhh20']){
+      assert.ok(credits.includes(`src="https://github.com/${author}.png?size=96" width="72"`),name+': original author avatar');
+    }
+    const links=[...content.matchAll(/\]\(([^)]+)\)|\b(?:href|src)="([^"]+)"/g)]
+      .map(match=>match[1]||match[2]);
+    for(const href of links){
+      assert.ok(!href.startsWith('website/'),name+': do not link website source files as user guides');
+      if(href.startsWith(base)){
+        assert.equal(href,base,name+': article navigation must open repository documents');
+      }else if(!/^(?:https?:|#)/.test(href)){
+        assert.ok(await readFile(new URL('../../'+href,import.meta.url)),name+': missing local link '+href);
+      }
+    }
+    const removal=content.match(/^bash .*\/uninstall\.sh\).*$/gm)||[];
+    assert.ok(removal.length>0,name+': removal preview');
+    assert.ok(removal.every(command=>command.includes('--check')),name+': no immediate removal in the landing page');
+    assert.ok(content.includes('--keep-data'),name+': data-preservation option');
+  }
 });
