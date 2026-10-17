@@ -10,7 +10,7 @@
 
 ## Python 检查
 
-完整检查使用 Python 3.12 / 3.13 和 `requirements/dev.lock.txt`，不需要 PySide6、Paramiko 或 PyInstaller。cryptography 显式作为证书夹具测试依赖，不进入 Bot 容器。依赖定义在 `pyproject.toml`，两份哈希锁文件由 uv 0.11.28 统一生成，不单独手改版本；生成时从 Bot Dockerfile 读取 Python 3.12 作为解析下限，不能使用维护者当前 Python 版本作为下限而漏掉条件依赖。宿主 CLI 仍支持 Python 3.10+、只用标准库，不安装这两份 Bot／开发锁文件。请在隔离虚拟环境中准备：
+完整检查使用 Python 3.12 / 3.13 和 `requirements/dev.lock.txt`，不需要 PySide6、Paramiko 或 PyInstaller。cryptography 显式作为证书夹具测试依赖，不进入 Bot 容器。依赖定义在 `pyproject.toml`，两份哈希锁文件由其中固定的同一 uv 版本统一生成，不单独手改版本；生成时从 Bot Dockerfile 读取 Python 3.12 作为解析下限，不能使用维护者当前 Python 版本作为下限而漏掉条件依赖。宿主 CLI 仍支持 Python 3.10+、只用标准库，不安装这两份 Bot／开发锁文件。请在隔离虚拟环境中准备：
 
 ```bash
 python -m pip install -r requirements/dev.lock.txt

@@ -12,7 +12,7 @@ dependencies = []
 
 [project.optional-dependencies]
 bot = ["Telethon==1.45.0", "cryptg==0.6.0", "psutil==7.2.2"]
-dev = ["pytest==9.1.1", "ruff==0.17.0", "bandit==1.9.4", "cryptography==50.0.2", "pip-audit==2.10.1", "uv==0.11.28"]
+dev = ["pytest==9.1.1", "ruff==0.17.0", "bandit==1.9.4", "cryptography==50.0.2", "pip-audit==2.10.1", "uv==0.13.1"]
 
 [project.scripts]
 tg2cloud = "tg2cloud.cli.commands:main"
