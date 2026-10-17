@@ -156,9 +156,25 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn("insert_final_newline = unset", rules)
 
     def test_ruff_keeps_original_implicit_defaults(self):
-        config = (ROOT / ".ruff.toml").read_text(encoding="utf-8")
-        self.assertIn("respect-gitignore = true", config)
+        config = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        sections = re.findall(r"(?ms)^\[tool\.ruff\]\n(.*?)(?=^\[|\Z)", config)
+        self.assertEqual(len(sections), 1)
+        self.assertIn('target-version = "py310"', sections[0])
+        self.assertIn("respect-gitignore = true", sections[0])
+        self.assertIn('extend-exclude = ["website"]', sections[0])
         self.assertNotRegex(config, r"(?m)^\s*(?:select|ignore|extend-select|extend-ignore)\s*=")
+
+    def test_ruff_has_no_parallel_root_configuration(self):
+        for name in (".ruff.toml", "ruff.toml"):
+            with self.subTest(name=name):
+                self.assertFalse((ROOT / name).exists())
+
+    def test_ruff_workflow_filters_follow_shared_pyproject(self):
+        for name in ("docs.yml", "vps-installer.yml"):
+            with self.subTest(workflow=name):
+                text = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
+                self.assertEqual(text.count('      - "pyproject.toml"'), 2)
+                self.assertNotIn('      - ".ruff.toml"', text)
 
     def test_branch_release_and_cli_workflows_share_check_entry(self):
         for workflow in ("tests.yml", "release.yml", "vps-installer.yml"):

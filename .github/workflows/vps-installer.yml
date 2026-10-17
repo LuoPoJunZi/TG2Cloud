@@ -22,7 +22,6 @@ on:
       - ".github/scripts/source_release.py"
       - ".github/scripts/check_python.py"
       - ".github/scripts/check_repository.py"
-      - ".ruff.toml"
       - "packaging/**"
       - ".github/workflows/vps-installer.yml"
   pull_request:
@@ -45,7 +44,6 @@ on:
       - ".github/scripts/source_release.py"
       - ".github/scripts/check_python.py"
       - ".github/scripts/check_repository.py"
-      - ".ruff.toml"
       - "packaging/**"
       - ".github/workflows/vps-installer.yml"
 

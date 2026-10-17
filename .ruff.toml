@@ -1,4 +1,0 @@
-# Keep Ruff's implicit default rule selection, exactly as in the existing CI.
-# Explicitly selecting rule groups can opt into additional rules.
-respect-gitignore = true
-extend-exclude = ["website"]

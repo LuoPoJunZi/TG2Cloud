@@ -26,3 +26,10 @@ version = {attr = "tg2cloud.version.VERSION"}
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["src"]
+
+[tool.ruff]
+# Preserve the existing implicit rule selection; do not opt into more rule groups.
+# The host CLI supports Python 3.10 even though the Bot container uses 3.12.
+target-version = "py310"
+respect-gitignore = true
+extend-exclude = ["website"]

@@ -29,9 +29,9 @@ Windows EXE 停留在 v1.2.1。main 不再跟踪旧部署器、PySide6 界面、
 
 ## 编辑与检查规范
 
-`.editorconfig` 和 `.gitattributes` 约定 UTF-8、换行与缩进；不自动重绘品牌资源或破坏 Markdown 有语义的末尾空格。现有中英文文档不做无关批量重命名；新用户文档加入[文档目录](../README.md)。
+`.editorconfig` 约定编辑器保存时的编码、缩进和空白；`.gitattributes` 控制 Git 的文本换行和二进制处理，两者职责不同，均需保留。不自动重绘品牌资源或破坏 Markdown 有语义的末尾空格。现有中英文文档不做无关批量重命名；新用户文档加入[文档目录](../README.md)。
 
-`.ruff.toml` 保留原有隐式规则和文件发现策略。统一检查入口为 `.github/scripts/check_python.py`；环境准备见[贡献指南](../../.github/CONTRIBUTING.md)。`all` 依次运行公共文件检查、unittest、Ruff、compileall，不安装依赖、不构建 EXE、不部署或推送。CLI 范围继续在 Python 3.10／3.13 下只用标准库运行。
+Ruff 配置集中在 `pyproject.toml` 的 `[tool.ruff]`：保留原有隐式默认规则、Git ignore 与 `website/` 排除，并明确以 Python 3.10 为目标，不另建重复配置。统一检查入口为 `.github/scripts/check_python.py`；环境准备见[贡献指南](../../.github/CONTRIBUTING.md)。`all` 依次运行公共文件检查、unittest、Ruff、compileall，不安装依赖、不构建 EXE、不部署或推送。CLI 范围继续在 Python 3.10／3.13 下只用标准库运行。
 
 `.github/scripts/check_repository.py` 使用 Git 枚举 tracked／未被忽略的新文件，禁止构建产物、缓存、私有配置、内部记录及本地桌面归档进入公共集合。已跟踪文件不能仅通过 ignore 移除，必须取消跟踪。它不读取或显示凭据内容，不是完整 Secret／历史扫描。
 
