@@ -2,6 +2,8 @@
 
 先明确哪些数据被包含，哪些没有被包含。备份包本身可能含敏感凭据，不能公开上传。
 
+v1.3.0 继续保留下述备份范围。本次 CloudDrive2 人工迁移已校验归档和 SQLite、保留旧镜像与回退点，用户确认升级后使用验收通过，但没有做故障注入或灾难恢复启动演练；不能把这次专用实例的人工备份当作安装器新增的通用完整备份功能，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。下文弹窗和菜单均指 v1.2.1 历史界面，不表示新版终端提供同名菜单。
+
 ## v1.2.1：离线业务快照预检
 
 v1.2.1 提供可选 `app.backup_bundle` 工具，仅接受人工准备的静止副本，覆盖标准 `.env`、Compose、业务 DB、Telegram Session、rclone 配置及所选网关配置。现有业务升级/手动备份不应假设包含 Telegram Session。下载、日志、云端文件和共享 HTTPS 仍须分别处理。

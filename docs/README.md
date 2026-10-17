@@ -22,11 +22,12 @@
 
 - [参与贡献](../.github/CONTRIBUTING.md)：本地检查、CI 与正式发布规则。
 - [仓库结构与维护规范](development/REPOSITORY.md)：源码职责、文档同步与本地产物处理。
-- [Linux Python + Bash 重构（待发布）](development/LINUX-REFACTOR.md)：新入口、模块映射、运行兼容、指纹协议和 helper 发布门槛。
+- [Linux Python + Bash 重构（v1.3.0）](development/LINUX-REFACTOR.md)：新入口、模块映射、运行兼容、指纹协议和 helper 发布门槛。
 - [脚本优先与桌面版冻结](development/SCRIPT-FIRST.md)：磁盘推荐、源码发布、备份和分阶段清理边界。
 - [品牌规范](development/BRAND-GUIDE.md)：正式 Logo / Icon 的唯一来源与使用规则。
 - [HTTPS 人工验收范围](development/DOMAIN-HTTPS-ACCEPTANCE.md)：按版本理解实机证据，不等于当前所有流程均已验收。
 - [可靠性维护版本验收](development/RELIABILITY-ACCEPTANCE.md)：主分支与正式版差异、自动与人工发布门槛。
+- [v1.3.0 CloudDrive2 升级验收](development/V130-ACCEPTANCE.md)：本次人工迁移、配置与历史数据保留、用户确认及尚未验证范围。
 - [第三方组件说明](第三方组件说明.md)
 - [安全政策](../.github/SECURITY.md)
 - [许可证](../LICENSE)

@@ -28,7 +28,7 @@
 
 ### 没有 Windows 电脑能安装吗？
 
-可以选用当前源码提供的 VPS 单行向导，先检查、收集信息并确认，再复用 Docker 安装资源；已有可核验的受管实例走保留配置升级。部署目标只取正式稳定 Release。当前仅完成 CloudDrive2 实机只读预检，写入升级和 OpenList 脚本实机验收仍待完成。两个 EXE 仍是主力入口，详见 [下载页的 VPS 入口](/download/)。
+可以。v1.3.0 起以 Linux 单行向导为主要入口，先检查、收集信息并确认，再复用 Docker 安装资源；已有可核验的受管实例走保留配置升级，业务代码只取正式稳定 Release。CloudDrive2 本次旧候选人工迁移及用户使用验收已完成，OpenList 脚本实机验收暂缓；Windows EXE 停留在 v1.2.1。详见 [下载页的 VPS 入口](/download/)。
 
 ### VPS 重装后 Host key 不匹配？
 
@@ -100,11 +100,15 @@ v1.2.1 支持重新转发已取消文件或 `/restart 编号`，确认后重新�
 
 ### 下载新版 EXE 后，Bot 还是旧版？
 
-下载只更新你电脑上的部署器，不会自动安装 VPS payload。通过“查看运行状态”核对实际 Bot 版本，再使用新版部署器保留配置重新部署；未获取版本不代表已更新，较新版本也不会被自动降级。[升级说明](/operations/update/)。
+下载不等于更新 VPS。Windows EXE 停留在 v1.2.1；v1.3.0 起请按公网或内网选择对应 Linux 入口，先 `--check` 再确认升级，不用旧 EXE 覆盖较新实例。CloudDrive2 本次升级后使用验收已获用户确认，其他环境和异常路径不自动视为通过，见[升级说明](/operations/update/)。
 
 ### `manage.sh update` 会下载 GitHub 最新源码吗？
 
-不会。它主要用已安装 payload 重建；安装新版应使用新版部署器，或在符合条件的受管实例上使用可选 VPS 稳定版本向导，详见 [升级](/operations/update/)。
+不会。它主要用已安装 payload 重建；安装新版应使用对应 Linux 稳定版本向导，保留配置并核对官方基线，详见 [升级](/operations/update/)。
+
+### 出现“现有程序与已发布版本不一致”怎么办？
+
+停止并保留数据，不要改版本号、删除数据库/Session、关闭指纹检查或用旧 EXE 覆盖。本次 CloudDrive2 旧候选是在额外授权、备份和人工核对后迁移，不代表脚本会自动接管任意自定义代码。处理边界及尚未验证项见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。
 
 ### TG115 能一键升级 TG2Cloud 吗？
 

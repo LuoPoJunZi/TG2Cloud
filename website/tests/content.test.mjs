@@ -147,3 +147,45 @@ test('website brand copies match the canonical repository assets byte for byte',
     assert.equal(digest(website),digest(original),`${copy} must be copied unchanged from assets/brand/${canonical}`);
   }
 });
+
+test('v1.3.0 acceptance separates checked migration, user feedback and untested scenarios',async()=>{
+  const path='docs/development/V130-ACCEPTANCE.md';
+  const record=await readFile(new URL('../../'+path,import.meta.url),'utf8');
+  for(const text of ['2026-10-17','旧测试候选','人工核对','用户确认','OpenList 脚本实机验收暂缓',
+    '不提供强制覆盖参数','回退故障注入','下载目录为空','WebDAV 大小校验不等于内容哈希校验']){
+    assert.ok(record.includes(text),text);
+  }
+  const index=await readFile(new URL('../../docs/README.md',import.meta.url),'utf8');
+  assert.ok(index.includes('(development/V130-ACCEPTANCE.md)'));
+  for(const name of ['README.md','README_EN.md','RELEASE_NOTES.md']){
+    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
+    assert.ok(content.includes(path),name);
+  }
+  for(const name of ['docs/download.md','docs/operations/update.md','docs/changelog.md','docs/reference/sources.md']){
+    assert.ok((await read(name)).includes(`${config.repo}/blob/main/${path}`),name);
+  }
+});
+
+test('current helper identity in installation docs matches every public entry',async()=>{
+  const guide=await readFile(new URL('../../docs/VPS-INSTALL.md',import.meta.url),'utf8');
+  const removal=await readFile(new URL('../../docs/UNINSTALL.md',import.meta.url),'utf8');
+  const english=await readFile(new URL('../../README_EN.md',import.meta.url),'utf8');
+  const chinese=await readFile(new URL('../../README.md',import.meta.url),'utf8');
+  const development=await read('docs/reference/development.md');
+  const pins=[];
+  for(const name of ['install.sh','install-lan.sh','uninstall.sh']){
+    const entry=await readFile(new URL('../../'+name,import.meta.url),'utf8');
+    const matches=[...entry.matchAll(/^installer_commit\s*=\s*"([0-9a-f]{40})"\r?$/gm)];
+    assert.equal(matches.length,1,name);
+    pins.push(matches[0][1]);
+  }
+  assert.equal(new Set(pins).size,1);
+  for(const [name,content] of [['VPS guide',guide],['uninstall',removal],['English README',english],
+    ['Chinese README',chinese],['website development',development]]){
+    assert.ok(content.includes('`'+pins[0]+'`'),name);
+  }
+  const recovery=await readFile(new URL('../../docs/RECOVERY.md',import.meta.url),'utf8');
+  assert.ok(!guide.includes('新布局尚未发布'));
+  assert.ok(!development.includes('新布局只完成本地候选准备'));
+  assert.ok(!recovery.includes('尚未进入 v1.3.0 Release'));
+});

@@ -85,7 +85,7 @@ Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-安装向导先收集信息、预检和确认，实际部署代码只取最新正式稳定 Release。首次安装、实际升级与回退仍待实机验收，请先在测试 VPS 使用。详见 [VPS 一键脚本](#可选-vps-一键脚本)。Windows EXE 固定保留 v1.2.1；已升级的实例不要用旧 EXE 再部署。
+安装向导先收集信息、预检和确认，实际部署代码只取最新正式稳定 Release。2026-10-17，CloudDrive2 测试实例已迁移到 v1.3.0，用户确认升级后使用验收通过；本次旧候选经人工核对、备份后迁移，不代表脚本会自动覆盖自定义代码。首次安装、自动跨版本升级、故障回退和 OpenList 实机升级仍需独立验证，见[验收记录](docs/development/V130-ACCEPTANCE.md)。Windows EXE 固定保留 v1.2.1；已升级的实例不要用旧 EXE 再部署。
 
 ## 目录
 
@@ -128,8 +128,8 @@ TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑�
 
 ## 主要能力
 
-- Windows 10/11 图形化部署器，支持密码和 SSH 私钥登录；
-- 首次连接显示 VPS 主机密钥指纹，确认后才保存；
+- Linux 公网 VPS / 可信内网的一键安装、保留配置升级和独立卸载入口；
+- v1.2.1 历史 Windows 图形部署器支持密码/密钥登录及首次 SSH 指纹确认，后续不再更新；
 - 只读探测 CPU、内存、安装盘、Docker 数据盘、inode 和 FUSE；
 - 根据当前 VPS 提供“均衡模式”和“流式优先”两套存储建议；
 - Telegram 私聊 Bot 鉴权，只允许配置的数字 ID 使用；
@@ -169,12 +169,12 @@ TG2Cloud 的定位是“手动选择、自动处理”：你在 Telegram 中挑�
 | 项目 | 基础建议 | 批量使用建议 | 说明 |
 | --- | --- | --- | --- |
 | VPS | 2 核、4GB 内存、50GB SSD | 4 核、8GB 内存、80～100GB SSD | 最终以部署器实时探测为准 |
-| 系统 | Ubuntu 22.04/24.04 或 Debian 12 64 位 | 同左 | 支持 x86_64、ARM64 |
-| 权限 | root 或可用 sudo | 同左 | 受管 CloudDrive2 需要 `/dev/fuse` |
+| 系统 | Debian / Ubuntu x86_64 | 同左 | 当前 Linux 入口仅支持 x86_64，不宣称 ARM64 已验收 |
+| 权限 | 以 root 运行脚本 | 同左 | 受管 CloudDrive2 需要 `/dev/fuse` |
 | 网络 | 可访问 Telegram、Docker 镜像仓库和目的端 | 100Mbps 以上并准备足够流量 | 公网测速不能代表到目标云存储的真实速度 |
-| 本地电脑 | Windows 10/11 64 位 | 同左 | 用于运行部署器和 HTTPS 管理页 |
+| 本地设备 | SSH 终端和浏览器 | 同左 | Windows / macOS / Linux 均可；历史 EXE 仅支持 Windows |
 
-安装脚本会硬检查约 1.8GB 内存和安装文件系统至少 8GB 可用空间；50GB 是推荐值，不是简单的硬门槛。部署器还会结合已有下载、Docker 分区、inode 和最终填写的预算做更严格复检。
+脚本按 Edition 检查内存：CloudDrive2 至少约 1800MB，OpenList 至少约 900MB；还需满足安装文件系统的保留空间、任务预算、Docker 分区和 inode 检查。50GB 是推荐容量，不是简单的硬门槛；最终以实时探测和执行前复检为准。
 
 ### 需要准备的信息
 
@@ -358,7 +358,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 全新 VPS 先收集配置、预检和确认再安装；完整已有实例复用配置，目标源码固定到 GitHub 最新正式稳定 Release 的 commit。已是最新版不重建、不重启。旧 TG115、部分容器、手改程序、冲突目录及网关镜像迁移均停止，不自动覆盖。`manage.sh update` 仍只重建本机已有 payload，与此入口不同。
 
-源码、Bot 和脚本版本为 **v1.3.0**；Windows 构建资源与最后发布的 EXE 固定为 **v1.2.1**。首次交互安装会读取资源，提供流式优先、均衡和手动预算，执行前再次校验；已有实例升级保留原值。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。CloudDrive2 候选代码已通过测试 VPS 的数据库兼容、启动和只读 WebDAV 检查；完整安装脚本升级/回退、真实 Telegram 转存及 OpenList 脚本实机验收仍需完成。
+源码、Bot 和脚本版本为 **v1.3.0**；Windows 构建资源与最后发布的 EXE 固定为 **v1.2.1**。首次交互安装会读取资源，提供流式优先、均衡和手动预算，执行前再次校验；已有实例升级保留原值。`v1.1.2` 标签不包含脚本，不要从该标签下载入口。单行脚本只安装最新正式稳定 Release 的 payload，不会因为 main 的版本号提高就安装未发布代码。CloudDrive2 v1.3.0 的本次升级后使用验收已获用户确认，完整范围见[验收记录](docs/development/V130-ACCEPTANCE.md)；OpenList 脚本实机验收暂缓。
 
 HTTPS 续做成功后可再次确认显示已有凭据。也可单独在私有终端运行以下命令，每项默认不显示；此操作不会安装、升级或改密，不能与 `--check`、`--configure-https` 或 `--verify` 组合：
 
@@ -369,7 +369,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 OpenList 显示的是保存的初始化管理员密码，可能已在管理页更改；请避免录屏或旁观。精简系统缺少 HTTPS 预检工具时，向导列出工具和安装命令，预检阶段不自动安装软件。
 
-CloudDrive2 已通过真实 VPS 的 `--check`：识别官方旧版、核对运行指纹、容量和现有 HTTPS，生成稳定版升级计划；没有升级或重启。此结果不等同于实际安装、跨版本升级或云盘转存验收。
+本次 CloudDrive2 旧测试候选先被官方基线检查安全拦截，再经授权备份并人工迁移到正式 v1.3.0。历史任务、配置和 Session 保留，Bot、HTTPS、代码指纹及只读 WebDAV 检查通过；升级后再次运行 `--check` 显示已是最新、不重建。用户随后确认使用验收完成；这不包含所有恢复场景或首次安装验收。
 
 完整说明与安全边界见 [VPS 安装与升级脚本](docs/VPS-INSTALL.md)。不要在脚本和 EXE 中同时操作同一实例；WebDAV 写入验收需另行确认，云盘账号与授权仍只在自己的 CloudDrive2/OpenList 中配置。
 
@@ -402,7 +402,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 在线一键卸载命令：
 
-> 用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍待实机验证**。在线入口固定到本版不可变向导源码 `d83e37acea5d5ae9d106fb0183b663bbdd7a9bfa`；正式 EXE 按同版本 GitHub Release 获取。先结束任务、把备份保存到清理范围之外并只读预检；没有无人值守强制删除。
+> 用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍待实机验证**。v1.3.0 在线入口固定到不可变向导源码 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`；历史 EXE 仅从 v1.2.1 Release 获取。先结束任务、把备份保存到清理范围之外并只读预检；本次升级验收不扩大卸载结论，也没有无人值守强制删除。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check

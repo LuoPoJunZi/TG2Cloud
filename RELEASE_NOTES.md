@@ -50,7 +50,9 @@ sha256sum -c SHA256SUMS.txt
 
 新布局主分支已通过 Linux 全量回归、宿主 Python 3.10/3.13、两 Edition 非 root 镜像和隔离 LAN 网关检查。正式构建还会从本标签重新执行回归、Docker/WebDAV、安全及源码包检查；具体结果以本标签 Actions 为准。缺少环境而跳过的项目不算通过。
 
-此前 CloudDrive2 候选完成过数据库兼容、保留历史记录的启动及只读 WebDAV 检查。v1.3.0 的真实两 Edition 首次安装／升级、内网 NAS、Telegram 转存和长期运行仍需独立验收；自动测试和源码发布不替代这些验收。
+发布后补充（2026-10-17）：CloudDrive2 旧测试候选经授权、备份和人工核对后，使用正式 v1.3.0 原生流程迁移成功；用户确认升级后的使用验收完成。历史任务、配置和 Session 授权保留，运行指纹、健康、HTTPS、只读 WebDAV 及在线入口复检通过。本次不是脚本自动接管任意候选代码的证明。
+
+OpenList 脚本实机验收暂缓；全新 VPS 安装、无需人工接管的正式版自动升级、故障回退、NAS、全部传输异常场景和长期续期仍需独立验证。详见[发布后验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。该补充只更新仓库文档，不替换已发布的 Tag、Release 正文或资产。
 
 更多说明：[VPS 安装](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.0/docs/VPS-INSTALL.md) · [内网安装](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.0/docs/LAN-INSTALL.md) · [升级边界](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.0/docs/development/SCRIPT-FIRST.md) · [恢复指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.0/docs/RECOVERY.md)。
 

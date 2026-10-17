@@ -90,4 +90,6 @@ v1.3.0 的三个在线入口使用新布局清单和 `scripts/run_source.py`，�
 
 ## 验收范围
 
+2026-10-17 已完成一次 CloudDrive2 测试实例到正式 v1.3.0 的授权人工迁移，用户确认升级后使用验收通过。保留历史任务、配置和 Session 授权，健康、递归指纹、HTTPS、只读 WebDAV 与官方入口复检均通过。原实例是与官方基线不一致的旧候选，不把本次操作写成标准自动升级；详细范围及未执行项见[验收记录](V130-ACCEPTANCE.md)。
+
 统一 Python 检查、两个 Edition 组装/非 root 镜像、CLI 3.10/3.13、Bash/ShellCheck、网站测试应在不含旧源码、legacy 或私有资料的副本验证。Docker、Linux PTY、真实 Telegram、VPS 升级/回退和两后端网络操作缺少条件时单列未运行，不能用 Windows 模拟结果代替。生产恢复、卸载和云端删除不属于此重构的自动验收范围。

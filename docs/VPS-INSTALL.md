@@ -4,11 +4,11 @@ TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本（测试阶段）](LAN-INSTALL.md)。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前源码版本为 v1.3.0。本脚本是独立入口，不依赖本机 EXE；公开向导另行固定到已验证 commit，实际部署目标只取已发布正式稳定版本。CloudDrive2 已完成真实 VPS 的只读预检，首次安装、实际跨版本升级和回退仍未验收，OpenList 脚本实机验收暂缓。下载新版入口或 EXE 不会自动更改已部署实例。
+> 当前正式版本为 v1.3.0。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。首次安装、无需人工接管的正式版自动升级与故障回退仍需独立验证；OpenList 脚本实机验收暂缓。详见[验收记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
 
 ## 支持范围
 
-当前源码开发入口已迁至 `src/tg2cloud`；本地可运行 `python3 scripts/run_source.py install --help`。在线一键命令 URL 不变，仍使用原已验证 helper pin 和正式稳定 payload；新布局尚未发布，不会因本地改动更新 VPS。迁移与本地预检说明见[Linux 重构](development/LINUX-REFACTOR.md)。
+v1.3.0 已发布 `src/tg2cloud` 新布局；本地可运行 `python3 scripts/run_source.py install --help`。在线一键命令 URL 不变，使用本版已验证 helper pin 和正式稳定 payload；修改本地源码或仅推送文档不会更新 VPS。迁移与本地预检说明见[Linux 重构](development/LINUX-REFACTOR.md)。
 
 | 场景 | 行为 |
 | --- | --- |
@@ -98,7 +98,7 @@ OpenList 使用 `--edition openlist`，其脚本实机验收仍暂缓。不指�
 
 终端修复只影响独立向导，不要求重建 EXE 或改写已有 Release。单行入口固定到不可变向导 commit，只有维护者将入口 pin 更新到通过 CI 的修复提交后，重新下载才会使用修复；不要通过删除实例、改为无人值守管道或跳过确认绕过错误。
 
-目标 payload 始终来自 GitHub 最新正式稳定 Release 的源码，不是本地工作树或 `main`。例如当前正式版本尚未包含本脚本时，从新增源码试用仍只会安装已发布的 payload；它不会把未发布业务代码装到 VPS。
+目标 payload 始终来自 GitHub 最新正式稳定 Release 的源码，不是本地工作树或 `main`。当前 v1.3.0 已包含脚本和模块化源码；未来从本地试用新向导时，也不会把尚未发布的业务代码装到 VPS。
 
 ### 候选镜像源码权限错误
 
@@ -116,7 +116,7 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到不可变源码 commit，不逐文件追随移动的 `main`。v1.3.0 向导包含磁盘推荐；准确的辅助源码身份由三个入口中的 `installer_commit` 给出。新向导先经过 CI，再更新三个入口的 pin；源码发布检查会拒绝 pin 与新版本辅助文件不一致的情况。业务 payload 仍只取最新正式稳定 Release。
 
-v1.3.0 的三个在线入口固定向导 commit 为 `fb37e5f0d6b4dfaed95eafafa08ef95faf33ca25`，模块版本为 `1.3.0`；该提交的 Windows／Linux 回归、Python 3.10／3.13 脚本矩阵及仓库检查通过。正式 payload 的 Tag commit 与向导 commit 分别核对，不要求两者相同。
+v1.3.0 的三个在线入口固定向导 commit 为 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`，模块版本为 `1.3.0`；对应 Linux 回归、宿主 Python 3.10／3.13 和仓库检查通过。正式 payload 的 Tag commit 为 `27874c12c6166e12f2f57759199576cffb9f3234`，与向导 commit 分别核对，不要求两者相同。
 
 这是向导源码身份，不是要部署的 Bot 版本。独立脚本另行通过 GitHub `/releases/latest` 排除草稿及预发布，解析正式 Tag 到不可变 commit；所有实际安装的 payload 来自这个正式 commit。向导会核对 Tag、commit 和 payload 版本。Release Tag 在引导后变化、API 限流、辅助模块缺失或版本不匹配时停止；不会退回 `main` 或 RC 的业务代码。
 
@@ -151,7 +151,13 @@ bash ./install.sh --edition clouddrive2
 
 升级不再询问 Bot Token、API Hash、WebDAV 密码。候选配置仅要求保留现有 `.env`；升级前后核对其原始字节。CloudDrive2 的现有安装器会规范化 `.env` 换行，因此该 Edition 的 `.env` 若含 CRLF/回车，CLI 会在写入前停止并要求人工核对，不擅自改成 LF。Session、SQLite、下载目录及云网关持久化目录保留，不清空、不重新授权云盘。
 
-确认后，现有安装器复用 APT 基础依赖检查，可能更新相关系统软件包；不主动升级 Docker 引擎。随后做候选构建及隔离预检，再进行程序备份、SQLite 一致性快照和短暂 Bot 停止。健康检查失败时调用已有回退；请以回退日志和实例状态为准，不能保证所有外部故障都能自动恢复。CLI 自己不另写数据库恢复或网关迁移逻辑。
+确认后，现有安装器复用 APT 基础依赖检查，可能更新相关系统软件包；不主动升级 Docker 引擎。随后做候选构建及隔离预检，保存程序备份、短暂停止所选 Bot 并创建 SQLite 一致性快照，再切换程序。健康检查失败时调用已有回退；请以回退日志和实例状态为准，不能保证所有外部故障都能自动恢复。CLI 自己不另写数据库恢复或网关迁移逻辑。
+
+### 源码基线不一致时
+
+出现“现有程序与已发布版本不一致”或额外/缺失源码时停止。版本号相同不代表代码相同；不要改版本文件、删 Session/数据库、关闭指纹校验或用旧 EXE 强制覆盖。先保存原程序、配置、数据库一致性快照、Session 和必要数据，再单独审阅差异及恢复方案。本次旧候选迁移属于经授权的人工处理，不是公开脚本新增的自动接管功能。
+
+rclone 运行时可能重新混淆同一密码，导致 `rclone.conf` 字节变化；这与 `.env` 原始字节保留是不同检查。不能仅凭文件 hash 变化认定已改密，也不能忽略真正的 URL、用户或密码变化。仅在私有环境核对实际值，不将解混淆输出、完整配置或备份贴到 Issue；rclone 混淆不等于加密。
 
 健康的已有 HTTPS 路由和证书原样保留；不切换域名、不重新签发，不重启未选中的 Bot。基础安装器仍可能对所选 Edition 的网关做既有的 Compose/网络操作；HTTPS 显式修复会操作共享代理，可能使管理页连接短暂中断。
 
@@ -219,4 +225,6 @@ cd /opt/tg2cloud-openlist && docker compose down
 
 OpenList 脚本实机验收暂缓。仅有网关、没有 Bot 的部分实例会安全停止，不自动当作全新安装覆盖；这不影响已发布 OpenList EXE 的既有验收结果。
 
-另有独立 Linux CI 检查本入口，不生成 EXE。分支 CI 继续执行测试，仅在实际 EXE 输入变化或手动触发时打包；正式 Tag 的 Release 构建工作流不变。实际首次安装、稳定版跨版本升级、中断与回退、真实云盘、双 Edition 共存、证书签发/续做及公网访问，仍需在专用测试 VPS 验收后再推荐生产使用。
+2026-10-17，CloudDrive2 旧测试候选迁移到正式 v1.3.0，原生安装器切换和健康检查成功，历史任务及 Session 授权保留；代码指纹、本机/外部 HTTPS、只读 WebDAV 通过。在线 `--check` 复检识别为最新且不重建，用户随后确认使用验收完成。该实例不是官方旧版的逐文件一致基线，因此不能据此宣称标准正式版自动升级也已验收，完整证据和保留范围见[发布后验收记录](development/V130-ACCEPTANCE.md)。
+
+Linux CI 和正式 Release 不再构建 EXE，分别执行对应回归与同 Tag 源码包校验。首次安装、正式版之间的自动升级、中断/故障回退、NAS、双 Edition 同时升级、长期续期及全部异常转存场景仍需独立验收；不要用历史结果或用户对本次使用的确认替代这些项目。

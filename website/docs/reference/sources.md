@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 17 日**，对应 TG2Cloud **v1.3.0** 的 Linux 模块化源码和脚本说明。源码包、SHA256 与不可变 Tag 的实际发布结果以 GitHub Release 及对应 Actions 为准。历史 EXE 停留在 v1.2.1，真实两 Edition 脚本全流程仍待验收。
+本次内容核对日期为 **2026 年 10 月 17 日**，对应 TG2Cloud **v1.3.0** 的 Linux 模块化源码和脚本说明。源码包、SHA256 与不可变 Tag 的实际发布结果以 GitHub Release 及对应 Actions 为准。历史 EXE 停留在 v1.2.1。CloudDrive2 旧候选经授权人工迁移到正式版，用户确认升级后使用验收完成；OpenList、首次安装、标准自动升级、故障回退与 NAS 等仍需独立验证。
 
 ## 主要来源
 
@@ -12,6 +12,7 @@
 | [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
 | [VPS 一键脚本](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md) | 单行入口、正式稳定 payload、配置保留与未验收范围 |
+| [v1.3.0 升级验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md) | CloudDrive2 人工迁移的实际检查、用户确认及未执行项；不扩大为 OpenList 或全部自动升级验证 |
 | [内网安装](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md) | 独立内网入口、固定端口、用户提供验收与未验收范围 |
 | [独立卸载](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) | 主分支完整清理与保留模式、归属/外部引用保护及部分失败；原 Tag 行为另行区分 |
 | [CHANGELOG](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) | TG2Cloud 更新与上游历史边界 |

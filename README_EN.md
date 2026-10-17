@@ -85,7 +85,7 @@ For ongoing installation and upgrades, run the Linux wizard as root on a Debian/
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-The wizard collects information, checks the environment and asks for confirmation before applying changes. The installed payload comes only from the latest official stable Release. Fresh installation, actual upgrade and rollback still need VPS acceptance; use a test VPS first. See [Optional VPS Installer](#optional-vps-installer). The Windows EXEs remain available at v1.2.1; do not redeploy an upgraded instance using an older EXE.
+The wizard collects information, checks the environment and asks for confirmation before applying changes. The installed payload comes only from the latest official stable Release. On 2026-10-17, the CloudDrive2 test instance was migrated to v1.3.0 and the user confirmed post-upgrade acceptance. This old test candidate required an explicitly authorized, backed-up manual migration, not automatic overwriting of custom code. Fresh installation, standard release-to-release upgrades without manual takeover, failure rollback and OpenList upgrades still need separate real-host validation. See the [acceptance record (Chinese)](docs/development/V130-ACCEPTANCE.md). Windows EXEs remain at v1.2.1; do not redeploy an upgraded instance using an older EXE.
 
 ## Contents
 
@@ -127,8 +127,8 @@ TG2Cloud follows a “select manually, process automatically” model. You choos
 
 ## Key Features
 
-- Windows 10/11 GUI deployers with password and SSH private-key login;
-- explicit VPS host-key fingerprint confirmation on first connection;
+- Linux entry points for public VPS / trusted LAN installation, configuration-preserving upgrades and separate uninstallation;
+- historical v1.2.1 Windows deployers with password/key login and first-connection SSH fingerprint confirmation, no longer updated;
 - read-only inspection of CPU, memory, installation disk, Docker storage, inodes, and FUSE;
 - balanced and streaming-first storage recommendations based on the actual VPS;
 - private-chat authorization restricted to one configured Telegram numeric ID;
@@ -170,12 +170,12 @@ They share the stable task core while using separate storage gateways, installat
 | Item | Baseline recommendation | Batch-use recommendation | Notes |
 | --- | --- | --- | --- |
 | VPS | 2 vCPU, 4 GB RAM, 50 GB SSD | 4 vCPU, 8 GB RAM, 80–100 GB SSD | The deployer's live probe is authoritative |
-| OS | Ubuntu 22.04/24.04 or Debian 12, 64-bit | Same | x86_64 and ARM64 |
-| Privileges | root or working sudo | Same | Managed CloudDrive2 requires `/dev/fuse` |
+| OS | Debian / Ubuntu x86_64 | Same | Current Linux entry points support x86_64 only; ARM64 acceptance is not claimed |
+| Privileges | Run the script as root | Same | Managed CloudDrive2 requires `/dev/fuse` |
 | Network | Access to Telegram, container registries, and the destination | 100 Mbps or faster with sufficient traffic | Public speed tests do not represent cloud-destination throughput |
-| Local computer | Windows 10/11, 64-bit | Same | Runs the deployer and HTTPS management page |
+| Local device | SSH terminal and browser | Same | Windows / macOS / Linux; historical EXEs require Windows |
 
-The installer enforces roughly 1.8 GB of RAM and at least 8 GB free on the installation filesystem. The 50 GB figure is a recommendation, not a simple hard threshold. The deployer also considers existing downloads, the Docker filesystem, inode availability, and the configured local budget.
+Memory checks depend on the edition: approximately 1800 MB minimum for CloudDrive2 and 900 MB for OpenList. Filesystem reserves, task budgets, Docker storage and inode checks must also pass. The 50 GB figure is a recommendation, not a simple hard threshold; the live probe and final preflight remain authoritative.
 
 ### Information You Need
 
@@ -357,7 +357,7 @@ The entry is downloaded from `main`, but the wizard modules are pinned to a veri
 
 A fresh installation collects configuration, checks the environment and asks for confirmation before applying changes. A complete existing installation retains its configuration and targets the latest official stable Release, pinned to its immutable commit. An up-to-date instance is not rebuilt or restarted. Legacy TG115, partial instances, custom code, conflicting directories and gateway image migrations fail closed. Unlike this entry, `manage.sh update` only rebuilds the payload already installed on the VPS.
 
-The Bot and script source version is **v1.3.0**; Windows resources and the final EXEs remain at **v1.2.1**. Fresh interactive installation offers stream-first, balanced or manual storage budgets and rechecks capacity before applying changes. Upgrades preserve existing values. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. The wizard installs only the latest officially released stable payload, never unpublished code merely because main has a higher version. The CloudDrive2 candidate passed database compatibility, startup and read-only WebDAV checks on the test VPS. Full installer upgrades/rollback, real Telegram transfers and OpenList script acceptance remain pending.
+The Bot and script source version is **v1.3.0**; Windows resources and the final EXEs remain at **v1.2.1**. Fresh interactive installation offers stream-first, balanced or manual storage budgets and rechecks capacity before applying changes. Upgrades preserve existing values. The `v1.1.2` tag does not contain the script, so do not download the entry from that tag. The wizard installs only the latest officially released stable payload, never unpublished code merely because main has a higher version. The user confirmed post-upgrade acceptance of this CloudDrive2 v1.3.0 test instance; see the [scoped record](docs/development/V130-ACCEPTANCE.md). OpenList real-host script acceptance remains deferred.
 
 After successful HTTPS recovery, the wizard offers to display saved credentials again. You can also view them separately in your private terminal. Each item requires confirmation and defaults to hidden; this operation does not install, upgrade or reset passwords and cannot be combined with `--check`, `--configure-https` or `--verify`:
 
@@ -368,7 +368,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 OpenList shows the saved initial administrator password, which may have changed in the management page. Avoid screen recording or observers. On minimal systems, the wizard lists missing HTTPS tools and package installation commands; preflight itself does not install packages.
 
-CloudDrive2 passed `--check` on a real VPS: official legacy-source identity, runtime fingerprints, capacity and existing HTTPS were checked, producing a stable-version upgrade plan without upgrading or restarting. This is not acceptance of an actual installation, cross-version upgrade or cloud transfer.
+The official baseline check first rejected the old CloudDrive2 test candidate. After separate authorization and backup, it was manually migrated to official v1.3.0 while preserving task history, configuration and Session authorization. Bot health, HTTPS, code fingerprints and read-only WebDAV passed; a subsequent `--check` reported up to date without rebuilding. The user then confirmed usage acceptance; this does not cover every recovery scenario or fresh installation.
 
 See the [VPS installation and upgrade guide (Chinese)](docs/VPS-INSTALL.md) for the complete scope. Never operate the same instance concurrently from the CLI and EXE. WebDAV write acceptance needs separate confirmation; cloud account credentials and authorization remain in your own CloudDrive2/OpenList instance.
 
@@ -401,7 +401,7 @@ The entry binds only the selected private address, does not use ports 80/443 or 
 
 Online one-line uninstaller:
 
-> The user reported successful VPS acceptance of the original data-preserving uninstaller; **the new complete cleanup still requires real-host testing**. The online entry pins immutable helper source `d83e37acea5d5ae9d106fb0183b663bbdd7a9bfa` for this version. Obtain official EXEs from the matching GitHub Release. Finish active tasks, save backups outside the cleanup paths and preview first; there is no unattended forced deletion.
+> The user reported successful VPS acceptance of the original data-preserving uninstaller; **the new complete cleanup still requires real-host testing**. The v1.3.0 online entry pins immutable helper source `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`; historical EXEs are available only from v1.2.1. Finish active tasks, save backups outside the cleanup paths and preview first. Upgrade acceptance does not validate uninstallation, and there is no unattended forced deletion.
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check

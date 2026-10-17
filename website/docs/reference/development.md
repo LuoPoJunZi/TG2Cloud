@@ -15,7 +15,7 @@ git rev-parse HEAD
 
 ## 关键目录与入口
 
-下表为当前工作树的待发布 Linux / Python + Bash 结构；产品版本仍为 1.3.0，正式 Tag 保持原布局。上面的标签命令仅用于复现已发布版本。桌面源码及专用测试仅在本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
+下表为正式 v1.3.0 已发布的 Linux / Python + Bash 结构；上面的标签命令用于复现该版本。main 可能包含发布后的检查或文档更新，应另外记录提交号。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
 | 路径 | 用途 |
 | --- | --- |
@@ -50,7 +50,7 @@ python scripts/run_source.py uninstall --help
 
 新 Docker 上下文由 `python .github/scripts/build_payload.py --edition all --directory build/local-contexts` 组装，不直接在 packaging 目录构建。部署后仍保留外层 `app/`、`data/tg115.db`、`data/bot.session` 和旧 `app.*` 维护命令。递归指纹使用显式 v2 协议；不确定的旧代码拒绝自动覆盖。
 
-在线 helper 仍固定到原已验证提交。新布局只完成本地候选准备，必须先公开辅助提交 A 并通过 CI，再在入口提交 B 更新清单和 pin；不能为了本地发布检查通过而改成 moving main。完整步骤见[重构与兼容说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LINUX-REFACTOR.md)。
+v1.3.0 在线 helper 已切换新布局，固定到已公开且通过 CI 的提交 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`。后续升级仍须先公开辅助提交 A 并通过 CI，再在入口提交 B 更新清单和 pin；不能改成 moving main。CloudDrive2 本次人工迁移及用户验收记录与自动测试分开，完整步骤见[重构与兼容说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LINUX-REFACTOR.md)和[验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。
 
 v1.1.1 至 v1.2.1 的 Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。历史 EXE 和对应 SHA256 保留，不由新工作流重写。
 

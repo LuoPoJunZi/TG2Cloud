@@ -6,7 +6,13 @@
 
 Windows EXE 停留在 v1.2.1。后续公网实例使用 install.sh 先 --check，再确认升级；内网实例使用 install-lan.sh，不混用入口。安装目录、身份和原源码均可核验时，旧 EXE 创建的标准 VPS 实例也可保留配置升级。网关镜像变化、自定义代码或部分实例仍会停止，不能用旧 EXE 绕过检查。
 
-v1.3.0 向导的磁盘推荐仅用于新安装，升级不静默改预算。脚本正式迁移仍需两 Edition 实机验收，不能把本地自动测试等同于实际升级通过。
+v1.3.0 向导的磁盘推荐仅用于新安装，升级不静默改预算。CloudDrive2 本次旧候选已迁移到正式版，用户确认升级后使用验收通过；OpenList 脚本实机验收暂缓，不能把本次结果扩展成两 Edition 的全部流程均已实测。
+
+## v1.3.0 本次升级验收
+
+2026-10-17，在专用测试 VPS 完成 CloudDrive2 旧测试候选到正式 v1.3.0 的迁移。原实例与官方旧版源码不一致，在线预检先安全停止；经授权人工核对、备份后，调用正式版原生安装流程完成切换。没有给脚本加入强制覆盖，也没有伪造旧版本。
+
+历史任务、原配置及 Session 授权保留，运行指纹、健康、HTTPS 和只读 WebDAV 检查通过，在线 `--check` 复检识别为最新且不重建。用户随后确认使用验收完成。首次安装、标准正式版自动升级、故障回退、NAS 和全部传输异常场景不属于本次结论，详见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。
 
 ## v1.2.1 历史图形升级流程
 
@@ -29,9 +35,9 @@ v1.3.0 向导的磁盘推荐仅用于新安装，升级不静默改预算。脚�
 
 ## 哪些配置会保留
 
-已有 TG2Cloud 重复部署默认保留 VPS 当前完整 `.env`，以及 SQLite、`rclone.conf` 和持久化数据。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”，才会应用本次表单。
+Linux 升级保留 VPS 当前 `.env` 原始字节，以及 SQLite、Session 授权和持久化数据。rclone 可能重新混淆同一 WebDAV 密码，使 `rclone.conf` 字节变化；应在私有环境核对实际配置，不凭 hash 变化直接断言改密，也不公开解混淆结果。混淆不是加密，配置和备份仍是敏感文件。
 
-因此，单纯在 Windows 界面改密码但没有应用配置，不会改变正在运行的 Bot。
+历史 v1.2.1 图形部署器仅在明确勾选“使用本页配置覆盖 VPS 当前 .env”时应用表单；单纯在旧 Windows 界面改密码但没有应用配置，不会改变正在运行的 Bot。不要用旧 EXE 覆盖已升级实例。
 
 ## `manage.sh update` 做什么
 
@@ -71,7 +77,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 它只获取正式稳定 Release 的源码，并核验已有实例的官方基线与运行指纹。已有完整受管实例保留 `.env`、rclone、SQLite 和持久化数据；仅重启或本机源码升级不等于 VPS 更新。不自动降级，不静默覆盖旧 TG115、部分安装或自定义配置，也不隐式切换 HTTPS 域名。
 
-当前 CloudDrive2 已完成真实 VPS 只读预检，但首次安装、实际跨版本升级及回退仍未验收；OpenList 脚本实机验收暂缓。完整边界见 [VPS 脚本指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。两个 EXE 仍是主力入口，切勿与脚本同时操作同一实例。
+CloudDrive2 本次实际迁移及用户使用验收已完成，但不能据此跳过官方源码基线核对；自定义或旧候选实例仍需单独审阅。OpenList 脚本实机验收暂缓。完整边界见 [VPS 脚本指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。从 v1.3.0 起只维护 Linux 脚本，Windows EXE 停留在 v1.2.1，切勿与脚本同时操作同一实例。
 
 v1.1.4 修复向导的交互终端与候选镜像源码权限：公开程序可供非 root Bot 读取，秘密仍保持私有；镜像内程序和日志统一为 TG2Cloud。数据库、Session、UID/GID 与 HTTPS 路由保持不变。遇到旧 `Permission denied` 不要删除数据或重新授权云盘，使用包含修复的正式版本重试；原版本 Tag 缺失时脚本仍安全停止。
 
@@ -103,7 +109,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh verify
 应用过程先备份和预检，再重建并检查实际环境；失败时按脚本机制恢复旧配置。改变目的账号或路径前，应先处理完队列及失败保留任务。
 
 :::warning 自动保护不是通用恢复产品
-当前 v1.2.1 只有有限内部失败回退机制，不提供正式自动 Restore。独立卸载不是升级步骤：主分支追加的完整清理会在双重确认后删除所选数据及可识别备份，保留数据需明确使用 `--keep-data`；未知归属与新增完整清理未实机验收的边界见 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。共享代理隔离解包也不是在线恢复；不能因为升级脚本有保护，就省略清理范围之外的独立备份。
+v1.3.0 沿用有限内部失败回退机制，不提供正式自动 Restore；本次升级成功不等于故障回退已经实测。独立卸载不是升级步骤：完整清理会在双重确认后删除所选数据及可识别备份，保留数据需明确使用 `--keep-data`；未知归属与新增完整清理未实机验收的边界见 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。共享代理隔离解包也不是在线恢复；不能因为升级脚本有保护，就省略清理范围之外的独立备份。
 :::
 
 ## 升级后检查清单

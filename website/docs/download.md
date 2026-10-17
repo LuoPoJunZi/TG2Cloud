@@ -87,7 +87,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 轻量入口来自主分支；Python 向导模块固定到审查并通过 CI 的源码 commit，实际部署 payload 只取正式稳定 Release 的不可变 commit，不取 main、RC 或草稿。出现下载错误应停止，不要把命令退出当作安装成功。
 
 :::warning 验收范围
-当前脚本完成 CloudDrive2 真实 VPS 的只读预检，没有执行首次安装或实际跨版本升级；OpenList 脚本实机验收暂缓。执行写入前请备份、安排维护窗口，并阅读 [完整 VPS 脚本指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。不要同时运行 EXE 和命令行向导。
+2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到正式 v1.3.0，用户确认升级后使用验收完成。历史任务与 Session 授权保留，健康、指纹、HTTPS、只读 WebDAV 及在线入口复检通过；原先只读预检的结论已补充为本次迁移记录。首次安装、无需人工接管的正式版自动升级、故障回退和 NAS 仍需独立验证；OpenList 脚本实机验收暂缓。详见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)与 [VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。不要同时运行 EXE 和命令行向导。
 :::
 
 ## 没有公网域名：独立内网入口

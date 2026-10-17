@@ -12,7 +12,9 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 - 共享核心模块化到 `src/tg2cloud/`，保留既有配置、数据库、Session 和后端提交策略，不新增数据库结构迁移或配置项。
 - 视频命名优先有效长描述与引用块，过滤链接、话题和推广；CI 工具与已验证依赖更新，网关镜像不变。
 
-新布局主分支已通过 Linux 全量回归、宿主 Python 3.10/3.13、两 Edition 非 root 镜像和隔离 LAN 网关检查。[发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/workflows/release.yml) 会从同一 Tag 重新验证并打包一次，发布任务复用源码包和实际 SHA256；各项结果以本次运行记录为准。真实两 Edition 首次安装／升级、NAS、Telegram 转存和长期运行仍待独立验收，见[下载页](/download/)。
+新布局已通过 Linux 全量回归、宿主 Python 3.10/3.13、两 Edition 非 root 镜像和隔离 LAN 网关检查。[发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/workflows/release.yml) 已从同一 Tag 验证、打包并发布源码包与实际 SHA256。
+
+发布后补充（2026-10-17）：CloudDrive2 旧测试候选经授权备份、人工核对后，使用正式 v1.3.0 原生流程迁移成功，用户确认升级后使用验收完成。历史任务、配置与 Session 授权保留，健康、指纹、HTTPS、只读 WebDAV 和在线入口复检通过；OpenList 与共享代理容器未重启。这不是任意候选代码可被自动覆盖的证明，也不替代首次安装、故障回退、NAS 及全部异常传输验证，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。
 
 ## TG2Cloud v1.2.1
 

@@ -1,10 +1,14 @@
 # 运行状态、故障排查与 HTTPS 维护
 
+当前维护入口为 v1.3.0 Linux 脚本。2026-10-17 已完成 CloudDrive2 测试实例的授权人工迁移，用户确认升级后使用验收通过，见[验收记录](development/V130-ACCEPTANCE.md)。下文涉及弹窗、按钮或 SSH 部署器的说明仅适用于历史 v1.2.1 Windows 界面，不能理解为新版终端菜单。
+
 以下维护能力从 TG2Cloud v1.1.2 提供；旧 EXE 不会自动获得这些改动。仅下载新版部署器也不会自动更新 VPS Bot 或续期容器。
 
 v1.2.1 源码的取消恢复、远端冲突处理、遗留扫描、验证记录和离线备份预检见[任务恢复指南](RECOVERY.md)。已发布 v1.2.0 不自动获得这些新能力；两版的升级回退点不能代替包含 Telegram Session 和网关授权的完整灾难备份。
 
 ## 查看实际运行版本
+
+公网实例先运行公开安装入口的 `--edition clouddrive2 --check`（OpenList 改为 `openlist`），核对实际版本、源码和 HTTPS；内网实例使用 `install-lan.sh` 对应参数。命令全文与安装/升级区别见 [VPS 指南](VPS-INSTALL.md)。`--check` 不执行升级，`manage.sh update` 只重建本地已有 payload；两者都不能替代升级后的实际转存检查。
 
 当前源码重构保留已部署的 `app.*` 运维命令、数据库和 Session 路径；新核心由 `app/tg2cloud/` 加载，新递归指纹有显式 v2 前缀，旧实例按历史协议与正式清单核对。目录调整不自动升级运行实例，也不要求迁移数据库。开发检查及发布门槛见[Linux 重构说明](development/LINUX-REFACTOR.md)。
 
