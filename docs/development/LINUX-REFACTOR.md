@@ -55,7 +55,7 @@ bash /path/to/TG2Cloud/install.sh --edition clouddrive2 --check
 
 `--help` 只依赖标准库；`--check` 仍检查本机身份并解析正式 Release，不等于纯离线或已部署。实际安装必须在受支持 Linux 上确认执行。本地入口不会安装未发布 payload：业务下载仍只选正式稳定 Release。
 
-可选安装宿主 CLI：`python3 -m pip install --no-deps .`，之后使用 `tg2cloud install --help` 或 `python3 -m tg2cloud.cli install --help`。这不安装 Bot 依赖；容器单独使用 `requirements/bot.lock.txt`。开发环境使用 `python3 -m pip install -r requirements/dev.lock.txt`。两个锁文件从 pyproject 经同一 uv 0.11.28 生成：
+可选安装宿主 CLI：`python3 -m pip install --no-deps .`，之后使用 `tg2cloud install --help` 或 `python3 -m tg2cloud.cli install --help`。这不安装 Bot 依赖；容器单独使用 `requirements/bot.lock.txt`。开发环境使用 `python3 -m pip install -r requirements/dev.lock.txt`。两个锁文件从 pyproject 经其中固定的同一 uv 版本生成，解析下限取 Bot Dockerfile 的 Python 版本（当前为 3.12）：
 
 ```bash
 python3 .github/scripts/lock_dependencies.py

@@ -10,7 +10,7 @@
 
 ## Python 检查
 
-完整检查使用 Python 3.12 / 3.13 和 `requirements/dev.lock.txt`，不需要 PySide6、Paramiko 或 PyInstaller。cryptography 显式作为证书夹具测试依赖，不进入 Bot 容器。依赖定义在 `pyproject.toml`，两份哈希锁文件由 uv 0.11.28 统一生成，不单独手改版本；生成时从 Bot Dockerfile 读取 Python 3.12 作为解析下限，不能使用维护者当前 Python 版本作为下限而漏掉条件依赖。宿主 CLI 仍支持 Python 3.10+、只用标准库，不安装这两份 Bot／开发锁文件。请在隔离虚拟环境中准备：
+完整检查使用 Python 3.12 / 3.13 和 `requirements/dev.lock.txt`，不需要 PySide6、Paramiko 或 PyInstaller。cryptography 显式作为证书夹具测试依赖，不进入 Bot 容器。依赖定义在 `pyproject.toml`，两份哈希锁文件由其中固定的同一 uv 版本统一生成，不单独手改版本；生成时从 Bot Dockerfile 读取 Python 3.12 作为解析下限，不能使用维护者当前 Python 版本作为下限而漏掉条件依赖。宿主 CLI 仍支持 Python 3.10+、只用标准库，不安装这两份 Bot／开发锁文件。请在隔离虚拟环境中准备：
 
 ```bash
 python -m pip install -r requirements/dev.lock.txt
@@ -31,7 +31,7 @@ python .github/scripts/check_python.py all
 独立 Linux 向导的无桌面依赖检查使用 Python 3.10 / 3.13，只需要现有 Ruff 工具，不要求 PySide6、Paramiko 或 Bot 依赖：
 
 ```bash
-uv run --with ruff==0.16.0 python .github/scripts/check_python.py all --scope cli
+uv run --no-project --with ruff==0.17.0 python .github/scripts/check_python.py all --scope cli
 ```
 
 `.ruff.toml` 统一原有 lint 规则；全范围自动发现 Python 文件，CLI 范围集中在检查入口。不要用 `ruff format .` 或 `--fix` 对稳定源码进行无关批量改写。
