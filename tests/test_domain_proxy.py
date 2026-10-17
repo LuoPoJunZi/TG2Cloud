@@ -874,11 +874,11 @@ class RegressionBoundaryTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         self.assertIn(
             '"127.0.0.1:19798:19798"',
-            (root / "packaging/compose/clouddrive2.yml").read_text(encoding="utf-8"),
+            (root / "packaging/compose/docker-compose.clouddrive2.yml").read_text(encoding="utf-8"),
         )
         self.assertIn(
             '"127.0.0.1:5244:5244"',
-            (root / "packaging/compose/openlist.yml").read_text(encoding="utf-8"),
+            (root / "packaging/compose/docker-compose.openlist.yml").read_text(encoding="utf-8"),
         )
 
     def test_templates_do_not_contain_credentials_or_private_keys(self) -> None:

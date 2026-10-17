@@ -37,7 +37,7 @@ REQUIRED = {
     "src/tg2cloud/app.py", "src/tg2cloud/deployment/profiles.py",
     "src/tg2cloud/deployment/fingerprints.py", "src/tg2cloud/cli/commands.py",
     "requirements/bot.lock.txt", "requirements/dev.lock.txt", "packaging/Dockerfile",
-    "packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml",
+    "packaging/compose/docker-compose.clouddrive2.yml", "packaging/compose/docker-compose.openlist.yml",
     "packaging/bootstrap-manifest.json", "packaging/runtime-manifest.json", "assets/brand/tg2cloud-logo.svg",
 }
 
@@ -153,7 +153,7 @@ def verify(directory: Path, tag: str) -> None:
                 if isinstance(node, ast.Constant) and isinstance(node.value, str)
                 and node.value.startswith(("packaging/", "requirements/") if modern else ("payload_clouddrive2/", "payload_openlist/"))
                 and (not modern or PurePosixPath(node.value).suffix or PurePosixPath(node.value).name == ".dockerignore")}
-    editions = ("packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml") if modern else ("payload_clouddrive2", "payload_openlist")
+    editions = ("packaging/compose/docker-compose.clouddrive2.yml", "packaging/compose/docker-compose.openlist.yml") if modern else ("payload_clouddrive2", "payload_openlist")
     if not all(any(path.startswith(edition) for path in payloads) for edition in editions):
         raise ValueError("both Edition payload manifests are required")
     if not payloads.issubset(files):
