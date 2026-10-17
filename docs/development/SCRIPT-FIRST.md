@@ -4,13 +4,15 @@
 
 ## v1.3.0 发布核对
 
-2026-10-16，[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) 已发布，Tag 指向 `c07734cab666defb6ae5b5351a06361711d24190`。[发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/38892441721) 从该 Tag 校验并生成一次 `TG2Cloud-v1.3.0-source.tar.gz` 与 `SHA256SUMS.txt`；公开下载摘要、两版 payload 与 11 个固定向导文件已核对。首次发布的历史 Windows 入口权限检查由主分支 Workflow 修正后重试，Tag 未移动，资产没有混入 main 的新业务代码。
+2026-10-17 重新准备 v1.3.0，包含新 Linux 源码布局、命名增强及已验证的依赖修复。发布前重新核对 GitHub，远端当时没有 v1.3.0 Tag 或 Release；此前旧布局的构建记录不能作为本次发布结果。实际源码和资产以[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) 及其对应 Tag 为准，不覆盖其他历史版本。
 
-这些是自动发布结果；下方真实 VPS／NAS 验收门槛仍保留，桌面源码尚未物理删除。
+发布工作流从同一 Tag 验证并生成一次 `TG2Cloud-v1.3.0-source.tar.gz` 与 `SHA256SUMS.txt`；发布 Job 复用此 artifact。下方真实 VPS／NAS 验收门槛仍保留，桌面恢复归档保存在本地。
+
+曾安装旧布局的同号 v1.3.0 实验实例需单独核对迁移；版本号相同不表示源码相同。脚本遇到基线不一致会停止，不会自动覆盖或重建数据库。不要删除版本标识、配置或 Session 来绕过此保护。
 
 ## 本轮实现与当前上线边界
 
-- 当前工作树的待发布 Linux 重构见[模块与兼容说明](LINUX-REFACTOR.md)；产品版本和已发布 v1.3.0 不变，旧源码验证后本地归档，公共 CI 不依赖归档。
+- Linux 重构见[模块与兼容说明](LINUX-REFACTOR.md)；产品版本为 v1.3.0，旧源码验证后本地归档，公共 CI 不依赖归档。
 - VPS 与 LAN 首次安装复用 `src/tg2cloud/deployment/resources.py` 的均衡／流式优先推荐，用户明确选择或手动输入；手动输入不能绕过资源校验。
 - 安装目录与 Docker 数据盘分别检查；任务预算不是分区、扩容，也不代表网关全部缓存受限。
 - 已有实例保留原始配置；新安装和升级在执行前再次探测，磁盘条件变化时中止。
@@ -29,7 +31,7 @@ v1.2.1 的 SHA256SUMS 校验两个 EXE。后续脚本版的 SHA256SUMS 校验该
 
 按用户后续明确授权，main 已将桌面源码、构建脚本、Windows 资源和专用 Qt／桌面 SSH 测试从 Git 跟踪中移除，本地文件与独立 ZIP 保留。混合测试中的 Bot、Linux、资源、Docker、网关和备份检查继续公开；原桌面配置输出另存为仅含合成数据的协议快照，Linux 配置继续与它逐项对照。公共 CI 不再安装 PySide6、Paramiko 或 PyInstaller。
 
-共用部署逻辑由此前 `scripts/lib/` 进一步分入 `src/tg2cloud/deployment/`，不是删除 Linux 能力。在线新白名单与启动命令只生成候选，真实 pin 保持不动，待公开辅助提交 A 通过 CI 后再在 B 更新。已发布 v1.3.0 Tag 保持原布局；目录整理不表示实机验收已完成。
+共用部署逻辑由此前 `scripts/lib/` 进一步分入 `src/tg2cloud/deployment/`，不是删除 Linux 能力。在线清单与启动命令已切换新布局，pin 指向已公开且通过 CI 的辅助提交 A；后续入口提交 B 不改变 A 的辅助文件。目录整理和自动检查不表示实机验收已完成。
 
 ## 后续验收和清理门槛
 

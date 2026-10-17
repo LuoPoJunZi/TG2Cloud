@@ -50,7 +50,7 @@ Your Cloud
 
 > 当前源码版本：**TG2Cloud v1.3.0**
 >
-> main 分支待发布更新：公共仓库仅维护 Linux 脚本与共享 Bot，旧桌面源码和专用测试只在本地备份中保留；视频命名增强支持长描述、引用块与宣传式原名替换。已发布 v1.3.0 和在线稳定业务代码不包含新的命名改动。
+> v1.3.0 包含 Linux 模块化源码和增强的视频命名，支持长描述、引用块与宣传式原名替换；旧桌面源码和专用测试仅在历史版本及本地备份中保留。具体发布状态以 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) 为准，在线业务代码只安装正式稳定版本。
 >
 > Windows 部署器最后更新到 **v1.2.1**；从 v1.3.0 起以 Linux 一键脚本维护两个 Edition。首次安装提供磁盘预算推荐，后续 Release 提供源码包及 SHA256。历史 EXE 下载保留；迁移与验收边界见[脚本优先说明](docs/development/SCRIPT-FIRST.md)。
 
@@ -710,7 +710,7 @@ Docker 数据目录可能和 `/opt/tg2cloud-clouddrive2` 位于不同文件系�
 
 ## 本地开发与测试
 
-当前工作树正在进行 Linux / Python + Bash 的待发布重构，产品版本仍为 v1.3.0，不代表已发布源码包已改变。新布局、本地入口、兼容边界和 helper 两步发布门槛见[Linux 重构说明](docs/development/LINUX-REFACTOR.md)。公开一键命令继续使用原有已验证的不可变向导 pin，不会执行本地未发布代码。
+Linux / Python + Bash 源码位于 `src/tg2cloud/`，产品版本为 v1.3.0。新布局、本地入口、兼容边界和 helper 两步发布规则见[Linux 重构说明](docs/development/LINUX-REFACTOR.md)。公开一键入口固定到已公开且 CI 通过的不可变向导提交，不执行本地未发布代码。
 
 ### 项目结构
 

@@ -22,7 +22,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this immutable pin only after the new uninstaller passes CI/review.
-installer_commit="acce0f887c543b6df633727d1769753f328c6601"
+installer_commit="ee6feef5cfd35e50c315cddf91ab0cb35c40a384"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '卸载向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2
@@ -65,10 +65,36 @@ class Redirect(HTTPRedirectHandler):
         return super().redirect_request(request, response, code, message, headers, new_url)
 
 files = (
-    "scripts/__init__.py", "scripts/uninstaller.py", "scripts/vps_installer.py", "scripts/vps_runtime.py",
-    "scripts/lib/__init__.py", "scripts/lib/deployer_products.py", "scripts/lib/domain_proxy.py",
-    "scripts/lib/proxy_maintenance.py", "scripts/lib/vps_resources.py",
-    "payload_clouddrive2/app/__init__.py", "payload_clouddrive2/app/version.py",
+    'scripts/run_source.py',
+    'src/tg2cloud/__init__.py',
+    'src/tg2cloud/cli/__init__.py',
+    'src/tg2cloud/cli/__main__.py',
+    'src/tg2cloud/cli/commands.py',
+    'src/tg2cloud/cli/terminal.py',
+    'src/tg2cloud/cli/vps.py',
+    'src/tg2cloud/config.py',
+    'src/tg2cloud/deployment/__init__.py',
+    'src/tg2cloud/deployment/check.py',
+    'src/tg2cloud/deployment/compatibility.py',
+    'src/tg2cloud/deployment/configuration.py',
+    'src/tg2cloud/deployment/fingerprints.py',
+    'src/tg2cloud/deployment/host.py',
+    'src/tg2cloud/deployment/install.py',
+    'src/tg2cloud/deployment/instances.py',
+    'src/tg2cloud/deployment/payload.py',
+    'src/tg2cloud/deployment/preflight.py',
+    'src/tg2cloud/deployment/profiles.py',
+    'src/tg2cloud/deployment/proxy/__init__.py',
+    'src/tg2cloud/deployment/proxy/certificates.py',
+    'src/tg2cloud/deployment/proxy/lan.py',
+    'src/tg2cloud/deployment/proxy/maintenance.py',
+    'src/tg2cloud/deployment/proxy/manager.py',
+    'src/tg2cloud/deployment/proxy/state.py',
+    'src/tg2cloud/deployment/releases.py',
+    'src/tg2cloud/deployment/resources.py',
+    'src/tg2cloud/deployment/uninstall.py',
+    'src/tg2cloud/deployment/upgrade.py',
+    'src/tg2cloud/version.py',
 )
 try:
     for name in files:
@@ -92,7 +118,7 @@ child_pid="$!"
 wait "$child_pid"
 child_pid=""
 cd -- "$bootstrap_dir"
-python3 -B -m scripts.uninstaller "$@" &
+python3 -B scripts/run_source.py uninstall "$@" &
 child_pid="$!"
 wait "$child_pid"
 child_pid=""

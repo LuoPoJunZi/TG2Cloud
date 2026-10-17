@@ -4,14 +4,15 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 ## TG2Cloud v1.3.0
 
-发布日期与核对日期：2026-10-16。本版以 Linux 一键脚本维护 CloudDrive2 和 OpenList；Windows EXE 停留在 v1.2.1，历史下载继续保留。详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.0/CHANGELOG.md)及 [v1.3.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0)。
+版本与资料核对日期：2026-10-17。本版以 Linux 一键脚本维护 CloudDrive2 和 OpenList；Windows EXE 停留在 v1.2.1，历史下载继续保留。实际发布状态见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.0/CHANGELOG.md)及 [v1.3.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0)。
 
 - VPS 与内网首次安装提供流式优先、均衡和手动磁盘预算，复用现有资源算法；升级保留原配置。
 - 执行前在锁内重新检查容量，磁盘条件变化则停止；任务预算不是分区，也不覆盖所有网关缓存。
 - Linux／Docker／WebDAV 回归后生成一次源码包及实际 SHA256，发布任务复用同一 artifact；三个在线入口固定到匹配的辅助源码。
-- 未新增数据库迁移、依赖或配置项，Bot 核心沿用 v1.2.1。
+- 共享核心模块化到 `src/tg2cloud/`，保留既有配置、数据库、Session 和后端提交策略，不新增数据库结构迁移或配置项。
+- 视频命名优先有效长描述与引用块，过滤链接、话题和推广；CI 工具与已验证依赖更新，网关镜像不变。
 
-本地完整回归 679 passed、26 skipped、451 子测试通过，网站构建及 15 测试通过。[正式发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/38892441721) 验证 Linux、Docker、两 Edition 非 root 启动及隔离 LAN 网关后打包一次；公开源码包、实际 SHA256 和三个在线入口的 11 个辅助文件已核对。真实两 Edition 首次安装／升级、NAS、Telegram 转存和长期运行仍待独立验收，见[下载页](/download/)。
+新布局主分支已通过 Linux 全量回归、宿主 Python 3.10/3.13、两 Edition 非 root 镜像和隔离 LAN 网关检查。[发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/workflows/release.yml) 会从同一 Tag 重新验证并打包一次，发布任务复用源码包和实际 SHA256；各项结果以本次运行记录为准。真实两 Edition 首次安装／升级、NAS、Telegram 转存和长期运行仍待独立验收，见[下载页](/download/)。
 
 ## TG2Cloud v1.2.1
 

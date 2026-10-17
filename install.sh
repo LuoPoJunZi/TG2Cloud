@@ -58,7 +58,7 @@ root = Path(sys.argv[1])
 api = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 # Update this pin only after the helper revision passes its CI and review.
 # It is independent of the target Release, which need not contain the CLI.
-installer_commit = "acce0f887c543b6df633727d1769753f328c6601"
+installer_commit = "ee6feef5cfd35e50c315cddf91ab0cb35c40a384"
 installer_version = "1.3.0"
 
 def validate_url(url):
@@ -102,10 +102,36 @@ try:
     else:
         raise ValueError("tag recursion")
     files = (
-        "scripts/__init__.py", "scripts/vps_runtime.py", "scripts/vps_installer.py",
-        "scripts/lib/__init__.py", "scripts/lib/deployer_products.py", "scripts/lib/domain_proxy.py",
-        "scripts/lib/vps_resources.py", "scripts/lib/proxy_maintenance.py",
-        "payload_clouddrive2/app/__init__.py", "payload_clouddrive2/app/version.py",
+        'scripts/run_source.py',
+        'src/tg2cloud/__init__.py',
+        'src/tg2cloud/cli/__init__.py',
+        'src/tg2cloud/cli/__main__.py',
+        'src/tg2cloud/cli/commands.py',
+        'src/tg2cloud/cli/terminal.py',
+        'src/tg2cloud/cli/vps.py',
+        'src/tg2cloud/config.py',
+        'src/tg2cloud/deployment/__init__.py',
+        'src/tg2cloud/deployment/check.py',
+        'src/tg2cloud/deployment/compatibility.py',
+        'src/tg2cloud/deployment/configuration.py',
+        'src/tg2cloud/deployment/fingerprints.py',
+        'src/tg2cloud/deployment/host.py',
+        'src/tg2cloud/deployment/install.py',
+        'src/tg2cloud/deployment/instances.py',
+        'src/tg2cloud/deployment/payload.py',
+        'src/tg2cloud/deployment/preflight.py',
+        'src/tg2cloud/deployment/profiles.py',
+        'src/tg2cloud/deployment/proxy/__init__.py',
+        'src/tg2cloud/deployment/proxy/certificates.py',
+        'src/tg2cloud/deployment/proxy/lan.py',
+        'src/tg2cloud/deployment/proxy/maintenance.py',
+        'src/tg2cloud/deployment/proxy/manager.py',
+        'src/tg2cloud/deployment/proxy/state.py',
+        'src/tg2cloud/deployment/releases.py',
+        'src/tg2cloud/deployment/resources.py',
+        'src/tg2cloud/deployment/uninstall.py',
+        'src/tg2cloud/deployment/upgrade.py',
+        'src/tg2cloud/version.py',
     )
     for name in files:
         data = fetch("https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/" + installer_commit + "/" + name)
@@ -114,7 +140,7 @@ try:
         with target.open("xb") as output:
             os.chmod(target, 0o600)
             output.write(data)
-    tree = ast.parse((root / "payload_clouddrive2/app/version.py").read_text(encoding="utf-8"))
+    tree = ast.parse((root / "src/tg2cloud/version.py").read_text(encoding="utf-8"))
     versions = [n.value.value for n in tree.body if isinstance(n, ast.Assign)
                 and isinstance(n.value, ast.Constant)
                 and any(isinstance(t, ast.Name) and t.id == "VERSION" for t in n.targets)]
@@ -134,7 +160,7 @@ child_pid="$!"
 wait "$child_pid"
 child_pid=""
 cd -- "$bootstrap_dir"
-python3 -B -m scripts.vps_installer "$@" &
+python3 -B scripts/run_source.py install "$@" &
 child_pid="$!"
 wait "$child_pid"
 child_pid=""

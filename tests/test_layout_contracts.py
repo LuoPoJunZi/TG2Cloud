@@ -184,7 +184,7 @@ class BootstrapLayoutTests(unittest.TestCase):
                 original = (ROOT / name).read_text(encoding="utf-8")
                 candidate = bootstrap.render_entry(ROOT, name)
                 pin = r'^installer_commit\s*=\s*"([0-9a-f]{40})"$'
-                self.assertEqual(re.findall(pin, original, re.MULTILINE), ["acce0f887c543b6df633727d1769753f328c6601"])
+                self.assertEqual(re.findall(pin, original, re.MULTILINE), ["ee6feef5cfd35e50c315cddf91ab0cb35c40a384"])
                 self.assertEqual(re.findall(pin, candidate, re.MULTILINE), re.findall(pin, original, re.MULTILINE))
                 self.assertIn(f'python3 -B scripts/run_source.py {command} "$@" &', candidate)
                 block = candidate.split("<<'PY' &\n", 1)[1].split("\nPY\n", 1)[0]
@@ -199,6 +199,28 @@ class BootstrapLayoutTests(unittest.TestCase):
                                      {"install": 'python3 -B -m scripts.vps_installer', "lan": 'python3 -B -m scripts.lan_installer',
                                       "uninstall": 'python3 -B -m scripts.uninstaller'}[command],
                                      f'python3 -B scripts/run_source.py {command}'))
+
+    def test_pinned_helper_bundle_runs_without_checkout_or_bot_packages(self):
+        # Only the online allowlist from public commit A is available here.
+        # Importing from the full checkout could conceal a missing helper file.
+        manifest = bootstrap.helper_files(ROOT)
+        pin = "ee6feef5cfd35e50c315cddf91ab0cb35c40a384"
+        with tempfile.TemporaryDirectory() as private:
+            root = Path(private)
+            for name in manifest:
+                result = subprocess.run(["git", "show", f"{pin}:{name}"], cwd=ROOT,
+                                        capture_output=True, timeout=20, check=True)
+                path = root / name
+                path.parent.mkdir(parents=True, exist_ok=True)
+                path.write_bytes(result.stdout)
+            for command in ("install", "lan", "uninstall"):
+                with self.subTest(command=command):
+                    result = subprocess.run([
+                        sys.executable, "-I", "-S", "-X", "utf8",
+                        str(root / "scripts/run_source.py"), command, "--help",
+                    ], cwd=root, capture_output=True, text=True, encoding="utf-8", timeout=20, check=False)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn("--edition", result.stdout)
 
     def test_cli_help_and_imports_work_outside_checkout_without_site_packages(self):
         with tempfile.TemporaryDirectory() as private:

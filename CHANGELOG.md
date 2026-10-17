@@ -1,29 +1,27 @@
 # 更新记录
 
-## 未发布
+## TG2Cloud v1.3.0
+
+版本日期：2026-10-17。Linux Python + Bash 模块化版本；Windows 部署器保留在 v1.2.1。本次从修复后的主分支重新准备 v1.3.0，发布资产与检查结果以对应 Tag 的 Actions 为准。
 
 - 修复 Linux 重构后的 CI：更新 ShellCheck 辅助文件路径；Compose 清单使用 Dependabot 可发现的标准前缀文件名，运行配置不变；历史布局回归固定到公开提交，不依赖维护者本地 Tag。
 - Bot／开发哈希锁文件按 Dockerfile 的 Python 3.12 下限统一生成，补齐较低 Python 版本的条件依赖；宿主 CLI 继续支持 Python 3.10+，不要求安装 Bot 依赖。
 - Linux 渐进式重构：`src/tg2cloud` 为共享源码，拆分 CLI/部署、Telegram 展示、任务阶段、SQLite 迁移和后端策略；Docker/Compose/Shell 资源归入 `packaging/`，依赖由 pyproject 和统一 uv 锁文件维护。Bot 依赖、网关镜像和产品版本不随目录调整升级。
 - 保留旧实例身份、`app/` 外层程序目录、`data/tg115.db`、`bot.session` 及 `app.*` 运维命令；新递归指纹显式使用 v2 协议，历史平铺布局、静态版本读取和 CRLF 校验继续支持。不新增数据库结构变更。
-- 新布局的离线载荷组装、helper 候选及源码清单检查独立可用；正式在线 helper pin 暂不改动，必须先公开辅助代码提交 A、通过 CI，再更新入口提交 B。此次工作不创建发布、不操作真实实例；验收门槛见[重构说明](docs/development/LINUX-REFACTOR.md)。
+- 新布局的载荷组装、递归指纹和源码清单检查接入发布；三个在线入口固定到已公开且通过 CI 的辅助提交 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`，业务代码仍只取正式稳定 Release。验收边界见[重构说明](docs/development/LINUX-REFACTOR.md)。
 - 公共仓库停止跟踪冻结的 Windows 部署器、构建依赖、版本资源及桌面专用测试，本地源码和独立 ZIP 保留；全部非桌面回归继续公开运行，Linux 发布不再依赖 Qt／SSH／Windows 构建工具。
 - 贡献／安全文档归入 `.github/`；此前集中到 `scripts/lib/` 的部署模块进一步迁入 `src/tg2cloud/deployment/`，不保留两套业务实现。三个公开 Shell URL 和已部署实例的外层布局保持不变。
 - 视频原名含频道推广与联系方式时，允许使用本条消息的有效说明命名；优先完整长描述、Telegram 引用块和明确标题，合并同段换行，继续排除链接、话题、推广及凭据信息。
 - 媒体组优先采用更完整的可见描述；正常有意义的单视频原名、已接收任务和远端文件不主动改名。不获取频道历史、评论区或受保护内容。
 
-上述修改仅在 main，尚未进入 v1.3.0 Release；在线业务代码仍只安装正式稳定版本。
-
-## TG2Cloud v1.3.0
-
-版本日期：2026-10-16。转为 Linux 一键脚本优先维护，两个 Edition 继续共用现有任务核心；Windows 部署器停留在 v1.2.1。
+- 合入经 CI 验证的 Actions、uv、Ruff 和开发 cryptography 升级；共享 Bot 基础镜像保持 Python 3.12，CloudDrive2/OpenList 网关 digest 不变。
 
 - Linux VPS / LAN 新安装增加均衡、流式优先与手动存储方案，复用原推荐算法；升级保留配置，执行前重新检查容量。
 - Windows EXE 停留在 v1.2.1；停止分支/发布工作流自动打包，后续 Release 发布一次生成并验证的源码归档与实际 SHA256。
 - 发布前检查三个在线入口的辅助代码 pin，拒绝将旧向导混入新版本；冻结 Windows 资源，保留旧版下载和源码恢复能力。
-- 桌面专用源码的物理清理等待脚本实机验收及测试依赖分离。本轮未改变 Bot、传输、数据库、容器权限或网盘数据处理。
+- 桌面专用源码和测试已按授权从公共仓库移出，本地恢复归档保留；公共测试不依赖归档。
 
-本版不新增数据库迁移、依赖或配置项；既有实例保留原预算。真实两 Edition 脚本安装／升级及 NAS 验收范围见[迁移边界及验收门槛](docs/development/SCRIPT-FIRST.md)，不能以自动测试替代。
+本版不新增数据库结构迁移或配置项；既有实例保留原预算、配置、Session 和运行数据。真实两 Edition 脚本安装／升级及 NAS 验收范围见[迁移边界及验收门槛](docs/development/SCRIPT-FIRST.md)，不能以自动测试替代。
 
 ## TG2Cloud v1.2.1
 

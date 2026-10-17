@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 16 日**，对应 TG2Cloud **v1.3.0** 正式版本。Actions 源码包、实际 SHA256、不可变 Tag 和两 Edition 载荷已核对；在线入口已解析到最新稳定 v1.3.0。历史 EXE 停留在 v1.2.1，真实两 Edition 脚本全流程仍待验收。
+本次内容核对日期为 **2026 年 10 月 17 日**，对应 TG2Cloud **v1.3.0** 的 Linux 模块化源码和脚本说明。源码包、SHA256 与不可变 Tag 的实际发布结果以 GitHub Release 及对应 Actions 为准。历史 EXE 停留在 v1.2.1，真实两 Edition 脚本全流程仍待验收。
 
 ## 主要来源
 
@@ -20,7 +20,7 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。待发布 Linux 重构的版本源为 `src/tg2cloud/version.py`，产品仍为 1.3.0；已发布 Tag 保持旧路径。历史验收按原版本和日期理解，不作为当前全链路通过的承诺；当前线上 helper pin 尚不包含本地新布局。
+本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，产品为 1.3.0；三个入口固定到已公开且通过 CI 的新布局辅助提交，业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
 
 ## 文档与软件版本分别维护
 

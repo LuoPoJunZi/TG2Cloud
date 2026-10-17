@@ -345,17 +345,12 @@ class StandaloneBootstrapTests(unittest.TestCase):
             prefix = "https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/" + self.pin + "/"
             self.assertTrue(url.startswith(prefix), "helper must not use main or the payload commit")
             name = url.removeprefix(prefix)
-            self.assertIn(name, {
-                "scripts/__init__.py", "scripts/vps_runtime.py", "scripts/vps_installer.py",
-                "scripts/lib/deployer_products.py", "scripts/lib/domain_proxy.py", "scripts/lib/vps_resources.py", "scripts/lib/proxy_maintenance.py",
-                "scripts/lib/__init__.py",
-                "payload_clouddrive2/app/__init__.py", "payload_clouddrive2/app/version.py",
-            })
+            self.assertIn(name, json.loads((ROOT / "packaging/bootstrap-manifest.json").read_text())["files"])
             if missing_helper:
                 raise OSError("offline fixture: helper unavailable")
             from payload_fixture import historical_file
             data = historical_file(self.pin, name)
-            if name == "payload_clouddrive2/app/version.py":
+            if name == "src/tg2cloud/version.py":
                 # The fixture represents the pinned helper revision, not a
                 # future product version in the local working tree.
                 data = version if version is not None else f'VERSION = "{self.helper_version}"\n'.encode()
@@ -387,7 +382,8 @@ class StandaloneBootstrapTests(unittest.TestCase):
             })
             if os.name == "posix":
                 self.assertEqual(marker.stat().st_mode & 0o777, 0o600)
-            self.assertEqual(len(self.urls), 12)
+            helpers = json.loads((ROOT / "packaging/bootstrap-manifest.json").read_text())["files"]
+            self.assertEqual(len(self.urls), 2 + len(helpers))
             self.assertFalse(any("/main/" in url or "/heads/" in url for url in self.urls))
 
     def test_rc_draft_bad_tag_and_commit_stop_before_helpers(self):
@@ -1151,7 +1147,7 @@ export -f python3
                 if bootstrap_exit:
                     self.assertFalse((fixture / "cli-args").exists())
                 else:
-                    self.assertEqual((fixture / "cli-args").read_text().splitlines(), ["-B", "-m", "scripts.vps_installer", "--edition", "clouddrive2", "--check"])
+                    self.assertEqual((fixture / "cli-args").read_text().splitlines(), ["-B", "scripts/run_source.py", "install", "--edition", "clouddrive2", "--check"])
 
     def test_help_without_root_or_qt(self):
         import sys

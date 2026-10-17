@@ -647,7 +647,7 @@ class MainBootstrapTests(unittest.TestCase):
         embedded = content.split("<<'PY' &\n", 1)[1].split("\nPY\n", 1)[0]
         ast.parse(embedded)
         self.assertNotIn("/main/", embedded)
-        self.assertIn('"scripts/lan_installer.py"', embedded)
+        self.assertIn("'src/tg2cloud/deployment/proxy/lan.py'", embedded)
         self.assertIn("trap cancel INT TERM HUP", content)
 
     def test_bootstrap_downloads_exact_pin_and_bounded_allowlisted_sources(self):
@@ -667,8 +667,10 @@ class MainBootstrapTests(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as private, patch("sys.argv", ["bootstrap", private, pin]), patch("sys.stdout", io.StringIO()), patch("urllib.request.build_opener", return_value=Mock(open=Mock(side_effect=fetch))):
             exec(compile(embedded, "LAN bootstrap", "exec"), {})  # noqa: S102 - repo-owned code, mocked networking
-            self.assertTrue((Path(private) / "scripts/lan_installer.py").is_file())
-        self.assertEqual(len(urls), 11)
+            self.assertTrue((Path(private) / "src/tg2cloud/deployment/proxy/lan.py").is_file())
+        helpers = json.loads((ROOT / "packaging/bootstrap-manifest.json").read_text())["files"]
+        self.assertEqual({url.rsplit(pin + "/", 1)[1] for url in urls}, set(helpers))
+        self.assertEqual(len(urls), len(helpers))
 
     def test_bootstrap_rejects_failed_or_oversized_downloads_without_fallback(self):
         content = (ROOT / "install-lan.sh").read_text(encoding="utf-8")
@@ -686,7 +688,7 @@ class MainBootstrapTests(unittest.TestCase):
                 self.assertEqual(stopped.exception.code, 2)
                 self.assertEqual(opener.open.call_count, 1)
                 self.assertNotIn("FAKE_DOWNLOAD_SECRET", errors.getvalue())
-                self.assertFalse((Path(private) / "scripts/lan_installer.py").exists())
+                self.assertFalse((Path(private) / "src/tg2cloud/deployment/proxy/lan.py").exists())
 
     @unittest.skipUnless(os.name == "posix", "Linux process substitution and bootstrap cleanup")
     def test_process_substitution_forwards_arguments_exit_and_cleans_own_directory(self):
@@ -718,7 +720,7 @@ export -f python3
                 if bootstrap_exit:
                     self.assertFalse((fixture / "cli-args").exists())
                 else:
-                    self.assertEqual((fixture / "cli-args").read_text().splitlines(), ["-B", "-m", "scripts.lan_installer", "--edition", "clouddrive2", "--lan-ip", IP, "--check"])
+                    self.assertEqual((fixture / "cli-args").read_text().splitlines(), ["-B", "scripts/run_source.py", "lan", "--edition", "clouddrive2", "--lan-ip", IP, "--check"])
 
     def test_lan_entry_imports_only_public_linux_helpers(self):
         tree = ast.parse((ROOT / "src/tg2cloud/deployment/proxy/lan.py").read_text(encoding="utf-8"))

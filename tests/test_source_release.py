@@ -27,7 +27,7 @@ bootstrap_spec.loader.exec_module(bootstrap)
 class SourceReleaseTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        # Validate the actual candidate layout, not HEAD's still-old sources.
+        # Validate public release inputs in a disposable two-commit A/B history.
         # Copy only explicit public runtime/build inputs, never private archives.
         names = set(package.REQUIRED)
         for product in PRODUCTS.values():
@@ -159,11 +159,18 @@ class SourceReleaseTests(unittest.TestCase):
                     package.validate_pins(self.root, commit)
         path.write_bytes(original)
 
-    def test_current_online_entries_are_explicitly_not_ready_for_new_release(self):
-        # Keep the real verified online pins. Only disposable fixtures use the
-        # candidate layout and the two-commit A/B publication sequence above.
+    def test_current_online_entries_match_reviewed_new_helper_layout(self):
         for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
-            self.assertNotEqual((ROOT / name).read_text(encoding="utf-8"), bootstrap.render_entry(ROOT, name))
+            self.assertEqual((ROOT / name).read_text(encoding="utf-8"), bootstrap.render_entry(ROOT, name))
+
+    def test_old_download_list_cannot_pass_new_layout_release_checks(self):
+        path = self.root / "install.sh"
+        path.write_text(path.read_text(encoding="utf-8").replace(
+            "'src/tg2cloud/cli/vps.py'", "'scripts/vps_installer.py'"), encoding="utf-8", newline="\n")
+        self.commit()
+        commit = package.git(self.root, "rev-parse", "HEAD").decode().strip()
+        with self.assertRaisesRegex(ValueError, "stale bootstrap helper layout"):
+            package.validate_pins(self.root, commit)
 
 
 class HistoricalSourceReleaseTests(unittest.TestCase):

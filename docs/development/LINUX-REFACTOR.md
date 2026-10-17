@@ -1,6 +1,6 @@
-# Linux Python + Bash 重构（待发布）
+# Linux Python + Bash 重构（v1.3.0）
 
-本文描述当前工作树，不改变已发布 v1.3.0 或产品版本。Windows 部署器停留在 v1.2.1；历史 Tag、桌面恢复 ZIP、本地归档和用户数据保留。运行支持仍为 Debian/Ubuntu x86_64、rootful Docker；宿主 Python 3.10+，Bot 镜像 Python 3.12。ARM64 和其他 NAS 系统不因源码重排自动获得支持。
+本文描述 v1.3.0 的 Linux 模块化布局。Windows 部署器停留在 v1.2.1；历史版本、桌面恢复 ZIP、本地归档和用户数据保留。运行支持仍为 Debian/Ubuntu x86_64、rootful Docker；宿主 Python 3.10+，Bot 镜像 Python 3.12。ARM64 和其他 NAS 系统不因源码重排自动获得支持。
 
 ## 源码与职责
 
@@ -77,16 +77,16 @@ CloudDrive2 继续临时对象上传、大小检查、改名及最终复验；Op
 
 新格式 `tg2cloud-code-v2:sha256:<摘要>` 递归覆盖 `app/` 的 Python 文件，按完整相对路径排序，部署和运行共用实现。同名子模块、添加、删除或修改均改变指纹。旧平铺包使用原无前缀算法；无标记的未知嵌套代码拒绝验证，指纹本身也不能绕过正式源码基线核对。
 
-保留真实在线 pin `acce0f887c543b6df633727d1769753f328c6601`。根入口本地优先运行新布局，但远程分支仍取原有旧助手；新清单不能搭配旧 pin 直接发布。后续必须：
+v1.3.0 的三个在线入口使用新布局清单和 `scripts/run_source.py`，固定辅助提交 A 为 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`。该提交已公开并通过主分支五个工作流；入口在后续提交 B 更新，辅助文件必须逐字匹配。业务代码仍只来自正式稳定 Release。今后更新必须：
 
 1. 审阅新 helper、递归清单、载荷与历史兼容测试。
 2. 经授权公开辅助代码提交 A，等待远端 CI。仅推送源码整理，不代表在线入口已切换到新助手。
-3. 用 `python3 .github/scripts/prepare_bootstrap.py --directory build/bootstrap-candidate` 生成候选（保留旧 pin，不能直接上线）。将候选的清单和启动命令应用到入口提交 B，pin 指向已验证的 A，不能固定到 B 自身。
-4. 核对 pin 内容与候选 Tag，完成 Docker/WebDAV/测试机验收，再另行授权发布新版本。不移动旧 Tag。
+3. 用 `python3 .github/scripts/prepare_bootstrap.py --directory build/bootstrap-candidate` 生成候选（保留当前 pin，不会自动切换）。将候选的清单和启动命令应用到入口提交 B，pin 指向已验证的 A，不能固定到 B 自身。
+4. 核对 pin 内容与候选 Tag，执行 Docker/WebDAV 检查并明确实机未验收范围，得到发布授权后发布。不移动已有远端 Tag。
 
-源码发布工具严格阻止旧清单或旧 pin 混入新布局。离线测试只在临时 Git 夹具模拟 A/B，不代表远端 CI 或线上下载已验证。
+源码发布工具严格阻止旧清单或不匹配的 pin 混入新布局。离线测试在临时 Git 夹具验证 A/B、失效 pin 和旧清单拒绝；远端 CI、在线下载及实机部署必须分别记录结果。
 
-推送 main 后，仍不改变现有正式 Release 或在线 helper pin。下一版确定版本后，若版本源或辅助代码有变化，应先公开并验证对应的新辅助提交，再更新入口 pin；不要直接使用早期整理提交替代最终版本基线。
+下一版确定版本后，若版本源或辅助代码有变化，应先公开并验证对应的新辅助提交，再更新入口 pin；不要直接使用早期整理提交替代最终版本基线。仅推送 main 不会改变已有正式 Release。
 
 ## 验收范围
 

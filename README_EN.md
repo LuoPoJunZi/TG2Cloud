@@ -50,7 +50,7 @@ This repository evolved from [whyhhh20/TG115](https://github.com/whyhhh20/TG115)
 
 > Current source version: **TG2Cloud v1.3.0**
 >
-> Unreleased on main: the public tree maintains Linux scripts and the shared Bot; frozen desktop sources and desktop-only tests are kept in local recovery archives. Video naming better handles long captions, block quotes and promotional original names. The naming changes are not included in the published v1.3.0 runtime.
+> v1.3.0 includes the modular Linux source layout and improved video naming for long captions, block quotes and promotional original names. Frozen desktop sources and tests remain in historical versions and local recovery archives. Check the [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) for publication status; online installers only deploy official stable releases.
 >
 > **v1.2.1 is the final Windows deployer release.** From v1.3.0, both editions use the Linux VPS and LAN scripts for ongoing maintenance. Fresh installations offer storage recommendations; releases provide a source package and SHA256 checksum. See the [transition and acceptance checklist (Chinese)](docs/development/SCRIPT-FIRST.md).
 
@@ -694,7 +694,7 @@ See the [Security Policy](.github/SECURITY.md) and [Third-Party Components (Chin
 
 ## Local Development and Testing
 
-The working tree contains an unreleased Linux / Python + Bash refactor; the product version remains 1.3.0 and published artifacts are unchanged. See the [layout, compatibility and two-commit helper publication guide](docs/development/LINUX-REFACTOR.md). Public one-line commands retain their previously verified immutable helper pins and do not run unpublished local code.
+The Linux / Python + Bash source lives in `src/tg2cloud/`, with product version 1.3.0. See the [layout, compatibility and two-commit helper publication guide](docs/development/LINUX-REFACTOR.md). Public one-line commands pin an already published, CI-validated helper commit and never run unpublished local code.
 
 ### Repository Layout
 

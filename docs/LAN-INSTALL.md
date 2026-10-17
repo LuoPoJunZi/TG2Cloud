@@ -6,7 +6,7 @@ TG2Cloud 后续以 Linux 脚本为主要维护入口，Windows 部署器停留�
 
 ## 支持范围与边界
 
-当前源码入口为 `python3 scripts/run_source.py lan --help`；公共在线 URL 和原已验证 helper pin 不变。新布局的 CLI 与 VPS 入口共享部署模块，不导入另一个向导；内网 IP 收集和 HTTPS 边界不变。见[待发布重构说明](development/LINUX-REFACTOR.md)。
+当前源码入口为 `python3 scripts/run_source.py lan --help`；公共在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交。CLI 与 VPS 入口共享部署模块，不导入另一个向导；内网 IP 收集和 HTTPS 边界不变。见[Linux 重构说明](development/LINUX-REFACTOR.md)。
 
 - Debian/Ubuntu、x86_64、root、Python 3.10+、Bash、curl（在线入口）、iproute2、CA 证书、时区数据库及可交互终端。
 - 本机默认 rootful Docker Engine 28+、Compose v2；不支持远端 Docker、rootless 或外部 Compose 覆盖。Docker 尚未安装时，由原安装器在最终确认后安装；已安装的旧引擎需要人工升级，脚本不会为此重启 NAS 上的其他容器。
