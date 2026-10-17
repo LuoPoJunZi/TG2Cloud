@@ -20,9 +20,39 @@ spec.loader.exec_module(checks)
 repository_spec = importlib.util.spec_from_file_location("check_repository", ROOT / ".github/scripts/check_repository.py")
 repository = importlib.util.module_from_spec(repository_spec)
 repository_spec.loader.exec_module(repository)
+lock_spec = importlib.util.spec_from_file_location("lock_dependencies", ROOT / ".github/scripts/lock_dependencies.py")
+locks = importlib.util.module_from_spec(lock_spec)
+lock_spec.loader.exec_module(locks)
 
 
 class PythonCheckEntryTests(unittest.TestCase):
+    def test_universal_locks_use_bot_python_not_generator_or_host_cli_runtime(self):
+        with tempfile.TemporaryDirectory() as private:
+            root = Path(private)
+            (root / "pyproject.toml").write_text('[project]\nrequires-python = ">=3.10"\n', encoding="utf-8")
+            (root / "packaging").mkdir()
+            (root / "packaging/Dockerfile").write_text('FROM python:3.12-slim-trixie@sha256:' + "a" * 64 + "\n", encoding="utf-8")
+            with patch.object(locks, "ROOT", root), patch.object(locks.sys, "argv", ["lock_dependencies.py"]), patch.object(locks.subprocess, "run") as run:
+                self.assertEqual(locks.main(), 0)
+            self.assertEqual(run.call_count, 2)
+            for call in run.call_args_list:
+                command = call.args[0]
+                self.assertIn("--universal", command)
+                self.assertIn("--generate-hashes", command)
+                self.assertEqual(command[command.index("--python-version") + 1], "3.12")
+                self.assertEqual(call.kwargs, {"cwd": root, "check": True, "shell": False})
+            self.assertEqual(run.call_args_list[-1].args[0][-2:], ["--constraint", "requirements/bot.lock.txt"])
+
+    def test_lock_generation_unknown_runtime_stops_before_resolution(self):
+        with tempfile.TemporaryDirectory() as private:
+            root = Path(private)
+            (root / "packaging").mkdir()
+            (root / "packaging/Dockerfile").write_text('FROM unknown:latest\n', encoding="utf-8")
+            with patch.object(locks, "ROOT", root), patch.object(locks.sys, "argv", ["lock_dependencies.py"]), patch.object(locks.subprocess, "run") as run:
+                with self.assertRaisesRegex(ValueError, "runtime version"):
+                    locks.main()
+                run.assert_not_called()
+
     def test_full_tests_use_existing_unittest_discovery(self):
         self.assertEqual(checks.commands("test", "all"), [[
             sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-p", "test*.py", "-v",
