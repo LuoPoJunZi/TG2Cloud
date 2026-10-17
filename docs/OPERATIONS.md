@@ -6,6 +6,64 @@
 
 v1.2.1 源码的取消恢复、远端冲突处理、遗留扫描、验证记录和离线备份预检见[任务恢复指南](RECOVERY.md)。已发布 v1.2.0 不自动获得这些新能力；两版的升级回退点不能代替包含 Telegram Session 和网关授权的完整灾难备份。
 
+## 实例管理命令
+
+以 root 登录自己的 Linux 主机后使用已安装的 `manage.sh`，不是在 Git 克隆目录运行。普通用户应先取得管理权限；精简系统不一定安装了 `sudo`，root 不必再加 `sudo`。
+
+| Edition | 安装目录 | Bot 容器 | 网关容器 |
+| --- | --- | --- | --- |
+| CloudDrive2 | `/opt/tg2cloud-clouddrive2` | `tg2cloud-clouddrive2-bot` | `tg2cloud-clouddrive2` |
+| OpenList | `/opt/tg2cloud-openlist` | `tg2cloud-openlist-bot` | `tg2cloud-openlist` |
+
+先做只读状态检查，例如：
+
+```bash
+/opt/tg2cloud-clouddrive2/manage.sh status
+/opt/tg2cloud-clouddrive2/manage.sh check
+```
+
+OpenList 把路径换成 `/opt/tg2cloud-openlist/manage.sh`。子命令含义如下；会写入、重启或删除的项目应先安排维护窗口，不要逐项试跑：
+
+| 子命令 | 影响与 Edition 差异 |
+| --- | --- |
+| `status` | 查看本 Edition 容器及健康状态；不等于 WebDAV 可写。 |
+| `logs` | 查看最近 30 分钟、最多 200 行并持续跟随；OpenList 同时显示网关日志，CloudDrive2 显示 Bot 日志。Ctrl+C 结束查看，不卸载服务。 |
+| `recent-logs` | 仅 OpenList，读取同一时间范围的脱敏日志，不持续跟随。 |
+| `check` / `doctor` | 核对配置、代码指纹及基础心跳；OpenList 另检查管理页响应，不创建远端文件。 |
+| `verify` | 真实创建和清理随机远端测试文件，直接运行时不会追加向导确认。先阅读[验收范围](STORAGE.md#写入验收与成功标记)；推荐按安装指南使用有确认的 `--verify`。 |
+| `restart` | CloudDrive2 仅重启 Bot；OpenList **同时重启网关与 Bot**。不重新加载修改后的环境配置。 |
+| `restart-bot` / `restart-openlist` | 仅 OpenList，分别重启 Bot／网关；重启网关会影响正在使用它的传输。 |
+| `stop` / `start` | CloudDrive2 停止／启动 Bot；OpenList 操作网关和 Bot 两个服务。 |
+| `update` | 用本机已安装 payload 重建 Bot，不下载新版本代码、不替换 `.env`；OpenList 还拉取 Compose 已固定的网关镜像并检查两服务。不是完整的 Release 升级向导。 |
+| `apply-config /absolute/new-config.env` | 备份、预检、应用完整新配置并重建 Bot；失败尝试恢复原配置。不是只应用一个增量字段。 |
+| `backup` | 仅 OpenList，创建业务备份，期间短暂停止网关与 Bot。CloudDrive2 没有同名子命令。 |
+| `backups` | 只读统计本 Edition 升级回退点的数量与占用，不显示其内容。 |
+| `prune-backups N` | **直接删除**旧回退点，按类型各保留最新 N 份，N 为 1～50，默认 5；无额外交互确认，执行前先独立备份。 |
+
+常规日志尽量脱敏，但文件名、聊天内容或第三方输出仍可能包含隐私，导出前须人工核对。不要通过 `cat .env`、公开完整容器环境或贴出 `rclone.conf` 来排查。
+
+## 修改运行配置
+
+先处理已有队列和失败保留任务，尤其不要在有未完成任务时直接切换云盘账号或目标路径。用匹配版本的配置格式准备**完整**新配置，放在实例目录之外的私密绝对路径，限 root 读取；不要写入仓库、Shell 历史或公开日志。
+
+以下命令会重建 Bot 并执行真实写入验收，只在已准备完整配置且同意这些操作后运行：
+
+```bash
+/opt/tg2cloud-clouddrive2/manage.sh apply-config /root/private/new-config.env
+/opt/tg2cloud-clouddrive2/manage.sh check
+/opt/tg2cloud-clouddrive2/manage.sh verify
+```
+
+OpenList 使用对应安装路径。单纯 `restart` 不会应用新环境值；`apply-config` 也不替你在网关后台创建用户或更新密码，两边必须一致。失败后核对旧配置和容器状态，不把“已尝试回退”当作全部恢复成功。
+
+## 升级与备份的操作边界
+
+正式升级统一使用 [VPS](VPS-INSTALL.md)／[LAN](LAN-INSTALL.md)入口，卸载另见[独立卸载指南](UNINSTALL.md)。不要为升级先卸载，或把 `manage.sh update` 当成在线下载新版。
+
+业务回退点位于 `/opt/tg2cloud-clouddrive2-backups` 或 `/opt/tg2cloud-openlist-backups`；部署只统计占用，超过 5GB 提醒，不自动清除。`prune-backups` 仅处理当前 Edition 下的受管 `config-*`、`database-*`、`env-*`、`openlist-state-*` 普通文件，不清理 TG115、下载或云端文件；它与卸载的数据清理模式不同。
+
+第一次升级和实际文件验证之前，不急于删除旧回退点。备份范围、Session 与网关授权缺项、离线快照及恢复预检统一见[备份范围](RECOVERY.md#备份范围必须区分)，共享代理维护见本页下方。备份目录为私密目录，包含配置或授权数据，不能公开上传；不要把“归档可解包”解释为已经验证服务可以恢复。
+
 ## 查看实际运行版本
 
 公网实例先运行公开安装入口的 `--edition clouddrive2 --check`（OpenList 改为 `openlist`），核对实际版本、源码和 HTTPS；内网实例使用 `install-lan.sh` 对应参数。命令全文与安装/升级区别见 [VPS 指南](VPS-INSTALL.md)。`--check` 不执行升级，`manage.sh update` 只重建本地已有 payload；两者都不能替代升级后的实际转存检查。
@@ -17,6 +75,8 @@ v1.2.1 源码的取消恢复、远端冲突处理、遗留扫描、验证记录�
 下载新 EXE 不等于 VPS Bot 已更新。版本较旧时，通过现有重新部署/更新流程升级，并保留现有配置和持久化数据；不要为更新版本卸载实例。服务器版本较新时不自动降级；未安装、Bot 已停止、旧版本无法报告版本或探测失败时明确显示未安装/未获取。容器健康仍不代表 WebDAV 写入验收通过。
 
 ## 部署阶段与失败提示
+
+本节的弹窗及底部日志区域指历史 Windows 部署器；当前 Linux 向导输出终端阶段与结果标记，具体含义见 [VPS 指南](VPS-INSTALL.md#https-续做与验收)，不提供同名弹窗。
 
 进度区域显示实际执行阶段，完整过程保留在底部运行日志。基础部署与 HTTPS 是两段独立操作，不使用猜测的百分比。阶段包含 SSH、基础环境、上传资源、运行环境、存储服务、Bot、基础健康检查，以及 HTTPS 环境、ACME 引导、证书与最终自检。
 
@@ -33,7 +93,7 @@ Bot `/doctor`（运行诊断）显示 OpenList 最近实际探测时间、认证
 
 ## 共享 HTTPS 代理维护
 
-在“HTTPS 管理入口”对话框底部选择“维护工具”。两 Edition 共用 `/opt/tg2cloud-proxy`；Edition 的业务备份不包含此目录，代理必须单独备份。
+以下“维护工具”按钮对应历史 Windows 界面，不是已提供的新终端子命令。两 Edition 共用 `/opt/tg2cloud-proxy`；Edition 的业务备份不包含此目录，代理必须单独备份。
 
 | 操作 | 范围与限制 |
 | --- | --- |
@@ -66,3 +126,16 @@ Let's Encrypt 已于 2025 年 6 月 4 日停止证书到期提醒邮件；填写
 ## 公网检查与验收边界
 
 VPS 本机 HTTPS 自检不能证明公网可访问或后端端口在外部网络不可达。请从独立网络验证 HTTPS、HTTP 跳转、`/dav` 与 `/dav/` 阻断，以及 IP 加管理端口不可达。参见 [HTTPS 验收清单](development/DOMAIN-HTTPS-ACCEPTANCE.md)。测试不得复用生产 Bot 凭据，不得把网关通过当成 Telegram/真实网盘转存全链路通过。
+
+## 常见问题索引
+
+| 现象 | 先检查什么 |
+| --- | --- |
+| Bot 一直排队 | 用 `/doctor` 区分目的端未就绪、手动暂停、资源不足或采样过期；`/resume` 不绕过安全线。预算与失败处理见[恢复指南](RECOVERY.md#磁盘保护与诊断)。 |
+| 容器 healthy 仍不能上传 | healthy 只说明基础心跳；按[网关配置与验收](STORAGE.md)检查挂载、专用用户和实际写入，不重复重装。 |
+| 401 / 403 / 429 | 核对实际 WebDAV 用户、权限或限流，不当成 SSH／证书故障；限流冷却见本页 OpenList 小节，任务重试见[恢复指南](RECOVERY.md#上传中断或远端冲突)。 |
+| `lookup tg2cloud-clouddrive2` | 这是容器内地址解析／网络问题，不是管理域名或密码错误。先核对所选 Compose 网络、网关与 Bot 状态，不把地址改成公网 URL。未知端口占用先人工核对，当前 CLI 不提供可随意套用的 `--repair-network` 参数。 |
+| CloudDrive2 缺少 `/dev/fuse` | 核对 VPS／虚拟机是否支持 FUSE；不要仅为通过检查改成特权 Bot，OpenList 与 CloudDrive2 的环境要求不同。 |
+| 磁盘看起来够但部署失败 | 对照[资料清单](填写信息清单.md)检查安装盘、Docker 数据盘、inode、已有下载、缓存和备份，不能只看总容量。 |
+| 管理页打不开 | 公网先查 [DNS、80/443 与 HTTPS 续做](VPS-INSTALL.md#https-续做与验收)，内网查[本机地址与入口](LAN-INSTALL.md#失败后如何处理)。管理页访问问题与 Bot WebDAV 认证不是同一层。 |
+| 单文件大于预算／担心逐个确认 | 流式和任务状态见[Bot 使用指南](BOT-USAGE.md)，验证含义见[恢复指南](RECOVERY.md#验证等级与本地清理)，不需要逐个进行旧式人工确认。 |

@@ -65,6 +65,18 @@ python3 .github/scripts/build_payload.py --edition all --directory build/local-c
 
 载荷输出必须是新路径。Docker 从生成的 `build/local-contexts/<edition>` 构建，不直接在 `packaging/` 构建。锁文件默认复用现有固定版本，只有明确升级依赖才使用 `--upgrade`；不单独手改两份清单。
 
+## 开发与静态安全检查
+
+完整回归、统一检查入口与隔离开发环境见[贡献指南](../../.github/CONTRIBUTING.md)，不在用户首页重复列出。准备好开发锁文件中的工具后，还可运行以下只检查、不修复或部署的命令：
+
+```bash
+python3 -m bandit -q -r src scripts
+python3 -m pip_audit -r requirements/bot.lock.txt
+python3 -m pip_audit -r requirements/dev.lock.txt
+```
+
+依赖漏洞审计需要访问外部漏洞服务，可能受网络或服务限流影响；命令存在不代表本轮已经执行或所有依赖均无风险。不要为了文档整理升级运行依赖或自动应用修复。
+
 ## 已有实例和恢复边界
 
 新代码部署为 `app/tg2cloud/`，外层 `app/` 保持不变；旧 `python -m app.healthcheck`、`app.deployment_check`、`app.backup_database` 等命令通过薄入口转发。两个 `/opt/tg2cloud-<edition>`、容器/网络、`.env`、rclone、`data/tg115.db`、`data/bot.session`、downloads、日志、网关及共享代理路径不变。不新增数据库结构变更、Session、环境变量，不重算旧预算。

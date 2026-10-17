@@ -1,5 +1,7 @@
 # TG2Cloud v1.1.1：小白使用说明
 
+> 历史 Windows 界面教程，保留当时的操作背景，最后维护的 EXE 为 v1.2.1。当前 Linux 安装请从[仓库文档目录](README.md)开始；网关配置见 [STORAGE](STORAGE.md)，当前 Bot 命令见 [BOT-USAGE](BOT-USAGE.md)。下文按钮和部分旧状态文案不应视为新终端向导界面。
+
 > TG2Cloud v1.1.1；适用电脑：Windows 10 / Windows 11 64 位；适用 VPS：Ubuntu 或 Debian 64 位；推荐 VPS：2 核 CPU、4GB 内存、50GB 硬盘。
 
 ---

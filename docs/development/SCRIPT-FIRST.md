@@ -23,6 +23,25 @@
 
 v1.2.1 的 SHA256SUMS 校验两个 EXE。后续脚本版的 SHA256SUMS 校验该次 Actions 生成的 `TG2Cloud-vX.Y.Z-source.tar.gz`。当前在线向导仍使用 HTTPS 下载固定 commit 的源码，不读取这个资产校验清单；不能宣称已为在线向导增加包签名或额外内容校验。
 
+### 手动下载文件的校验
+
+从同一个正式 Release 下载源码归档和 `SHA256SUMS.txt`，保存在同一目录后，在 Linux 中检查：
+
+```bash
+sha256sum -c SHA256SUMS.txt
+```
+
+这校验手动下载的文件是否与该清单一致，不是数字签名，也不替代对仓库来源的信任。不要把 v1.3.0 的源码校验清单用于 v1.2.1 EXE。
+
+历史 Windows EXE 只从 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 获取。下载对应 Edition 和该版本自己的清单，在下载目录用 PowerShell 计算所选文件的 SHA256 并逐字核对清单：
+
+```powershell
+Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
+Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
+```
+
+只下载一个 Edition 时运行对应一行。历史 EXE 没有商业代码签名，SmartScreen／安全软件可能提示未知发布者；不要为运行它关闭系统安全防护，不运行来源不明或校验不一致的文件。当前实例已升级时不要用旧 EXE 覆盖部署；历史界面见[旧版教程](../README-小白使用说明.md)。
+
 ## 桌面源码保留和备份
 
 清理前应生成一个仓库外的完整公共源码 ZIP，包含两个部署器、共享模块、载荷、品牌、Windows 构建资源、固定依赖、测试、许可证、恢复说明和逐文件 SHA256 清单。不要包含本地凭据、虚拟环境或运行数据。

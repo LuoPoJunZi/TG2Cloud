@@ -81,7 +81,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 | 主题 | 仓库文档 |
 | --- | --- |
 | 安装与配置 | [公网 VPS 安装 / 升级](docs/VPS-INSTALL.md) · [局域网 / NAS 安装](docs/LAN-INSTALL.md) · [填写信息清单](docs/填写信息清单.md) |
-| 运行与故障排查 | [日志、状态与 HTTPS 维护](docs/OPERATIONS.md) · [Bot 命令、任务恢复与备份](docs/RECOVERY.md) |
+| 网关与首次转存 | [CloudDrive2 / OpenList 配置与验收](docs/STORAGE.md) · [Bot 使用、菜单与命令](docs/BOT-USAGE.md) |
+| 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) |
 | 升级验收 | [v1.3.0 CloudDrive2 升级记录与未验证范围](docs/development/V130-ACCEPTANCE.md) |
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |

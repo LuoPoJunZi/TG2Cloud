@@ -1,5 +1,6 @@
 """Offline repository contracts; no build, deployment, or personal data."""
 
+import ast
 import importlib.util
 import io
 import re
@@ -245,6 +246,116 @@ class RepositoryContractTests(unittest.TestCase):
         prepare, downstream = release.split("  linux-validation:\n", 1)
         self.assertIn(".github/scripts/check_repository.py", prepare)
         self.assertIn("    needs: prepare", downstream)
+
+
+class UserDocumentationTests(unittest.TestCase):
+    """Repository guides stand alone and document real public operations."""
+
+    GUIDES = (
+        "README.md", "README_EN.md", "docs/README.md", "docs/BOT-USAGE.md",
+        "docs/STORAGE.md", "docs/OPERATIONS.md", "docs/RECOVERY.md",
+        "docs/VPS-INSTALL.md", "docs/LAN-INSTALL.md", "docs/填写信息清单.md",
+        "docs/README-小白使用说明.md", "docs/development/REPOSITORY.md",
+        "docs/development/SCRIPT-FIRST.md", "docs/development/LINUX-REFACTOR.md",
+    )
+
+    def test_readmes_and_index_offer_standalone_bot_and_storage_guides(self):
+        for name in ("BOT-USAGE.md", "STORAGE.md"):
+            self.assertIn(f"]({name})", (ROOT / "docs/README.md").read_text(encoding="utf-8"))
+            for readme in ("README.md", "README_EN.md"):
+                self.assertIn(f"](docs/{name})", (ROOT / readme).read_text(encoding="utf-8"))
+        for name in ("VPS-INSTALL.md", "LAN-INSTALL.md", "RECOVERY.md"):
+            text = (ROOT / "docs" / name).read_text(encoding="utf-8")
+            for target in ("BOT-USAGE.md", "STORAGE.md"):
+                self.assertIn(f"]({target})", text)
+
+    def test_guide_links_and_local_heading_anchors_exist(self):
+        for name in self.GUIDES:
+            source = ROOT / name
+            text = source.read_text(encoding="utf-8")
+            for href in re.findall(r"\]\(([^)]+)\)", text):
+                if re.match(r"(?:https?://|mailto:)", href):
+                    continue
+                relative, _, fragment = href.partition("#")
+                target = (source.parent / unquote(relative)).resolve() if relative else source
+                with self.subTest(source=name, link=href):
+                    self.assertTrue(target.is_relative_to(ROOT))
+                    self.assertTrue(target.is_file())
+                    if fragment:
+                        headings = re.findall(r"^#{1,6}\s+(.+)$", target.read_text(encoding="utf-8"), re.MULTILINE)
+                        anchors = {re.sub(r"[^\w\s-]", "", heading.strip().lower()).replace(" ", "-")
+                                   for heading in headings}
+                        self.assertIn(unquote(fragment), anchors)
+
+    def test_repository_navigation_does_not_depend_on_website_articles_or_source(self):
+        for name in self.GUIDES:
+            source = ROOT / name
+            links = re.findall(r'\]\(([^)]+)\)|\bhref="([^"]+)"', source.read_text(encoding="utf-8"))
+            for markdown, html in links:
+                href = markdown or html
+                with self.subTest(source=name, link=href):
+                    if href.startswith("https://tg2cloud.pages.dev/"):
+                        self.assertEqual(href, "https://tg2cloud.pages.dev/")
+                    elif not re.match(r"(?:https?://|mailto:|#)", href):
+                        target = (source.parent / unquote(href.split("#", 1)[0])).resolve()
+                        self.assertFalse(target.is_relative_to(ROOT / "website"))
+
+    def test_documented_bot_commands_are_handled_and_include_recovery(self):
+        tree = ast.parse((ROOT / "src/tg2cloud/telegram/commands.py").read_text(encoding="utf-8"))
+        supported = set()
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Compare) or not isinstance(node.left, ast.Name) or node.left.id != "command":
+                continue
+            for value in node.comparators:
+                try:
+                    literals = ast.literal_eval(value)
+                except (ValueError, TypeError):
+                    continue
+                supported.update([literals] if isinstance(literals, str) else literals)
+        text = (ROOT / "docs/BOT-USAGE.md").read_text(encoding="utf-8")
+        documented = set(re.findall(r"`(/[a-z]+)(?=[\s`])", text))
+        self.assertTrue(documented)
+        self.assertLessEqual(documented, supported)
+        self.assertLessEqual({"/restart", "/recover", "/search", "/tasks", "/stream", "/orphans"}, documented)
+        views = ast.parse((ROOT / "src/tg2cloud/telegram/views.py").read_text(encoding="utf-8"))
+        menu = next(ast.literal_eval(node.value) for node in views.body if isinstance(node, ast.Assign)
+                    and any(isinstance(target, ast.Name) and target.id == "BOT_MENU_COMMANDS" for target in node.targets))
+        for command, description in menu:
+            self.assertRegex(text, rf"(?m)^/{command}\s+{re.escape(description)}$")
+
+    def test_storage_guide_uses_actual_edition_addresses_without_importing_bot(self):
+        tree = ast.parse((ROOT / "src/tg2cloud/deployment/profiles.py").read_text(encoding="utf-8"))
+        text = (ROOT / "docs/STORAGE.md").read_text(encoding="utf-8")
+        editions = set()
+        for node in tree.body:
+            if not isinstance(node, ast.Assign) or not isinstance(node.value, ast.Call):
+                continue
+            if not isinstance(node.value.func, ast.Name) or node.value.func.id != "ProductProfile":
+                continue
+            values = {item.arg: ast.literal_eval(item.value) for item in node.value.keywords
+                      if item.arg in {"key", "webdav_url", "install_dir"}}
+            editions.add(values["key"])
+            for key in ("webdav_url", "install_dir"):
+                self.assertIn("`" + values[key] + "`", text)
+        self.assertEqual(editions, {"clouddrive2", "openlist"})
+
+    def test_absolute_manage_examples_name_supported_subcommands(self):
+        text = (ROOT / "docs/OPERATIONS.md").read_text(encoding="utf-8")
+        commands = {}
+        for edition in ("clouddrive2", "openlist"):
+            source = (ROOT / "packaging/hooks" / edition / "manage.sh").read_text(encoding="utf-8")
+            labels = re.findall(r"^  ([a-z][a-z0-9-]*(?:\|[a-z][a-z0-9-]*)*)\)", source, re.MULTILINE)
+            commands[edition] = {part for label in labels for part in label.split("|")}
+        examples = re.findall(r"/opt/tg2cloud-(clouddrive2|openlist)/manage\.sh ([a-z-]+)", text)
+        self.assertTrue(examples)
+        for edition, command in examples:
+            self.assertIn(command, commands[edition])
+        for command in ("backup", "recent-logs", "restart-bot", "restart-openlist"):
+            self.assertIn(command, commands["openlist"])
+            self.assertNotIn(command, commands["clouddrive2"])
+            self.assertIn("`" + command, text)
+        self.assertIn("直接删除", text)
+        self.assertIn("1～50", text)
 
 
 class PublicFileTests(unittest.TestCase):

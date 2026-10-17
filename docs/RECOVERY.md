@@ -2,6 +2,8 @@
 
 本页恢复能力自 **v1.2.1** 提供，**v1.3.0** 继续保留；v1.2.0 EXE 不含这些改动。下载入口或重启旧容器不会自动升级 Bot；v1.3.0 起使用匹配的 Linux 脚本维护，旧 Windows EXE 停留在 v1.2.1。正式上线前应先在专用环境完成[维护版本验收](development/RELIABILITY-ACCEPTANCE.md)。
 
+完整命令表和日常状态见 [Bot 使用指南](BOT-USAGE.md)；网关配置与首次写入验收见 [STORAGE](STORAGE.md)，本页集中说明恢复、安全约束、命名和备份，不重复安装流程。
+
 ## 取消后重新转存
 
 已发布 v1.3.0 的 Linux 源码拆分到 `src/tg2cloud`；此次重构不改数据库结构、任务状态或备份格式，继续保留 `data/tg115.db`、`data/bot.session` 和旧 `app.backup_database` / `app.backup_bundle` 命令。CloudDrive2 本次实机迁移确认历史数据及 Session 授权保留，用户确认使用验收通过；不代表已经完成失败回退或灾难恢复，见[验收记录](development/V130-ACCEPTANCE.md)。旧版本回退仍须使用匹配源码和已校验快照，不能直接用新目录覆盖旧实例。

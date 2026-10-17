@@ -81,7 +81,8 @@ Browse the repository guides by topic below. Most are in Chinese; see the [full 
 | Topic | Repository documents |
 | --- | --- |
 | Installation and configuration | [Public VPS installation / upgrade](docs/VPS-INSTALL.md) · [LAN / NAS installation](docs/LAN-INSTALL.md) · [Information checklist](docs/填写信息清单.md) |
-| Operation and troubleshooting | [Logs, status and HTTPS maintenance](docs/OPERATIONS.md) · [Bot commands, task recovery and backup](docs/RECOVERY.md) |
+| Gateway and first transfer | [CloudDrive2 / OpenList configuration and verification](docs/STORAGE.md) · [Bot usage, menus and commands](docs/BOT-USAGE.md) |
+| Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) |
 | Upgrade acceptance | [v1.3.0 CloudDrive2 upgrade evidence and untested scenarios](docs/development/V130-ACCEPTANCE.md) |
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |

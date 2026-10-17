@@ -122,6 +122,8 @@ TG2CLOUD_LAN_BASE=OK；TG2CLOUD_LAN_ENTRY=OK；HTTPS=NOT_APPLICABLE
 
 从另一台局域网电脑访问管理页，配置自己的云存储，再建立与 Bot 保存信息一致的专用 WebDAV 用户。云盘 Token、Cookie 和 OAuth 仍只在自己的 CloudDrive2/OpenList 中填写，脚本不收集。
 
+两版后台用户、目录与验收阶段见[存储网关指南](STORAGE.md)；安装后的命令与实际转存见 [Bot 使用指南](BOT-USAGE.md)。不需要为了这些后台配置重新安装。
+
 向导在基础安装与内网入口检查通过后、显示凭据和询问 WebDAV 写入验收之前，再次给出完整管理地址，避免被前面的镜像构建日志淹没。例如：
 
 ```text
