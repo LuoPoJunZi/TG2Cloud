@@ -8,6 +8,8 @@ TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v
 
 ## 支持范围
 
+当前源码开发入口已迁至 `src/tg2cloud`；本地可运行 `python3 scripts/run_source.py install --help`。在线一键命令 URL 不变，仍使用原已验证 helper pin 和正式稳定 payload；新布局尚未发布，不会因本地改动更新 VPS。迁移与本地预检说明见[Linux 重构](development/LINUX-REFACTOR.md)。
+
 | 场景 | 行为 |
 | --- | --- |
 | 全新 VPS | 选择 Edition，收集信息，预检，确认后安装 Docker 环境、基础服务及强制 HTTPS |

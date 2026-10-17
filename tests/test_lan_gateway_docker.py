@@ -14,8 +14,8 @@ import unittest
 import uuid
 from pathlib import Path
 
-from deployer_products import PRODUCTS
-from scripts import lan_installer as lan
+from tg2cloud.deployment.profiles import PRODUCTS
+from tg2cloud.deployment.proxy import lan
 
 ENABLED = (sys.platform.startswith("linux") and shutil.which("docker")
            and os.environ.get("TG2CLOUD_TEST_LAN_DOCKER") == "1")

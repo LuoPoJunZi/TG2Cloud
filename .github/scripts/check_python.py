@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess  # nosec B404
 import sys
 from pathlib import Path
@@ -10,11 +11,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CLI_TESTS = (
     "test_vps_installer.py", "test_lan_installer.py", "test_uninstaller.py",
-    "test_proxy_host_compat.py", "test_repository.py", "test_storage_wizard.py", "test_source_release.py",
+    "test_proxy_host_compat.py", "test_repository.py", "test_storage_wizard.py", "test_source_release.py", "test_layout_contracts.py",
 )
 CLI_PATHS = (
-    "scripts", "deployer_products.py", "domain_proxy.py", "proxy_maintenance.py",
-    "vps_resources.py", ".github/scripts/check_python.py", ".github/scripts/check_repository.py",
+    "src/tg2cloud/cli", "src/tg2cloud/deployment", "src/tg2cloud/__init__.py",
+    "src/tg2cloud/version.py", "src/tg2cloud/config.py", "scripts",
+    ".github/scripts/check_python.py", ".github/scripts/check_repository.py",
     ".github/scripts/source_release.py",
     *(f"tests/{name}" for name in CLI_TESTS),
     "tests/test_lan_gateway_docker.py",
@@ -26,7 +28,7 @@ def source_paths(scope: str) -> tuple[str, ...]:
         return CLI_PATHS
     return (
         *(path.name for path in sorted(ROOT.glob("*.py"))),
-        ".github/scripts", "payload_clouddrive2/app", "scripts", "tests", "legacy",
+        ".github/scripts", "src", "packaging/compat", "scripts", "tests",
     )
 
 
@@ -63,7 +65,9 @@ def main(argv: list[str] | None = None) -> int:
         print("+ " + " ".join(command), flush=True)
         # Commands use the current Python, fixed module names and validated choices;
         # no user-provided command text is executed by a shell.
-        result = subprocess.run(command, cwd=ROOT, check=False, shell=False)  # nosec B603
+        environment = dict(os.environ)
+        environment["PYTHONPATH"] = str(ROOT / "src") + os.pathsep + environment.get("PYTHONPATH", "")
+        result = subprocess.run(command, cwd=ROOT, check=False, shell=False, env=environment)  # nosec B603
         if result.returncode:
             return result.returncode
     return 0

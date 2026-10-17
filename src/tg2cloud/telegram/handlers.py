@@ -1,0 +1,183 @@
+from __future__ import annotations
+
+import asyncio
+from pathlib import Path
+from types import SimpleNamespace
+from typing import Any
+
+from telethon import events
+
+from tg2cloud.domain.naming import (
+    album_file_name,
+    caption_title,
+    safe_file_name,
+    video_file_name,
+)
+from tg2cloud.domain.states import FAILED_STATES
+from tg2cloud.telegram.views import format_bytes
+
+
+class TelegramHandlers:
+    def _register_handlers(self) -> None:
+        self.client.add_event_handler(self._on_message, events.NewMessage(incoming=True))
+        self.client.add_event_handler(self._on_callback, events.CallbackQuery())
+        self.client.add_event_handler(self._on_album, events.Album())
+
+    def _authorized(self, sender_id: int | None) -> bool:
+        return sender_id == self.settings.allowed_user_id
+
+    @staticmethod
+    def _media_key(message: Any) -> str | None:
+        document = getattr(message, "document", None)
+        document_id = getattr(document, "id", None)
+        if document_id is not None:
+            return f"document:{document_id}"
+        photo = getattr(message, "photo", None)
+        photo_id = getattr(photo, "id", None)
+        if photo_id is not None:
+            return f"photo:{photo_id}"
+        return None
+
+    async def _on_callback(self, event: events.CallbackQuery.Event) -> None:
+        if (
+            not self._authorized(event.sender_id)
+            or getattr(event, "chat_id", None) != self.settings.allowed_user_id
+        ):
+            self.log.warning("忽略未授权或非私聊按钮操作")
+            await event.answer("无权执行这个操作。", alert=True)
+            return
+        await self._handle_callback(event)
+
+    async def _on_album(self, event: events.Album.Event) -> None:
+        if (not self._authorized(event.sender_id) or not event.is_private
+                or event.chat_id != self.settings.allowed_user_id):
+            return
+        messages = event.messages
+        if not messages or not event.grouped_id or any(
+            message.sender_id != event.sender_id or message.chat_id != event.chat_id
+            or message.grouped_id != event.grouped_id or message.out
+            for message in messages
+        ):
+            return
+        if len(messages) > 100:
+            await event.reply("媒体组过大，未按组接收；请分组重发并核对任务列表。")
+            return
+        # Telegram updates may arrive out of order or be repeated. Use only this
+        # received group, ordered by message id; never fetch channel history.
+        messages = sorted({message.id: message for message in messages}.values(), key=lambda item: item.id)
+        title = ""
+        if len(messages) > 1:
+            # Prefer the fuller visible description when an earlier group member
+            # only carries a short category label. Existing tasks remain unchanged.
+            titles = (caption_title(message.raw_text or "", message.entities) for message in messages)
+            title = max(titles, key=len, default="")
+        numbers = {"视频": 0, "图片": 0}
+        deliveries = []
+        for message in messages:
+            file = message.file
+            mime = str(getattr(file, "mime_type", ""))
+            kind = ("视频" if getattr(message, "video", None) or mime.startswith("video/")
+                    else "图片" if getattr(message, "photo", None) or mime.startswith("image/") else "")
+            name = None
+            if title and kind and file:
+                numbers[kind] += 1
+                extension = file.ext or Path(file.name or "").suffix or (".jpg" if kind == "图片" else ".bin")
+                name = album_file_name(title, kind, numbers[kind], extension)
+            proxy = SimpleNamespace(sender_id=message.sender_id, chat_id=message.chat_id,
+                                    is_private=True, message=message, raw_text=message.raw_text,
+                                    reply=message.reply)
+            deliveries.append(self._on_message(proxy, album_name=name, album_delivery=True))
+        # Each ingestion writes its SQLite task before awaiting the reply. A slow
+        # reply for one photo must not delay registration of the other members.
+        results = await asyncio.gather(*deliveries, return_exceptions=True)
+        for message, result in zip(messages, results):
+            if isinstance(result, Exception):
+                self.log.error("媒体组消息 %s 接收或回复失败；请核对任务列表后重发。", message.id)
+
+    async def _on_message(self, event: events.NewMessage.Event, *,
+                          album_name: str | None = None, album_delivery: bool = False) -> None:
+        if not self._authorized(event.sender_id) or not getattr(event, "is_private", False):
+            self.log.warning("忽略未授权或非私聊消息")
+            return
+
+        message = getattr(event, "message", None)
+        if getattr(message, "grouped_id", None):
+            if not album_delivery:
+                # Album aggregates split updates for ~0.5 s. Keep a fallback for
+                # singleton/late groups so an isolated grouped video is not lost.
+                await asyncio.sleep(2)
+            if self.db.has_message(int(event.chat_id), int(message.id)):
+                return
+        text = (event.raw_text or "").strip()
+        if text.startswith("/") and not album_delivery:
+            await self._handle_command(event, text)
+            return
+
+        if not message.media or not message.file:
+            await event.reply("这条消息没有可下载的文件。请转发视频或文档。")
+            return
+        file_size = int(message.file.size or 0)
+        if file_size <= 0:
+            await event.reply("无法读取文件大小，任务没有进入队列。")
+            return
+        snapshot = getattr(self, "snapshot", None)
+        if snapshot and (snapshot.disk_free <= self.settings.min_free_disk_bytes or any(
+            free <= self.settings.min_free_disk_bytes for _, free in snapshot.filesystems
+        )):
+            await event.reply("磁盘空间触及安全线，暂不接收新文件。请释放空间后重新转发；已有任务记录保留。")
+            return
+        fallback = f"telegram-{message.id}{message.file.ext or '.bin'}"
+        file_name = safe_file_name(message.file.name or "", fallback)
+        if getattr(message, "video", None) or str(getattr(message.file, "mime_type", "")).startswith("video/"):
+            file_name = video_file_name(message.file.name or "", text, fallback, getattr(message, "entities", ()))
+        if album_name:
+            file_name = album_name
+        task, created = self.db.create_task(
+            chat_id=int(event.chat_id),
+            message_id=int(message.id),
+            sender_id=int(event.sender_id),
+            media_key=self._media_key(message),
+            file_name=file_name,
+            file_size=file_size,
+            original_file_name=safe_file_name(message.file.name or "", fallback),
+        )
+        if not created:
+            if task["state"] == "cancelled":
+                await self._offer_recovery(event, int(task["id"]), message_id=int(message.id))
+                return
+            await event.reply(
+                f"这个文件已经登记过。\n{self._format_task(task)}", buttons=self._task_buttons(task)
+            )
+            return
+        await event.reply(
+            "✅ 已接收并持久化\n"
+            f"任务：#{task['id']}\n"
+            f"文件：{file_name}\n"
+            f"大小：{format_bytes(file_size)}\n"
+            "状态：在排队\n"
+            "无需重新转发，系统会自动处理。"
+        )
+
+    async def _watch_loop(self) -> None:
+        while not self._stop.is_set():
+            for task_id, message in list(self._watch_messages.items()):
+                task = self.db.get(task_id)
+                if task is None:
+                    self._watch_messages.pop(task_id, None)
+                    continue
+                text = self._format_task(task, verbose=True)
+                try:
+                    if text != getattr(message, "raw_text", None):
+                        await asyncio.wait_for(message.edit(text), timeout=5)
+                except Exception:  # noqa: BLE001 - Telegram progress is best-effort
+                    self._watch_messages.pop(task_id, None)
+                    self.log.warning("进度订阅更新失败，已停止订阅 #%s", task_id)
+                if task["state"] in {*FAILED_STATES, "completed", "confirmed", "cancelled"}:
+                    self._watch_messages.pop(task_id, None)
+            await asyncio.sleep(5)
+
+    async def _notify(self, message: str) -> None:
+        try:
+            await self.client.send_message(self.settings.allowed_user_id, message)
+        except Exception:
+            self.log.exception("发送 Bot 通知失败")

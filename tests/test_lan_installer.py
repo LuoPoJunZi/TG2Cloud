@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import ast
-import importlib.util
 import io
 import json
 import os
@@ -18,14 +17,20 @@ from contextlib import ExitStack, nullcontext
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
-from deployer_products import PRODUCTS
-from scripts import lan_installer as lan
-from scripts import vps_installer as vps
-from scripts.vps_runtime import SafeLog
+import tg2cloud.cli.terminal as tgdep_terminal
+import tg2cloud.deployment.install as tgdep_install
+import tg2cloud.deployment.instances as tgdep_instances
+import tg2cloud.deployment.payload as tgdep_payload
+import tg2cloud.deployment.preflight as tgdep_preflight
+import tg2cloud.deployment.releases as tgdep_releases
+import tg2cloud.deployment.upgrade as tgdep_upgrade
+from tg2cloud.deployment.host import SafeLog
+from tg2cloud.deployment.profiles import PRODUCTS
+from tg2cloud.deployment.proxy import lan
 
 ROOT = Path(__file__).resolve().parents[1]
 IP = "192.168.26.5"
-RELEASE = vps.Release("v" + PRODUCTS["clouddrive2"].app_version, "a" * 40)
+RELEASE = tgdep_releases.Release("v" + PRODUCTS["clouddrive2"].app_version, "a" * 40)
 
 
 def interface(address=IP, *, name="eth0", flags=None, prefix=24):
@@ -34,7 +39,7 @@ def interface(address=IP, *, name="eth0", flags=None, prefix=24):
 
 
 def instance(product, *, present=True, version=None):
-    return vps.Instance(product, Path(product.install_dir), present,
+    return tgdep_instances.Instance(product, Path(product.install_dir), present,
                         version or (product.app_version if present else ""), present,
                         "gateway@sha256:" + "b" * 64 if present else "",
                         {"BOT_TOKEN": "FAKE_OFFLINE_SECRET", "TG2CLOUD_STORAGE_BACKEND": product.key} if present else {},
@@ -88,7 +93,7 @@ class AddressEnvironmentTests(unittest.TestCase):
         for responses in ([(0, ""), (1, "")], [(0, ""), (0, ""), (0, '"unix:///var/run/docker.sock"'), (0, '{"version":"28.0.0","security":[]}')]):
             session = Mock()
             session.run.side_effect = responses
-            with patch.object(vps, "validate_host") as host, patch.dict(os.environ, {}, clear=True):
+            with patch.object(tgdep_preflight, "validate_host") as host, patch.dict(os.environ, {}, clear=True):
                 lan.validate_environment(session)
             host.assert_called_once()
             self.assertFalse(any("apt" in call.args[0] for call in session.run.call_args_list))
@@ -96,7 +101,7 @@ class AddressEnvironmentTests(unittest.TestCase):
     def test_remote_daemon_compose_injection_missing_tool_rootless_and_nondefault_context_rejected(self):
         for name in ("DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_CERT_PATH", "COMPOSE_FILE", "COMPOSE_PROJECT_NAME", "COMPOSE_PROFILES"):
             session = Mock()
-            with self.subTest(variable=name), patch.object(vps, "validate_host"), patch.dict(os.environ, {name: "external"}, clear=True), self.assertRaises(ValueError):
+            with self.subTest(variable=name), patch.object(tgdep_preflight, "validate_host"), patch.dict(os.environ, {name: "external"}, clear=True), self.assertRaises(ValueError):
                 lan.validate_environment(session)
             session.run.assert_not_called()
         for responses in ([(1, "")], [(0, ""), (0, ""), (0, '"tcp://external:2375"')],
@@ -104,7 +109,7 @@ class AddressEnvironmentTests(unittest.TestCase):
                           [(0, ""), (0, ""), (0, '"unix:///var/run/docker.sock"'), (0, '{"version":"27.5.1","security":[]}')]):
             session = Mock()
             session.run.side_effect = responses
-            with self.subTest(responses=responses), patch.object(vps, "validate_host"), patch.dict(os.environ, {}, clear=True), self.assertRaises(ValueError):
+            with self.subTest(responses=responses), patch.object(tgdep_preflight, "validate_host"), patch.dict(os.environ, {}, clear=True), self.assertRaises(ValueError):
                 lan.validate_environment(session)
 
 
@@ -356,11 +361,14 @@ class PlanExecutionTests(unittest.TestCase):
                  "check_backend": None, "check_entry": None, "wait_for_entry": None, "save_state": None}
         for name, value in mocks.items():
             self.patches[name] = self.stack.enter_context(patch.object(lan, name, return_value=value))
-        for name in ("assert_unmodified", "payload_sources", "check_foreign_gateway", "resource_check", "show_credentials", "verify_destination"):
-            self.patches[name] = self.stack.enter_context(patch.object(vps, name))
-        self.patches["docker_inventory"] = self.stack.enter_context(patch.object(vps, "docker_inventory", return_value=set()))
-        self.patches["gateway_image"] = self.stack.enter_context(patch.object(vps, "gateway_image", return_value=self.instance.gateway_image))
-        self.patches["choose_storage"] = self.stack.enter_context(patch.object(vps, "choose_storage", return_value=("8", "8")))
+        targets = {"assert_unmodified": tgdep_upgrade, "payload_sources": tgdep_payload,
+                   "check_foreign_gateway": tgdep_instances, "resource_check": tgdep_preflight,
+                   "show_credentials": tgdep_terminal, "verify_destination": tgdep_install}
+        for name, target in targets.items():
+            self.patches[name] = self.stack.enter_context(patch.object(target, name))
+        self.patches["docker_inventory"] = self.stack.enter_context(patch.object(tgdep_instances, "docker_inventory", return_value=set()))
+        self.patches["gateway_image"] = self.stack.enter_context(patch.object(tgdep_payload, "gateway_image", return_value=self.instance.gateway_image))
+        self.patches["choose_storage"] = self.stack.enter_context(patch.object(tgdep_preflight, "choose_storage", return_value=("8", "8")))
 
     def plan(self, **kwargs):
         return lan.make_plan(self.instance, RELEASE, ROOT, ROOT, Mock(), self.log, **kwargs)
@@ -405,7 +413,7 @@ class PlanExecutionTests(unittest.TestCase):
         self.instance.version = "1.1.4"
         plan = self.plan()
         self.patches["resource_check"].side_effect = ValueError("资源不足")
-        with patch.object(lan, "edition_lock", return_value=nullcontext()), patch.object(vps, "discover", return_value=self.instance), patch.object(vps, "apply_base") as apply, self.assertRaisesRegex(ValueError, "资源不足"):
+        with patch.object(lan, "edition_lock", return_value=nullcontext()), patch.object(tgdep_instances, "discover", return_value=self.instance), patch.object(tgdep_install, "apply_base") as apply, self.assertRaisesRegex(ValueError, "资源不足"):
             lan.execute(plan, RELEASE, ROOT, ROOT, Mock(), self.log, Mock())
         apply.assert_not_called()
         self.patches["save_state"].assert_not_called()
@@ -415,7 +423,7 @@ class PlanExecutionTests(unittest.TestCase):
         self.patches["load_state"].return_value = None
         with self.assertRaisesRegex(ValueError, "--lan-ip"):
             self.plan()
-        with patch.object(vps, "collect_config") as collect:
+        with patch.object(tgdep_terminal, "collect_config") as collect:
             plan = self.plan(address=IP)
         collect.assert_not_called()
         self.assertEqual(plan.action, "install")
@@ -429,14 +437,14 @@ class PlanExecutionTests(unittest.TestCase):
         self.patches["load_state"].return_value = None
         ui = Mock()
         ui.ask.return_value = IP
-        with patch.object(vps, "collect_config", return_value={"BOT_TOKEN": "FAKE_OFFLINE_SECRET"}) as collect:
+        with patch.object(tgdep_terminal, "collect_config", return_value={"BOT_TOKEN": "FAKE_OFFLINE_SECRET"}) as collect:
             plan = self.plan(ui=ui)
         ui.ask.assert_called_once()
         collect.assert_called_once()
         self.assertEqual(collect.call_args.kwargs, {"storage": ("8", "8")})
         self.assertEqual(plan.address, IP)
         self.patches["validate_local_ip"].side_effect = ValueError("not local")
-        with patch.object(vps, "collect_config") as collect, self.assertRaises(ValueError):
+        with patch.object(tgdep_terminal, "collect_config") as collect, self.assertRaises(ValueError):
             self.plan(ui=ui)
         collect.assert_not_called()
 
@@ -462,8 +470,8 @@ class PlanExecutionTests(unittest.TestCase):
         self.patches["load_state"].return_value = plan.saved
         self.patches["inspect_lan"].side_effect = [None, inspected(self.product)]
         self.stack.enter_context(patch.object(lan, "edition_lock", return_value=nullcontext()))
-        self.discover = self.stack.enter_context(patch.object(vps, "discover", return_value=current))
-        apply = self.stack.enter_context(patch.object(vps, "apply_base"))
+        self.discover = self.stack.enter_context(patch.object(tgdep_instances, "discover", return_value=current))
+        apply = self.stack.enter_context(patch.object(tgdep_install, "apply_base"))
         return session, apply
 
     def test_execute_resumes_only_owned_entry_after_base_and_never_modifies_https(self):
@@ -561,13 +569,13 @@ class MainBootstrapTests(unittest.TestCase):
         self.log = SafeLog(self.messages.append)
         self.ui = Mock(confirm=Mock(return_value=False))
         self.stack.enter_context(patch.object(lan, "validate_environment"))
-        self.stack.enter_context(patch.object(vps, "docker_inventory", return_value=set()))
-        self.stack.enter_context(patch.object(vps, "discover", return_value=self.instance))
+        self.stack.enter_context(patch.object(tgdep_instances, "docker_inventory", return_value=set()))
+        self.stack.enter_context(patch.object(tgdep_instances, "discover", return_value=self.instance))
         self.stack.enter_context(patch.object(lan, "load_state", return_value=self.plan.saved))
         self.stack.enter_context(patch.object(lan, "SafeLog", return_value=self.log))
         client = Mock(resolve=Mock(return_value=RELEASE), download=Mock(return_value=ROOT))
-        self.client = self.stack.enter_context(patch.object(vps, "ReleaseClient", return_value=client))
-        self.terminal = self.stack.enter_context(patch.object(vps, "Terminal", return_value=self.ui))
+        self.client = self.stack.enter_context(patch.object(tgdep_releases, "ReleaseClient", return_value=client))
+        self.terminal = self.stack.enter_context(patch.object(tgdep_terminal, "Terminal", return_value=self.ui))
         self.stack.enter_context(patch.object(lan, "make_plan", return_value=self.plan))
         self.execute = self.stack.enter_context(patch.object(lan, "execute"))
 
@@ -615,7 +623,7 @@ class MainBootstrapTests(unittest.TestCase):
         self.assertEqual(self.execute.call_args.args[0].instance.product.key, "openlist")
 
     def test_credentials_view_never_resolves_release_or_installs(self):
-        with patch.object(lan, "reject_https_route"), patch.object(vps, "show_credentials") as show:
+        with patch.object(lan, "reject_https_route"), patch.object(tgdep_terminal, "show_credentials") as show:
             self.assertEqual(lan.main(["--edition", "openlist", "--show-credentials"]), 0)
         show.assert_called_once()
         self.client.assert_not_called()
@@ -643,21 +651,24 @@ class MainBootstrapTests(unittest.TestCase):
         self.assertIn("trap cancel INT TERM HUP", content)
 
     def test_bootstrap_downloads_exact_pin_and_bounded_allowlisted_sources(self):
+        from payload_fixture import historical_file
+
         content = (ROOT / "install-lan.sh").read_text(encoding="utf-8")
         embedded = content.split("<<'PY' &\n", 1)[1].split("\nPY\n", 1)[0]
+        pin = re.search(r'^installer_commit="([0-9a-f]{40})"$', content, re.MULTILINE)[1]
         urls = []
 
         def fetch(request, *, timeout):
             self.assertEqual(timeout, 30)
             urls.append(request.full_url)
-            prefix = "https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/" + "b" * 40 + "/"
+            prefix = "https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/" + pin + "/"
             self.assertTrue(request.full_url.startswith(prefix))
-            return io.BytesIO((ROOT / request.full_url.removeprefix(prefix)).read_bytes())
+            return io.BytesIO(historical_file(pin, request.full_url.removeprefix(prefix)))
 
-        with tempfile.TemporaryDirectory() as private, patch("sys.argv", ["bootstrap", private, "b" * 40]), patch("sys.stdout", io.StringIO()), patch("urllib.request.build_opener", return_value=Mock(open=Mock(side_effect=fetch))):
+        with tempfile.TemporaryDirectory() as private, patch("sys.argv", ["bootstrap", private, pin]), patch("sys.stdout", io.StringIO()), patch("urllib.request.build_opener", return_value=Mock(open=Mock(side_effect=fetch))):
             exec(compile(embedded, "LAN bootstrap", "exec"), {})  # noqa: S102 - repo-owned code, mocked networking
             self.assertTrue((Path(private) / "scripts/lan_installer.py").is_file())
-        self.assertEqual(len(urls), 10)
+        self.assertEqual(len(urls), 11)
 
     def test_bootstrap_rejects_failed_or_oversized_downloads_without_fallback(self):
         content = (ROOT / "install-lan.sh").read_text(encoding="utf-8")
@@ -709,16 +720,16 @@ export -f python3
                 else:
                     self.assertEqual((fixture / "cli-args").read_text().splitlines(), ["-B", "-m", "scripts.lan_installer", "--edition", "clouddrive2", "--lan-ip", IP, "--check"])
 
-    def test_exe_inputs_are_unaffected_by_lan_sources_and_tests(self):
-        spec = importlib.util.spec_from_file_location("exe_inputs_fixture", ROOT / "legacy/desktop/exe_build_inputs.py")
-        module = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(module)
-        self.assertFalse(module.requires_build(["install-lan.sh", "scripts/lan_installer.py", "tests/test_lan_installer.py", "docs/LAN-INSTALL.md"]))
-        for name in ("installer.py", "installer_clouddrive2.py", "installer_openlist.py", "build.ps1"):
-            self.assertNotIn("scripts.lan_installer", (ROOT / "legacy/desktop" / name).read_text(encoding="utf-8"))
+    def test_lan_entry_imports_only_public_linux_helpers(self):
+        tree = ast.parse((ROOT / "src/tg2cloud/deployment/proxy/lan.py").read_text(encoding="utf-8"))
+        imports = [node.module or "" for node in ast.walk(tree) if isinstance(node, ast.ImportFrom)]
+        self.assertIn("tg2cloud.deployment.profiles", imports)
+        self.assertIn("tg2cloud.deployment.proxy.manager", imports)
+        self.assertNotIn("tg2cloud.cli.vps", imports)
+        self.assertFalse(any(name.startswith(("legacy", "PySide6", "paramiko")) for name in imports))
 
     def test_help_and_shell_syntax_do_not_require_qt_root_or_docker(self):
-        result = subprocess.run([sys.executable, "-B", "-m", "scripts.lan_installer", "--help"], cwd=ROOT,
+        result = subprocess.run([sys.executable, "-B", str(ROOT / "scripts/run_source.py"), "lan", "--help"], cwd=ROOT,
                                 env={**os.environ, "PYTHONIOENCODING": "utf-8"}, capture_output=True, text=True, encoding="utf-8", timeout=15, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("--lan-ip", result.stdout)

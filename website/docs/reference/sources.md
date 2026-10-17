@@ -15,12 +15,12 @@
 | [内网安装](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md) | 独立内网入口、固定端口、用户提供验收与未验收范围 |
 | [独立卸载](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) | 主分支完整清理与保留模式、归属/外部引用保护及部分失败；原 Tag 行为另行区分 |
 | [CHANGELOG](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) | TG2Cloud 更新与上游历史边界 |
-| [产品定义](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/deployer_products.py) | 两版默认路径、容器、端口及 FUSE 要求 |
+| [产品定义](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/src/tg2cloud/deployment/profiles.py) | 当前工作树两版默认路径、容器、端口及 FUSE 要求 |
 | [迁移说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/MIGRATION_FROM_TG115.md) | TG115 到 TG2Cloud 的操作与未验证范围 |
-| [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/SECURITY.md) | 凭据保护与第三方边界 |
-| [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CONTRIBUTING.md) | 测试和构建入口 |
+| [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
+| [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站以当前源码产品定义及各版本真实发布/验收记录区分两个后端，不把旧段落机械套到 OpenList。版本源为 `payload_clouddrive2/app/version.py`；历史验收按其原版本和日期理解，不作为当前全链路通过的承诺。
+本网站区分当前工作树和正式发布行为。待发布 Linux 重构的版本源为 `src/tg2cloud/version.py`，产品仍为 1.3.0；已发布 Tag 保持旧路径。历史验收按原版本和日期理解，不作为当前全链路通过的承诺；当前线上 helper pin 尚不包含本地新布局。
 
 ## 文档与软件版本分别维护
 
