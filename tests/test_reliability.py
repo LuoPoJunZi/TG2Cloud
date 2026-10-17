@@ -4,7 +4,6 @@ from __future__ import annotations
 import io
 import json
 import sqlite3
-import sys
 import tarfile
 import tempfile
 import unittest
@@ -13,14 +12,13 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "payload_clouddrive2"))
-
 import test_openlist_backup as shell_fixture
-from app.backup_bundle import pack, preflight
-from app.db import TaskDB
-from app.recovery import redact_text
-from app.resources import ResourceMonitor
 from test_scenarios import make_settings
+
+from tg2cloud.domain.errors import redact_text
+from tg2cloud.monitoring.resources import ResourceMonitor
+from tg2cloud.persistence.bundle import pack, preflight
+from tg2cloud.persistence.sqlite import TaskDB
 
 
 class BundleTests(unittest.TestCase):
@@ -72,7 +70,7 @@ class BundleTests(unittest.TestCase):
         for edition, target in (("clouddrive2", "1.2.0"), ("openlist", "1.1.0"), ("openlist", "2.0.0")):
             with self.subTest(edition=edition, target=target), self.assertRaises(ValueError):
                 preflight(self.archive, self.root, edition, target)
-        with patch("app.backup_bundle.shutil.disk_usage", return_value=SimpleNamespace(free=1)), self.assertRaises(ValueError):
+        with patch("tg2cloud.persistence.bundle.shutil.disk_usage", return_value=SimpleNamespace(free=1)), self.assertRaises(ValueError):
             preflight(self.archive, self.root, "openlist", "1.2.0")
 
     def test_tampering_traversal_and_links_fail_closed(self):
@@ -109,7 +107,7 @@ class ResourceAndMigrationTests(unittest.TestCase):
             self.assertIn("database", snapshot.filesystems[0][0])
             self.assertGreater(snapshot.filesystems[0][1], 0)
             with patch.object(Path, "stat", side_effect=[SimpleNamespace(st_dev=1), SimpleNamespace(st_dev=2)]), \
-                    patch("app.resources.psutil.disk_usage", side_effect=[SimpleNamespace(free=100), SimpleNamespace(free=100), SimpleNamespace(free=5)]):
+                    patch("tg2cloud.monitoring.resources.psutil.disk_usage", side_effect=[SimpleNamespace(free=100), SimpleNamespace(free=100), SimpleNamespace(free=5)]):
                 snapshot = monitor.sample()
             self.assertEqual([free for _, free in snapshot.filesystems], [100, 5])
 
@@ -150,7 +148,7 @@ class CloudRollbackTests(unittest.TestCase):
         self.fixture = shell_fixture.OpenListBackupTests(methodName="runTest")
         self.fixture.setUp()
         self.addCleanup(self.fixture.doCleanups)
-        script = (shell_fixture.ROOT / "payload_clouddrive2/remote_install.sh").read_text(encoding="utf-8")
+        script = (shell_fixture.ROOT / "packaging/hooks/clouddrive2/remote_install.sh").read_text(encoding="utf-8")
         self.prefix = script.split('[[ "$(id -u)" -eq 0 ]]', 1)[0]
 
     def run_rollback(self, mode="ok", extra=""):

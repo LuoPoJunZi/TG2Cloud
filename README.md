@@ -710,38 +710,41 @@ Docker 数据目录可能和 `/opt/tg2cloud-clouddrive2` 位于不同文件系�
 
 ## 本地开发与测试
 
+当前工作树正在进行 Linux / Python + Bash 的待发布重构，产品版本仍为 v1.3.0，不代表已发布源码包已改变。新布局、本地入口、兼容边界和 helper 两步发布门槛见[Linux 重构说明](docs/development/LINUX-REFACTOR.md)。公开一键命令继续使用原有已验证的不可变向导 pin，不会执行本地未发布代码。
+
 ### 项目结构
 
 ```text
 install.sh                  公网 VPS 一键安装／升级入口
 install-lan.sh              可信内网安装／升级入口
 uninstall.sh                独立卸载入口
-scripts/                    Linux 向导及运行适配
-scripts/lib/                Edition 定义、HTTPS、代理备份及资源探测
-payload_clouddrive2/         CloudDrive2 部署资源及两版共用 Bot 运行代码
-payload_clouddrive2/app/     Bot 调度、队列和 WebDAV/rclone 适配层
-payload_openlist/            OpenList 专属 Compose、安装和管理脚本
+src/tg2cloud/               共享 Bot 核心、CLI、部署、存储和持久化
+scripts/run_source.py       不依赖当前目录的受控源码入口
+packaging/                  Dockerfile、两版 Compose、Shell 钩子及兼容入口
+requirements/               从 pyproject.toml 统一生成的哈希锁文件
 tests/                       单元、场景、部署和 WebDAV 集成测试
 ```
 
 ### 完整 Python 回归
 
-```powershell
-uv run --with-requirements payload_clouddrive2/requirements.txt `
-  --with-requirements .github/requirements-test.txt `
-  python -m unittest discover -s tests -v
+```bash
+python -m pip install -r requirements/dev.lock.txt
+python .github/scripts/check_python.py all
+python scripts/run_source.py install --help
+python scripts/run_source.py lan --help
+python scripts/run_source.py uninstall --help
 ```
 
 ### 静态和依赖检查
 
-```powershell
-uv run --with ruff==0.16.0 python .github/scripts/check_python.py lint
-uv run --with bandit==1.9.4 bandit -q -r payload_clouddrive2/app scripts
-uv run --with pip-audit==2.10.1 pip-audit -r payload_clouddrive2/requirements.txt
-uv run --with pip-audit==2.10.1 pip-audit -r .github/requirements-test.txt
+```bash
+python .github/scripts/check_python.py lint
+python -m bandit -q -r src scripts
+python -m pip_audit -r requirements/bot.lock.txt
+python -m pip_audit -r requirements/dev.lock.txt
 ```
 
-CI 在 Linux 上运行 ShellCheck、Compose 配置校验、Python 3.12 回归和两 Edition Bot 镜像检查，Windows 保留 Python 3.13 兼容回归。v1.3.0 起不再构建 EXE，Release 复用同一次 Linux 验证生成的源码包与实际 SHA256。贡献前请阅读 [CONTRIBUTING.md](.github/CONTRIBUTING.md)。
+CI 只维护 Linux：Python 3.12 运行 Bot 回归、ShellCheck、Compose 和两 Edition 镜像检查；Python 3.10 / 3.13 单独验证仅标准库的宿主 CLI。历史 EXE、归档和用户数据不参与新构建。Release 继续复用一次验证生成的源码包与实际 SHA256。贡献前请阅读 [CONTRIBUTING.md](.github/CONTRIBUTING.md)。
 
 如果仓库由 GitHub Fork 创建，首次使用时需进入仓库的 **Actions** 页面，按提示启用工作流。本仓库同时支持 `main` 推送、Pull Request 和页面中的 “Run workflow” 手动触发。GitHub 默认不会在新 Fork 中自动运行工作流，详见 [GitHub 官方说明](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows#workflows-in-forked-repositories)。
 

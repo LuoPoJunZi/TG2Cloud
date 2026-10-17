@@ -40,6 +40,9 @@ on:
 permissions:
   contents: read
 
+env:
+  PYTHONPATH: src
+
 jobs:
   release-notes:
     runs-on: ubuntu-latest

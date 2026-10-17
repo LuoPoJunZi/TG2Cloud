@@ -8,21 +8,24 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
+from payload_fixture import payload
+
+import tg2cloud.deployment.configuration as tgdep_configuration
+import tg2cloud.deployment.payload as tgdep_payload
+
 SOURCE = Path(__file__).resolve().parents[1]
-PAYLOAD = SOURCE / "payload_clouddrive2"
-OPENLIST_PAYLOAD = SOURCE / "payload_openlist"
+PAYLOAD = payload("clouddrive2")
+OPENLIST_PAYLOAD = payload("openlist")
 sys.path.insert(0, str(SOURCE))
 sys.path.insert(0, str(PAYLOAD))
 
-from app.config import Settings
-
-from scripts import vps_installer as cli
-from scripts.lib.deployer_products import (
+from tg2cloud.config import Settings
+from tg2cloud.deployment.profiles import (
     CLOUDDRIVE2_PRODUCT,
     OPENLIST_PRODUCT,
     RELEASE_VERSION,
 )
-from scripts.lib.vps_resources import GIB, VpsResources, recommend_storage
+from tg2cloud.deployment.resources import GIB, VpsResources, recommend_storage
 
 
 def encoded(value: str) -> str:
@@ -69,7 +72,7 @@ class OpenListProductTests(unittest.TestCase):
             "target": "", "budget": "20", "reserve": "8", "timezone": "Asia/Shanghai",
             "admin_password": "FAKE_ADMIN_PASSWORD",
         }
-        pairs = cli.new_config(OPENLIST_PRODUCT, values)
+        pairs = tgdep_configuration.new_config(OPENLIST_PRODUCT, values)
         config = "\n".join(f"{key}={value}" for key, value in pairs.items())
         self.assertEqual(pairs["TG2CLOUD_STORAGE_BACKEND"], "openlist")
         self.assertEqual(pairs["TG2CLOUD_RCLONE_REMOTE_NAME"], "openlist")
@@ -130,7 +133,7 @@ class OpenListPayloadTests(unittest.TestCase):
     def test_openlist_archive_replaces_only_backend_specific_payload(self) -> None:
         with tempfile.TemporaryDirectory() as temp:
             payload = Path(temp) / "payload"
-            cli.build_payload(SOURCE, OPENLIST_PRODUCT, payload)
+            tgdep_payload.build_payload(SOURCE, OPENLIST_PRODUCT, payload)
             names = {"payload/" + path.relative_to(payload).as_posix()
                      for path in payload.rglob("*") if path.is_file()}
             compose_text = (payload / "docker-compose.yml").read_text(encoding="utf-8")

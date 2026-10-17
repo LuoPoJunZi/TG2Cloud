@@ -5,18 +5,17 @@ import os
 import shutil
 import socket
 import subprocess
-import sys
 import tempfile
 import unittest
 from dataclasses import replace
 from pathlib import Path
 
 SOURCE = Path(__file__).resolve().parents[1]
-sys.path.insert(0, str(SOURCE / "payload_clouddrive2"))
 
-from app.rclone_client import RcloneClient, RcloneError
-from app.verify_destination import verify_destination
 from test_scenarios import make_settings
+
+from tg2cloud.storage.rclone import RcloneClient, RcloneError
+from tg2cloud.storage.verify_destination import verify_destination
 
 
 @unittest.skipUnless(shutil.which("rclone"), "需要本机 rclone；Linux CI 必须安装后运行")

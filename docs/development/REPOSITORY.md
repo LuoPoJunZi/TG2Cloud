@@ -7,17 +7,17 @@
 | 路径 | 职责与维护边界 |
 | --- | --- |
 | `install.sh`、`install-lan.sh`、`uninstall.sh` | 保留根目录的公开单行命令入口 |
-| `scripts/` | VPS、内网、卸载向导与本机执行适配 |
-| `scripts/lib/` | Edition 定义和载荷清单、共享 HTTPS、代理备份与资源探测 |
-| `payload_clouddrive2/` | 共享 Bot 应用及 CloudDrive2 Docker／Shell 资源 |
-| `payload_openlist/` | OpenList 专用资源，复用同一份 Bot 核心 |
+| `src/tg2cloud/` | 共享 Bot、CLI、公共部署、存储、持久化及监测 |
+| `scripts/run_source.py` | 不依赖当前目录或 Bot 依赖的受控源码入口 |
+| `packaging/` | 共用 Dockerfile、两版 Compose、Shell 钩子和 `app.*` 兼容入口 |
+| `requirements/`、`pyproject.toml` | 包元数据、依赖分组及同一 uv 工具生成的哈希锁文件 |
 | `assets/brand/` | 正式 Logo／Icon 唯一来源，不自动重绘或覆盖 |
 | `tests/` | Bot、Linux、资源、Docker、网关、备份和协议兼容回归 |
 | `.github/` | Workflow、检查工具、Dependabot、贡献指南和安全政策 |
 | `docs/` | 用户指南与公开开发规范，入口见[文档目录](../README.md) |
 | `website/` | 独立静态文档站，沿用现有 Node 构建与部署方式 |
 
-根目录只保留标准配置、README／英文版、许可证、版本记录及三个 Shell 入口，不再平铺 Python 部署模块。新模块按职责放入现有目录；不为追求目录外观搬动稳定 payload、运行时文件或用户数据。
+根目录只保留标准配置、README／英文版、许可证、版本记录及三个 Shell 入口。本轮重构不迁移运行数据或提升版本；兼容及未公开 helper 的发布步骤见[Linux 重构说明](LINUX-REFACTOR.md)。
 
 ## 桌面源码只在本地保留
 
@@ -35,7 +35,7 @@ Windows EXE 停留在 v1.2.1。main 不再跟踪旧部署器、PySide6 界面、
 
 `.github/scripts/check_repository.py` 使用 Git 枚举 tracked／未被忽略的新文件，禁止构建产物、缓存、私有配置、内部记录及本地桌面归档进入公共集合。已跟踪文件不能仅通过 ignore 移除，必须取消跟踪。它不读取或显示凭据内容，不是完整 Secret／历史扫描。
 
-输入检查保留三个入口、Linux 共用模块、两 Edition payload 及品牌资源，并以 AST 读取 `scripts/lib/deployer_products.py` 的清单，不执行模块。文档索引检查要求公开 `docs/` Markdown 有有效本地链接；它不是所有动态依赖的解析器，也不验证公网可达性。公共文件检查需要完整 Git checkout；源码 ZIP 可运行测试、lint 和语法检查，但不能推断跟踪状态。
+输入检查保留三个入口、Linux 共用模块、两 Edition 资源及品牌资源，以 AST 读取 `src/tg2cloud/deployment/profiles.py` 静态清单并检查递归源码，不执行模块。公开 `docs/` Markdown 必须有有效索引链接；它不是动态依赖解析器，也不验证公网。公共检查需要完整 Git checkout；源码 ZIP 可运行测试和语法检查，但不能推断跟踪状态。
 
 完整回归还应在不含本地 `legacy/` 的干净副本运行，确保新克隆可独立工作。缺少 Bash、rclone 或显式 Docker 条件时如实记录跳过；不增加 skip 来掩盖失败。
 

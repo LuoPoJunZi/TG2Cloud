@@ -14,7 +14,9 @@ TAG = re.compile(rf"v({CORE})(?:-(alpha|beta|rc)\.([1-9][0-9]*))?")
 
 
 def source_version(root: Path) -> str:
-    module = ast.parse((root / "payload_clouddrive2/app/version.py").read_text(encoding="utf-8"))
+    current = root / "src/tg2cloud/version.py"
+    path = current if current.is_file() else root / "payload_clouddrive2/app/version.py"
+    module = ast.parse(path.read_text(encoding="utf-8"))
     values = [node.value.value for node in module.body
               if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "VERSION" for target in node.targets)
               and isinstance(node.value, ast.Constant) and isinstance(node.value.value, str)]

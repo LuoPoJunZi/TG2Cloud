@@ -14,23 +14,18 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock, patch
 
+from payload_fixture import payload
+
 SOURCE = Path(__file__).resolve().parents[1]
-PAYLOAD = SOURCE / "payload_clouddrive2"
+PAYLOAD = payload("clouddrive2")
 sys.path.insert(0, str(SOURCE))
 sys.path.insert(0, str(PAYLOAD))
 
-from app import __version__
-from app.backup_database import backup_database
-from app.bot_commands import state_label
-from app.config import Settings
-from app.db import TaskDB
-from app.main import TransferService, safe_file_name, setup_logging
-from app.rclone_client import RcloneClient, RcloneError
-from app.resources import AdaptiveWindow, ResourceSnapshot
-from app.verify_destination import DestinationVerificationError, verify_destination
-
-from scripts.lib.deployer_products import CLOUDDRIVE2_PRODUCT, RELEASE_VERSION
-from scripts.lib.vps_resources import (
+from tg2cloud import __version__
+from tg2cloud.app import TransferService, setup_logging
+from tg2cloud.config import Settings
+from tg2cloud.deployment.profiles import CLOUDDRIVE2_PRODUCT, RELEASE_VERSION
+from tg2cloud.deployment.resources import (
     GIB,
     LEGACY_PROBE_BEGIN,
     LEGACY_PROBE_END,
@@ -42,6 +37,16 @@ from scripts.lib.vps_resources import (
     parse_probe_output,
     recommend_storage,
 )
+from tg2cloud.domain.naming import safe_file_name
+from tg2cloud.monitoring.resources import AdaptiveWindow, ResourceSnapshot
+from tg2cloud.persistence.backup import backup_database
+from tg2cloud.persistence.sqlite import TaskDB
+from tg2cloud.storage.rclone import RcloneClient, RcloneError
+from tg2cloud.storage.verify_destination import (
+    DestinationVerificationError,
+    verify_destination,
+)
+from tg2cloud.telegram.views import state_label
 
 
 def encoded(value: str) -> str:
@@ -1057,7 +1062,7 @@ class RcloneConfigTests(unittest.TestCase):
             process = Process()
             spawn = AsyncMock(return_value=process)
             with patch(
-                "app.rclone_client.asyncio.create_subprocess_exec",
+                "tg2cloud.storage.rclone.asyncio.create_subprocess_exec",
                 new=spawn,
             ):
                 stream = await client.open_upload_stream("large.bin", 7)
@@ -1410,10 +1415,10 @@ class PayloadTests(unittest.TestCase):
             rclone_config_path=Path("/config/rclone/rclone.conf"),
             api_id=123456, api_hash="FAKE_LOCAL_TEST_API_HASH",
         )
-        with patch("app.main.setup_logging"), patch("app.main.logging.getLogger") as get_logger, \
-                patch("app.main.TaskDB") as database, patch("app.main.TelegramClient") as telegram, \
-                patch("app.main.RcloneClient"), patch("app.main.ResourceMonitor"), \
-                patch("app.main.AdaptiveWindow"), patch.object(TransferService, "_register_handlers"):
+        with patch("tg2cloud.app.setup_logging"), patch("tg2cloud.transfer.service.logging.getLogger") as get_logger, \
+                patch("tg2cloud.app.TaskDB") as database, patch("tg2cloud.telegram.client.TelegramClient") as telegram, \
+                patch("tg2cloud.app.RcloneClient"), patch("tg2cloud.app.ResourceMonitor"), \
+                patch("tg2cloud.transfer.service.AdaptiveWindow"), patch.object(TransferService, "_register_handlers"):
             TransferService(settings)
         get_logger.assert_called_once_with("tg2cloud")
         database.assert_called_once_with(Path("/data/tg115.db"))
@@ -1424,7 +1429,7 @@ class PayloadTests(unittest.TestCase):
             directory = Path(private)
             legacy = directory / "tg115.log"
             legacy.write_text("retained old log", encoding="utf-8")
-            with patch("app.main.logging.getLogger"), patch("app.main.RotatingFileHandler") as handler:
+            with patch("tg2cloud.transfer.service.logging.getLogger"), patch("tg2cloud.logging_setup.RotatingFileHandler") as handler:
                 setup_logging(SimpleNamespace(log_dir=directory))
             self.assertEqual(handler.call_args.args[0], directory / "tg2cloud.log")
             self.assertEqual(legacy.read_text(encoding="utf-8"), "retained old log")
@@ -1443,15 +1448,15 @@ class PayloadTests(unittest.TestCase):
             "manage.sh",
             "backup_retention.sh",
             "app/main.py",
-            "app/bot_commands.py",
-            "app/interfaces.py",
-            "app/states.py",
+            "app/tg2cloud/telegram/commands.py",
+            "app/tg2cloud/transfer/ports.py",
+            "app/tg2cloud/domain/states.py",
             "app/deployment_check.py",
             "app/backup_database.py",
-            "app/db.py",
-            "app/naming.py",
-            "app/resources.py",
-            "app/rclone_client.py",
+            "app/tg2cloud/persistence/sqlite.py",
+            "app/tg2cloud/domain/naming.py",
+            "app/tg2cloud/monitoring/resources.py",
+            "app/tg2cloud/storage/rclone.py",
             "app/verify_destination.py",
         ):
             self.assertTrue((PAYLOAD / relative).is_file(), relative)

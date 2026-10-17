@@ -13,6 +13,9 @@ python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 2)' || {
 }
 
 script_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+if [[ -f "$script_root/src/tg2cloud/cli/commands.py" && -f "$script_root/scripts/run_source.py" ]]; then
+  exec python3 -B "$script_root/scripts/run_source.py" install "$@"
+fi
 if [[ -f "$script_root/scripts/vps_installer.py" && -f "$script_root/scripts/vps_runtime.py" ]]; then
   cd -- "$script_root"
   exec python3 -B -m scripts.vps_installer "$@"

@@ -15,8 +15,8 @@ from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from scripts.lib.deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
-from scripts.lib.domain_proxy import (
+from tg2cloud.deployment.profiles import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
+from tg2cloud.deployment.proxy.manager import (
     _CERTIFICATE_CHECK_SCRIPT,
     CERTBOT_IMAGE,
     NGINX_IMAGE,
@@ -874,11 +874,11 @@ class RegressionBoundaryTests(unittest.TestCase):
         root = Path(__file__).resolve().parents[1]
         self.assertIn(
             '"127.0.0.1:19798:19798"',
-            (root / "payload_clouddrive2/docker-compose.yml").read_text(encoding="utf-8"),
+            (root / "packaging/compose/clouddrive2.yml").read_text(encoding="utf-8"),
         )
         self.assertIn(
             '"127.0.0.1:5244:5244"',
-            (root / "payload_openlist/docker-compose.yml").read_text(encoding="utf-8"),
+            (root / "packaging/compose/openlist.yml").read_text(encoding="utf-8"),
         )
 
     def test_templates_do_not_contain_credentials_or_private_keys(self) -> None:

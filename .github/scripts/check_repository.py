@@ -13,11 +13,13 @@ from urllib.parse import unquote, urlsplit
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_FILES = (
     "install.sh", "install-lan.sh", "uninstall.sh", ".github/scripts/release_metadata.py",
-    "scripts/__init__.py", "scripts/vps_installer.py", "scripts/vps_runtime.py",
-    "scripts/lan_installer.py", "scripts/uninstaller.py",
-    "scripts/lib/deployer_products.py", "scripts/lib/domain_proxy.py",
-    "scripts/lib/proxy_maintenance.py", "scripts/lib/vps_resources.py", "scripts/lib/__init__.py",
-    "LICENSE", ".github/CONTRIBUTING.md", ".github/SECURITY.md", ".github/requirements-test.txt",
+    "scripts/run_source.py", "pyproject.toml", "requirements/bot.lock.txt", "requirements/dev.lock.txt",
+    "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/app.py",
+    "src/tg2cloud/deployment/profiles.py", "src/tg2cloud/deployment/fingerprints.py",
+    "src/tg2cloud/cli/commands.py", "packaging/Dockerfile",
+    "packaging/bootstrap-manifest.json", "packaging/runtime-manifest.json",
+    ".github/scripts/build_payload.py", ".github/scripts/prepare_bootstrap.py", ".github/scripts/lock_dependencies.py",
+    "LICENSE", ".github/CONTRIBUTING.md", ".github/SECURITY.md",
     "assets/brand/tg2cloud.ico", "assets/brand/tg2cloud-logo.svg",
     "assets/brand/tg2cloud-icon-256.png",
 )
@@ -49,7 +51,10 @@ def public_files(root: Path) -> list[str]:
         [git, "-C", str(root), "ls-files", "--cached", "--others", "--exclude-standard", "-z", "--"],
         capture_output=True, text=True, encoding="utf-8", check=True, shell=False,
     )
-    return sorted({path for path in result.stdout.split("\0") if path})
+    # Review additions/deletions without modifying the index. Required missing
+    # inputs are independently rejected by check_build_inputs.
+    return sorted({path for path in result.stdout.split("\0") if path
+                   and ((root / path).exists() or (root / path).is_symlink())})
 
 
 def forbidden_reason(name: str) -> str | None:
@@ -63,6 +68,10 @@ def forbidden_reason(name: str) -> str | None:
         "operation_feedback.py", "requirements-build.txt", "build.ps1",
     }):
         return "frozen desktop source or tests belong only in local recovery archives"
+    if parts[0] in {"payload_clouddrive2", "payload_openlist"} or name.startswith("scripts/lib/") or name in {
+        "scripts/vps_installer.py", "scripts/lan_installer.py", "scripts/uninstaller.py", "scripts/vps_runtime.py",
+    }:
+        return "retired source layout; current code belongs in src and resources in packaging"
     if any(part in LOCAL_DIRECTORIES for part in parts[:-1]):
         return "generated output, cache or local development directory"
     if basename in INTERNAL_FILES or name.casefold() in {"docs/audit.md", "docs/worklog.md"}:
@@ -81,14 +90,16 @@ def forbidden_reason(name: str) -> str | None:
 
 def payload_files(root: Path) -> set[str]:
     # Inspect literal paths in product definitions without importing runtime modules.
-    tree = ast.parse((root / "scripts/lib/deployer_products.py").read_text(encoding="utf-8"))
+    tree = ast.parse((root / "src/tg2cloud/deployment/profiles.py").read_text(encoding="utf-8"))
     paths = {
         node.value for node in ast.walk(tree)
         if isinstance(node, ast.Constant) and isinstance(node.value, str)
-        and node.value.startswith(("payload_clouddrive2/", "payload_openlist/"))
+        and node.value.startswith(("packaging/", "requirements/"))
+        and (PurePosixPath(node.value).suffix or PurePosixPath(node.value).name == ".dockerignore")
     }
-    if not any(path.startswith("payload_clouddrive2/") for path in paths) or not any(path.startswith("payload_openlist/") for path in paths):
+    if not {"packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml"} <= paths:
         raise ValueError("both product payload manifests must contain literal paths")
+    paths.update(path.relative_to(root).as_posix() for path in (root / "src/tg2cloud").rglob("*.py"))
     return paths
 
 
@@ -96,12 +107,12 @@ def check_build_inputs(root: Path, files: list[str]) -> list[str]:
     errors: list[str] = []
     candidate_files = set(files)
     required = set(BUILD_FILES)
-    product_path = root / "scripts/lib/deployer_products.py"
+    product_path = root / "src/tg2cloud/deployment/profiles.py"
     if product_path.is_file() and not product_path.is_symlink():
         try:
             required.update(payload_files(root))
         except (OSError, SyntaxError, UnicodeError, ValueError):
-            errors.append("scripts/lib/deployer_products.py: cannot inspect both payload manifests")
+            errors.append("src/tg2cloud/deployment/profiles.py: cannot inspect both payload manifests")
     for name in sorted(required):
         path = root / name
         if not path.is_file() or path.is_symlink() or not path.resolve().is_relative_to(root):

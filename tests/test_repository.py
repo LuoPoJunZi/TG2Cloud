@@ -40,7 +40,7 @@ class PythonCheckEntryTests(unittest.TestCase):
 
     def test_compile_scope_covers_formal_python_but_not_generated_trees(self):
         paths = checks.source_paths("all")
-        for path in (".github/scripts", "payload_clouddrive2/app", "scripts", "tests"):
+        for path in (".github/scripts", "src", "packaging/compat", "scripts", "tests"):
             self.assertIn(path, paths)
         for path in ("build", "dist", ".venv", "website", "legacy"):
             self.assertNotIn(path, paths)
@@ -63,9 +63,10 @@ class PythonCheckEntryTests(unittest.TestCase):
         self.assertIn(".github/scripts/check_repository.py", checks.CLI_PATHS)
 
     def test_runner_anchors_working_directory_and_stops_on_failure(self):
-        with patch.object(checks.subprocess, "run", return_value=Mock(returncode=7)) as run:
+        with patch.dict(checks.os.environ, {"TG2CLOUD_TEST": "fixture"}, clear=True), patch.object(checks.subprocess, "run", return_value=Mock(returncode=7)) as run:
             self.assertEqual(checks.main(["all"]), 7)
-            run.assert_called_once_with(checks.commands("repository", "all")[0], cwd=ROOT, check=False, shell=False)
+            run.assert_called_once_with(checks.commands("repository", "all")[0], cwd=ROOT, check=False, shell=False,
+                                        env={"TG2CLOUD_TEST": "fixture", "PYTHONPATH": str(ROOT / "src") + checks.os.pathsep})
 
     def test_runner_supports_successful_cli_check_sequence(self):
         with patch.object(checks.subprocess, "run", return_value=Mock(returncode=0)) as run:
@@ -81,10 +82,12 @@ class RepositoryContractTests(unittest.TestCase):
                 self.assertFalse((ROOT / name).exists())
         files = repository.public_files(ROOT)
         self.assertFalse(any(name.startswith("legacy/") for name in files))
-        for name in ("deployer_products.py", "domain_proxy.py", "proxy_maintenance.py", "vps_resources.py"):
+        modules = {"deployer_products.py": "deployment/profiles.py", "domain_proxy.py": "deployment/proxy/manager.py",
+                   "proxy_maintenance.py": "deployment/proxy/maintenance.py", "vps_resources.py": "deployment/resources.py"}
+        for name, target in modules.items():
             self.assertFalse((ROOT / name).exists())
-            self.assertIn("scripts/lib/" + name, files)
-        code = "import sys; from scripts import vps_installer, lan_installer, uninstaller; assert not any(name.split('.')[0] in {'legacy', 'PySide6', 'paramiko'} for name in sys.modules)"
+            self.assertIn("src/tg2cloud/" + target, files)
+        code = "import sys; sys.path.insert(0, " + repr(str(ROOT / "src")) + "); from tg2cloud.cli import vps; from tg2cloud.deployment.proxy import lan; from tg2cloud.deployment import uninstall; assert not any(name.split('.')[0] in {'legacy', 'PySide6', 'paramiko', 'telethon', 'cryptg', 'psutil'} for name in sys.modules)"
         result = subprocess.run([sys.executable, "-B", "-c", code], cwd=ROOT, capture_output=True,
                                 text=True, timeout=15, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -136,16 +139,37 @@ class RepositoryContractTests(unittest.TestCase):
                 self.assertNotIn("ruff check installer.py", text)
 
     def test_certificate_fixtures_have_explicit_non_runtime_dependency(self):
-        requirements = (ROOT / ".github/requirements-test.txt").read_text(encoding="utf-8")
-        self.assertRegex(requirements, r"(?m)^cryptography==[0-9]+\.[0-9]+\.[0-9]+$")
-        self.assertNotIn("cryptography", (ROOT / "payload_clouddrive2/requirements.txt").read_text(encoding="utf-8"))
+        requirements = (ROOT / "requirements/dev.lock.txt").read_text(encoding="utf-8")
+        self.assertRegex(requirements, r"(?m)^cryptography==[0-9]+\.[0-9]+\.[0-9]+[ \\]*$")
+        self.assertNotIn("cryptography", (ROOT / "requirements/bot.lock.txt").read_text(encoding="utf-8"))
         workflow = (ROOT / ".github/workflows/tests.yml").read_text(encoding="utf-8")
-        self.assertIn("--with-requirements .github/requirements-test.txt", workflow)
-        self.assertIn("-r .github/requirements-test.txt", workflow.split("  linux-products:", 1)[1])
+        self.assertIn("-r requirements/dev.lock.txt", workflow.split("  linux-products:", 1)[1])
+
+    def test_dependabot_openlist_scans_compose_not_a_missing_dockerfile(self):
+        config = (ROOT / ".github/dependabot.yml").read_text(encoding="utf-8")
+        updates = re.split(r"(?m)^  - package-ecosystem: *", config)[1:]
+        openlist = [block for block in updates
+                    if re.search(r"(?m)^    directory: /packaging/compose$", block)]
+        self.assertEqual(len(openlist), 1)
+        self.assertEqual(openlist[0].splitlines()[0], "docker-compose")
+        self.assertIn("interval: monthly", openlist[0])
+        self.assertIn("open-pull-requests-limit: 5", openlist[0])
+        self.assertTrue((ROOT / "packaging/compose/openlist.yml").is_file())
+
+    def test_dependabot_shared_bot_image_keeps_docker_scanner_and_version_limits(self):
+        config = (ROOT / ".github/dependabot.yml").read_text(encoding="utf-8")
+        updates = re.split(r"(?m)^  - package-ecosystem: *", config)[1:]
+        docker = [block for block in updates if block.splitlines()[0] == "docker"
+                  and re.search(r"(?m)^    directory: /packaging$", block)]
+        self.assertEqual(len(docker), 1)
+        self.assertIn("    directory: /packaging\n", docker[0])
+        self.assertTrue((ROOT / "packaging/Dockerfile").is_file())
+        for rule in ("dependency-name: python", "version-update:semver-major", "version-update:semver-minor"):
+            self.assertIn(rule, docker[0])
 
     def test_consistency_checks_run_when_source_docs_or_brand_change(self):
         website = (ROOT / ".github/workflows/website-docs.yml").read_text(encoding="utf-8")
-        for path in ("assets/brand/**", "docs/**", "README.md", "README_EN.md", "payload_clouddrive2/app/version.py"):
+        for path in ("assets/brand/**", "docs/**", "README.md", "README_EN.md", "src/tg2cloud/version.py"):
             self.assertEqual(website.count(f'"{path}"'), 2, path)
         docs = (ROOT / ".github/workflows/docs.yml").read_text(encoding="utf-8")
         self.assertIn("-p test_repository.py", docs)
@@ -168,7 +192,7 @@ class RepositoryContractTests(unittest.TestCase):
 class PublicFileTests(unittest.TestCase):
     def test_inventory_includes_tracked_and_unignored_candidates_without_path_quoting(self):
         result = Mock(stdout="README.md\0docs/中文 说明.md\0README.md\0")
-        with patch.object(repository.shutil, "which", return_value="/tools/git"), patch.object(repository.subprocess, "run", return_value=result) as run:
+        with patch.object(repository.shutil, "which", return_value="/tools/git"), patch.object(repository.subprocess, "run", return_value=result) as run, patch.object(Path, "exists", return_value=True):
             self.assertEqual(repository.public_files(ROOT), ["README.md", "docs/中文 说明.md"])
         run.assert_called_once_with(
             ["/tools/git", "-C", str(ROOT), "ls-files", "--cached", "--others", "--exclude-standard", "-z", "--"],
@@ -195,10 +219,10 @@ class PublicFileTests(unittest.TestCase):
 
     def test_public_sources_resources_and_example_config_are_allowed(self):
         for name in (
-            "scripts/lib/deployer_products.py", "install.sh", "tests/test_repository.py", ".github/workflows/release.yml",
+            "src/tg2cloud/deployment/profiles.py", "install.sh", "tests/test_repository.py", ".github/workflows/release.yml",
             ".github/CONTRIBUTING.md", ".github/SECURITY.md", "assets/brand/tg2cloud.ico",
             "website/public/favicon.ico", "docs/填写信息清单.md", "docs/development/BRAND-GUIDE.md",
-            "docs/development/DOMAIN-HTTPS-ACCEPTANCE.md", "LICENSE", "payload_clouddrive2/.env.example",
+            "docs/development/DOMAIN-HTTPS-ACCEPTANCE.md", "LICENSE", "packaging/hooks/clouddrive2/.env.example",
         ):
             with self.subTest(name=name):
                 self.assertIsNone(repository.forbidden_reason(name))
@@ -252,16 +276,16 @@ class RepositoryGuardrailTests(unittest.TestCase):
     def build_fixture(self):
         for name in repository.BUILD_FILES:
             self.put(name)
-        self.put("scripts/lib/deployer_products.py", 'FILES = ("payload_clouddrive2/app/bot.py", "payload_openlist/compose.yaml")\n')
-        self.put("payload_clouddrive2/app/bot.py")
-        self.put("payload_openlist/compose.yaml")
+        self.put("src/tg2cloud/deployment/profiles.py", 'FILES = ("packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml")\n')
+        self.put("packaging/compose/clouddrive2.yml")
+        self.put("packaging/compose/openlist.yml")
         return list(repository.BUILD_FILES) + sorted(repository.payload_files(self.root))
 
     def test_payload_inspection_collects_both_editions_without_execution(self):
-        self.put("scripts/lib/deployer_products.py", 'raise RuntimeError("must not execute")\n'
-                 'FILES = ("payload_clouddrive2/app/bot.py", "payload_openlist/compose.yaml", "README.md")\n')
+        self.put("src/tg2cloud/deployment/profiles.py", 'raise RuntimeError("must not execute")\n'
+                 'FILES = ("packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml", "README.md")\n')
         self.assertEqual(repository.payload_files(self.root), {
-            "payload_clouddrive2/app/bot.py", "payload_openlist/compose.yaml",
+            "packaging/compose/clouddrive2.yml", "packaging/compose/openlist.yml", "src/tg2cloud/deployment/profiles.py",
         })
 
     def test_build_contract_includes_all_public_regular_inputs(self):
@@ -269,10 +293,10 @@ class RepositoryGuardrailTests(unittest.TestCase):
 
     def test_missing_payload_and_excluded_brand_resource_are_reported(self):
         files = self.build_fixture()
-        (self.root / "payload_openlist/compose.yaml").unlink()
+        (self.root / "packaging/compose/openlist.yml").unlink()
         files.remove("assets/brand/tg2cloud.ico")
         errors = repository.check_build_inputs(self.root, files)
-        self.assertTrue(any("payload_openlist/compose.yaml: required build input missing" in error for error in errors))
+        self.assertTrue(any("packaging/compose/openlist.yml: required build input missing" in error for error in errors))
         self.assertTrue(any("assets/brand/tg2cloud.ico: required build input excluded" in error for error in errors))
 
     def test_directory_cannot_replace_build_file(self):
@@ -285,11 +309,11 @@ class RepositoryGuardrailTests(unittest.TestCase):
 
     def test_missing_edition_or_invalid_manifest_fails_without_echoing_code(self):
         files = self.build_fixture()
-        for text in ('FILES = ("payload_clouddrive2/app/bot.py",)\n', 'invalid syntax PRIVATE_MARKER !\n'):
+        for text in ('FILES = ("packaging/compose/clouddrive2.yml",)\n', 'invalid syntax PRIVATE_MARKER !\n'):
             with self.subTest(text=text):
-                self.put("scripts/lib/deployer_products.py", text)
+                self.put("src/tg2cloud/deployment/profiles.py", text)
                 errors = repository.check_build_inputs(self.root, files)
-                self.assertIn("scripts/lib/deployer_products.py: cannot inspect both payload manifests", errors)
+                self.assertIn("src/tg2cloud/deployment/profiles.py: cannot inspect both payload manifests", errors)
                 self.assertNotIn("PRIVATE_MARKER", " ".join(errors))
 
     def test_document_index_resolves_chinese_spaces_and_encoded_paths(self):

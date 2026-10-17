@@ -12,6 +12,9 @@ python3 -c 'import sys; sys.exit(0 if sys.version_info >= (3, 10) else 2)' || {
   exit 2
 }
 script_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
+if [[ -f "$script_root/src/tg2cloud/cli/commands.py" && -f "$script_root/scripts/run_source.py" ]]; then
+  exec python3 -B "$script_root/scripts/run_source.py" uninstall "$@"
+fi
 if [[ -f "$script_root/scripts/uninstaller.py" && -f "$script_root/scripts/vps_installer.py" ]]; then
   cd -- "$script_root"
   exec python3 -B -m scripts.uninstaller "$@"

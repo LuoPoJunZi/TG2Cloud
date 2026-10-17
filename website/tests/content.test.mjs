@@ -21,7 +21,7 @@ test('documented version and verification date are valid',()=>{
 test('package and shared product versions match the documented source',async()=>{
   const pkg=JSON.parse(await read('package.json'));
   const lock=JSON.parse(await read('package-lock.json'));
-  const source=await readFile(new URL('../../payload_clouddrive2/app/version.py',import.meta.url),'utf8');
+  const source=await readFile(new URL('../../src/tg2cloud/version.py',import.meta.url),'utf8');
   assert.deepEqual([...source.matchAll(/^VERSION\s*=\s*"([^"]+)"\r?$/gm)].map(match=>match[1]),[config.version]);
   assert.equal(pkg.version,config.version);
   assert.equal(lock.version,config.version);
@@ -66,11 +66,11 @@ test('downloads point to published assets and source checkout respects release s
 test('developer source links follow the public script-only layout',async()=>{
   const template=await read('src/templates.mjs');
   const guide=await read('docs/reference/development.md');
-  for(const path of ['scripts/lib/deployer_products.py','.github/CONTRIBUTING.md','.github/SECURITY.md']){
+  for(const path of ['src/tg2cloud/deployment/profiles.py','.github/CONTRIBUTING.md','.github/SECURITY.md']){
     assert.ok(template.includes(`'${path}'`));
     assert.ok(await readFile(new URL('../../'+path,import.meta.url),'utf8'));
   }
-  assert.ok(guide.includes('scripts/lib/vps_resources.py'));
+  assert.ok(guide.includes('src/tg2cloud/deployment/resources.py'));
   assert.ok(!guide.includes('legacy/desktop/'));
 });
 

@@ -22,12 +22,12 @@ from unittest.mock import AsyncMock, Mock, patch
 import test_review_regressions as review
 from test_deployment import BASH, bash_path
 
-from scripts.lib import proxy_maintenance as backups
-from scripts.lib.deployer_products import (
+from tg2cloud.deployment.profiles import (
     OPENLIST_PRODUCT,
     RELEASE_VERSION,
 )
-from scripts.lib.domain_proxy import (
+from tg2cloud.deployment.proxy import maintenance as backups
+from tg2cloud.deployment.proxy.manager import (
     DomainProxyManager,
     empty_state,
     render_certbot_loop,
@@ -294,7 +294,7 @@ class RenewalTests(unittest.TestCase):
 
 class ProbeVisibilityTests(unittest.IsolatedAsyncioTestCase):
     async def test_doctor_cooldown_time_is_actual_probe_not_message_refresh(self):
-        from app.interfaces import DestinationProbe
+        from tg2cloud.transfer.ports import DestinationProbe
         service = review.OpenListReviewTests.service(DestinationProbe(False, "root", "limited", "rate_limited"))
         service.settings.destination_label = "OpenList"
         service.db = SimpleNamespace(is_paused=lambda: False)
@@ -331,7 +331,7 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_rc_requires_exact_notes_identity(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for path in ("payload_clouddrive2/app/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
+            for path in ("src/tg2cloud/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / path).read_bytes())
@@ -346,11 +346,11 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_future_linux_version_does_not_require_any_desktop_files(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for name in ("payload_clouddrive2/app/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
+            for name in ("src/tg2cloud/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
                 target = root / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / name).read_bytes())
-            (root / "payload_clouddrive2/app/version.py").write_text('VERSION = "9.0.0"\n', encoding="utf-8")
+            (root / "src/tg2cloud/version.py").write_text('VERSION = "9.0.0"\n', encoding="utf-8")
             (root / "CHANGELOG.md").write_text("## TG2Cloud v9.0.0\n", encoding="utf-8")
             (root / "RELEASE_NOTES.md").write_text("TG2Cloud v9.0.0\n", encoding="utf-8")
             entry = root / "install.sh"

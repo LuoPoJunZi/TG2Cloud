@@ -8,7 +8,6 @@ import os
 import shlex
 import shutil
 import subprocess
-import sys
 import tempfile
 import threading
 import time
@@ -21,20 +20,17 @@ from unittest.mock import AsyncMock, Mock, patch
 
 from test_domain_proxy import TransactionManager
 
-from scripts.lib.deployer_products import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
-from scripts.lib.domain_proxy import (
+from tg2cloud.app import TransferService
+from tg2cloud.deployment.profiles import CLOUDDRIVE2_PRODUCT, OPENLIST_PRODUCT
+from tg2cloud.deployment.proxy.manager import (
     DomainProxyManager,
     ProxyReport,
     empty_state,
     proxy_lock_command,
     state_with_route,
 )
-
-sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "payload_clouddrive2"))
-
-from app.interfaces import DestinationProbe
-from app.main import TransferService
-from app.rclone_client import RcloneClient, RcloneError
+from tg2cloud.storage.rclone import RcloneClient, RcloneError
+from tg2cloud.transfer.ports import DestinationProbe
 
 
 class OpenListReviewTests(unittest.IsolatedAsyncioTestCase):
@@ -156,7 +152,7 @@ class RemoteLockTests(unittest.TestCase):
     @unittest.skipUnless(os.name != "nt" and shutil.which("flock"), "live flock test requires Linux")
     def test_real_flock_is_exclusive_and_released_on_ssh_eof(self):
         with tempfile.TemporaryDirectory() as temp:
-            with patch("scripts.lib.domain_proxy.PROXY_ROOT", temp):
+            with patch("tg2cloud.deployment.proxy.manager.PROXY_ROOT", temp):
                 command = shlex.split(proxy_lock_command())[2]
             holder = subprocess.Popen(
                 ["bash", "-c", command], stdin=subprocess.PIPE, stdout=subprocess.PIPE,

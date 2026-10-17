@@ -10,13 +10,12 @@
 
 ## Python 检查
 
-完整检查使用 Python 3.12 / 3.13、Bot requirements、`.github/requirements-test.txt` 中的证书夹具依赖和 Ruff 0.16.0，不再需要 PySide6、Paramiko 或 PyInstaller。cryptography 原先由 Paramiko 间接提供，现显式列为测试依赖，不进入 Docker 运行依赖。可以通过 uv 创建临时检查环境：
+完整检查使用 Python 3.12 / 3.13 和 `requirements/dev.lock.txt`，不需要 PySide6、Paramiko 或 PyInstaller。cryptography 显式作为证书夹具测试依赖，不进入 Bot 容器。依赖定义在 `pyproject.toml`，两份哈希锁文件由 uv 0.11.28 统一生成，不单独手改版本。请在隔离虚拟环境中准备：
 
-```powershell
-uv run --with-requirements payload_clouddrive2/requirements.txt `
-  --with-requirements .github/requirements-test.txt `
-  --with ruff==0.16.0 `
-  python .github/scripts/check_python.py all
+```bash
+python -m pip install -r requirements/dev.lock.txt
+python -m pip install --no-deps -e .
+python .github/scripts/check_python.py all
 ```
 
 已经准备好本地 Python 环境时，在仓库根目录直接执行：
@@ -37,7 +36,7 @@ uv run --with ruff==0.16.0 python .github/scripts/check_python.py all --scope cl
 
 `.ruff.toml` 统一原有 lint 规则；全范围自动发现 Python 文件，CLI 范围集中在检查入口。不要用 `ruff format .` 或 `--fix` 对稳定源码进行无关批量改写。
 
-真实本地 WebDAV 集成测试需要 `rclone` 在 PATH 中；缺少时明确跳过。Shell 故障回归需要 Bash（Windows 可通过兼容变量 `TG115_TEST_BASH` 指定 Git Bash 的绝对路径，不为品牌清理改坏测试）。Linux 全量 CI 安装两者并使用 Python 3.12，Windows 使用 Python 3.13；独立向导 CI 另测 3.10 / 3.13。默认测试只创建临时文件、模拟配置和回环 WebDAV 服务，不使用个人凭据或联系真实 VPS。Docker 集成由已有显式测试开关控制，自动测试通过不代表实机验收通过。
+真实本地 WebDAV 集成测试需要 PATH 中的 `rclone`；缺少时明确跳过。Shell 回归需要 Bash（本地 Windows 可用兼容变量 `TG115_TEST_BASH` 指定 Git Bash，不为品牌清理改坏测试）。公共 CI 只维护 Linux：全量 Python 3.12，宿主 CLI 3.10 / 3.13。历史兼容测试读取固定公开 Git 对象，需要完整历史 checkout。默认只操作临时文件、模拟配置和回环 WebDAV，不使用个人凭据或真实 VPS；Docker 使用显式开关，自动检查不代表实机验收。
 
 涉及 Shell 时，执行 Bash 语法检查以及 CI 中已有的 ShellCheck 范围：
 
@@ -75,8 +74,14 @@ npm test
 
 恢复历史构建请使用 [v1.2.1 Tag](https://github.com/LuoPoJunZi/TG2Cloud/tree/v1.2.1) 或独立本地源码备份，在新目录中构建。main 不再跟踪桌面源码、Windows 资源、打包依赖或专用测试；Bot、Linux、Docker、网关及备份测试继续公开运行。边界见[脚本优先说明](../docs/development/SCRIPT-FIRST.md)。
 
+## Dependabot 镜像检查
+
+`packaging/Dockerfile` 的共享 Bot 基础镜像使用 `docker` 更新器；`packaging/compose/` 的两个网关使用 `docker-compose` 更新器。不要给 OpenList 复制一个独立 Dockerfile 来满足错误扫描配置。回归测试核对更新器与实际清单，并保留 Python 基础镜像禁止自动跨主/次版本升级的保护。pip 更新器读取根 `pyproject.toml`，依赖升级后仍需用统一工具重新生成并审阅两份锁文件。
+
+更新器只检查依赖并提出 PR，不会自动合并、发布或更新 VPS。镜像 digest 变化仍需单独审查和测试；修正更新器类型本身不修改运行镜像。Dependabot 的历史失败记录不会消失，修复是否在 GitHub 生效应以推送后的新检查结果为准。
+
 ## 版本与 Release
 
-Bot 和脚本版本源为 `payload_clouddrive2/app/version.py`。新版本同步安装入口、网站、CHANGELOG 和 RELEASE_NOTES；历史 Windows 资源只保留在 v1.2.1 Tag／本地备份，当前发布校验不再依赖它们。`python .github/scripts/release_metadata.py --tag vX.Y.Z` 校验版本与发布文档，不创建标签或发布。
+Bot、包和脚本唯一版本源为 `src/tg2cloud/version.py`；重构不自动提版本。新版本同步安装入口、网站、CHANGELOG 和 RELEASE_NOTES；Windows 资源仅在 v1.2.1 Tag／本地备份。`python .github/scripts/release_metadata.py --tag vX.Y.Z` 仅检查，不创建标签或发布。新目录、载荷组装、递归清单和未发布 helper pin 的 A/B 步骤见[Linux 重构说明](../docs/development/LINUX-REFACTOR.md)；本地验证不能绕过正式发布门槛。
 
 Release Workflow 仅接受严格版本标签 `vX.Y.Z` 或 `vX.Y.Z-alpha.N` / `beta.N` / `rc.N`。手动触发也必须选择已有 Tag，不允许把 main 当作发布来源。预发布的 Release Notes 必须写明完整预发布标签；Workflow 自动标记 Pre-release。Linux 检查从同一标签执行，包含完整回归、两 Edition Docker 和本地 WebDAV。`source_release.py build` 从该 Tag 打包一次并校验在线向导 pin；Release Job 下载同一 artifact，再次 verify 后发布源码归档和 SHA256。旧 pin 与本版辅助代码不一致会阻断发布；不替换已有 Release，不上传本机产物。

@@ -15,10 +15,12 @@ from dataclasses import replace
 from pathlib import Path
 from unittest.mock import Mock, patch
 
-from scripts import uninstaller as uninstall
-from scripts.lib.deployer_products import PRODUCTS
-from scripts.lib.domain_proxy import render_compose
-from scripts.vps_runtime import SafeLog
+import tg2cloud.cli.terminal as tgdep_terminal
+import tg2cloud.deployment.preflight as tgdep_preflight
+from tg2cloud.deployment import uninstall
+from tg2cloud.deployment.host import SafeLog
+from tg2cloud.deployment.profiles import PRODUCTS
+from tg2cloud.deployment.proxy.manager import render_compose
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -663,7 +665,7 @@ class EntryTests(unittest.TestCase):
         ui = Mock()
         ui.confirm.return_value = confirm
         ui.ask.return_value = typed
-        with patch.object(uninstall, "SafeLog", return_value=SafeLog(output.write)), patch.object(uninstall, "LocalSession", return_value=docker), patch.object(uninstall, "validate_environment"), patch.object(uninstall, "build_plan", return_value=plan), patch.object(uninstall.vps, "Terminal", return_value=ui), patch.object(uninstall, "execute", side_effect=failure) as execute:
+        with patch.object(uninstall, "SafeLog", return_value=SafeLog(output.write)), patch.object(uninstall, "LocalSession", return_value=docker), patch.object(uninstall, "validate_environment"), patch.object(uninstall, "build_plan", return_value=plan), patch.object(tgdep_terminal, "Terminal", return_value=ui), patch.object(uninstall, "execute", side_effect=failure) as execute:
             code = uninstall.main(args)
         return code, output.getvalue(), execute, ui
 
@@ -736,12 +738,12 @@ class EntryTests(unittest.TestCase):
     def test_environment_rejects_remote_daemon_without_system_mutation(self):
         for key in ("DOCKER_HOST", "DOCKER_CONTEXT", "COMPOSE_FILE", "COMPOSE_PROJECT_NAME"):
             session = Mock()
-            with patch.object(uninstall.vps, "validate_host"), patch.dict(os.environ, {key: "external"}, clear=True), self.assertRaises(uninstall.UninstallError):
+            with patch.object(tgdep_preflight, "validate_host"), patch.dict(os.environ, {key: "external"}, clear=True), self.assertRaises(uninstall.UninstallError):
                 uninstall.validate_environment(session)
             session.run.assert_not_called()
         session = Mock()
         session.run.return_value = (0, '"tcp://external:2375"')
-        with patch.object(uninstall.vps, "validate_host"), patch.dict(os.environ, {}, clear=True), self.assertRaises(uninstall.UninstallError):
+        with patch.object(tgdep_preflight, "validate_host"), patch.dict(os.environ, {}, clear=True), self.assertRaises(uninstall.UninstallError):
             uninstall.validate_environment(session)
 
     def test_inventory_filters_env_and_reports_daemon_failure(self):
@@ -757,7 +759,7 @@ class EntryTests(unittest.TestCase):
             uninstall.docker_snapshot(session)
 
     def test_no_package_removal_prune_remote_operations_or_broad_delete_commands(self):
-        source = (ROOT / "scripts/uninstaller.py").read_text(encoding="utf-8")
+        source = (ROOT / "src/tg2cloud/deployment/uninstall.py").read_text(encoding="utf-8")
         for forbidden in ("apt-get", "apt remove", "apt purge", "systemctl", "docker system prune", "docker volume prune", "docker network prune", "docker image rm", "rm -rf", "SSHSession", "requests", "paramiko"):
             self.assertNotIn(forbidden, source)
         self.assertNotIn("PySide6", source)
@@ -768,7 +770,7 @@ class EntryTests(unittest.TestCase):
         self.assertIn("scripts/uninstaller.py", bootstrap)
         self.assertIn("python3 -B -m scripts.uninstaller", bootstrap)
         self.assertIn("tg2cloud-uninstall-bootstrap", bootstrap)
-        self.assertNotIn("payload_openlist/remote_install.sh", bootstrap)
+        self.assertNotIn("packaging/hooks/openlist/remote_install.sh", bootstrap)
         self.assertTrue(re.search(r"installer_commit=", bootstrap))
 
 

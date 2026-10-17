@@ -1,0 +1,215 @@
+from __future__ import annotations
+
+import ipaddress
+import json
+import re
+from dataclasses import dataclass
+from typing import Any
+
+from tg2cloud.deployment.profiles import ProductProfile
+
+STATE_VERSION = 1
+
+SUPPORTED_EDITIONS = ("clouddrive2", "openlist")
+
+EDITION_BACKEND_PORTS = {"clouddrive2": 19798, "openlist": 5244}
+
+_FQDN_RE = re.compile(
+    r"(?=^.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+"
+    r"[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?"
+)
+
+_EMAIL_RE = re.compile(r"[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@[A-Za-z0-9.-]+")
+
+_MARKER_RE = re.compile(r"^TG2CLOUD_([A-Z0-9_]+)=(.*)$")
+
+@dataclass(frozen=True)
+class DomainRoute:
+    edition: str
+    domain: str
+    backend_port: int
+
+@dataclass(frozen=True)
+class ProxyEnvironment:
+    core: str
+    docker: str
+    port_80: str
+    port_443: str
+    dns_a: tuple[str, ...] = ()
+    dns_aaaa: tuple[str, ...] = ()
+    local_addresses: tuple[str, ...] = ()
+
+    @property
+    def ports_safe(self) -> bool:
+        return self.port_80 in {"FREE", "OWN"} and self.port_443 in {"FREE", "OWN"}
+
+@dataclass(frozen=True)
+class ProxyReport:
+    domain: str
+    state: str
+    message: str
+    statuses: tuple[tuple[str, str], ...]
+    markers: tuple[tuple[str, str], ...] = ()
+    warnings: tuple[str, ...] = ()
+
+def validate_domain(value: str) -> str:
+    """Return a strict lowercase ASCII FQDN or raise a user-facing error."""
+    domain = value.strip().lower().rstrip(".")
+    if not domain:
+        raise ValueError("请填写要用于管理页的域名。")
+    if any(char.isspace() for char in value):
+        raise ValueError("域名不能包含空格或换行。")
+    if "://" in domain or any(char in domain for char in "/?#@:*\\'\";$`()[]{}|<>"):
+        raise ValueError("只填写域名，不要包含协议、端口、路径、通配符或命令字符。")
+    try:
+        ipaddress.ip_address(domain.strip("[]"))
+    except ValueError:
+        pass
+    else:
+        raise ValueError("必须使用域名，不能填写 IPv4 或 IPv6 地址。")
+    if not domain.isascii():
+        raise ValueError("请输入域名的 ASCII/Punycode 形式（例如 xn-- 开头的域名）。")
+    if not _FQDN_RE.fullmatch(domain):
+        raise ValueError("域名格式不正确；请填写完整的 ASCII/Punycode FQDN。")
+    return domain
+
+def validate_email(value: str) -> str:
+    email = value.strip()
+    if not email:
+        return ""
+    if any(char.isspace() for char in email) or not email.isascii():
+        raise ValueError("Let's Encrypt 邮箱格式不正确。")
+    if len(email) > 254 or not _EMAIL_RE.fullmatch(email):
+        raise ValueError("Let's Encrypt 邮箱格式不正确。")
+    return email
+
+def empty_state() -> dict[str, Any]:
+    return {"version": STATE_VERSION, "domains": {}}
+
+def normalize_state(raw: str | bytes | None) -> dict[str, Any]:
+    if isinstance(raw, bytes):
+        raw = raw.decode("utf-8", "strict")
+    if raw is None or not raw.strip():
+        return empty_state()
+    try:
+        value = json.loads(raw)
+    except (TypeError, json.JSONDecodeError) as exc:
+        raise ValueError("共享代理状态文件不是有效 JSON；请先检查 VPS 上的状态。") from exc
+    if not isinstance(value, dict) or value.get("version") != STATE_VERSION:
+        raise ValueError("共享代理状态版本无法识别；不会自动覆盖。")
+    domains = value.get("domains")
+    if not isinstance(domains, dict) or set(domains) - set(SUPPORTED_EDITIONS):
+        raise ValueError("共享代理状态包含未知 Edition；不会自动覆盖。")
+    normalized = empty_state()
+    seen: set[str] = set()
+    for edition, item in domains.items():
+        if not isinstance(item, dict):
+            raise TypeError("共享代理域名状态格式不正确。")
+        domain = validate_domain(str(item.get("domain", "")))
+        if domain in seen:
+            raise ValueError("同一个域名不能同时分配给两个 Edition。")
+        port = int(item.get("backend_port", 0))
+        expected_port = EDITION_BACKEND_PORTS[edition]
+        if port != expected_port:
+            raise ValueError(
+                f"共享代理状态中的 {edition} 后端端口应为 {expected_port}；不会自动覆盖。"
+            )
+        seen.add(domain)
+        normalized["domains"][edition] = {
+            "domain": domain,
+            "backend_port": port,
+        }
+    return normalized
+
+def state_with_route(
+    state: dict[str, Any], product: ProductProfile, domain: str
+) -> dict[str, Any]:
+    result = normalize_state(json.dumps(state))
+    domain = validate_domain(domain)
+    for edition, item in result["domains"].items():
+        if edition != product.key and item["domain"] == domain:
+            raise ValueError("该域名已分配给另一个 TG2Cloud Edition。")
+    result["domains"][product.key] = {
+        "domain": domain,
+        "backend_port": product.management_port,
+    }
+    return result
+
+def state_without_route(state: dict[str, Any], edition: str) -> dict[str, Any]:
+    result = normalize_state(json.dumps(state))
+    result["domains"].pop(edition, None)
+    return result
+
+def routes_from_state(state: dict[str, Any]) -> tuple[DomainRoute, ...]:
+    normalized = normalize_state(json.dumps(state))
+    return tuple(
+        DomainRoute(edition, item["domain"], item["backend_port"])
+        for edition, item in sorted(normalized["domains"].items())
+    )
+
+def parse_markers(output: str) -> dict[str, str]:
+    markers: dict[str, str] = {}
+    for line in output.splitlines():
+        match = _MARKER_RE.fullmatch(line.strip())
+        if match:
+            markers[match.group(1)] = match.group(2)
+    return markers
+
+def _marker_addresses(markers: dict[str, str], key: str) -> tuple[str, ...]:
+    result: list[str] = []
+    for raw in markers.get(key, "").split(","):
+        value = raw.strip()
+        if not value:
+            continue
+        try:
+            address = ipaddress.ip_address(value)
+        except ValueError:
+            continue
+        if key == "PROXY_DNS_A" and address.version != 4:
+            continue
+        if key == "PROXY_DNS_AAAA" and (
+            address.version != 6 or getattr(address, "ipv4_mapped", None) is not None
+        ):
+            continue
+        result.append(str(address))
+    return tuple(sorted(set(result)))
+
+def parse_environment(output: str) -> ProxyEnvironment:
+    markers = parse_markers(output)
+    return ProxyEnvironment(
+        core=markers.get("PROXY_CORE", "UNKNOWN"),
+        docker=markers.get("PROXY_DOCKER", "UNKNOWN"),
+        port_80=markers.get("PROXY_PORT_80", "UNKNOWN"),
+        port_443=markers.get("PROXY_PORT_443", "UNKNOWN"),
+        dns_a=_marker_addresses(markers, "PROXY_DNS_A"),
+        dns_aaaa=_marker_addresses(markers, "PROXY_DNS_AAAA"),
+        local_addresses=_marker_addresses(markers, "PROXY_LOCAL_IPS"),
+    )
+
+def dns_matches_environment(environment: ProxyEnvironment, ssh_host: str) -> bool:
+    expected = set(environment.local_addresses)
+    try:
+        expected.add(str(ipaddress.ip_address(ssh_host.strip().strip("[]"))))
+    except ValueError:
+        # A hostname used for SSH can be round-robin or proxied.  Only addresses
+        # actually assigned to this VPS are authoritative for the DNS gate.
+        pass
+    targets = set(environment.dns_a) | set(environment.dns_aaaa)
+    return bool(targets) and targets <= expected
+
+def dns_diagnostic(environment: ProxyEnvironment, ssh_host: str) -> str:
+    """Return non-sensitive DNS details suitable for the dialog and errors."""
+    expected = set(environment.local_addresses)
+    try:
+        expected.add(str(ipaddress.ip_address(ssh_host.strip().strip("[]"))))
+    except ValueError:
+        pass
+
+    def display(values: tuple[str, ...] | set[str]) -> str:
+        return ", ".join(sorted(values)) if values else "无"
+
+    return (
+        f"DNS A：{display(environment.dns_a)}；"
+        f"AAAA：{display(environment.dns_aaaa)}；"
+        f"当前 VPS：{display(expected)}"
+    )
