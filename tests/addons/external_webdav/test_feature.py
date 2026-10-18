@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import ast
 import base64
 import copy
 import json
@@ -418,8 +419,33 @@ class EntryAndReleaseTests(unittest.TestCase):
         self.assertIn("print-config", result.stdout)
 
     def test_main_installers_and_bot_do_not_opt_in(self):
-        for name in ("install.sh", "install-lan.sh", "src/tg2cloud/cli/vps.py", "src/tg2cloud/app.py"):
+        block = re.compile(r"<<'PY'[^\n]*\n(.*?)^PY\s*$", re.MULTILINE | re.DOTALL)
+        for name in ("install.sh", "install-lan.sh"):
+            source = (ROOT / name).read_text(encoding="utf-8")
+            self.assertNotIn("external_webdav", block.sub("", source))
+            self.assertNotIn("install-webdav.sh", source)
+            self.assertNotIn("tg2cloud-webdav", source)
+            for embedded in block.findall(source):
+                tree = ast.parse(embedded)
+                for node in ast.walk(tree):
+                    if isinstance(node, ast.Assign) and any(isinstance(target, ast.Name) and target.id == "files" for target in node.targets):
+                        # Downloading shared compatibility modules is not an
+                        # activation. Exclude only the literal file allowlist,
+                        # never executable statements or imports, from this guard.
+                        self.assertTrue(all(isinstance(path, str) for path in ast.literal_eval(node.value)))
+                        node.value = ast.Tuple(elts=[], ctx=ast.Load())
+                self.assertNotIn("external_webdav", ast.unparse(tree))
+        for name in ("src/tg2cloud/cli/vps.py", "src/tg2cloud/app.py"):
             self.assertNotIn("external_webdav", (ROOT / name).read_text(encoding="utf-8"))
+
+    def test_main_dispatch_does_not_call_addon_installer(self):
+        from tg2cloud.cli import commands
+
+        for command, target in (("install", "tg2cloud.cli.vps.main"), ("lan", "tg2cloud.deployment.proxy.lan.main")):
+            with self.subTest(command=command), patch(target, return_value=0) as operation, patch.object(cli, "main") as addon, patch.object(commands.signal, "signal"):
+                self.assertEqual(commands.main([command, "--help"]), 0)
+                operation.assert_called_once_with(["--help"])
+                addon.assert_not_called()
 
     def test_stable_contract_and_host_bundle_are_complete(self):
         releases.supported(ROOT)
