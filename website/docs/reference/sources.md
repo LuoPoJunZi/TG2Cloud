@@ -1,13 +1,13 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 18 日**，对应 TG2Cloud **v1.3.1** 的独立外部 WebDAV 与 Linux 脚本说明，当前待发布，下载仍以正式 v1.3.0 为准。源码包、SHA256 与不可变 Tag 的结果以 GitHub Release 和对应 Actions 为准。历史 v1.3.0 CloudDrive2 迁移不等于本版附加功能已实机验收；原生账号、手机、公网 ACME 和 ARM64 仍需单独核对。
+本次内容核对日期为 **2026 年 10 月 18 日**，对应 TG2Cloud **v1.3.1** 的独立外部 WebDAV 与 Linux 脚本说明。正式源码包、SHA256 与不可变 Tag 已发布并核对，以 GitHub Release 和对应 Actions 为准。历史 v1.3.0 CloudDrive2 迁移不等于本版附加功能已实机验收；原生账号、手机、公网 ACME 和 ARM64 仍需单独核对。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
-| [已发布 v1.3.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) | 同标签源码包与实际 SHA256；历史 Windows EXE 另见 v1.2.1 |
+| [已发布 v1.3.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1) | 同标签源码包与实际 SHA256；独立外部 WebDAV 与共享代理兼容 |
 | [已发布 v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) | 同一次 Actions 构建的实际资产与 SHA256；不是实机验收结论 |
 | [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |

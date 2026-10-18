@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.3.1
 
-版本日期：2026-10-18，发布准备中。独立外部 WebDAV 附加功能；主安装流程和 Bot 菜单保持原行为，正式状态以同名 Release 为准。
+版本日期：2026-10-18。[v1.3.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1) 已发布源码包与实际 SHA256。独立外部 WebDAV 附加功能；主安装流程和 Bot 菜单保持原行为。
 
 - 独立 Linux 入口 `install-webdav.sh` 和离线维护命令，不加入主安装、Bot 菜单或运行依赖。
 - 两版原生独立只读账号通过人工后台设置/确认后做认证和目录检查；单账号强哈希门禁、只读方法、Range 和失败关闭，不复用 Bot/管理员凭据。

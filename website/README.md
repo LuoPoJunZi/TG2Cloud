@@ -2,7 +2,7 @@
 
 TG2Cloud 中文网页文档。包含品牌首页、31 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
-**正文基准：TG2Cloud v1.3.1；资料核对日期：2026-10-18。** 本版准备发布独立只读外部 WebDAV，主安装与 Bot 菜单保持原行为；正式完成前下载仍指向 v1.3.0。外部入口的隔离 Nginx/认证/Range 回归已通过，原生两版账号、手机、ACME 和 ARM64 仍需实机验收。Windows EXE 停留在 v1.2.1；历史 CloudDrive2 v1.3.0 使用验收见[原记录](../docs/development/V130-ACCEPTANCE.md)，不扩展为新版全部验收结论。
+**正文基准：TG2Cloud v1.3.1；资料核对日期：2026-10-18。** 本版已发布独立只读外部 WebDAV，主安装与 Bot 菜单保持原行为；源码包与实际 SHA256 已核对。外部入口的隔离 Nginx/认证/Range 回归已通过，原生两版账号、手机、ACME 和 ARM64 仍需实机验收。Windows EXE 停留在 v1.2.1；历史 CloudDrive2 v1.3.0 使用验收见[原记录](../docs/development/V130-ACCEPTANCE.md)，不扩展为新版全部验收结论。
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 
@@ -73,7 +73,7 @@ npm run dev
 | 分类 | 内容 |
 | --- | --- |
 | 开始使用（5 篇） | 项目介绍、版本选择、部署前准备、从零部署、下载与校验 |
-| 部署与配置（7 篇） | SSH、域名 HTTPS、Telegram 配置、CloudDrive2、OpenList、资源预算、WebDAV 验收 |
+| 部署与配置（8 篇） | SSH、域名 HTTPS、Telegram 配置、CloudDrive2、OpenList、资源预算、WebDAV 验收、外部 WebDAV |
 | 日常使用（4 篇） | 第一次转存、Bot 命令、任务状态、流式传输与速度 |
 | 运维与迁移（4 篇） | 状态与日志、升级与配置、备份边界、TG115 迁移 |
 | 问题排查（4 篇） | FAQ、SSH 与管理页、WebDAV、队列/空间/上传失败 |

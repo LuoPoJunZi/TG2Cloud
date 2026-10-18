@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current source: **v1.3.1 (release preparation)**, maintained through Linux scripts. Published downloads are listed in [Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). The [historical CloudDrive2 v1.3.0 acceptance record](docs/development/V130-ACCEPTANCE.md) does not certify every scenario in this new version.
+Current version: **v1.3.1**, maintained through Linux scripts. The source archive and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). The [historical CloudDrive2 v1.3.0 acceptance record](docs/development/V130-ACCEPTANCE.md) does not certify every scenario in this new version.
 
 ## Getting started
 
@@ -76,7 +76,7 @@ This command only previews; it does not uninstall. Actual complete removal delet
 
 ## Documentation
 
-Optional add-on: [External WebDAV (planned for v1.3.1)](docs/external-webdav.md). Separately installed, read-only HTTPS access to an existing upload directory with an independent native account. The public installer becomes usable after the supporting stable Release is published.
+Optional add-on: [External WebDAV](docs/external-webdav.md). Available since v1.3.1: separately installed, read-only HTTPS access to an existing upload directory with an independent native account, an online installer and offline maintenance commands.
 
 Browse the repository guides by topic below. Most are in Chinese; see the [full documentation index](docs/README.md) or the [documentation website](https://tg2cloud.pages.dev/).
 

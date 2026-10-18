@@ -7,17 +7,17 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.3.1
 git rev-parse HEAD
 ```
 
-本文档对应待发布 v1.3.1，正式下载仍为 v1.3.0，见[下载页](/download/)。main 用于当前开发并须记录提交号；复现已发布版本时使用对应标签，不能把未发布修改当成 Release 行为。
+本文档对应正式 v1.3.1，见[下载页](/download/)。main 用于当前开发并须记录提交号；复现已发布版本时使用对应标签，不能把后续未发布修改当成 Release 行为。
 
 ## 关键目录与入口
 
-下表为正式 v1.3.0 已发布的 Linux / Python + Bash 结构；上面的标签命令用于复现该版本。main 可能包含发布后的检查或文档更新，应另外记录提交号。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
+下表为 v1.3.1 沿用的 Linux / Python + Bash 结构；上面的标签命令用于复现 v1.3.1。main 可能包含发布后的检查或文档更新，应另外记录提交号。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
-v1.3.1 沿用该结构，独立附加功能在 `src/tg2cloud/addons/external_webdav/`，专用入口为 `install-webdav.sh`。当前 main 用于发布准备，正式 Release 完成前不把公开入口下载成功当作实机安装通过。
+v1.3.1 沿用该结构，独立附加功能在 `src/tg2cloud/addons/external_webdav/`，专用入口为 `install-webdav.sh`。源码包已正式发布；下载、构建或发布成功都不等于实机安装通过。
 
 | 路径 | 用途 |
 | --- | --- |
