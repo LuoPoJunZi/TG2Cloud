@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前源码 **v1.3.2（待发布）**，以 Linux 脚本维护；已发布源码包与校验清单见 [v1.3.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。历史 CloudDrive2 v1.3.0 升级范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表新版所有部署与恢复场景均已通过。
+当前版本 **v1.3.2**，以 Linux 脚本维护；源码包与校验清单见 [正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.2)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。历史 CloudDrive2 v1.3.0 升级范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表新版所有部署与恢复场景均已通过。
 
 ## 开始使用
 
@@ -56,7 +56,7 @@ v1.3.2 统一安装与管理：公网／内网入口选择 Edition 后，未安�
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-脚本先收集信息、检查并等待确认，业务代码只安装正式稳定 Release。已有实例建议先追加 `--edition clouddrive2 --check`（OpenList 使用 `openlist`）；只读检查不执行升级，核对后去掉 `--check` 再确认执行。完整参数见 [VPS 指南](docs/VPS-INSTALL.md)。
+脚本先收集信息、检查并等待确认，业务代码只安装正式稳定 Release。已有实例建议先追加 `--edition clouddrive2 --check`（OpenList 使用 `openlist`）；只读检查不执行升级。核对后重新运行不带参数的入口，选择 Edition 和“安装 / 升级”并确认，可同时获得离线管理命令；显式参数仍兼容。完整参数见 [VPS 指南](docs/VPS-INSTALL.md)。
 
 ### 可信内网 / NAS
 

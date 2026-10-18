@@ -2,7 +2,7 @@
 
 TG2Cloud 中文网页文档。包含品牌首页、31 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
-**正文基准：TG2Cloud v1.3.2（待发布）；资料核对日期：2026-10-18。** 新版中文安装与离线管理菜单、外部 WebDAV 交互优化正在准备发布；已发布下载基线仍为 v1.3.1。Bot 业务、网关镜像、数据库和 Session 不随本轮交互更新改变。原生两版账号、手机、ACME、ARM64 及新版安装／卸载仍需实机验收。Windows EXE 停留在 v1.2.1；历史 CloudDrive2 v1.3.0 使用验收见[原记录](../docs/development/V130-ACCEPTANCE.md)，不扩展为新版全部验收结论。
+**正文基准：TG2Cloud v1.3.2；资料核对日期：2026-10-18。** 新版中文安装与离线管理菜单、外部 WebDAV 交互优化已正式发布，实际源码资产及 SHA256 已核对。Bot 业务、网关镜像、数据库和 Session 不随本轮交互更新改变。原生两版账号、手机、ACME、ARM64 及新版安装／卸载仍需实机验收。Windows EXE 停留在 v1.2.1；历史 CloudDrive2 v1.3.0 使用验收见[原记录](../docs/development/V130-ACCEPTANCE.md)，不扩展为新版全部验收结论。
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 

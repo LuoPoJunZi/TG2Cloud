@@ -51,7 +51,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 验证与兼容范围
 
-正式发布由同一 Tag 的 Actions 重新执行 Linux 回归、宿主 Python 3.10 / 3.13 兼容检查、Compose、非 root 候选镜像及隔离 Nginx / WebDAV 检查；验证成功后只打包一次，发布任务复用该产物并核对 SHA256。结果以实际工作流为准。
+发布提交已通过主分支的 Linux 回归与宿主 Python 3.10 / 3.13 兼容检查。同一 Tag 的 Release Actions 再执行 Python 3.12 全量回归、Compose、非 root 候选镜像及隔离 Nginx / WebDAV 检查；验证成功后只打包一次，发布任务复用该产物并核对 SHA256。结果以实际工作流为准。
 
 **本轮不连接真实 VPS、Telegram 或用户网盘。新版安装／升级／卸载、两网关原生账号与目录权限、手机播放、公网 ACME 和 ARM64 的端到端验收仍需单独完成。** 主安装支持范围仍为 Debian / Ubuntu x86_64、rootful Docker、宿主 Python 3.10+；附加功能预检接受 ARM64，不等于主安装支持已扩大。隔离测试不能代替网关会员能力或原生 ACL 审计。
 

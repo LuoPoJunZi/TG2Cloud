@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current source: **v1.3.2 (unreleased)**, maintained through Linux scripts. The published source archive and checksums are available in the [v1.3.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). The [historical CloudDrive2 v1.3.0 acceptance record](docs/development/V130-ACCEPTANCE.md) does not certify every scenario in this new version.
+Current version: **v1.3.2**, maintained through Linux scripts. The source archive and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.2). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). The [historical CloudDrive2 v1.3.0 acceptance record](docs/development/V130-ACCEPTANCE.md) does not certify every scenario in this new version.
 
 ## Getting started
 
@@ -56,7 +56,7 @@ Prepare a domain pointing to the VPS and allow inbound TCP 80/443. Select CloudD
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-The wizard collects information, checks the environment and asks for confirmation. Business code comes only from official stable Releases. For an existing instance, first append `--edition clouddrive2 --check` (use `openlist` for OpenList). This check does not upgrade; review the plan, remove `--check`, then confirm execution. See the [VPS guide](docs/VPS-INSTALL.md).
+The wizard collects information, checks the environment and asks for confirmation. Business code comes only from official stable Releases. For an existing instance, first append `--edition clouddrive2 --check` (use `openlist` for OpenList). This check does not upgrade. Then rerun the entry without arguments, choose the Edition and installation/upgrade, and confirm to also install the offline manager. Explicit flags remain compatible. See the [VPS guide](docs/VPS-INSTALL.md).
 
 ### Trusted LAN / NAS
 

@@ -4,7 +4,7 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 ## TG2Cloud v1.3.2
 
-版本与资料核对日期：2026-10-18。本版待发布；当前可下载的正式版本仍为 [v1.3.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1)。进度见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+版本与资料核对日期：2026-10-18。[v1.3.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.2) 已正式发布；辅助提交、入口提交和同标签发布检查全部通过，下载的源码包、实际 SHA256 与公开资产摘要已核对。详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 - 公网／内网默认入口采用中文编号向导，未安装的 Edition 确认后进入安装，已有实例进入管理；新装 WebDAV 密码回车生成 8 位，升级保留原配置。
 - 新增离线 `tg2cloud`：安装升级、状态、日志、启停、WebDAV 验收、HTTPS、备份、凭据与“卸载当前实例”；危险操作保留确认，状态／日志不下载代码。

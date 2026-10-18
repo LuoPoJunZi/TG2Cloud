@@ -2,6 +2,12 @@
 
 从 v1.3.0 起以 Linux 一键脚本为主入口，CloudDrive2 和 OpenList 两个 Edition 继续维护。最后一个 Windows 部署器版本为 v1.2.1，历史 Tag、Release、EXE 和原校验文件保留。
 
+## v1.3.2 安装与离线管理
+
+公网／内网的默认入口先选择 Edition，缺失时确认安装，已有实例进入管理菜单。确认安装管理命令后可在主机运行 `tg2cloud`，不依赖 Windows；显式参数和原 `manage.sh` 仍兼容。最后一套完整卸载只在无依赖且归属核验通过时清理管理代码，独立卸载 URL 保留救援。菜单、权限及未验收边界见[运维指南](../OPERATIONS.md#本地管理菜单)。
+
+新装 WebDAV 密码回车生成 8 位、默认时区 Asia/Shanghai；升级保留已有配置、Session、数据库和预算。独立外部 WebDAV 使用自己的编号向导与 9 位默认密码，仍不加入主安装或 Bot。主安装支持范围没有扩大；真实两 Edition 安装／升级／卸载和 NAS 仍需独立验收。
+
 ## v1.3.1 独立附加功能
 
 v1.3.1 沿用 Linux Python + Bash 架构，新增独立 `install-webdav.sh`，不加入公网/内网主安装或 Bot 菜单。主入口 helper 必须包含兼容 proxy schema 2 的共享代码；旧工具拒绝或禁止维护新状态，详见[外部 WebDAV](../external-webdav.md)。原生两版账号、手机、ACME 和 ARM64 尚未端到端实机验收。发布授权仍不包含部署真实实例。
@@ -14,7 +20,7 @@ v1.3.1 沿用 Linux Python + Bash 架构，新增独立 `install-webdav.sh`，�
 
 曾安装旧布局的同号 v1.3.0 实验实例需单独核对迁移；版本号相同不表示源码相同。脚本遇到基线不一致会停止，不会自动覆盖或重建数据库。不要删除版本标识、配置或 Session 来绕过此保护。
 
-## 本轮实现与当前上线边界
+## v1.3.0 实现与历史上线边界
 
 - Linux 重构见[模块与兼容说明](LINUX-REFACTOR.md)；产品版本为 v1.3.0，旧源码验证后本地归档，公共 CI 不依赖归档。
 - VPS 与 LAN 首次安装复用 `src/tg2cloud/deployment/resources.py` 的均衡／流式优先推荐，用户明确选择或手动输入；手动输入不能绕过资源校验。

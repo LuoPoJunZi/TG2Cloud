@@ -4,7 +4,7 @@ TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本（测试阶段）](LAN-INSTALL.md)。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前源码为 v1.3.2（待发布），正式状态以 GitHub Release 为准。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录不代表新版实机验收；首次安装、正式版自动升级与回退仍需独立验证，OpenList 脚本实机验收暂缓。详见[验收记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
+> 当前版本为 v1.3.2，正式状态以 GitHub Release 为准。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录不代表新版实机验收；首次安装、正式版自动升级与回退仍需独立验证，OpenList 脚本实机验收暂缓。详见[验收记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
 
 ## 支持范围
 
