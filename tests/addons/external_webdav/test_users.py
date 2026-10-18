@@ -56,6 +56,17 @@ class FamilyWebDAVTests(unittest.TestCase):
         self.service.record = lambda: config.validate_record(json.loads(self.service.record_path.read_text()))
         self.service.revoke = lambda: self.service.auth_write(config.auth_content({}))
         self.service.auth_write(config.auth_content({"phone-reader": HASH}))
+        # Only ownership is privileged: retain real temporary writes, fsync,
+        # chmod and atomic replacement without requiring a root test runner.
+        def check_owner(path, uid, gid):
+            self.assertEqual(Path(path).parent, self.service.auth.parent)
+            self.assertTrue(Path(path).name.startswith("." + self.service.auth.name + "-"))
+            self.assertEqual(uid, 0)
+            self.assertEqual(gid, self.service.auth.stat().st_gid)
+
+        self.ownership = patch.object(config.os, "chown", side_effect=check_owner, create=True)
+        self.chown = self.ownership.start()
+        self.addCleanup(self.ownership.stop)
         self.ui.confirm.return_value = True
         self.ui.ask.side_effect = [SECRET, self.item["target_dir"]]
         self.backend = patch.object(verification, "check_backend")
@@ -70,6 +81,18 @@ class FamilyWebDAVTests(unittest.TestCase):
 
     def run_account(self, action="add", user="family-reader"):
         users.account(self.service, action, user)
+
+    def test_failed_chown_preserves_previous_auth_and_removes_candidate(self):
+        before = self.service.auth.read_bytes()
+        inode = self.service.auth.stat().st_ino
+        self.chown.side_effect = PermissionError("synthetic ownership failure")
+        with self.assertRaises(PermissionError):
+            config.atomic(self.service.auth, config.auth_content({"family-reader": NEW_HASH}),
+                          mode=0o640, gid=self.service.auth.stat().st_gid)
+        self.chown.assert_called_once()
+        self.assertEqual(self.service.auth.read_bytes(), before)
+        self.assertEqual(self.service.auth.stat().st_ino, inode)
+        self.assertEqual(list(self.service.auth.parent.glob("." + self.service.auth.name + "-*")), [])
 
     def test_add_migrates_v1_without_changing_directory_route_or_primary(self):
         self.assertEqual(self.service.record()["schema"], 1)
