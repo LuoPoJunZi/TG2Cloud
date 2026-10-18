@@ -22,7 +22,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this reviewed immutable pin only after the LAN module passes CI/review.
-installer_commit="1879a8e1c498fbabaf7ba26ba4b9810f1cfd44e6"
+installer_commit="ea43d845b7f4c7185166a7474ef30e44ba2af8df"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '内网向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2
@@ -76,6 +76,7 @@ files = (
     'src/tg2cloud/addons/external_webdav/nginx.py',
     'src/tg2cloud/addons/external_webdav/releases.py',
     'src/tg2cloud/addons/external_webdav/service.py',
+    'src/tg2cloud/addons/external_webdav/users.py',
     'src/tg2cloud/addons/external_webdav/verification.py',
     'src/tg2cloud/cli/__init__.py',
     'src/tg2cloud/cli/__main__.py',
@@ -107,6 +108,7 @@ files = (
     'src/tg2cloud/deployment/runtime.py',
     'src/tg2cloud/deployment/uninstall.py',
     'src/tg2cloud/deployment/upgrade.py',
+    'src/tg2cloud/deployment/users.py',
     'src/tg2cloud/version.py',
 )
 try:

@@ -58,7 +58,7 @@ root = Path(sys.argv[1])
 api = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 # Update this pin only after the helper revision passes its CI and review.
 # It is independent of the target Release, which need not contain the CLI.
-installer_commit = "1879a8e1c498fbabaf7ba26ba4b9810f1cfd44e6"
+installer_commit = "ea43d845b7f4c7185166a7474ef30e44ba2af8df"
 installer_version = "1.3.3"
 
 def validate_url(url):
@@ -113,6 +113,7 @@ try:
         'src/tg2cloud/addons/external_webdav/nginx.py',
         'src/tg2cloud/addons/external_webdav/releases.py',
         'src/tg2cloud/addons/external_webdav/service.py',
+        'src/tg2cloud/addons/external_webdav/users.py',
         'src/tg2cloud/addons/external_webdav/verification.py',
         'src/tg2cloud/cli/__init__.py',
         'src/tg2cloud/cli/__main__.py',
@@ -144,6 +145,7 @@ try:
         'src/tg2cloud/deployment/runtime.py',
         'src/tg2cloud/deployment/uninstall.py',
         'src/tg2cloud/deployment/upgrade.py',
+        'src/tg2cloud/deployment/users.py',
         'src/tg2cloud/version.py',
     )
     for name in files:
