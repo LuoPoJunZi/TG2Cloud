@@ -104,7 +104,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 独立卸载：先预检
 
-待发布的默认公网／内网入口已经整合管理菜单：选择已有 Edition 后可从菜单 9 卸载，无需另记独立命令；本机也可运行 `tg2cloud`。最后一套完整卸载后，无依赖且归属可验证时清理快捷命令及其代码。下方 `uninstall.sh` URL 保留作兼容／救援及只读预检，不删除旧入口；新行为须先发布并更新固定 helper 才会在网上生效。见[管理菜单](/operations/maintenance/)。
+v1.3.2 默认公网／内网入口整合管理菜单：选择已有 Edition 后可从菜单 9 卸载，无需另记独立命令；确认安装管理命令后，本机也可运行 `tg2cloud`。最后一套完整卸载后，无依赖且归属可验证时清理快捷命令及其代码。下方 `uninstall.sh` URL 保留作兼容／救援及只读预检，不删除旧入口；旧主机需显式更新，不会自动更换管理代码。见[管理菜单](/operations/maintenance/)。
 
 卸载不是升级步骤。v1.2.0 Tag 中的原入口默认保留实例数据、证书和历史备份；主分支追加的完整清理增强会在双重确认后删除所选配置、数据库、下载和可识别历史备份。需要保留数据时必须明确使用 `--keep-data`。用户已反馈原保留数据卸载在其 VPS 通过，但完整清理增强仍待新的实机验收，不据此推定 NAS 或两个 Edition 均通过。两个 EXE 与正式 Release 不变，详情见 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
 

@@ -44,7 +44,7 @@ Both editions share transfer capabilities but have different gateway configurati
 
 ## Quick start
 
-Pending source changes unify installation and management: the public/LAN entries offer setup for a missing Edition or its maintenance menu, including uninstall, for an existing instance. Locally, run `tg2cloud`. Uninstall remains Edition-scoped; removing the last instance in full also removes verified manager code and its command when unused. The standalone uninstall URL stays available for compatibility/recovery. Online availability requires a new verified helper pin; see the [operations guide](docs/OPERATIONS.md#本地管理菜单待发布).
+v1.3.2 unifies installation and management: the public/LAN entries offer setup for a missing Edition or its maintenance menu, including uninstall, for an existing instance. After confirming manager installation, run `tg2cloud` locally. Uninstall remains Edition-scoped; removing the last instance in full also removes verified manager code and its command when unused. The standalone uninstall URL stays available for compatibility/recovery. Existing hosts require an explicit update; see the [operations guide](docs/OPERATIONS.md#本地管理菜单).
 
 Requires Debian / Ubuntu x86_64, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
 

@@ -102,11 +102,11 @@ v1.3.0 的三个在线入口使用新布局清单和 `scripts/run_source.py`，�
 
 下一版确定版本后，若版本源或辅助代码有变化，应先公开并验证对应的新辅助提交，再更新入口 pin；不要直接使用早期整理提交替代最终版本基线。仅推送 main 不会改变已有正式 Release。
 
-待发布的中文安装 UI 和离线管理入口新增 `cli/management.py`、`cli/presentation.py`、`deployment/runtime.py`，均为宿主标准库模块。递归清单已涵盖它们；本地 `manage --help` 不加载 Bot 或访问 Docker。离线运行代码从正在执行的已审阅向导（公开时为固定 helper A）复制，而不是把业务 Release 或移动 main 当成助手来源；业务 payload 的稳定发布规则不变。根入口的有效旧 pin 不能现在改为不存在的 SHA，也不能把新文件清单指向不含这些文件的旧提交。
+v1.3.2 的中文安装 UI 和离线管理入口新增 `cli/management.py`、`cli/presentation.py`、`deployment/runtime.py`，均为宿主标准库模块。递归清单已涵盖它们；本地 `manage --help` 不加载 Bot 或访问 Docker。离线运行代码从正在执行的已审阅向导（在线入口为固定 helper A）复制，而不是把业务 Release 或移动 main 当成助手来源；业务 payload 的稳定发布规则不变。不能使用不存在的 SHA，也不能把新文件清单指向不含这些文件的旧提交。
 
 默认公网／内网分发现在复用管理入口：缺失 Edition 确认进入原安装器，已有实例进入菜单；显式参数仍交给原解析器。完整卸载复用原核心后，只有无依赖才清理受管命令和代码。新增 lifecycle 锁协调确认安装与最后清理，清理按 Edition 排序锁、代理锁和代码发布锁复核；代码锁移到保留的锁目录，不能因删除运行包替换正在锁定的 inode。部分清理返回 PARTIAL/非零，不冒充成功或重新提示安装。独立 uninstall.sh 保留救援能力；不能为了“统一入口”删除已公开 URL 或放宽归属校验。
 
-发布前先确定版本并验证代码／清单，公开辅助提交 A 并通过 CI，再生成候选入口，将其 pin 与下载清单在 B 一起更新；严格源码发布检查必须确认所有 helper 与 A 一致，不能为本地未发布状态放宽。还需在隔离 Linux 执行真实 TTY、文件锁、离线命令启动与两 Edition 安装/升级，以及 Docker/WebDAV/HTTPS 验收；模拟与 Windows 检查不替代这些结果。此轮不更新正式版本、Tag、Release 或远端 pin。
+v1.3.2 辅助提交 A 为 `1879a8e1c498fbabaf7ba26ba4b9810f1cfd44e6`，已通过五个公开 CI（Linux／Docker／WebDAV、宿主 Python 3.10／3.13、仓库、文档与网站），入口 B 同时更新三个下载清单和 pin。严格发布校验逐文件确认辅助源码与 A 一致，不放宽检查。本轮不连接真实 VPS 或用户网盘；真实新装／升级／卸载、原生账号、手机及公网 ACME 仍需独立验收，不能用隔离 CI 代替。
 
 ## 验收范围
 

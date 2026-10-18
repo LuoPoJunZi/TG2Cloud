@@ -56,6 +56,8 @@ v1.3.0 在线 helper 已切换新布局，固定到已公开且通过 CI 的提�
 
 v1.3.1 辅助提交 A 为 `90648bf0878958b976541f660df69fcb24ea807f`，已通过 Linux/Docker 和宿主 Python 3.10/3.13 CI；三个入口在 B 更新递归清单并固定 A。附加功能使用正式源码资产和 SHA256，不复用历史 v1.3.0 helper 维护 schema 2。
 
+v1.3.2 辅助提交 A 为 `1879a8e1c498fbabaf7ba26ba4b9810f1cfd44e6`，已通过五个公开 CI；三个入口 B 的清单包含中文管理模块和宿主运行包，逐文件匹配 A。新增 `tg2cloud` 菜单不改变业务稳定 Release 选择或实例数据位置，不能用旧 helper 覆盖新布局。
+
 v1.1.1 至 v1.2.1 的 Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。历史 EXE 和对应 SHA256 保留，不由新工作流重写。
 
 v1.1.2 进一步核对 Tag、共享版本源、Windows 版本资源、CHANGELOG 和 Release Notes 的一致性；维护助手与备份对话框纳入打包自检。已有 Release 不会被新运行覆盖，本地 EXE 的校验值不作为 Actions 产物校验值。
