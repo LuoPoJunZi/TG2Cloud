@@ -173,6 +173,16 @@ class SharedStateTests(unittest.TestCase):
         self.assertIn("return 403", text)
         self.assertIn("listen 443 ssl", text)
 
+    def test_method_guard_runs_before_limit_except_location_selection(self):
+        for edition in ("clouddrive2", "openlist"):
+            with self.subTest(edition=edition):
+                text = nginx.render_route(route(edition))
+                tls_server = text.split("listen 443 ssl;", 1)[1]
+                server_policy, locations = tls_server.split("location / {", 1)
+                self.assertIn("if ($request_method !~ ^(GET|HEAD|OPTIONS|PROPFIND)$) { return 405; }", server_policy)
+                self.assertNotIn("if ($request_method", locations)
+                self.assertEqual(locations.count("limit_except GET HEAD OPTIONS PROPFIND { deny all; }"), 2)
+
     def test_last_management_removal_keeps_proxy_alive(self):
         manager = DomainProxyManager(Mock(), PRODUCTS["clouddrive2"], {}, Mock())
         manager.read_state = Mock(return_value=shared())

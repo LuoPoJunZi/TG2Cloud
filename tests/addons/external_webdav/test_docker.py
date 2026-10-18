@@ -148,8 +148,10 @@ class ExternalNginxTests(unittest.TestCase):
                     for bad_user, bad_secret in ((user, SECRET + "-bad"), ("bot-user", SECRET), ("admin", SECRET)):
                         self.assertEqual(request("PROPFIND", "/dav/", bad_user, bad_secret)[0], 401)
                     before = len(observed)
-                    for method in ("PUT", "DELETE", "MOVE", "COPY", "MKCOL", "PROPPATCH", "LOCK", "UNLOCK", "POST"):
-                        self.assertEqual(request(method, "/dav/test-only")[0], 405)
+                    for method in ("PUT", "DELETE", "MOVE", "COPY", "MKCOL", "PROPPATCH", "LOCK", "UNLOCK", "POST", "PATCH"):
+                        for path in ("/dav", "/dav/", "/dav/test-only"):
+                            with self.subTest(method=method, path=path):
+                                self.assertEqual(request(method, path)[0], 405)
                     self.assertEqual(len(observed), before, "write rejection must happen before the synthetic backend")
                     for path in ("/dav", "/dav/"):
                         status, body, _ = request("PROPFIND", path)

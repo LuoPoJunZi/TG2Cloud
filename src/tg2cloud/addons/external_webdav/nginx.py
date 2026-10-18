@@ -38,7 +38,6 @@ limit_req_zone ${prefix}_listing zone={prefix}_propfind:1m rate=2r/s;
     locations = "    location / { return 404; }\n"
     for location in ("= /dav", "^~ /dav/"):
         policy = "return 403;" if not route["enabled"] else f"""
-        if ($request_method !~ ^(GET|HEAD|OPTIONS|PROPFIND)$) {{ return 405; }}
         if ($http_depth !~ ^(0|1|)$) {{ return 403; }}
         auth_basic "TG2Cloud external WebDAV";
         auth_basic_user_file /etc/nginx/{route['auth_file']};
@@ -84,6 +83,9 @@ limit_req_zone ${prefix}_listing zone={prefix}_propfind:1m rate=2r/s;
     listen [::]:443 ssl;
     server_name {domain};
     if ($host != {domain}) {{ return 444; }}
+    # Run before location selection: limit_except does not inherit location
+    # rewrite directives, so a location-level return would be skipped there.
+    if ($request_method !~ ^(GET|HEAD|OPTIONS|PROPFIND)$) {{ return 405; }}
     ssl_certificate /etc/letsencrypt/live/{domain}/fullchain.pem;
     ssl_certificate_key /etc/letsencrypt/live/{domain}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
