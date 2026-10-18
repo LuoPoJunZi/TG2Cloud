@@ -1,17 +1,16 @@
-**TG2Cloud v1.3.1** 增加独立的只读「外部 WebDAV」附加功能，可通过专用 HTTPS 域名访问 Bot 已有上传目录。两个 Edition 继续使用 Linux 一键脚本；Windows 部署器停留在 v1.2.1。
+**TG2Cloud v1.3.2** 优化 Linux 安装交互，新增离线 `tg2cloud` 管理菜单，并简化独立外部 WebDAV 向导。CloudDrive2 / OpenList 继续共用稳定 Bot 核心；Windows EXE 保留在 v1.2.1。
 
 ## 本次更新
 
-- **独立入口**：新增 `install-webdav.sh` 与离线 `tg2cloud-webdav`，支持安装、状态、检查、启停、配置、升级和卸载。主安装不默认安装或询问此功能，Bot 菜单和运行依赖不变。
-- **独立只读账号**：引导在原生网关后台创建专用账号，将根目录直接限定为最终上传目录；不复用 Bot、管理员或网盘凭据。原生权限由用户确认，程序验证认证与目录响应。
-- **HTTPS 读取**：单账号哈希门禁与原生只读权限共同约束，允许 GET、HEAD、OPTIONS、PROPFIND，支持中文文件名和 Range；禁止写方法、危险编码和越界路径，不展示网关管理后台。
-- **共享代理兼容**：proxy schema 2 保留管理与附加路由，续期和私密备份覆盖新增资源；禁用时拒绝访问，主卸载会提示附加依赖，独立卸载不删除云文件或 Bot 数据。
-- **Nginx 边界修复**：方法检查提前到 server 层，修正反斜杠正则的配置转义；隔离 Docker 测试覆盖两版认证、只读拦截、编码路径、密码轮换和视频 Range。
-- **可信引导**：主入口仍固定到通过 CI 的不可变 helper，附加入口只执行已核对源码包及 SHA256 的正式稳定 Release，不回退执行 main 业务代码。
+- **统一安装与管理**：公网、内网入口不带参数时先编号选择 Edition。尚未安装则确认进入对应向导，已安装则显示管理菜单；显式参数继续兼容。
+- **离线管理命令**：确认安装后提供 `tg2cloud`，可查看状态与脱敏日志、启停、验收 WebDAV、维护 HTTPS、查看备份与凭据，或选择“卸载当前实例”。状态和日志不下载最新代码；写入操作保留确认和实例核验。
+- **简洁中文向导**：WebDAV 用户名回车默认 `tg2cloud`，密码回车生成 8 位；保存子目录可留空。新装默认 `Asia/Shanghai`，升级不改已有时区、凭据、预算或数据。
+- **限定卸载与收尾**：只卸载所选 Edition。最后一套完整卸载后，无其他实例、路由、保留数据或挂载依赖且归属核验通过，才移除管理命令和代码；未知文件、忙碌或部分失败不强删。独立卸载 URL 保留作兼容／救援。
+- **外部 WebDAV 交互**：独立中文编号菜单、简洁版本提示、实际目录确认、9 位默认随机密码及集中手机配置输出；不加入主安装或 Bot 菜单，不改原生只读与失败关闭规则。
 
-不新增数据库迁移或 Bot 环境变量，不更换 Bot 业务、两版网关镜像、现有 Session、任务记录、rclone 配置和上传策略。现有 v1.3.0 实例按原升级流程保留配置；安装附加功能是单独操作，不必为此重新挂载云存储。
+不新增 Bot 依赖、数据库结构迁移、环境变量或网关镜像。现有 `.env`、数据库、Telegram Session、rclone 配置、上传策略及两 Edition 身份保持兼容。内网实例不会因改用公网入口而隐式申请证书。
 
-## Linux 安装与升级
+## 安装与日常维护
 
 公网 VPS：
 
@@ -25,7 +24,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
 ```
 
-已有完整实例先追加 `--edition clouddrive2 --check` 或 `--edition openlist --check` 只读预检，再去掉 `--check` 确认升级；公网与内网入口不要混用。保留独立备份，未知或修改过的源码不会被自动接管。
+已有实例可先追加 `--edition clouddrive2 --check`（OpenList 使用 `openlist`）只读预检；核对后去掉参数进入新版菜单，确认升级。日常在主机运行 `tg2cloud`；仅查看帮助或只读预检不会安装此命令。未知或修改过的实例不会被自动接管。
+
+旧实例同版本无需更新业务时，新向导可在确认后仅安装本地管理命令，不重启容器。详细限制见[运维指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.2/docs/OPERATIONS.md)。
 
 ## 独立外部 WebDAV
 
@@ -35,7 +36,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-webdav.sh)
 ```
 
-要求完整受管实例、可用的原生独立只读账号、专用域名和 HTTPS 签发条件。使用原网关和共享代理，不复制数据；原生账号能力不足、目录不明或身份不符时停止。完整步骤见[外部 WebDAV 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.1/docs/external-webdav.md)。
+要求完整受管实例、可用的原生独立只读账号、专用域名和 HTTPS 签发条件。使用原网关和共享代理，不复制数据；原生账号能力不足、目录不明或身份不符时停止。完整步骤见[外部 WebDAV 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.2/docs/external-webdav.md)。已安装主机不会自动更新离线工具，需显式执行附加功能升级。密码不持久化回显，分享终端记录前必须脱敏。
 
 手机参数为 HTTPS、你的专用域名、443、根路径 `/dav/`，使用新外部账号与新密码。管理域名仍禁止 `/dav`。停用使用 `tg2cloud-webdav disable --edition openlist`，独立卸载使用 `tg2cloud-webdav uninstall --edition openlist`；CloudDrive2 改为 `--edition clouddrive2`。
 
@@ -43,17 +44,17 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 | 文件 | 用途 |
 | --- | --- |
-| `TG2Cloud-v1.3.1-source.tar.gz` | 同标签公共源码与两 Edition 资源 |
+| `TG2Cloud-v1.3.2-source.tar.gz` | 同标签公共源码与两 Edition 资源 |
 | `SHA256SUMS.txt` | 本次 Actions 源码包的实际校验清单 |
 
 下载两个文件到同一目录，执行 `sha256sum -c SHA256SUMS.txt`。校验和不是数字签名；不用于历史 EXE。Windows 历史资产仍见 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
 
 ## 验证与兼容范围
 
-主分支已通过 Linux 全量回归、宿主 Python 3.10/3.13、Compose、两版非 root 候选镜像及真实隔离 Nginx 测试。同标签 Actions 会重新验证并只打包一次，Release 复用该产物；具体结果以本标签工作流为准。
+正式发布由同一 Tag 的 Actions 重新执行 Linux 回归、宿主 Python 3.10 / 3.13 兼容检查、Compose、非 root 候选镜像及隔离 Nginx / WebDAV 检查；验证成功后只打包一次，发布任务复用该产物并核对 SHA256。结果以实际工作流为准。
 
-**尚未执行本版原生 CloudDrive2/OpenList 账号与目录权限、手机实际播放、公网 DNS/ACME 或 ARM64 的端到端实机验收。** 附加宿主预检允许 ARM64，不等于主安装器新增 ARM64 支持。隔离测试使用合成后端，不能代替网关会员能力或原生 ACL 审计。
+**本轮不连接真实 VPS、Telegram 或用户网盘。新版安装／升级／卸载、两网关原生账号与目录权限、手机播放、公网 ACME 和 ARM64 的端到端验收仍需单独完成。** 主安装支持范围仍为 Debian / Ubuntu x86_64、rootful Docker、宿主 Python 3.10+；附加功能预检接受 ARM64，不等于主安装支持已扩大。隔离测试不能代替网关会员能力或原生 ACL 审计。
 
-附加功能启用后代理状态升级到 schema 2；旧 v1.3.0 严格写入工具会拒绝维护，禁止用更旧脚本或桌面恢复包覆盖新代理。主卸载前先独立卸载附加入口，仅 disable 不解除依赖。CloudDrive2 历史迁移范围见 [v1.3.0 原验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)，不扩展为本版实机通过结论。
+附加功能启用后代理状态升级到 schema 2；旧 v1.3.0 严格写入工具会拒绝维护，禁止用更旧脚本或桌面恢复包覆盖新代理。主卸载前先独立卸载附加入口，仅 disable 不解除依赖。完整卸载会删除所选本地数据及可识别备份，需保留时使用 `--keep-data`；系统 Docker / Nginx、云端文件、镜像缓存和锁元数据不删除，不承诺主机逐字节恢复原样。CloudDrive2 历史迁移范围见 [v1.3.0 原验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)，不扩展为本版实机通过结论。
 
 TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留 MIT 许可证、版权及必要致谢；云存储授权由用户在自己的网关完成。

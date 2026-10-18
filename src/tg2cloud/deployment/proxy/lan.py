@@ -11,14 +11,17 @@ import shlex
 import shutil
 import signal
 import socket
+import sys
 import tempfile
 import time
 import urllib.error
 import urllib.request
+from contextlib import nullcontext
 from dataclasses import dataclass, field
 from pathlib import Path
 
 from tg2cloud.cli import terminal
+from tg2cloud.cli.presentation import InstallerLog, edition_menu
 from tg2cloud.deployment import (
     configuration,
     install,
@@ -490,7 +493,10 @@ def execute(plan: Plan, release, source, baseline, session, log, ui, *, verify=F
         log(f"{product.display_name} 内网管理页：http://{plan.address}:{product.management_port}")
         log("请先用局域网电脑的浏览器打开上面的地址，配置云存储，并创建与保存凭据一致的专用 WebDAV 用户；完成后再确认写入验收。")
         if plan.action == "install" or not plan.entry_healthy:
-            terminal.show_credentials(ui, product, current.config, log)
+            if plan.action == "install":
+                terminal.show_setup_credentials(ui, product, current.config, log)
+            else:
+                terminal.show_credentials(ui, product, current.config, log)
         if verify or plan.action == "install":
             install.verify_destination(plan, session, log, ui)
 
@@ -505,9 +511,11 @@ def parser() -> argparse.ArgumentParser:
     return result
 
 
-def main(argv=None) -> int:
-    args = parser().parse_args(argv)
-    log, ui = SafeLog(), None
+def main(argv=None, *, friendly=None) -> int:
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    args = parser().parse_args(arguments)
+    friendly = not arguments if friendly is None else friendly
+    log, ui = InstallerLog(SafeLog()) if friendly else SafeLog(), None
     try:
         if args.check and (args.verify or args.show_credentials):
             raise ValueError("--check 不能与写入验收或凭据显示组合")
@@ -519,7 +527,8 @@ def main(argv=None) -> int:
         validate_environment(session)
         if not args.edition:
             ui = terminal.Terminal()
-            choice = ui.ask("选择 Edition：1 CloudDrive2，2 OpenList", default="1")
+            ui.friendly = friendly
+            choice = edition_menu(ui, log)
             args.edition = {"1": "clouddrive2", "2": "openlist"}.get(choice)
             if not args.edition:
                 raise ValueError("Edition 选择无效")
@@ -551,6 +560,7 @@ def main(argv=None) -> int:
                     baseline = client.download(client.resolve("v" + instance.version), old_root)
             if not args.check and ui is None:
                 ui = terminal.Terminal()
+                ui.friendly = friendly
             plan = make_plan(instance, release, source, baseline, session, log, ui, address=args.lan_ip or "")
             preview(plan, release, log)
             if args.check:
@@ -558,13 +568,31 @@ def main(argv=None) -> int:
                     raise ValueError("基础预检完成，但内网管理入口尚未通过；未执行恢复或重建")
                 log("TG2CLOUD_LAN_CHECK=OK；只读预检，不等于安装/外部访问/WebDAV/转存通过")
                 return 0
+            if friendly:
+                from tg2cloud.deployment import runtime
             if plan.action == "newer" or (plan.action == "current" and plan.entry_healthy and not args.verify):
+                if friendly:
+                    runtime.check_destination()
+                    if ui.confirm("实例无需安装/升级；是否仅安装本地管理命令 tg2cloud？不重启容器"):
+                        with runtime.lifecycle_lock():
+                            current = instances.discover(product, instances.docker_inventory(session), session, log, install_dir=product.install_dir)
+                            if not current.present or current.raw_config != instance.raw_config or current.version != instance.version:
+                                raise ValueError("确认期间实例已移除或变化；不重新创建管理命令")
+                            runtime.install()
+                        log("本地管理命令已安装：tg2cloud")
                 log("TG2CLOUD_LAN_RESULT=NO_CHANGE；不重建、不降级")
                 return 0
+            if friendly:
+                runtime.check_destination()
+                log("将安装本地管理命令 tg2cloud；仅用于可信局域网，不自动切换为公网 HTTPS。")
             if not ui.confirm("确认上述内网 HTTP 计划？仅用于可信局域网，禁止公网转发；所选 Bot 可能短暂停止"):
                 log("TG2CLOUD_LAN_RESULT=CANCELLED；未修改实例或内网状态")
                 return 0
-            execute(plan, release, source, baseline, session, log, ui, verify=args.verify)
+            with runtime.lifecycle_lock() if friendly else nullcontext():
+                if friendly:
+                    runtime.install()
+                    log("本地管理命令已安装：tg2cloud（后续操作失败时可用于检查）")
+                execute(plan, release, source, baseline, session, log, ui, verify=args.verify)
             log("TG2CLOUD_LAN_RESULT=BASE_LAN_OK；WebDAV 与真实转存以独立验收为准")
         return 0
     except KeyboardInterrupt:

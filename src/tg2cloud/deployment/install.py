@@ -81,7 +81,9 @@ def make_plan(
                 if not environment.ports_safe or not dns_matches_environment(environment, "127.0.0.1"):
                     raise ValueError("首次安装 HTTPS 前置检查未通过：检查 DNS 直指 VPS，以及 80/443 端口是否可安全使用")
     if action == "install" and ui is not None:
+        log("\n── 磁盘与资源 ──")
         storage = preflight.choose_storage(instance, session, log, ui)
+        log("\n── Telegram 与 WebDAV ──")
         plan.config = terminal.collect_config(ui, instance.product, storage=storage)
         log.register(plan.config)
     if action in {"install", "upgrade"} and (ui is not None or instance.present):
@@ -159,6 +161,9 @@ def execute_plan(
         log("TG2CLOUD_CLI_BASE_HTTPS=OK；公网访问仍需外部网络检查")
         if plan.action == "install" or plan.configure_https:
             log("请在 https://" + report.domain + " 配置自己的云存储，再建立专用 WebDAV 用户。")
-            terminal.show_credentials(ui, instance.product, plan.config, log)
+            if plan.action == "install":
+                terminal.show_setup_credentials(ui, instance.product, plan.config, log)
+            else:
+                terminal.show_credentials(ui, instance.product, plan.config, log)
         if verify or plan.action == "install":
             verify_destination(plan, session, log, ui)

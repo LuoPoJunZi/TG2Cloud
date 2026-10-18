@@ -59,7 +59,7 @@ api = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 # Update this pin only after the helper revision passes its CI and review.
 # It is independent of the target Release, which need not contain the CLI.
 installer_commit = "90648bf0878958b976541f660df69fcb24ea807f"
-installer_version = "1.3.1"
+installer_version = "1.3.2"
 
 def validate_url(url):
     parsed = urllib.parse.urlsplit(url)
@@ -160,8 +160,8 @@ try:
     with marker.open("x", encoding="utf-8") as output:
         os.chmod(marker, 0o600)
         json.dump({"tag": tag, "commit": sha, "installer_commit": installer_commit}, output)
-    print("安装向导源码已固定：" + installer_commit)
-    print("部署目标为正式稳定 Release：" + tag + " / " + sha)
+    print("TG2Cloud 安装向导：v" + installer_version)
+    print("部署目标为正式稳定版本：" + tag)
 except Exception:
     print("安装向导或稳定 Release 获取失败。请检查网络/限流；不会改用 main/RC 的部署代码，未修改 VPS 实例。", file=sys.stderr)
     sys.exit(2)

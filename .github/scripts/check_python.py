@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 CLI_TESTS = (
     "test_vps_installer.py", "test_lan_installer.py", "test_uninstaller.py",
     "test_proxy_host_compat.py", "test_repository.py", "test_storage_wizard.py", "test_source_release.py", "test_layout_contracts.py",
-    "test_feature.py", "test_http.py",
+    "test_feature.py", "test_http.py", "test_management.py",
 )
 CLI_PATHS = (
     "src/tg2cloud/cli", "src/tg2cloud/deployment", "src/tg2cloud/addons", "src/tg2cloud/__init__.py",

@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current version: **v1.3.1**, maintained through Linux scripts. The source archive and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). The [historical CloudDrive2 v1.3.0 acceptance record](docs/development/V130-ACCEPTANCE.md) does not certify every scenario in this new version.
+Current source: **v1.3.2 (unreleased)**, maintained through Linux scripts. The published source archive and checksums are available in the [v1.3.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). The [historical CloudDrive2 v1.3.0 acceptance record](docs/development/V130-ACCEPTANCE.md) does not certify every scenario in this new version.
 
 ## Getting started
 
@@ -43,6 +43,8 @@ Current version: **v1.3.1**, maintained through Linux scripts. The source archiv
 Both editions share transfer capabilities but have different gateway configuration and independent instance data. Upgrade an existing instance through its matching entry, preserving configuration; do not uninstall first.
 
 ## Quick start
+
+Pending source changes unify installation and management: the public/LAN entries offer setup for a missing Edition or its maintenance menu, including uninstall, for an existing instance. Locally, run `tg2cloud`. Uninstall remains Edition-scoped; removing the last instance in full also removes verified manager code and its command when unused. The standalone uninstall URL stays available for compatibility/recovery. Online availability requires a new verified helper pin; see the [operations guide](docs/OPERATIONS.md#本地管理菜单待发布).
 
 Requires Debian / Ubuntu x86_64, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
 

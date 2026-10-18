@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前版本 **v1.3.1**，以 Linux 脚本维护；源码包与校验清单见 [正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。历史 CloudDrive2 v1.3.0 升级范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表新版所有部署与恢复场景均已通过。
+当前源码 **v1.3.2（待发布）**，以 Linux 脚本维护；已发布源码包与校验清单见 [v1.3.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。历史 CloudDrive2 v1.3.0 升级范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表新版所有部署与恢复场景均已通过。
 
 ## 开始使用
 
@@ -41,6 +41,8 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 4. 向 Bot 发送或转发文件，查看接收结果；任务查询、失败恢复及验证含义见[任务使用与恢复指南](docs/RECOVERY.md)。
 
 两个 Edition 共用转存能力，但网关配置不同；各自的实例数据互相独立。已有实例升级使用对应入口并保留配置，不需要先卸载。
+
+待发布源码统一安装与管理：公网／内网入口选择 Edition 后，未安装则确认进入对应向导，已安装则显示管理菜单（含卸载）；本机可直接运行 `tg2cloud`。卸载仅作用于所选 Edition，最后一套完整卸载后核验并清理快捷命令及管理代码。独立卸载 URL 保留作兼容／救援；在线入口仍需更新固定 helper 后生效，见[运维指南](docs/OPERATIONS.md#本地管理菜单待发布)。
 
 ## 快速安装
 

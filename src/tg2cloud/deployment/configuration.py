@@ -46,7 +46,7 @@ def checked_directory(value: str) -> Path:
 
 
 def check_product_directory(product: ProductProfile, directory: Path) -> None:
-    protected = [Path("/opt/tg2cloud-proxy"), Path("/opt/tg2cloud-cli-locks"), Path("/opt/tg2cloud-webdav")]
+    protected = [Path("/opt/tg2cloud-proxy"), Path("/opt/tg2cloud-cli-locks"), Path("/opt/tg2cloud-webdav"), Path("/opt/tg2cloud-cli")]
     for profile in PRODUCTS.values():
         protected += [Path(profile.backup_dir), *(Path(name) for name in profile.legacy_install_dirs)]
         if profile.key != product.key:

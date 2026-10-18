@@ -3,8 +3,9 @@ from __future__ import annotations
 import base64
 import re
 import secrets
+import string
 from contextlib import ExitStack
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
+from zoneinfo import ZoneInfoNotFoundError
 
 from tg2cloud.deployment import configuration, install, releases
 from tg2cloud.deployment.host import SafeLog
@@ -12,6 +13,8 @@ from tg2cloud.deployment.profiles import ProductProfile
 
 
 class Terminal:
+    friendly = False
+
     def __init__(self) -> None:
         # A terminal is not seekable: buffered r+ (BufferedRandom) fails before
         # the first prompt. Separate streams still use only the controlling TTY.
@@ -36,7 +39,8 @@ class Terminal:
                     hidden = previous.copy()
                     hidden[3] &= ~termios.ECHO
                     termios.tcsetattr(self.tty.fileno(), termios.TCSANOW, hidden)
-                self.output.write(prompt + (f" [{default}]" if default and not secret else "") + ": ")
+                suffix = (f"（回车默认 {default}）" if self.friendly is True else f" [{default}]") if default and not secret and "回车默认" not in prompt else ""
+                self.output.write(prompt + suffix + ": ")
                 self.output.flush()
                 line = self.tty.readline()
             finally:
@@ -52,7 +56,16 @@ class Terminal:
                 self.output.write("输入格式不正确，请重新填写（不显示输入值）。\n")
 
     def confirm(self, prompt: str) -> bool:
+        if self.friendly is True:
+            return self.ask(prompt + "（y/N）", validate=lambda text: text.lower()) == "y"
         return self.ask(prompt + " [y/N]", default="n", validate=lambda text: text.lower()) == "y"
+
+    def private(self, label: str, value: str) -> None:
+        """Confirmed setup output goes only to the controlling private terminal."""
+        if not self.output.isatty():
+            raise RuntimeError("凭据只能在当前交互终端显示")
+        self.output.write(configuration.plain(label) + "：" + configuration.plain(value) + "\n")
+        self.output.flush()
 
     def reveal(self, label: str, value: str) -> None:
         if self.confirm("是否仅在当前终端显示" + label + "？请确保没有旁观/录屏"):
@@ -86,6 +99,30 @@ def show_credentials(ui: Terminal, product: ProductProfile, config: dict[str, st
             log("未保存可显示的 OpenList 初始化管理员密码；不会重置。")
 
 
+def show_setup_credentials(ui: Terminal, product: ProductProfile, config: dict[str, str], log: SafeLog) -> None:
+    """Only a fresh, explicitly confirmed installation uses consolidated output."""
+    if getattr(ui, "friendly", False) is not True:
+        show_credentials(ui, product, config, log)
+        return
+    log("\n── 后台账号设置 ──\n请在自己的管理页挂载云存储，再创建以下专用 WebDAV 用户。凭据仅显示在当前终端，请勿录屏。")
+    for key, label in (("USERNAME", "WebDAV 用户名"), ("PASSWORD", "WebDAV 密码")):
+        encoded = config.get("WEBDAV_" + key + "_B64", config.get("CD2_WEBDAV_" + key + "_B64", ""))
+        ui.private(label, base64.b64decode(encoded, validate=True).decode("utf-8"))
+    target = base64.b64decode(config.get("WEBDAV_TARGET_PATH_B64", config.get("CD2_TARGET_PATH_B64", "")), validate=True).decode("utf-8")
+    log("Bot 保存子目录：" + (target or "未设置，使用该 WebDAV 账号根目录（在管理页设置）"))
+    if product.is_openlist and config.get("OPENLIST_ADMIN_PASSWORD"):
+        ui.private("OpenList 初始化管理员密码（后台已改密时不代表当前密码）", config["OPENLIST_ADMIN_PASSWORD"])
+
+
+def generated_password() -> str:
+    # Only the Bot's default WebDAV password changes. Admin/add-on policies stay separate.
+    alphabet = string.ascii_letters + string.digits
+    while True:
+        value = "".join(secrets.choice(alphabet) for _ in range(8))
+        if any(c.islower() for c in value) and any(c.isupper() for c in value) and any(c.isdigit() for c in value):
+            return value
+
+
 def collect_config(ui: Terminal, product: ProductProfile, *, storage: tuple[str, str] | None = None) -> dict[str, str]:
     def api_hash(value: str) -> str:
         if not re.fullmatch(r"[0-9a-fA-F]{32}", value):
@@ -105,21 +142,17 @@ def collect_config(ui: Terminal, product: ProductProfile, *, storage: tuple[str,
             raise ValueError("目标路径不能包含父目录或反斜杠")
         return value
 
-    def timezone(value: str) -> str:
-        ZoneInfo(value)
-        return value
-
     values = {
         "api_id": ui.ask("Telegram API ID", validate=configuration.positive),
         "api_hash": ui.ask("Telegram API Hash（隐藏输入）", secret=True, validate=api_hash),
         "bot_token": ui.ask("Bot Token（隐藏输入）", secret=True, validate=token),
         "user_id": ui.ask("允许使用 Bot 的 Telegram 用户 ID", validate=configuration.positive),
-        "webdav_user": ui.ask("专用 WebDAV 用户名", default=product.webdav_username or "tg2cloud"),
-        "webdav_password": ui.ask("WebDAV 密码（留空安全生成）", secret=True, default=secrets.token_urlsafe(21)),
-        "target": ui.ask("WebDAV 根目录下的子目录（根目录已选中目标时留空）", validate=target),
+        "webdav_user": ui.ask("WebDAV 用户名（回车默认 tg2cloud）", default="tg2cloud"),
+        "webdav_password": ui.ask("WebDAV 密码（回车自动生成；隐藏输入）", secret=True, default=generated_password()),
+        "target": ui.ask("Bot 保存子目录（可留空；账号根目录在管理页设置）", validate=target),
         "budget": storage[0] if storage else ui.ask("本地任务预算 GB", default="20", validate=configuration.size_gb),
         "reserve": storage[1] if storage else ui.ask("磁盘最少保留 GB", default="8", validate=configuration.size_gb),
-        "timezone": ui.ask("时区", default="Asia/Shanghai", validate=timezone),
+        "timezone": "Asia/Shanghai",
         "admin_password": secrets.token_urlsafe(21),
     }
     if float(values["reserve"]) < 8:
@@ -140,4 +173,3 @@ def preview(plan: install.Plan, release: releases.Release, log: SafeLog) -> None
         if plan.config:
             log("任务预算/保留空间 GB：" + plan.config["LOCAL_TEMP_BUDGET_GB"] + " / " + plan.config["MIN_FREE_DISK_GB"])
     log("HTTPS：" + ("显式配置 " + (plan.domain or "尚需收集域名") if plan.configure_https else "不修改现有路由/证书"))
-    log("不切换另一 Edition 的域名，不迁移 TG115；不会重启未选中的 Bot。")

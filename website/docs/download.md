@@ -1,6 +1,6 @@
 # 下载与 SHA-256 校验
 
-当前文档对应已发布的 **TG2Cloud v1.3.1**，包含独立外部 WebDAV 附加功能。项目以 Linux 一键脚本维护两个 Edition，Windows 部署器停留在 v1.2.1；新版源码包和历史 EXE 分别使用对应校验清单。
+当前文档对应待发布的 **TG2Cloud v1.3.2**，新增中文安装与离线管理菜单，并优化独立外部 WebDAV 交互；正式下载基线仍为 v1.3.1。项目以 Linux 一键脚本维护两个 Edition，Windows 部署器停留在 v1.2.1；新版源码包和历史 EXE 分别使用对应校验清单。
 
 ## v1.3.1 源码包与脚本
 
@@ -103,6 +103,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 用户提供的 CloudDrive2 内网 Debian 日志显示首次部署和 WebDAV 验收通过；OpenList 内网、其他 NAS、升级/回退及 Telegram 转存仍待验收。详见 [内网安装指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md)。
 
 ## 独立卸载：先预检
+
+待发布的默认公网／内网入口已经整合管理菜单：选择已有 Edition 后可从菜单 9 卸载，无需另记独立命令；本机也可运行 `tg2cloud`。最后一套完整卸载后，无依赖且归属可验证时清理快捷命令及其代码。下方 `uninstall.sh` URL 保留作兼容／救援及只读预检，不删除旧入口；新行为须先发布并更新固定 helper 才会在网上生效。见[管理菜单](/operations/maintenance/)。
 
 卸载不是升级步骤。v1.2.0 Tag 中的原入口默认保留实例数据、证书和历史备份；主分支追加的完整清理增强会在双重确认后删除所选配置、数据库、下载和可识别历史备份。需要保留数据时必须明确使用 `--keep-data`。用户已反馈原保留数据卸载在其 VPS 通过，但完整清理增强仍待新的实机验收，不据此推定 NAS 或两个 Edition 均通过。两个 EXE 与正式 Release 不变，详情见 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
 

@@ -3,12 +3,22 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import tempfile
+from contextlib import nullcontext
 from pathlib import Path
 from zoneinfo import ZoneInfoNotFoundError
 
 from tg2cloud.cli import terminal
-from tg2cloud.deployment import configuration, install, instances, preflight, releases
+from tg2cloud.cli.presentation import InstallerLog, edition_menu
+from tg2cloud.deployment import (
+    configuration,
+    install,
+    instances,
+    preflight,
+    releases,
+    runtime,
+)
 from tg2cloud.deployment.host import LocalSession, SafeLog
 from tg2cloud.deployment.profiles import PRODUCTS
 
@@ -24,9 +34,11 @@ def parser() -> argparse.ArgumentParser:
     return result
 
 
-def main(argv: list[str] | None = None) -> int:
-    args = parser().parse_args(argv)
-    log = SafeLog()
+def main(argv: list[str] | None = None, *, friendly: bool | None = None) -> int:
+    arguments = list(sys.argv[1:] if argv is None else argv)
+    args = parser().parse_args(arguments)
+    friendly = not arguments if friendly is None else friendly
+    log = InstallerLog(SafeLog()) if friendly else SafeLog()
     ui = None
     try:
         if args.show_credentials and (args.check or args.configure_https or args.verify):
@@ -42,12 +54,13 @@ def main(argv: list[str] | None = None) -> int:
             if args.check:
                 raise ValueError("只读检查请显式指定 --edition")
             ui = terminal.Terminal()
+            ui.friendly = friendly
             detected = [product for product in PRODUCTS.values()
                         if {product.bot_container, product.storage_container} & inventory]
             for product in detected:
                 log("发现 " + product.display_name + " 容器；选择后仍需核对完整性和实际版本")
             default_choice = "2" if len(detected) == 1 and detected[0].is_openlist else "1"
-            chosen = ui.ask("选择 Edition：1 CloudDrive2，2 OpenList，3 升级两套已有实例", default=default_choice)
+            chosen = edition_menu(ui, log, default=default_choice, both=True)
             args.edition = {"1": "clouddrive2", "2": "openlist", "3": "both"}.get(chosen)
             if not args.edition:
                 raise ValueError("Edition 选择无效")
@@ -88,6 +101,7 @@ def main(argv: list[str] | None = None) -> int:
                     old_source = baselines[tag]
                 if not args.check and ui is None:
                     ui = terminal.Terminal()
+                    ui.friendly = friendly
                 plan = install.make_plan(instance, release, source, old_source, session, log, ui, configure_https=args.configure_https)
                 terminal.preview(plan, release, log)
                 plans.append((plan, old_source))
@@ -96,14 +110,32 @@ def main(argv: list[str] | None = None) -> int:
                 return 0
             actionable = [(plan, baseline) for plan, baseline in plans if plan.action in {"install", "upgrade"} or plan.configure_https or args.verify]
             if not actionable:
+                if friendly:
+                    runtime.check_destination()
+                    if ui.confirm("实例无需安装/升级；是否仅安装本地管理命令 tg2cloud？不重启容器"):
+                        with runtime.lifecycle_lock():
+                            for selected in selected_instances:
+                                current = instances.discover(selected.product, instances.docker_inventory(session), session, log, install_dir=str(selected.directory))
+                                if not current.present or current.raw_config != selected.raw_config or current.version != selected.version:
+                                    raise ValueError("确认期间实例已移除或变化；不重新创建管理命令")
+                            runtime.install()
+                        log("本地管理命令已安装：tg2cloud")
                 log("TG2CLOUD_CLI_RESULT=NO_CHANGE")
                 return 0
-            log("备份含敏感配置，仅保存在 VPS；失败可能需人工恢复。不要同时运行 EXE 的基础安装/更新。")
+            if friendly:
+                runtime.check_destination()
+                log("\n── 执行确认 ──\n将安装本地管理命令 tg2cloud；备份含敏感配置，仅保存在本机。请勿同时运行其他安装器。")
+            else:
+                log("备份含敏感配置，仅保存在 VPS；失败可能需人工恢复。请勿同时运行其他安装器。")
             if not ui.confirm("确认执行上述所选计划？所选 Bot 可能短暂中断"):
                 log("TG2CLOUD_CLI_RESULT=CANCELLED；未执行安装/升级/HTTPS变更")
                 return 0
-            for plan, baseline in actionable:
-                install.execute_plan(plan, release, source, baseline, session, log, ui, verify=args.verify)
+            with runtime.lifecycle_lock() if friendly else nullcontext():
+                if friendly:
+                    runtime.install()
+                    log("本地管理命令已安装：tg2cloud（后续操作失败时可用于检查）")
+                for plan, baseline in actionable:
+                    install.execute_plan(plan, release, source, baseline, session, log, ui, verify=args.verify)
             log("TG2CLOUD_CLI_RESULT=BASE_HTTPS_OK；WebDAV 是否验收请以独立结果为准")
         return 0
     except KeyboardInterrupt:

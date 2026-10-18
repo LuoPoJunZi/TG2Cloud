@@ -374,8 +374,10 @@ class StandaloneBootstrapTests(unittest.TestCase):
             root = Path(private)
             code, output, errors = self.bootstrap(root)
             self.assertEqual(code, 0, errors)
-            self.assertIn(self.pin, output)
-            self.assertIn(RELEASE.tag + " / " + "a" * 40, output)
+            self.assertIn("安装向导：v" + self.helper_version, output)
+            self.assertIn("正式稳定版本：" + RELEASE.tag, output)
+            self.assertNotIn(self.pin, output)
+            self.assertNotIn("a" * 40, output)
             marker = root / ".bootstrap-release.json"
             self.assertEqual(json.loads(marker.read_text(encoding="utf-8")), {
                 "tag": RELEASE.tag, "commit": "a" * 40, "installer_commit": self.pin,
@@ -993,11 +995,20 @@ class InstanceTests(unittest.TestCase):
         client = Mock()
         client.resolve.side_effect = [RELEASE, tgdep_releases.Release("v" + self.instance.version, "b" * 40)]
         client.download.return_value = ROOT
+        # New interactive preflight checks ownership of the offline command;
+        # the test must not inspect or write a real host command directory.
+        check_patch = patch.object(cli.runtime, "check_destination")
+        check_patch.start()
+        self.addCleanup(check_patch.stop)
+        install_patch = patch.object(cli.runtime, "install")
+        runtime_install = install_patch.start()
+        self.addCleanup(install_patch.stop)
         with patch.object(tgdep_preflight, "validate_host"), patch.object(tgdep_instances, "docker_inventory", return_value={self.product.bot_container, self.product.storage_container}), patch.object(tgdep_instances, "discover", return_value=self.instance) as discover, patch.object(tgdep_releases, "ReleaseClient", return_value=client), patch.object(tgdep_terminal, "Terminal", return_value=ui), patch.object(tgdep_install, "make_plan", return_value=tgdep_install.Plan(self.instance, "upgrade", Mock())), patch.object(tgdep_install, "execute_plan") as execute, patch.object(cli, "SafeLog", return_value=self.log):
             self.assertEqual(tgdep_vps.main([]), 0)
         self.assertEqual(ui.ask.call_args.kwargs["default"], "2")
         self.assertEqual(discover.call_args.args[0].key, "openlist")
         execute.assert_not_called()
+        runtime_install.assert_not_called()
 
     def test_resource_gate_uses_existing_assessment(self):
         session = Mock()

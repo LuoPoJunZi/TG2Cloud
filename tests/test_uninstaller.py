@@ -657,6 +657,26 @@ class DataSafetyTests(unittest.TestCase):
 
 
 class EntryTests(unittest.TestCase):
+    def test_incomplete_manager_cleanup_reports_partial_not_full_success(self):
+        with patch.object(uninstall, "cleanup_manager", return_value="incomplete"):
+            code, output, execute, _ = self.run_main(["--edition", "all"], typed="DELETE ALL all")
+        self.assertEqual(code, 1)
+        execute.assert_called_once()
+        self.assertIn("RESULT=PARTIAL", output)
+        self.assertNotIn("RESULT=OK", output)
+
+    def test_manager_cleanup_only_after_full_success_never_check_cancel_or_keep_data(self):
+        scenarios = [(["--edition", "all", "--check"], True, "", None, False),
+                     (["--edition", "all"], False, "", None, False),
+                     (["--edition", "all", "--keep-data"], True, "", None, False),
+                     (["--edition", "all", "--purge-data"], True, "DELETE all", None, False),
+                     (["--edition", "all"], True, "DELETE ALL all", RuntimeError("fixture"), False),
+                     (["--edition", "all"], True, "DELETE ALL all", None, True)]
+        for args, confirmed, typed, failure, expected in scenarios:
+            with self.subTest(args=args, failure=bool(failure)), patch.object(uninstall, "cleanup_manager") as cleanup:
+                self.run_main(args, confirm=confirmed, typed=typed, failure=failure)
+            self.assertEqual(cleanup.call_count, int(expected))
+
     def run_main(self, args, *, confirm=True, typed="", failure=None):
         output = io.StringIO()
         docker = FakeDocker()

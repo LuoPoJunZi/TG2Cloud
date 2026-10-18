@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from tg2cloud.cli import terminal
-from tg2cloud.deployment import configuration, preflight
+from tg2cloud.deployment import configuration, preflight, runtime
 from tg2cloud.deployment.host import LocalSession, SafeLog, edition_lock
 from tg2cloud.deployment.profiles import PRODUCTS, ProductProfile
 from tg2cloud.deployment.proxy.maintenance import ARCHIVE_NAME
@@ -546,6 +546,48 @@ def validate_environment(session: LocalSession) -> None:
         raise UninstallError("Docker 不可用或不是本机默认 daemon；不安装、不重启 Docker")
 
 
+def manager_in_use(session: LocalSession) -> bool:
+    """Conservative post-removal dependency check, including stopped/partial instances."""
+    containers, networks = docker_snapshot(session)
+    for name, item in (*containers.items(), *networks.items()):
+        labels = item.get("labels") or {}
+        if (name.startswith("tg2cloud-") or labels.get(MANAGED) == "true"
+                or labels.get(COMPOSE + "project", "").startswith("tg2cloud-")):
+            return True
+    roots = [*(Path(p.install_dir) for p in PRODUCTS.values()), *(Path(p.backup_dir) for p in PRODUCTS.values()),
+             *(LAN_ROOT / key for key in PRODUCTS), PROXY_BACKUP_ROOT,
+             *(Path("/opt/tg2cloud-webdav") / key / "config.json" for key in PRODUCTS)]
+    if any(path.exists() or path.is_symlink() for path in roots):
+        return True
+    state = read_state()
+    if state["domains"] or state.get("external_webdav"):
+        return True
+    for item in containers.values():
+        if mount_overlaps(item, runtime.ROOT) or mount_overlaps(item, runtime.COMMAND):
+            return True
+    return any(point == runtime.ROOT or point.is_relative_to(runtime.ROOT) or point == runtime.COMMAND for point in mountpoints())
+
+
+def cleanup_manager(session: LocalSession, log: SafeLog) -> str:
+    if not any(path.exists() or path.is_symlink() for path in (runtime.ROOT, runtime.COMMAND)):
+        return "absent"
+    try:
+        with runtime.lifecycle_lock(), ExitStack() as locks:
+            for key in sorted(PRODUCTS):
+                locks.enter_context(edition_lock(LOCK_ROOT / (key + ".lock")))
+            locks.enter_context(session.hold_lock(proxy_lock_command()))
+            if manager_in_use(session):
+                log("仍有 Edition、入口、保留数据/备份或相关资源；保留 tg2cloud 管理命令及其代码。")
+                return "retained"
+            if runtime.remove(root=runtime.ROOT, command=runtime.COMMAND):
+                log("最后一个实例已完整卸载：tg2cloud 快捷命令及受管管理代码已移除。")
+                return "removed"
+            return "absent"
+    except (ValueError, RuntimeError, OSError, TimeoutError):
+        log("警告：业务卸载已完成，但管理代码清理未确认；可能忙碌、归属不明或部分完成，不继续删除，请人工核对。")
+        return "incomplete"
+
+
 def preview(plan: Plan, log: SafeLog) -> None:
     log("TG2Cloud 卸载计划（确认前不停止容器、不修改路由）")
     log("Edition：" + ", ".join(PRODUCTS[key].display_name for key in plan.editions))
@@ -561,6 +603,7 @@ def preview(plan: Plan, log: SafeLog) -> None:
     else:
         log("共享代理历史备份保留；所选范围之外的数据不会清理。")
     log("镜像缓存、并发锁元数据、旧 TG115 和系统软件不清理；不能保证系统逐字节恢复到安装前。")
+    log("最后一套完整清理后，若无其他实例/入口/保留数据依赖，将核验并移除 tg2cloud 命令及其代码；否则保留。")
     log("请先结束进行中的传输并自行备份；停止容器会中断任务。不要同时运行 EXE/其他安装器。")
 
 
@@ -608,6 +651,9 @@ def main(argv: list[str] | None = None) -> int:
                 log("TG2CLOUD_UNINSTALL_RESULT=CANCELLED；删除确认不匹配，未执行卸载")
                 return 0
         execute(plan, session, log)
+        if plan.purge_backups and cleanup_manager(session, log) == "incomplete":
+            log("TG2CLOUD_UNINSTALL_RESULT=PARTIAL；实例资源清理已完成，管理命令/代码尚未确认完全清理；请核对后使用兼容卸载入口重试，不要重装。")
+            return 1
         log("TG2CLOUD_UNINSTALL_RESULT=OK；所选受管运行资源及路由已移除，系统应用未卸载。")
         if not plan.purge_data:
             log("--keep-data 保留本地实例数据/证书/备份；再次安装前请按卸载文档处理残留目录，不会静默覆盖。")

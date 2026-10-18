@@ -2,7 +2,7 @@
 
 TG2Cloud 后续以 Linux 脚本为主要维护入口，Windows 部署器停留在 v1.2.1。公网 VPS 使用 `install.sh` 和强制 HTTPS。本入口单独使用 `install-lan.sh`：手填运行脚本的 Linux 内网 IPv4，用内网 HTTP 管理网关，不收集域名、不申请证书，也不修改原部署器或 VPS 向导。
 
-> 当前源码版本为 v1.3.1，内网模式仍需按环境验收。此前收到过 CloudDrive2 在内网 Debian 实机首次部署和 WebDAV 验收通过的日志；本版流程、OpenList 实机、不同 NAS 系统、跨版本升级与回退仍需单独验收。公开一行入口固定下载经过 CI 验证的不可变源码 commit，不直接运行 moving main 中的依赖；业务 payload 仍只取最新正式稳定 Release。历史 PySide6 部署器停留在 v1.2.1，公网 VPS 继续使用强制 HTTPS。
+> 当前源码版本为 v1.3.2（待发布），内网模式仍需按环境验收。此前收到过 CloudDrive2 在内网 Debian 实机首次部署和 WebDAV 验收通过的日志；本版流程、OpenList 实机、不同 NAS 系统、跨版本升级与回退仍需单独验收。公开一行入口固定下载经过 CI 验证的不可变源码 commit，不直接运行 moving main 中的依赖；业务 payload 仍只取最新正式稳定 Release。历史 PySide6 部署器停留在 v1.2.1，公网 VPS 继续使用强制 HTTPS。
 
 ## 支持范围与边界
 
@@ -38,6 +38,10 @@ Nginx 仅监听指定内网 IPv4，不监听 `0.0.0.0`、公网 IPv4 或 IPv6，
 不要配置路由器公网端口转发或 UPnP，不要把管理入口放入公网反代。只绑定私有 IP 也不能防止人为路由、端口转发或不安全的共享网络。脚本不调整路由器、NAS 防火墙或宿主机 Docker daemon 配置。
 
 ## 在线一键向导（推荐）
+
+待发布源码的默认交互也采用新版中文提示：WebDAV 密码回车生成 8 位，新安装默认时区 `Asia/Shanghai`，账号根目录仍在后台设置；已有配置不改写。最终确认后安装离线 `tg2cloud` 菜单，保留内网模式与保存的 IP，不隐式转换到公网 HTTPS。该菜单尚需新版 helper 公开与 pin 更新才会出现在在线入口中；当前可从已审阅源码运行 `python3 scripts/run_source.py manage`，详见[本地管理说明](OPERATIONS.md#本地管理菜单待发布)。原有显式参数和结果标记保持兼容。
+
+新版不带参数时与公网入口共用 Edition 选择及管理菜单：未安装则确认进入对应 Edition 的内网安装向导；已有实例显示包含卸载的菜单，并按原已保存模式维护。无需另记卸载命令；旧 `uninstall.sh` URL 保留救援与兼容。最后一套默认完整卸载后，核验无依赖才清理 `tg2cloud` 和受管管理代码；另有实例或选择保留数据时不清理它们。
 
 目标 Linux 能联网，并已具备上述运行条件时，以 root 执行：
 

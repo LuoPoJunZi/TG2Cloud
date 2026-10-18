@@ -16,6 +16,8 @@
     "src/tg2cloud/cli/__init__.py",
     "src/tg2cloud/cli/__main__.py",
     "src/tg2cloud/cli/commands.py",
+    "src/tg2cloud/cli/management.py",
+    "src/tg2cloud/cli/presentation.py",
     "src/tg2cloud/cli/terminal.py",
     "src/tg2cloud/cli/vps.py",
     "src/tg2cloud/config.py",
@@ -38,6 +40,7 @@
     "src/tg2cloud/deployment/proxy/state.py",
     "src/tg2cloud/deployment/releases.py",
     "src/tg2cloud/deployment/resources.py",
+    "src/tg2cloud/deployment/runtime.py",
     "src/tg2cloud/deployment/uninstall.py",
     "src/tg2cloud/deployment/upgrade.py",
     "src/tg2cloud/version.py"

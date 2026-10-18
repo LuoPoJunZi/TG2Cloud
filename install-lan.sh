@@ -119,7 +119,7 @@ try:
         with target.open("xb") as writer:
             target.chmod(0o600)
             writer.write(data)
-    print("内网向导源码已固定：" + commit)
+    print("TG2Cloud 内网安装向导源码已验证。")
 except Exception:
     print("内网向导下载失败；不会改用 main/RC 或安装替代代码，未修改实例。", file=sys.stderr)
     sys.exit(2)
