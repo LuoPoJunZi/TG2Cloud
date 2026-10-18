@@ -4,6 +4,7 @@ import asyncio
 import os
 import time
 
+from tg2cloud.domain.actors import task_actor
 from tg2cloud.domain.errors import (
     safe_failure,
 )
@@ -12,6 +13,7 @@ from tg2cloud.domain.naming import (
 )
 
 
+@task_actor
 async def _download_one(self, task_id: int) -> None:
     task = self.db.get(task_id)
     if not task:

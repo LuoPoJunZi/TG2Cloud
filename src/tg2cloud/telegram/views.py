@@ -108,8 +108,8 @@ def truncate_display(text: str, max_width: int = 32) -> str:
 
 class TaskViews:
     @staticmethod
-    def _format_help() -> str:
-        return (
+    def _format_help(*, admin: bool = True) -> str:
+        text = (
             "TG2Cloud 使用帮助\n\n"
             "提交文件：直接发送或转发视频、文档等文件\n"
             "状态查看：/status、/queue [页码]\n"
@@ -126,13 +126,17 @@ class TaskViews:
             "临时巡检：/orphans\n"
             "快捷菜单：使用输入框左侧原生命令菜单"
         )
+        if not admin:
+            text = "\n".join(line for line in text.splitlines() if not line.startswith(("调度控制", "运行诊断", "临时巡检")))
+            text += "\n家庭成员：仅管理自己的任务，文件保存到共同目录。"
+        return text
 
     @staticmethod
-    def _home_buttons() -> list[list[Any]]:
+    def _home_buttons(*, admin: bool = True) -> list[list[Any]]:
         return [
             [
                 Button.inline("📋", data=b"queue:1"),
-                Button.inline("🖥", data=b"vps_resources"),
+                *([Button.inline("🖥", data=b"vps_resources")] if admin else []),
                 Button.inline("🔄", data=b"refresh:home"),
             ],
         ]
@@ -342,18 +346,33 @@ class TaskViews:
         return f"🟢 正常运行 · {destination}"
 
     def _format_status(self) -> str:
-        counts = self.db.counts()
-        snapshot = self.snapshot
+        from tg2cloud.domain.actors import current_user
+
+        actor = current_user(self.settings.allowed_user_id)
+        member = actor != self.settings.allowed_user_id
+        if member:
+            counts = self.db.counts(sender_id=actor)
+            downloading = counts.get("downloading", 0)
+            uploading = sum(counts.get(s, 0) for s in ("uploading", "streaming", "verifying", "finalizing", "cleanup_pending"))
+            failed = self.db.weekly_failed_count(sender_id=actor)
+            rates = {"download": 0.0, "upload": 0.0, "stream": 0.0}
+            for task_id, progress in getattr(self, "_progress", {}).items():
+                task = self.db.get(task_id)
+                if task and task["sender_id"] == actor and time.monotonic() - progress["at"] <= 20:
+                    rates[progress["stage"]] += progress["speed"]
+            download_rate = rates["download"] + rates["stream"]
+            upload_rate = rates["upload"] + rates["stream"]
+            network_rate = download_rate + upload_rate
+        else:
+            counts = self.db.counts()
+            downloading = len(self.download_tasks)
+            uploading = len(self.upload_tasks) + self._stream_count()
+            failed = self.db.weekly_failed_count()
+            stream_rate = self._stage_rate("stream")
+            download_rate = self._stage_rate("download") + stream_rate
+            upload_rate = self._stage_rate("upload") + stream_rate
+            network_rate = self.snapshot.network_bytes_per_second if self._sample_fresh() else None
         queued = counts.get("queued", 0)
-        downloading = len(self.download_tasks)
-        uploading = len(self.upload_tasks) + self._stream_count()
-        failed = self.db.weekly_failed_count()
-        stream_rate = self._stage_rate("stream")
-        download_rate = self._stage_rate("download") + stream_rate
-        upload_rate = self._stage_rate("upload") + stream_rate
-        network_rate = (
-            snapshot.network_bytes_per_second if self._sample_fresh() else None
-        )
         return (
             "☁️ **TG2Cloud**\n"
             f"{self._runtime_status_line()}\n\n"
@@ -363,6 +382,8 @@ class TaskViews:
             f"⬇️ {format_dashboard_rate(download_rate)}\n"
             f"⬆️ {format_dashboard_rate(upload_rate)}\n"
             f"🌐 {format_dashboard_rate(network_rate)}\n\n"
+            + ("仅你的任务与传输速度 · 共用保存目录\n\n" if member else "")
+            +
             f"🕐 更新于 {self._dashboard_time()}"
         )
 
@@ -392,8 +413,6 @@ class TaskViews:
             f"内存　{memory}\n"
             f"磁盘　{disk}\n"
             f"本地　{local}\n"
-            + ("\n".join(f"文件系统（{name}）　{format_dashboard_bytes(free)} 可用"
-                          for name, free in snapshot.filesystems) + "\n" if snapshot and snapshot.filesystems else "")
             + (f"保护状态　{self._resource_pause_reason}\n" if getattr(self, "_resource_pause_reason", "") else "")
             + "\n"
             f"🕐 更新于 {self._dashboard_time()}"

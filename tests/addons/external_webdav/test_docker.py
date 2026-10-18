@@ -34,6 +34,7 @@ class ExternalNginxTests(unittest.TestCase):
         target = route(edition)
         domain = target["domain"]
         user = "phone-reader"
+        family = "family-reader"
         observed = []
         current = {"password": SECRET}
 
@@ -43,7 +44,8 @@ class ExternalNginxTests(unittest.TestCase):
                 expected = "Basic " + base64.b64encode((user + ":" + current["password"]).encode()).decode()
                 bot = "Basic " + base64.b64encode(("bot-user:" + SECRET).encode()).decode()
                 admin = "Basic " + base64.b64encode(("admin:" + SECRET).encode()).decode()
-                if self.headers.get("Authorization") not in {expected, bot, admin}:
+                family_auth = "Basic " + base64.b64encode((family + ":" + SECRET).encode()).decode()
+                if self.headers.get("Authorization") not in {expected, family_auth, bot, admin}:
                     self.send_response(401)
                     self.end_headers()
                     return
@@ -107,8 +109,11 @@ class ExternalNginxTests(unittest.TestCase):
                     destination.parent.mkdir(parents=True, exist_ok=True)
                     destination.write_text(content)
 
-                def rotate(password):
-                    config.atomic(auth / (edition + ".htpasswd"), (user + ":" + config.password_hash(password) + "\n").encode(), mode=0o640)
+                def rotate(password, *, include_family=True):
+                    hashes = {user: config.password_hash(password)}
+                    if include_family:
+                        hashes[family] = config.password_hash(SECRET)
+                    config.atomic(auth / (edition + ".htpasswd"), config.auth_content(hashes), mode=0o640)
                     # Assign actual image worker GID; retain test-runner UID for
                     # safe temp cleanup. No host-wide chown or product paths.
                     self.docker("run", "--rm", "-v", str(auth) + ":/auth", "--entrypoint", "sh", NGINX_IMAGE,
@@ -157,6 +162,8 @@ class ExternalNginxTests(unittest.TestCase):
                         status, body, _ = request("PROPFIND", path)
                         self.assertEqual(status, 207)
                         verification.propfind(body, domain)
+                    self.assertEqual(request("PROPFIND", "/dav/", username=family)[0], 207)
+                    self.assertEqual(request("GET", "/dav/video.mp4", username=family, headers={"Range": "bytes=0-0"})[:2], (206, b"x"))
                     for path in ("/dav/%E4%B8%AD%E6%96%87%20video.mp4", "/dav/file%25name.mp4"):
                         self.assertEqual(request("GET", path, headers={"Range": "bytes=0-0"})[:2], (206, b"x"))
                     self.assertEqual(request("HEAD", "/dav/video.mp4")[0], 200)
@@ -172,6 +179,10 @@ class ExternalNginxTests(unittest.TestCase):
                     current["password"] = changed
                     rotate(changed)
                     self.assertEqual(request("GET", "/dav/video.mp4")[0], 401)
+                    self.assertEqual(request("GET", "/dav/video.mp4", password=changed)[0], 200)
+                    self.assertEqual(request("GET", "/dav/video.mp4", username=family)[0], 200)
+                    rotate(changed, include_family=False)
+                    self.assertEqual(request("PROPFIND", "/dav/", username=family)[0], 401)
                     self.assertEqual(request("GET", "/dav/video.mp4", password=changed)[0], 200)
                     with patch.object(verification.ssl, "create_default_context", return_value=context):
                         verification.check_media(dict(target, username=user), changed, "视频 空格.mp4")

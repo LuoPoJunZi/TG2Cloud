@@ -30,6 +30,7 @@ MENU = """
 7. 备份管理
 8. 查看 WebDAV 凭据
 9. 卸载当前实例
+10. Bot 用户管理
 0. 退出
 """
 
@@ -250,7 +251,7 @@ class Management:
                     self.upgrade(instance)
                 return 0
             self.log(MENU)
-            action = choose(self.ui, "选择操作", tuple(str(n) for n in range(10)), "0")
+            action = choose(self.ui, "选择操作", tuple(str(n) for n in range(11)), "0")
             if action == "0":
                 return 0
             try:
@@ -266,6 +267,9 @@ class Management:
                 elif action == "9":
                     if self.remove(instance):
                         return 0  # The final uninstall may have removed this offline runtime.
+                elif action == "10":
+                    from tg2cloud.deployment.users import manage
+                    manage(self, instance)
                 else:
                     handlers[action](instance)
             except (ValueError, RuntimeError, TimeoutError, OSError) as exc:

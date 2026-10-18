@@ -7,9 +7,10 @@ from typing import Any
 
 from telethon import events
 
+from tg2cloud.domain.actors import current_user, user_event
 from tg2cloud.domain.naming import (
     album_file_name,
-    caption_title,
+    caption_candidate,
     safe_file_name,
     video_file_name,
 )
@@ -24,7 +25,16 @@ class TelegramHandlers:
         self.client.add_event_handler(self._on_album, events.Album())
 
     def _authorized(self, sender_id: int | None) -> bool:
-        return sender_id == self.settings.allowed_user_id
+        if sender_id == self.settings.allowed_user_id:
+            return True
+        if type(sender_id) is not int or sender_id <= 0:
+            return False
+        try:
+            members = self.db.family_users(self.settings.allowed_user_id)["users"]
+            return any(member["id"] == sender_id and member["enabled"] for member in members)
+        except Exception:  # noqa: BLE001 - unreadable grants must never authorize members
+            # Unknown/corrupt grants never expand access; the original owner remains.
+            return False
 
     @staticmethod
     def _media_key(message: Any) -> str | None:
@@ -38,19 +48,31 @@ class TelegramHandlers:
             return f"photo:{photo_id}"
         return None
 
+    @staticmethod
+    def _media_caption(message: Any, fallback: str = "") -> str:
+        # Only text actually delivered with this message. Forwarding metadata,
+        # reply ids and channel names are not a license to fetch other messages.
+        for field in ("raw_text", "message"):
+            value = getattr(message, field, None)
+            if isinstance(value, str) and value.strip():
+                return value[:8192]
+        return fallback[:8192] if isinstance(fallback, str) else ""
+
+    @user_event
     async def _on_callback(self, event: events.CallbackQuery.Event) -> None:
         if (
             not self._authorized(event.sender_id)
-            or getattr(event, "chat_id", None) != self.settings.allowed_user_id
+            or getattr(event, "chat_id", None) != event.sender_id
         ):
             self.log.warning("忽略未授权或非私聊按钮操作")
             await event.answer("无权执行这个操作。", alert=True)
             return
         await self._handle_callback(event)
 
+    @user_event
     async def _on_album(self, event: events.Album.Event) -> None:
         if (not self._authorized(event.sender_id) or not event.is_private
-                or event.chat_id != self.settings.allowed_user_id):
+                or event.chat_id != event.sender_id):
             return
         messages = event.messages
         if not messages or not event.grouped_id or any(
@@ -67,10 +89,14 @@ class TelegramHandlers:
         messages = sorted({message.id: message for message in messages}.values(), key=lambda item: item.id)
         title = ""
         if len(messages) > 1:
-            # Prefer the fuller visible description when an earlier group member
-            # only carries a short category label. Existing tasks remain unchanged.
-            titles = (caption_title(message.raw_text or "", message.entities) for message in messages)
-            title = max(titles, key=len, default="")
+            # The same bounded quality score as a single video, not raw length:
+            # an explicit title must beat a longer advertisement/category label.
+            try:
+                titles = (caption_candidate(self._media_caption(message), getattr(message, "entities", ()))
+                          for message in messages)
+                title = max(titles, key=lambda candidate: candidate[1], default=("", -1))[0]
+            except Exception:  # noqa: BLE001 - optional naming must not prevent ingestion
+                self.log.warning("媒体组标题识别失败，使用原有文件命名；未影响任务接收。")
         numbers = {"视频": 0, "图片": 0}
         deliveries = []
         for message in messages:
@@ -84,7 +110,7 @@ class TelegramHandlers:
                 extension = file.ext or Path(file.name or "").suffix or (".jpg" if kind == "图片" else ".bin")
                 name = album_file_name(title, kind, numbers[kind], extension)
             proxy = SimpleNamespace(sender_id=message.sender_id, chat_id=message.chat_id,
-                                    is_private=True, message=message, raw_text=message.raw_text,
+                                    is_private=True, message=message, raw_text=self._media_caption(message),
                                     reply=message.reply)
             deliveries.append(self._on_message(proxy, album_name=name, album_delivery=True))
         # Each ingestion writes its SQLite task before awaiting the reply. A slow
@@ -94,6 +120,7 @@ class TelegramHandlers:
             if isinstance(result, Exception):
                 self.log.error("媒体组消息 %s 接收或回复失败；请核对任务列表后重发。", message.id)
 
+    @user_event
     async def _on_message(self, event: events.NewMessage.Event, *,
                           album_name: str | None = None, album_delivery: bool = False) -> None:
         if not self._authorized(event.sender_id) or not getattr(event, "is_private", False):
@@ -129,7 +156,11 @@ class TelegramHandlers:
         fallback = f"telegram-{message.id}{message.file.ext or '.bin'}"
         file_name = safe_file_name(message.file.name or "", fallback)
         if getattr(message, "video", None) or str(getattr(message.file, "mime_type", "")).startswith("video/"):
-            file_name = video_file_name(message.file.name or "", text, fallback, getattr(message, "entities", ()))
+            try:
+                file_name = video_file_name(message.file.name or "", self._media_caption(message, text),
+                                            fallback, getattr(message, "entities", ()))
+            except Exception:  # noqa: BLE001 - keep the safe original if optional metadata is malformed
+                self.log.warning("视频标题识别失败，使用原有文件命名；未影响任务接收。")
         if album_name:
             file_name = album_name
         task, created = self.db.create_task(
@@ -162,7 +193,7 @@ class TelegramHandlers:
         while not self._stop.is_set():
             for task_id, message in list(self._watch_messages.items()):
                 task = self.db.get(task_id)
-                if task is None:
+                if task is None or not self._authorized(task["sender_id"]):
                     self._watch_messages.pop(task_id, None)
                     continue
                 text = self._format_task(task, verbose=True)
@@ -177,7 +208,10 @@ class TelegramHandlers:
             await asyncio.sleep(5)
 
     async def _notify(self, message: str) -> None:
+        target = current_user(self.settings.allowed_user_id)
+        if not self._authorized(target):
+            return
         try:
-            await self.client.send_message(self.settings.allowed_user_id, message)
+            await self.client.send_message(target, message)
         except Exception:
             self.log.exception("发送 Bot 通知失败")

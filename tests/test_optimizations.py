@@ -236,6 +236,30 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
             ["🔄", "↩️"],
         )
 
+    def test_resource_page_hides_filesystem_inventory_and_keeps_capacity(self) -> None:
+        snapshot = replace(self.service.snapshot, filesystems=(
+            ("暂存/数据库/日志/配置", 60 * 1024**3),
+            ("独立磁盘", 10 * 1024**3),
+        ))
+        self.service.snapshot = snapshot
+        with patch.object(self.service, "_dashboard_time", return_value="18:13:30"):
+            text = self.service._format_vps_resources()
+        self.assertEqual(text, (
+            "🖥 **VPS 资源**\n\n"
+            "CPU　10.0%\n内存　2.00 GB 可用\n磁盘　60.00 GB 可用\n"
+            "本地　0.00 / 20.00 GB\n\n🕐 更新于 18:13:30"
+        ))
+        self.assertEqual(self.service.snapshot.filesystems, snapshot.filesystems)
+
+    def test_resource_page_keeps_safety_warning_without_filesystem_inventory(self) -> None:
+        self.service._dashboard_resource_snapshot = replace(self.service.snapshot, filesystems=(("数据库", 1),))
+        self.service._resource_pause_reason = "文件系统剩余空间触及安全线，暂停新任务"
+        text = self.service._format_vps_resources()
+        self.assertIn("保护状态　" + self.service._resource_pause_reason, text)
+        self.assertNotIn("文件系统（", text)
+        self.assertNotIn("数据库", text)
+        self.assertIn("磁盘　60.00 GB 可用", text)
+
     async def test_resource_refresh_failure_keeps_page_usable(self) -> None:
         self.service.monitor = SimpleNamespace(
             sample=Mock(side_effect=RuntimeError("simulated sample failure"))

@@ -2,6 +2,16 @@
 
 TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发布说明的整理，不把历史 TG115 的版本号当成 TG2Cloud 发布版本。
 
+## TG2Cloud v1.3.3
+
+版本日期：2026-10-18，待发布；实际状态见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。当前正式下载仍为 v1.3.2。
+
+新增家庭共享：Bot 安装后授权成员、各自任务与通知、共用保存目录；外部 WebDAV 支持多个独立只读账号，授权和目录由网关后台确认。未增加个人目录，也未完成本轮真实网关／手机验收；详见[Bot 使用](/usage/commands/)与[外部 WebDAV](/deploy/external-webdav/)。
+
+视频命名增量增强 Unicode 多语言、混合随机 ID、广告域名与元数据过滤，同条消息及本组说明共用候选评分；可靠原名、扩展名、媒体组指定名称、无说明回退及既有去重保留。识别异常不阻止接收，不抓评论／频道，不增依赖。示例与限制见[第一次转存](/usage/first-transfer/)；仅本地待发布，不代表真实 Telegram 或网关验收通过。
+
+资源页移除文件系统容量清单，后台磁盘采样与安全保护不变。新增回归与既有恢复、权限、转存检查共同运行；自动检查不代替[历史实机记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)之外的新验收。
+
 ## TG2Cloud v1.3.2
 
 版本与资料核对日期：2026-10-18。[v1.3.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.2) 已正式发布；辅助提交、入口提交和同标签发布检查全部通过，下载的源码包、实际 SHA256 与公开资产摘要已核对。详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。

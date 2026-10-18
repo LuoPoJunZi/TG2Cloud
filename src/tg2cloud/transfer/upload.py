@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from tg2cloud.domain.actors import task_actor
 from tg2cloud.domain.errors import (
     RemoteReviewRequired,
     failure_kind,
@@ -103,6 +104,7 @@ async def _complete_cloud_receive(
     )
 
 
+@task_actor
 async def _upload_one(self, task_id: int) -> None:
     task = self.db.get(task_id)
     if not task or task.get("cancel_requested") or task.get("state") in {"completed", "confirmed", "cancelled"}:

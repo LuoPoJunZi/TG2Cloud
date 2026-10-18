@@ -13,9 +13,9 @@ from pathlib import Path
 from tg2cloud.cli.terminal import Terminal
 from tg2cloud.deployment.configuration import plain
 
-ACTIONS = ("install", "status", "check", "enable", "disable", "configure", "uninstall", "upgrade", "print-config")
+ACTIONS = ("install", "status", "check", "enable", "disable", "configure", "uninstall", "upgrade", "print-config", "users")
 ACTION_LABELS = ("安装外部 WebDAV", "查看运行状态", "检查连接与配置", "启用访问", "停用访问",
-                 "修改域名或账号配置", "卸载外部 WebDAV", "升级附加功能", "查看手机连接配置")
+                 "修改域名或账号配置", "卸载外部 WebDAV", "升级附加功能", "查看手机连接配置", "用户管理")
 
 
 class WebDAVTerminal(Terminal):
@@ -140,6 +140,9 @@ def main(argv: list[str] | None = None) -> int:
             if changed and service.record() is not None and service.record()["phase"] == "enabled":
                 with service.locked():
                     service.install_runtime(source_root(), source_identity(source_root()))
+        elif args.action == "users":
+            from tg2cloud.addons.external_webdav.users import menu
+            menu(service, sample_file=args.sample_file)
         elif args.action == "upgrade":
             item = service.record()
             if item is None:

@@ -12,6 +12,7 @@
     "src/tg2cloud/addons/external_webdav/nginx.py",
     "src/tg2cloud/addons/external_webdav/releases.py",
     "src/tg2cloud/addons/external_webdav/service.py",
+    "src/tg2cloud/addons/external_webdav/users.py",
     "src/tg2cloud/addons/external_webdav/verification.py",
     "src/tg2cloud/cli/__init__.py",
     "src/tg2cloud/cli/__main__.py",
@@ -43,6 +44,7 @@
     "src/tg2cloud/deployment/runtime.py",
     "src/tg2cloud/deployment/uninstall.py",
     "src/tg2cloud/deployment/upgrade.py",
+    "src/tg2cloud/deployment/users.py",
     "src/tg2cloud/version.py"
   ]
 }

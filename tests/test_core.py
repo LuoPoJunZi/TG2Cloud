@@ -1244,6 +1244,8 @@ class UploadRecoveryTests(unittest.TestCase):
     @staticmethod
     def service(task: dict[str, object]) -> TransferService:
         service = TransferService.__new__(TransferService)
+        # Production task rows always include immutable sender ownership.
+        task.setdefault("sender_id", 123)
         service.settings = SimpleNamespace(max_retries=1)
         service.db = UploadRecoveryTests.FakeDB(task)  # type: ignore[assignment]
         service.db.staging_name = lambda task_id, name: f".uploading-{task_id}-{name}"

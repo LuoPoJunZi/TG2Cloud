@@ -5,6 +5,7 @@ import time
 from pathlib import Path
 from typing import Any
 
+from tg2cloud.domain.actors import task_actor
 from tg2cloud.domain.errors import (
     RemoteReviewRequired,
     failure_kind,
@@ -83,6 +84,7 @@ async def _begin_remote_write(
 
 
 
+@task_actor
 async def _stream_one(self, task_id: int) -> None:
     task = self.db.get(task_id)
     if not task:

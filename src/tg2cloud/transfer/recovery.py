@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
+from tg2cloud.domain.actors import current_user
 from tg2cloud.domain.errors import RemoteReviewRequired, needs_review
 from tg2cloud.domain.states import FAILED_STATES
 from tg2cloud.storage.policies import policy_for
@@ -51,7 +52,8 @@ def _retry_task(self, task: dict[str, Any]) -> bool:
             or task_id in self.download_tasks or task_id in self.upload_tasks):
         return False
     task = self.db.get(task_id) or task
-    if task.get("sender_id") != self.settings.allowed_user_id or needs_review(task):
+    actor = current_user(self.settings.allowed_user_id)
+    if task.get("sender_id") != actor or needs_review(task):
         return False
     state = task["state"]
     if task.get("cancel_requested"):
@@ -62,7 +64,7 @@ def _retry_task(self, task: dict[str, Any]) -> bool:
         state = task["state"]
     if state in FAILED_STATES:
         return self.db.requeue(
-            task_id, sender_id=self.settings.allowed_user_id,
+            task_id, sender_id=actor,
             expected_updated_at=task["updated_at"], local_complete=self._local_complete(task),
         )
     return state in {"queued", "waiting_upload"}

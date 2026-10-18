@@ -8,6 +8,7 @@ from telethon import Button, events
 from telethon.errors import MessageNotModifiedError
 from telethon.tl import functions, types
 
+from tg2cloud.domain.actors import current_user
 from tg2cloud.domain.errors import (
     needs_review,
 )
@@ -25,6 +26,9 @@ from tg2cloud.telegram.views import (
 
 class CommandHandlers:
     """Telegram command routing and user-facing status rendering."""
+
+    def _user_home_buttons(self):
+        return self._home_buttons(admin=current_user(self.settings.allowed_user_id) == self.settings.allowed_user_id)
 
     async def _register_bot_menu(self) -> None:
         """Install the native Telegram command menu without blocking startup."""
@@ -65,7 +69,7 @@ class CommandHandlers:
         self, page: int
     ) -> tuple[str, list[dict[str, Any]], bool]:
         offset = (page - 1) * QUEUE_PAGE_SIZE
-        fetched = self.db.list_recent(QUEUE_PAGE_SIZE + 1, offset=offset, sender_id=self.settings.allowed_user_id)
+        fetched = self.db.list_recent(QUEUE_PAGE_SIZE + 1, offset=offset, sender_id=current_user(self.settings.allowed_user_id))
         tasks = fetched[:QUEUE_PAGE_SIZE]
         has_next = len(fetched) > QUEUE_PAGE_SIZE
         if not tasks:
@@ -190,10 +194,16 @@ class CommandHandlers:
 
         await event.answer()
         name, value = action
+        actor = current_user(self.settings.allowed_user_id)
+        if actor != self.settings.allowed_user_id and name in {
+            "control", "menu:doctor", "menu:orphans", "vps_resources", "refresh:vps_resources",
+        }:
+            await self._edit_callback(event, "此操作仅限管理员；你可以转存和管理自己的任务。", self._user_home_buttons())
+            return
         if name.startswith("task:"):
             requested_id = value[0] if isinstance(value, tuple) else value
             owned = self.db.get(requested_id)
-            if owned and owned["sender_id"] != self.settings.allowed_user_id:
+            if owned and owned["sender_id"] != actor:
                 await self._edit_callback(event, "没有找到这个任务。", self._secondary_buttons(b"queue:1"))
                 return
         if name in {"task:restart", "task:recover", "task:recover_yes"}:
@@ -205,7 +215,7 @@ class CommandHandlers:
         if name in {"menu:home", "menu:status", "refresh:home"}:
             await self._refresh_destination_for_dashboard()
             await self._edit_callback(
-                event, self._format_status(), self._home_buttons()
+                event, self._format_status(), self._user_home_buttons()
             )
         elif name in {"vps_resources", "refresh:vps_resources"}:
             self._refresh_resource_snapshot()
@@ -239,7 +249,7 @@ class CommandHandlers:
                     else "新任务仍需满足目的端与资源安全条件"
                 ),
             )
-            await self._edit_callback(event, text, self._home_buttons())
+            await self._edit_callback(event, text, self._user_home_buttons())
         elif name == "task:view":
             task = self.db.get(value)
             text = (
@@ -271,6 +281,7 @@ class CommandHandlers:
             token = secrets.token_hex(3)
             confirmations = getattr(self, "_cancel_confirmations", {})
             confirmations[int(task["id"])] = {
+                "actor": actor,
                 "token": token,
                 "expires_at": time.monotonic() + TASK_ACTION_TTL_SECONDS,
             }
@@ -298,6 +309,7 @@ class CommandHandlers:
             plan = getattr(self, "_cancel_confirmations", {}).get(task_id)
             valid = bool(
                 plan
+                and plan.get("actor", self.settings.allowed_user_id) == actor
                 and time.monotonic() <= float(plan["expires_at"])
                 and secrets.compare_digest(str(plan["token"]), token)
             )
@@ -337,16 +349,20 @@ class CommandHandlers:
     ) -> None:
         parts = text.split()
         command = parts[0].split("@", 1)[0].lower()
+        actor = current_user(self.settings.allowed_user_id)
+        if actor != self.settings.allowed_user_id and command in {"/pause", "/resume", "/doctor", "/orphans"}:
+            await event.reply("此操作仅限管理员；你可以转存和管理自己的任务。")
+            return
         if command in {"/task", "/watch", "/retry", "/cancel", "/stream", "/confirm", "/restart", "/recover"}:
             task_id = self._parse_task_id(parts)
             task = self.db.get(task_id) if task_id else None
-            if task and task["sender_id"] != self.settings.allowed_user_id:
+            if task and task["sender_id"] != actor:
                 await event.reply("没有找到这个任务。")
                 return
         if command == "/start":
-            await event.reply(self._format_status(), buttons=self._home_buttons())
+            await event.reply(self._format_status(), buttons=self._user_home_buttons())
         elif command == "/help":
-            await event.reply(self._format_help())
+            await event.reply(self._format_help(admin=actor == self.settings.allowed_user_id))
         elif command == "/queue":
             page = self._parse_queue_page(parts)
             if page is None:
@@ -354,7 +370,7 @@ class CommandHandlers:
             else:
                 await self._reply_queue(event, page)
         elif command in {"/status", "/performance"}:
-            await event.reply(self._format_status(), buttons=self._home_buttons())
+            await event.reply(self._format_status(), buttons=self._user_home_buttons())
         elif command == "/task":
             await self._command_task(event, parts)
         elif command in {"/restart", "/recover"}:
@@ -426,7 +442,7 @@ class CommandHandlers:
         self, event: events.NewMessage.Event, parts: list[str]
     ) -> None:
         if len(parts) == 2 and parts[1].lower() == "all":
-            task_ids = self.db.confirm_completed(limit=100, sender_id=self.settings.allowed_user_id)
+            task_ids = self.db.confirm_completed(limit=100, sender_id=current_user(self.settings.allowed_user_id))
             if not task_ids:
                 await event.reply("当前没有等待人工确认的已完成任务。")
                 return
@@ -574,7 +590,7 @@ class CommandHandlers:
         self, event: events.NewMessage.Event, parts: list[str]
     ) -> None:
         if len(parts) == 2 and parts[1].lower() == "all":
-            tasks = self.db.list_states(FAILED_STATES, limit=100)
+            tasks = self.db.list_states(FAILED_STATES, limit=100, sender_id=current_user(self.settings.allowed_user_id))
             count = sum(
                 self._retry_task(task)
                 for task in tasks
@@ -620,7 +636,14 @@ class CommandHandlers:
     async def _offer_recovery(self, event: Any, task_id: int, *, rename: bool = False,
                               edit: bool = False, message_id: int | None = None) -> None:
         task = self.db.get(task_id)
-        valid = task and task["sender_id"] == self.settings.allowed_user_id and (
+        actor = current_user(self.settings.allowed_user_id)
+        if task and task["sender_id"] != actor:
+            if edit:
+                await self._edit_callback(event, "没有找到这个任务。", self._secondary_buttons(b"queue:1"))
+            else:
+                await event.reply("没有找到这个任务。")
+            return
+        valid = task and task["sender_id"] == actor and (
             task["state"] in FAILED_STATES if rename else task["state"] == "cancelled"
         )
         if not valid or task.get("cancel_requested") or task_id in getattr(self, "_cancelling", set()):
@@ -629,7 +652,8 @@ class CommandHandlers:
             token = secrets.token_hex(6)
             plans = getattr(self, "_recovery_confirmations", {})
             plans[task_id] = {"token": token, "expires": time.monotonic() + TASK_ACTION_TTL_SECONDS,
-                              "revision": task["updated_at"], "rename": rename, "message_id": message_id}
+                              "revision": task["updated_at"], "rename": rename, "message_id": message_id,
+                              "actor": actor}
             self._recovery_confirmations = plans
             text = (f"确认{'换名重传' if rename else '重新转存'} · #{task_id}\n"
                     "保留历史记录和原远端文件；完整本地副本优先复用，否则重新下载。\n"
@@ -645,7 +669,9 @@ class CommandHandlers:
         plans = getattr(self, "_recovery_confirmations", {})
         plan = plans.get(task_id)
         task = self.db.get(task_id)
+        actor = current_user(self.settings.allowed_user_id)
         valid = (plan and task and time.monotonic() <= plan["expires"]
+                 and task["sender_id"] == actor and plan.get("actor", self.settings.allowed_user_id) == actor
                  and secrets.compare_digest(plan["token"], token))
         updated = False
         if valid:
@@ -653,7 +679,7 @@ class CommandHandlers:
             if (task_id not in getattr(self, "_cancelling", set())
                     and task_id not in self.download_tasks and task_id not in self.upload_tasks):
                 updated = self.db.requeue(
-                    task_id, sender_id=self.settings.allowed_user_id,
+                    task_id, sender_id=actor,
                     expected_updated_at=plan["revision"], local_complete=self._local_complete(task),
                     fresh_path=True, restart_cancelled=not plan["rename"], message_id=plan["message_id"],
                 )
@@ -674,7 +700,7 @@ class CommandHandlers:
                 query = " ".join(parts[1:])[:200]
                 if not query:
                     raise ValueError
-            tasks = self.db.search(sender_id=self.settings.allowed_user_id, query=query, state=state,
+            tasks = self.db.search(sender_id=current_user(self.settings.allowed_user_id), query=query, state=state,
                                    after_id=after_id)
         except ValueError:
             await event.reply("用法：/search <文件名> 或 /tasks <状态> [最后编号]；编号查询使用 /task。")

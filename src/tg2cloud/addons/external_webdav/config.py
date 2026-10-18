@@ -15,6 +15,7 @@ from pathlib import Path, PurePosixPath
 OWNER = "tg2cloud.external_webdav"
 ROOT = Path("/opt/tg2cloud-webdav")
 HASH = re.compile(r"\$6\$rounds=200000\$[A-Za-z0-9./]{16}\$[A-Za-z0-9./]{86}")
+MAX_MEMBERS = 32
 INPUT_ERROR = "密码不能为空；仅支持不含空白的可打印 ASCII 字符，最多 128 位。"
 
 
@@ -124,11 +125,18 @@ def read_record(path: Path) -> dict | None:
     info = path.stat()
     if not path.is_file() or info.st_size > 32768 or (os.name == "posix" and (info.st_uid or info.st_mode & 0o077)):
         raise ValueError("附加功能记录的所有者、权限或大小不安全。")
-    item = json.loads(path.read_text(encoding="utf-8"))
+    return validate_record(json.loads(path.read_text(encoding="utf-8")))
+
+
+def validate_record(item: dict) -> dict:
+    """Versioned metadata contract, separate from private filesystem checks."""
     required = {"schema", "owner", "edition", "instance_dir", "domain", "username", "bot_root", "target_dir",
                 "binding", "phase", "scope_verification", "backend_image", "revision"}
-    if (not isinstance(item, dict) or set(item) != required or type(item["schema"]) is not int or item["schema"] != 1 or item["owner"] != OWNER
-            or any(not isinstance(value, str) for key, value in item.items() if key != "schema")
+    schema = item.get("schema") if isinstance(item, dict) else None
+    if schema == 2:
+        required.add("members")
+    if (not isinstance(item, dict) or set(item) != required or type(schema) is not int or schema not in {1, 2} or item["owner"] != OWNER
+            or any(not isinstance(value, str) for key, value in item.items() if key not in {"schema", "members"})
             or item["edition"] not in {"clouddrive2", "openlist"}
             or item["phase"] not in {"pending", "disabled", "enabled", "needs_repair"}
             or item["scope_verification"] != "manual-native-readonly"
@@ -142,7 +150,43 @@ def read_record(path: Path) -> dict | None:
     username(item["username"])
     logical_path(item["bot_root"], allow_root=True)
     logical_path(item["target_dir"])
+    members = item.get("members", [])
+    if not isinstance(members, list) or len(members) > MAX_MEMBERS:
+        raise ValueError("外部账号清单无效。")
+    seen = {item["username"].casefold()}
+    for member in members:
+        if (not isinstance(member, dict) or set(member) != {"username", "phase"}
+                or not isinstance(member["username"], str)
+                or member["phase"] not in {"pending", "disabled", "enabled", "needs_repair"}
+                or member["username"].casefold() in seen):
+            raise ValueError("外部账号清单重复或状态不受支持。")
+        seen.add(username(member["username"]).casefold())
     return item
+
+
+def auth_entries(content: str) -> dict[str, str]:
+    """A bounded allowlist of salted hashes; never accept arbitrary htpasswd syntax."""
+    if content == "disabled:!\n":
+        return {}
+    if not content or len(content) > 16384 or not content.endswith("\n"):
+        raise ValueError("外部认证文件大小或格式不受支持。")
+    result, seen = {}, set()
+    for line in content.splitlines():
+        user, separator, hashed = line.partition(":")
+        if not separator or not HASH.fullmatch(hashed) or user.casefold() in seen:
+            raise ValueError("外部认证文件必须使用唯一专用账号和强哈希。")
+        username(user)
+        result[user] = hashed
+        seen.add(user.casefold())
+        if len(result) > MAX_MEMBERS + 1:
+            raise ValueError("外部账号数量超过家庭共享限制。")
+    return result
+
+
+def auth_content(entries: dict[str, str]) -> bytes:
+    text = "".join(f"{user}:{hashed}\n" for user, hashed in sorted(entries.items())) if entries else "disabled:!\n"
+    auth_entries(text)
+    return text.encode("ascii")
 
 
 def write_record(path: Path, item: dict) -> None:

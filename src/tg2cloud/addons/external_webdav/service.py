@@ -66,14 +66,16 @@ class Service:
                 raise ValueError("共享认证目录含未知资源。")
             for path in auth_dir.iterdir():
                 config.canonical(path)
-                if (not path.is_file() or path.stat().st_size > 512
+                if (not path.is_file() or path.stat().st_size > 16384
                         or (os.name == "posix" and path.stat().st_mode & 0o007)):
                     raise ValueError("认证文件类型／大小不受支持。")
-                content = path.read_text(encoding="ascii")
-                lines = content.splitlines()
-                if len(lines) != 1 or not (content == "disabled:!\n" or (
-                        lines[0].count(":") == 1 and config.HASH.fullmatch(lines[0].split(":", 1)[1]))):
-                    raise ValueError("认证文件不是单账号强哈希格式，拒绝发布。")
+                entries = config.auth_entries(path.read_text(encoding="ascii"))
+                if path == self.auth and self.record():
+                    record = self.record()
+                    allowed = {record["username"], *(m["username"] for m in record.get("members", [])
+                                                     if m["phase"] in {"enabled", "pending"})}
+                    if entries.keys() - allowed or (record["phase"] == "disabled" and entries):
+                        raise ValueError("认证文件包含未登记或已撤销的账号；拒绝发布。")
         if (root / "docker-compose.yml").exists():
             expected = render_compose(certificate_domains(state), external_auth=state.get("version") == 2)
             if (root / "docker-compose.yml").read_text().replace("\r\n", "\n") != expected:
@@ -167,6 +169,8 @@ class Service:
         phases = {"pending": "待完成配置", "enabled": "已启用", "disabled": "已停用", "needs_repair": "需要修复"}
         self.log("目标目录：" + item["target_dir"])
         self.log("状态：" + phases[item["phase"]])
+        if item.get("members"):
+            self.log(f"另有 {len(item['members'])} 个家庭只读账号；请在“用户管理”中逐个检查。")
         self.log("─────────────────────────────")
 
     def management_hint(self) -> None:
@@ -188,6 +192,8 @@ class Service:
             self.display(previous)
             self.management_hint()
             return False
+        if previous and previous.get("members"):
+            raise ValueError("存在家庭只读账号；请先通过用户管理移除其入口授权，再更改共享域名／目录或主账号。不会静默丢弃账号。")
         launcher = self.launcher
         config.canonical(launcher)
         if launcher.exists() and not launcher.read_text().startswith("#!/bin/sh\n# TG2Cloud external_webdav managed\n"):
@@ -333,6 +339,8 @@ class Service:
                 item.update(phase="pending", revision=secrets.token_hex(16))
                 self.save(item)
                 self.revoke()
+                for member in item.get("members", []):
+                    member["phase"] = "disabled"
                 routes = state.get("external_webdav", {})
                 if self.product.key in routes:
                     if action == "uninstall":
@@ -369,9 +377,16 @@ class Service:
                     raise ValueError("入口已关闭，不能执行外部样本读取验收。")
                 verification.check_public_denials(self.route(item, False))
             self.log("只读检查通过；原生目录／权限仍须在后台人工复核，不能自动感知后台根目录变更。")
+            if item.get("members"):
+                self.log("本次仅检查主账号；其他家庭账号请在用户管理中逐个输入密码检查。")
             return
         if action != "enable":
             raise ValueError("未知外部入口操作。")
+        if item.get("members") and item["phase"] == "enabled":
+            verification.check_public(route, secret, sample_file=sample_file)
+            self.verify_mounted_hash()
+            self.log("入口已启用；主账号检查通过，保留其他家庭账号授权，不重新写入认证文件。")
+            return
         if not self.ui.confirm("已重新核对原生独立只读账号和目标目录，确认启用？"):
             return
         with self.locked():
@@ -379,10 +394,14 @@ class Service:
             instance, state = self.preflight(item["instance_dir"], item["domain"])
             self.assert_binding(item, instance)
             self.backup(state)
+            if item.get("members"):
+                self.log("本次仅恢复主账号；家庭账号保持关闭，请通过用户管理逐个检查启用。")
             item.update(phase="pending", revision=secrets.token_hex(16))
             self.save(item)
             try:
                 self.revoke()
+                for member in item.get("members", []):
+                    member["phase"] = "disabled"
                 self.auth_write((item["username"] + ":" + config.password_hash(secret) + "\n").encode())
                 state.update(version=2)
                 state.setdefault("external_webdav", {})[self.product.key] = self.route(item, True)

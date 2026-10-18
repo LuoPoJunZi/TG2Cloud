@@ -96,6 +96,16 @@ class TaskDB:
             ).fetchone()
             return bool(row and row[0] == "1")
 
+    def family_users(self, admin_id: int) -> dict:
+        from tg2cloud.persistence.users import read
+        with self._lock:
+            return read(self._conn, admin_id)
+
+    def change_family_user(self, admin_id: int, request: dict) -> dict:
+        from tg2cloud.persistence.users import change
+        with self._lock:
+            return change(self._conn, admin_id, request)
+
     def remote_claimed(self, path: str, task_id: int) -> bool:
         with self._lock:
             return self.protected_remote(path) or self._conn.execute(
@@ -287,6 +297,7 @@ class TaskDB:
         limit: int = 200,
         ready_only: bool = False,
         after_id: int = 0,
+        sender_id: int | None = None,
     ) -> list[dict[str, Any]]:
         state_values = tuple(states)
         if not state_values:
@@ -295,6 +306,9 @@ class TaskDB:
         # placeholders are generated only from the tuple length; values stay bound.
         query = f"SELECT * FROM tasks WHERE state IN ({placeholders})"  # nosec B608
         params: list[Any] = list(state_values)
+        if sender_id is not None:
+            query += " AND sender_id = ?"
+            params.append(sender_id)
         if after_id > 0:
             query += " AND id > ?"
             params.append(after_id)
@@ -321,16 +335,17 @@ class TaskDB:
                 ).fetchall()
             ]
 
-    def counts(self) -> dict[str, int]:
+    def counts(self, *, sender_id: int | None = None) -> dict[str, int]:
         with self._lock:
             return {
                 row["state"]: row["count"]
                 for row in self._conn.execute(
-                    "SELECT state, COUNT(*) AS count FROM tasks GROUP BY state"
+                    "SELECT state, COUNT(*) AS count FROM tasks WHERE (? IS NULL OR sender_id=?) GROUP BY state",
+                    (sender_id, sender_id),
                 ).fetchall()
             }
 
-    def weekly_failed_count(self, *, now: float | None = None) -> int:
+    def weekly_failed_count(self, *, now: float | None = None, sender_id: int | None = None) -> int:
         """Current failed tasks that failed this local calendar week, counted once.
 
         This is a display filter, never a task deletion or state reset. Legacy
@@ -351,8 +366,8 @@ class TaskDB:
                  OR (t.updated_at>=? AND t.updated_at<=? AND NOT EXISTS
                      (SELECT 1 FROM task_events e WHERE e.task_id=t.id AND e.new_state IN ({placeholders}))))"""  # nosec B608
         with self._lock:
-            return self._conn.execute(query, (*states, *states, start, now,
-                                              start, now, *states)).fetchone()[0]
+            return self._conn.execute(query + " AND (? IS NULL OR t.sender_id=?)", (*states, *states, start, now,
+                                              start, now, *states, sender_id, sender_id)).fetchone()[0]
 
     def used_local_bytes(self) -> int:
         placeholders = ",".join("?" for _ in LOCAL_STATES)

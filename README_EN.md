@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current version: **v1.3.2**, maintained through Linux scripts. The source archive and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.2). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). The [historical CloudDrive2 v1.3.0 acceptance record](docs/development/V130-ACCEPTANCE.md) does not certify every scenario in this new version.
+Preparing **v1.3.3**, maintained through Linux scripts. Until publication, source archives and checksums remain available in the [v1.3.2 stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.2). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). The [historical CloudDrive2 v1.3.0 acceptance record](docs/development/V130-ACCEPTANCE.md) does not certify every scenario in this new version.
 
 ## Getting started
 
@@ -81,6 +81,8 @@ This command only previews; it does not uninstall. Actual complete removal delet
 Optional add-on: [External WebDAV](docs/external-webdav.md). Available since v1.3.1: separately installed, read-only HTTPS access to an existing upload directory with an independent native account, an online installer and offline maintenance commands.
 
 Browse the repository guides by topic below. Most are in Chinese; see the [full documentation index](docs/README.md) or the [documentation website](https://tg2cloud.pages.dev/).
+
+Unreleased v1.3.3: [family sharing](docs/FAMILY-SHARING.md) adds post-install Bot grants and independent read-only WebDAV accounts for the same shared directory. Installation still takes one administrator ID. See [naming rules](docs/RECOVERY.md#多语言候选评分与随机名称增强) for multilingual caption improvements and limitations.
 
 | Topic | Repository documents |
 | --- | --- |
