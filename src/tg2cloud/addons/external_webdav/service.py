@@ -153,12 +153,24 @@ class Service:
             # inode mount can retain the previous password after revocation.
             config.atomic(self.auth, b"disabled:!\n", mode=0o640, gid=self.auth.stat().st_gid)
 
-    def display(self, item: dict) -> None:
+    def display(self, item: dict, *, secret: str | None = None) -> None:
+        self.log("──────── 手机连接配置 ────────")
         for line in ("名称：TG2Cloud 文件", "协议：HTTPS", "服务器：" + item["domain"], "端口：443",
-                     "根路径：/dav/", "用户名：" + item["username"], "密码（不回显）：使用新设置的外部专用密码",
-                     "目标目录：" + item["target_dir"], "目录／原生只读权限：用户在网关后台确认；不是自动权限审计",
-                     "状态：" + item["phase"]):
+                     "根路径：/dav/", "用户名：" + item["username"]):
             self.log(line)
+        if secret is not None:
+            # Only the current install/configure keeps a secret in memory.
+            # Bypass SafeLog only for this explicitly confirmed private TTY.
+            self.ui.show_password(secret)
+        else:
+            self.log("密码（未保存明文）：使用你设置的外部专用密码")
+        phases = {"pending": "待完成配置", "enabled": "已启用", "disabled": "已停用", "needs_repair": "需要修复"}
+        self.log("目标目录：" + item["target_dir"])
+        self.log("状态：" + phases[item["phase"]])
+        self.log("─────────────────────────────")
+
+    def management_hint(self) -> None:
+        self.log("下次管理，请运行：\ntg2cloud-webdav")
 
     def assert_binding(self, item: dict, instance) -> None:
         if (item["instance_dir"] != str(instance.directory) or item["binding"] != config.binding(instance.config)
@@ -172,37 +184,58 @@ class Service:
     def configure(self, *, install_dir: str | None, install: bool = False, sample_file: str = "") -> bool:
         previous = self.record()
         if previous and install:
-            self.log("外部 WebDAV 已登记；不重复安装或自动启用。使用 check／configure／enable 维护。")
+            self.log("外部 WebDAV 已登记；不重复安装或自动启用。请在管理菜单中检查、修改配置或启用访问。")
             self.display(previous)
+            self.management_hint()
             return False
         launcher = self.launcher
         config.canonical(launcher)
         if launcher.exists() and not launcher.read_text().startswith("#!/bin/sh\n# TG2Cloud external_webdav managed\n"):
             raise ValueError("同名维护命令不是本功能拥有，停止，不覆盖。")
+        self.log("──────── " + ("安装" if install else "配置") + "外部 WebDAV ────────")
+        self.log("正在检查实例、存储网关和共享代理……")
         instance, _ = self.preflight(install_dir or (previous or {}).get("instance_dir"))
+        self.log("所属实例：" + str(instance.directory))
+        self.log("基础检查通过。")
         from tg2cloud.deployment.proxy.state import validate_domain, validate_email
         domain = self.ui.ask("外部 HTTPS 域名（不能复用管理域名）", default=(previous or {}).get("domain", ""), validate=validate_domain)
         email = self.ui.ask("Let's Encrypt 邮箱（可留空）", validate=validate_email)
-        self.log("Bot 用户根目录不是 TARGET_PATH；程序不能从相对子目录推断网盘绝对目录。")
-        bot_root = self.ui.ask("请先在后台核对 Bot WebDAV 用户根目录，填写网关逻辑绝对路径", validate=lambda v: config.logical_path(v, allow_root=True))
         relative = config.decode(instance.config, "TARGET_PATH").strip("/")
+        if relative:
+            config.logical_path("/" + relative)
+        self.log("Bot 保存子目录：" + (relative or "使用账号根目录"))
+        # A TARGET_PATH is relative to the native account. Only a still-matching
+        # instance binding may suggest its previously user-confirmed root.
+        default_root = ""
+        if (previous and previous["instance_dir"] == str(instance.directory)
+                and previous["binding"] == config.binding(instance.config)
+                and previous["backend_image"] == instance.gateway_image):
+            default_root = previous["bot_root"]
+        bot_root = self.ui.ask("Bot WebDAV 账号根目录（后台核对）", default=default_root,
+                               validate=lambda v: config.logical_path(v, allow_root=True))
         target = config.logical_path(bot_root.rstrip("/") + "/" + relative if relative else bot_root)
+        self.log("本次共享目录：" + target)
         user = self.ui.ask("新的外部专用用户名", default=(previous or {}).get("username", ""),
                            validate=lambda v: config.username(v, config.decode(instance.config, "USERNAME")))
         generated = config.new_password()
-        secret = self.ui.ask("新的外部密码（留空安全生成；不回显）", default=generated, secret=True, validate=config.password)
+        secret = self.ui.ask("新的外部密码（回车自动生成 9 位随机密码）", default=generated, secret=True, validate=config.password)
         self.log.register({"EXTERNAL_PASSWORD": secret})
         item = {"schema": 1, "owner": config.OWNER, "edition": self.product.key, "instance_dir": str(instance.directory),
                 "domain": domain, "username": user, "bot_root": bot_root, "target_dir": target,
                 "binding": config.binding(instance.config), "phase": "pending", "scope_verification": "manual-native-readonly",
                 "backend_image": instance.gateway_image, "revision": secrets.token_hex(16)}
         self.preflight(str(instance.directory), domain)
-        self.log("计划：独立外部 WebDAV；实例 " + str(instance.directory) + "；域名 " + domain)
-        self.log("新账号 " + user + "；原生账号根目录必须直接限定为 " + target)
-        self.log("新增私密配置／备份：" + str(self.directory) + "；认证哈希：" + str(self.auth))
-        self.log("新增／更新离线代码 " + str(self.root / "runtime") + "/<代码摘要>；维护命令 " + str(self.launcher) + "。")
-        self.log("共享代理将迁移至 schema 2；旧写入端会拒绝操作。可能重建 Nginx 挂载并短暂中断管理入口；不重启 Bot／网关。")
-        if not self.ui.confirm("确认计划并继续人工建号？已有外部入口会先撤销认证"):
+        self.log("──────── 安装计划 ────────")
+        for line in ("存储网关：" + self.product.display_name, "所属实例：" + str(instance.directory),
+                     "外部域名：" + domain, "共享目录：" + target, "外部账号：" + user, "访问权限：只读"):
+            self.log(line)
+        self.log("将新增独立配置和账号认证文件，并更新共享 HTTPS 代理。")
+        self.log("管理入口可能短暂中断，不重启 Bot 和存储网关。")
+        self.log("不修改 Bot 账号、上传配置或云端文件。")
+        self.log("共享代理将使用新版状态格式；旧版管理工具将拒绝操作，请使用当前版本维护。")
+        self.log("下一步将在当前终端显示建号所需的账号与密码。请确保没有旁观或录屏。")
+        self.log("如已存在外部入口，将先撤销其认证，配置完成前暂停访问。")
+        if not self.ui.confirm("确认继续？"):
             return False
         with self.locked():
             self.assert_record(previous)
@@ -215,16 +248,26 @@ class Service:
             if self.product.key in state.get("external_webdav", {}):
                 state["external_webdav"][self.product.key]["enabled"] = False
                 self.manager.apply_shared_state_locked(state, verify_remaining=False)
-        self.log("人工步骤：登录自己的 " + self.product.display_name + " 后台，核对当前版本支持独立只读用户。")
-        self.log("创建／调整普通外部账号 " + user + "，根目录直接设为 " + target + "，仅 WebDAV 读取／列表；关闭所有写入／管理权限。")
-        self.log("CloudDrive2 须确认当前版本／会员支持独立 WebDAV 用户；OpenList 不使用管理员或 Bot 用户。能力不足请取消，入口不开放。")
         try:
-            self.ui.reveal("新外部 WebDAV 密码（仅当前终端）", secret)
-            confirmed = self.ui.ask("完成后输入外部账号根目录的完整路径以确认；不能为 /", validate=config.logical_path)
+            self.log("──────── 后台创建账号 ────────")
+            self.log("请登录 " + self.product.display_name + " 后台，创建独立" + ("普通用户：" if self.product.is_openlist else " WebDAV 用户："))
+            self.log("用户名：" + user)
+            self.ui.show_password(secret)
+            self.log(("base path：" if self.product.is_openlist else "根目录：") + target)
+            self.log("权限：" + ("仅开启 WebDAV 读取／列表；关闭 WebDAV 管理及所有写入权限。" if self.product.is_openlist
+                                  else "只读，关闭上传、删除、移动、改名和管理权限。"))
+            self.log("请勿使用管理员账号或 Bot 正在使用的账号。")
+            if not self.product.is_openlist:
+                self.log("若当前版本或会员权限不支持独立只读用户，请取消安装。")
+            confirmed = self.ui.ask("完成后输入外部账号根目录的完整路径以确认（不能为 /）", validate=config.logical_path)
             if confirmed != target or not self.ui.confirm("已在后台确认这是独立账号、根目录隔离且原生只读，无上传／删除／改名／管理权限？"):
                 raise ValueError("未完成人工目录／权限确认；入口保持关闭。")
             route = dict(self.route(item, True), username=user)
+            self.log("──────── 检查与启用 ────────")
+            self.log("正在检查后端账号认证与目录访问……")
             verification.check_backend(route, secret)
+            self.log("账号认证与目录访问通过。")
+            self.log("目录范围和后端只读权限以你刚才的后台确认为准。")
             with self.locked():
                 current, state = self.preflight(str(instance.directory), domain)
                 self.assert_binding(item, current)
@@ -234,16 +277,24 @@ class Service:
                 state.update(version=2)
                 state.setdefault("external_webdav", {})[self.product.key] = self.route(item, True)
                 try:
+                    def verify():
+                        self.log("正在检查 HTTPS、专用账号认证和目录访问……")
+                        verification.check_public(route, secret, sample_file=sample_file)
+
+                    self.log("正在准备 HTTPS 证书并校验代理配置……")
                     self.manager.apply_shared_state_locked(state, domain=domain, email=email,
-                        verify=lambda: verification.check_public(route, secret, sample_file=sample_file))
+                        verify=verify)
                     self.verify_mounted_hash()
                 except BaseException:
                     self.revoke()
                     raise
                 item["phase"] = "enabled"
                 self.save(item)
-            self.display(item)
-            self.log("EXTERNAL_WEBDAV=OK；本机 TLS、认证与目录检查通过；公网手机和真实视频拖动仍需独立验收。")
+            self.log("本机检查通过。")
+            self.log(("安装" if install else "配置") + "完成，外部 WebDAV 已启用。")
+            self.display(item, secret=secret)
+            self.log("请妥善保存密码，程序不会长期保存明文密码。后续查看连接配置时，不再显示密码。")
+            self.log("请在手机上继续验证公网连接、文件播放和视频拖动。")
             return True
         except BaseException:
             with self.locked():
@@ -266,13 +317,14 @@ class Service:
             raise ValueError("尚未登记此 Edition 的外部 WebDAV。")
         if action in {"status", "print-config"}:
             self.display(item)
+            self.management_hint()
             if action == "status":
                 self.log("这是本地登记状态；check 才检查实际网关、代理和认证。")
             return
         instance, state = self.preflight(item["instance_dir"], require_running=action not in {"disable", "uninstall"})
         if action in {"disable", "uninstall"}:
             self.log("只操作本功能的认证／路由；不删除云端文件、Bot 数据或人工创建的后端账号。")
-            if not self.ui.confirm("确认" + action + "外部入口？现有读取连接重载后最多约 10 秒退出"):
+            if not self.ui.confirm("确认" + ("卸载" if action == "uninstall" else "停用") + "外部入口？现有读取连接重载后最多约 10 秒退出"):
                 return
             with self.locked():
                 self.assert_record(item)
@@ -382,4 +434,4 @@ class Service:
             raise ValueError("已有同名命令不属于 TG2Cloud，拒绝覆盖。")
         script = '#!/bin/sh\n# TG2Cloud external_webdav managed\nexec python3 -B ' + shlex.quote(str(destination / "scripts/run_source.py")) + ' webdav "$@"\n'
         config.atomic(launcher, script.encode(), mode=0o700)
-        self.log("离线维护命令：tg2cloud-webdav；旧运行代码保留以便人工回退，不自动删除。")
+        self.management_hint()

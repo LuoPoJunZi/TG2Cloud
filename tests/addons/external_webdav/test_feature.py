@@ -3,6 +3,7 @@ from __future__ import annotations
 import ast
 import base64
 import copy
+import io
 import json
 import re
 import shutil
@@ -85,12 +86,18 @@ class ConfigTests(unittest.TestCase):
         self.assertEqual(config.username("phone-reader", "bot-reader"), "phone-reader")
 
     def test_password_generation_and_rejection(self):
-        self.assertEqual(config.password(SECRET), SECRET)
-        for value in ("short", "PASSWORD123456789", " " + SECRET, SECRET + "\n", "重复" * 20):
+        for value in (SECRET, "x", "short", "PASSWORD123456789", "symbols!@#$%^&*()[]{}:;=+?", "x" * 128):
+            self.assertEqual(config.password(value), value)
+        for value in ("", " " + SECRET, SECRET + "\n", SECRET + "\r", "a\tb", "x\x00y", "x\x7fy", "重复" * 20, "x" * 129):
             with self.subTest(value=value), self.assertRaises(ValueError):
                 config.password(value)
         for _ in range(20):
-            config.password(config.new_password())
+            generated = config.new_password()
+            self.assertEqual(len(generated), 9)
+            self.assertRegex(generated, r"^[A-Za-z0-9]{9}$")
+            for pattern in (r"[a-z]", r"[A-Z]", r"[0-9]"):
+                self.assertRegex(generated, pattern)
+            self.assertEqual(config.password(generated), generated)
 
     def test_real_openssl_salted_slow_hash_and_rotation(self):
         executable = shutil.which("openssl")
@@ -104,6 +111,9 @@ class ConfigTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "不一致"):
             config.password_hash(SECRET + "-changed", existing=first, executable=executable)
         self.assertNotIn(SECRET, first)
+        for value in ("x", config.new_password()):
+            hashed = config.password_hash(value, executable=executable)
+            self.assertEqual(hashed, config.password_hash(value, existing=hashed, executable=executable))
 
     def test_atomic_hash_replacement_is_seen_by_directory_reader(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -357,6 +367,12 @@ class LifecycleTests(unittest.TestCase):
         verify.assert_called_once()
         self.assertEqual(self.service.auth_write.call_args.args[0], b"phone-reader:synthetic-hash\n")
         self.session.run.assert_not_called()
+        self.assertEqual([call.args for call in self.ui.show_password.call_args_list], [(SECRET,), (SECRET,)])
+        self.ui.reveal.assert_not_called()
+        self.assertNotIn(SECRET, "\n".join(self.messages))
+        self.assertNotIn("EXTERNAL_WEBDAV=OK", "\n".join(self.messages))
+        self.assertIn("安装完成，外部 WebDAV 已启用。", self.messages)
+        self.assertIn("状态：已启用", self.messages)
 
     def test_declining_plan_performs_no_write(self):
         self.configure_fixture()
@@ -365,12 +381,111 @@ class LifecycleTests(unittest.TestCase):
         self.service.save.assert_not_called()
         self.service.revoke.assert_not_called()
         self.service.manager.apply_shared_state_locked.assert_not_called()
+        self.ui.show_password.assert_not_called()
 
     def test_interrupted_manual_account_setup_remains_closed_and_repairable(self):
         current = self.configure_fixture()
-        self.ui.reveal.side_effect = KeyboardInterrupt
+        self.ui.show_password.side_effect = KeyboardInterrupt
         with self.assertRaises(KeyboardInterrupt):
             self.service.configure(install_dir=None, install=True)
+        self.assertEqual(current["value"]["phase"], "needs_repair")
+        self.service.auth_write.assert_not_called()
+
+    def test_actual_scope_and_username_are_used_for_both_editions(self):
+        for edition, relative, bot_root, target in (
+                ("clouddrive2", "", "/资料/归档", "/资料/归档"),
+                ("openlist", "视频/周末", "/媒体 A", "/媒体 A/视频/周末"),
+                ("clouddrive2", "Movies", "/", "/Movies")):
+            with self.subTest(edition=edition):
+                current = self.configure_fixture()
+                self.messages.clear()
+                self.service.product = PRODUCTS[edition]
+                instance = self.service.preflight.return_value[0]
+                instance.config = env(relative)
+                user = "new-reader-" + edition
+                self.ui.ask.side_effect = [route(edition)["domain"], "", bot_root, user, SECRET, target]
+                with patch.object(verification, "check_backend"), patch.object(config, "password_hash", return_value="synthetic-hash"):
+                    self.service.configure(install_dir=None, install=True)
+                self.assertEqual(current["value"]["bot_root"], bot_root)
+                self.assertEqual(current["value"]["target_dir"], target)
+                self.assertEqual(current["value"]["username"], user)
+                self.assertIn("Bot 保存子目录：" + (relative or "使用账号根目录"), self.messages)
+                self.assertIn("本次共享目录：" + target, self.messages)
+                self.assertIn(("base path：" if edition == "openlist" else "根目录：") + target, self.messages)
+                self.assertIn("目标目录：" + target, self.messages)
+                self.assertIn("用户名：" + user, self.messages)
+                self.assertNotIn("/115open/Telegram", "\n".join(self.messages))
+
+    def test_blank_password_generates_nine_characters_and_short_manual_input_is_kept(self):
+        for entered in ("", "short"):
+            with self.subTest(generated=not entered):
+                current = self.configure_fixture()
+                answers = iter((route()["domain"], "", "/网盘", "phone-reader", entered, "/网盘/Telegram"))
+
+                def answer(*args, answers=answers, **kwargs):
+                    value = next(answers) or kwargs.get("default", "")
+                    return kwargs["validate"](value)
+
+                self.ui.ask.side_effect = answer
+                self.ui.show_password.reset_mock()
+                with patch.object(verification, "check_backend") as verify, patch.object(config, "password_hash", return_value="synthetic-hash"):
+                    self.service.configure(install_dir=None, install=True)
+                used = verify.call_args.args[1]
+                if entered:
+                    self.assertEqual(used, entered)
+                else:
+                    self.assertRegex(used, r"^[A-Za-z0-9]{9}$")
+                self.assertEqual([call.args[0] for call in self.ui.show_password.call_args_list], [used, used])
+                self.assertNotIn(used, json.dumps(current["value"]))
+
+    def test_confirmed_root_is_only_suggested_for_unchanged_instance_binding(self):
+        for changed in ("none", "directory", "username", "backend", "instance"):
+            with self.subTest(changed=changed):
+                instance = SimpleNamespace(directory=PurePosixPath(self.item["instance_dir"]), config=env(), gateway_image="pinned-test-image")
+                if changed == "directory":
+                    instance.config = env("Other")
+                elif changed == "username":
+                    instance.config = env(user="other-bot")
+                elif changed == "backend":
+                    instance.gateway_image = "changed-test-image"
+                elif changed == "instance":
+                    instance.directory = PurePosixPath("/opt/custom")
+                self.service.record.side_effect = None
+                self.service.record.return_value = copy.deepcopy(self.item)
+                self.service.preflight.return_value = (instance, shared())
+                self.ui.ask.reset_mock()
+                self.ui.ask.side_effect = [route()["domain"], "", "/confirmed", "phone-reader", SECRET]
+                self.ui.confirm.return_value = False
+                self.service.configure(install_dir=None)
+                root_prompt = self.ui.ask.call_args_list[2]
+                self.assertEqual(root_prompt.args[0], "Bot WebDAV 账号根目录（后台核对）")
+                self.assertEqual(root_prompt.kwargs["default"], self.item["bot_root"] if changed == "none" else "")
+                self.service.save.assert_not_called()
+
+    def test_unsafe_bot_subdirectory_is_rejected_before_write_or_secret_display(self):
+        for relative in ("../outside", "a//b", "a\\b", "a\nb"):
+            with self.subTest(relative=relative):
+                self.configure_fixture()
+                self.service.preflight.return_value[0].config = env(relative)
+                self.ui.ask.side_effect = [route()["domain"], ""]
+                with self.assertRaises(ValueError):
+                    self.service.configure(install_dir=None, install=True)
+                self.service.save.assert_not_called()
+                self.ui.show_password.assert_not_called()
+
+    def test_phone_config_later_never_recovers_or_displays_a_password(self):
+        self.service.maintain("print-config")
+        self.ui.show_password.assert_not_called()
+        self.assertNotIn(SECRET, "\n".join(self.messages))
+        self.assertIn("密码（未保存明文）：使用你设置的外部专用密码", self.messages)
+
+    def test_secret_in_backend_error_is_still_redacted_and_entry_stays_closed(self):
+        current = self.configure_fixture()
+        with (patch.object(verification, "check_backend", side_effect=ValueError("failed " + SECRET)),
+              self.assertRaises(ValueError) as error):
+            self.service.configure(install_dir=None, install=True)
+        self.service.log(str(error.exception))
+        self.assertNotIn(SECRET, "\n".join(self.messages))
         self.assertEqual(current["value"]["phase"], "needs_repair")
         self.service.auth_write.assert_not_called()
         self.service.manager.apply_shared_state_locked.assert_not_called()
@@ -404,11 +519,85 @@ class EntryAndReleaseTests(unittest.TestCase):
         service.record.return_value = {"phase": "enabled"}
         with (patch("tg2cloud.addons.external_webdav.discovery.host"),
               patch("tg2cloud.addons.external_webdav.service.Service", return_value=service),
-              patch("tg2cloud.cli.terminal.Terminal"), patch.object(cli.signal, "signal"),
+              patch.object(cli, "WebDAVTerminal"), patch.object(cli.signal, "signal"),
               patch.object(cli, "source_identity", return_value={"source": "local-reviewed-source"}),
               patch("builtins.print")):
             self.assertEqual(cli.main(["install", "--edition", "openlist"]), 0)
         service.install_runtime.assert_not_called()
+
+    def test_numbered_wizard_dispatches_chinese_menu_and_preserves_cli_actions(self):
+        for edition, number in (("clouddrive2", "1"), ("openlist", "2")):
+            for action, action_number in zip(cli.ACTIONS, map(str, range(1, 10))):
+                with self.subTest(edition=edition, action=action):
+                    service, ui = Mock(), Mock()
+                    service.record.return_value = {"phase": "enabled", "instance_dir": PRODUCTS[edition].install_dir} if action == "upgrade" else None
+                    service.configure.return_value = False
+                    values = iter((number, action_number))
+                    ui.ask.side_effect = lambda *args, values=values, **kwargs: kwargs["validate"](next(values))
+                    ui.confirm.return_value = False
+                    messages = []
+                    with (patch("tg2cloud.addons.external_webdav.discovery.host"),
+                          patch("tg2cloud.addons.external_webdav.service.Service", return_value=service) as factory,
+                          patch.object(cli, "WebDAVTerminal", return_value=ui), patch.object(cli.signal, "signal"),
+                          patch("tg2cloud.deployment.host.SafeLog", return_value=SafeLog(messages.append))):
+                        self.assertEqual(cli.main([]), 0)
+                    self.assertEqual(factory.call_args.args[0].key, edition)
+                    text = "\n".join(messages)
+                    for label in cli.ACTION_LABELS:
+                        self.assertIn(label, text)
+                    if action in {"install", "configure"}:
+                        self.assertEqual(service.configure.call_args.kwargs["install"], action == "install")
+                    elif action != "upgrade":
+                        service.maintain.assert_called_once_with(action, sample_file="")
+                    ui.close.assert_called_once()
+
+    def test_menu_rejects_invalid_values_and_accepts_legacy_names(self):
+        ui, messages = Mock(), []
+        ui.ask.side_effect = lambda *args, **kwargs: kwargs["validate"]("not-an-action")
+        with self.assertRaises(ValueError):
+            cli.choose(ui, messages.append, "操作", tuple(zip(cli.ACTIONS, cli.ACTION_LABELS)))
+        for value, result in (("1", "install"), ("print-config", "print-config"), ("0", "")):
+            ui.ask.side_effect = lambda *args, value=value, **kwargs: kwargs["validate"](value)
+            self.assertEqual(cli.choose(ui, messages.append, "操作", tuple(zip(cli.ACTIONS, cli.ACTION_LABELS))), result)
+
+    def test_exit_menu_does_not_probe_instances_or_mutate(self):
+        ui = Mock()
+        ui.ask.side_effect = lambda *args, **kwargs: kwargs["validate"]("0")
+        with (patch("tg2cloud.addons.external_webdav.discovery.host"),
+              patch("tg2cloud.addons.external_webdav.service.Service") as service,
+              patch.object(cli, "WebDAVTerminal", return_value=ui), patch.object(cli.signal, "signal"), patch("builtins.print")):
+            self.assertEqual(cli.main([]), 0)
+        service.assert_not_called()
+        ui.close.assert_called_once()
+
+    def test_password_validation_explains_error_without_echoing_input(self):
+        ui = cli.WebDAVTerminal.__new__(cli.WebDAVTerminal)
+        ui.output = io.StringIO()
+        with patch.object(cli.Terminal, "ask", side_effect=["sensitive bad input", "short"]) as ask:
+            self.assertEqual(ui.ask("密码", secret=True, validate=config.password), "short")
+        self.assertEqual(ask.call_count, 2)
+        self.assertIn(config.INPUT_ERROR, ui.output.getvalue())
+        self.assertNotIn("sensitive bad input", ui.output.getvalue())
+
+    def test_password_display_is_private_terminal_only_not_logger_or_confirmation(self):
+        ui = cli.WebDAVTerminal.__new__(cli.WebDAVTerminal)
+        ui.output = io.StringIO()
+        ui.confirm = Mock()
+        with self.assertRaisesRegex(RuntimeError, "私有终端"):
+            ui.show_password(SECRET)
+        self.assertEqual(ui.output.getvalue(), "")
+        ui.output.isatty = lambda: True
+        with patch("builtins.print") as printed:
+            ui.show_password(SECRET)
+        self.assertEqual(ui.output.getvalue(), "密码：" + SECRET + "\n")
+        ui.confirm.assert_not_called()
+        printed.assert_not_called()
+
+    def test_bootstrap_banner_hides_commit_but_retains_identity(self):
+        source = (ROOT / "install-webdav.sh").read_text()
+        self.assertIn('"commit": pinned.commit', source)
+        banner = next(line for line in source.splitlines() if 'print("外部 WebDAV 正式源码已验证：' in line)
+        self.assertNotIn("pinned.commit", banner)
 
     def test_help_without_site_packages_or_checkout_working_directory(self):
         with tempfile.TemporaryDirectory() as directory:

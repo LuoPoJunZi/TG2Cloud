@@ -29,6 +29,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 引导只执行正式稳定源码资产，核验同 Release SHA256 清单，不回退 main/RC。校验和不是数字签名。安装后提供离线 `tg2cloud-webdav`，status 不下载代码。
 
+::: info 待发布的向导优化
+本地源码已改为中文编号菜单，保留原英文子命令，`0` 退出；尚未进入稳定 Release，在线命令和旧离线代码不会自动变成新界面。安装后运行 `tg2cloud-webdav` 可重新进入独立管理菜单。
+:::
+
+新向导读取实际 Bot 保存子目录，未设置时显示“使用账号根目录”；账号根目录仍须后台核对。只有实例、目录绑定和网关镜像未变时，才建议复用此前确认值。计划、后台建号与完成页均使用本次实际目录，不固定任何网盘路径。
+
 ## 原生只读账号与目录
 
 向导要求在后台核实 Bot 用户根目录，再与 Bot 相对子目录计算最终网关逻辑目录。例如 `/媒体` 加 `Telegram` 才是 `/媒体/Telegram`，不是 VPS 暂存目录；不能仅从 Base64 相对子目录推测完整根。Base64 不是加密。拒绝暴露网关 `/`。
@@ -40,7 +46,11 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 第一版采用人工后台建号、输入完整目录并确认原生只读的受支持流程，不猜 API/权限位、不修改后端数据库、不重置管理员、不保留管理令牌。程序随后验证新凭据、匿名拒绝、目录 XML/href 和 HTTPS，但不能声称自动审计了原生权限。后台改名的管理员也需人工排除。
 
-新密码安全生成或隐藏输入，不在参数、日志或 URL 中传递；经单独确认可只在终端显示。入口单账号 Basic Auth 哈希门禁仅接受新用户，同一组凭据再由本地网关认证；其他后端有效用户、Bot、管理员都不能通过新域名。
+新密码安全生成或隐藏输入，不在参数、日志或 URL 中传递；已发布 v1.3.1 经单独确认可只在终端显示。待发布向导在确认计划后，直接于后台建号说明和最后手机配置中向当前私有终端显示本次密码，不再重复询问；请避免旁观、录屏或分享终端历史。后续查看配置不会显示密码，也不会为回显保存明文。
+
+待发布向导回车生成 9 位大小写字母及数字随机密码；手动密码不设最低长度或字符种类要求，但拒绝空值、空白、控制字符、非 ASCII 和超过 128 位的输入，提示不包含输入值。短密码保护较弱，建议生成或设置更长的独特密码；后端自身规则仍需满足。
+
+入口单账号 Basic Auth 哈希门禁仅接受新用户，同一组凭据再由本地网关认证；其他后端有效用户、Bot、管理员都不能通过新域名。
 
 ## HTTPS 与手机
 
@@ -53,7 +63,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 端口：443
 根路径：/dav/
 用户名：新外部专用用户名
-密码：使用新设置的密码（默认不回显）
+密码：使用新设置的外部专用密码
 ```
 
 仅 GET/HEAD/OPTIONS/PROPFIND，其他写方法拒绝；Depth 仅空值/0/1。中文、空格、正常编码和 Range 保留，流式读取不完整落盘。危险点段/重复编码、反斜杠、查询参数拒绝；上游重定向返回 502，不把凭据送往其他主机。限流兼容常规播放，但大量并发枚举仍可能 429。网关须支持安全的本地 WebDAV 读取代理，不能为兼容修改影响 Bot 的全局设置。
@@ -61,6 +71,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 ## 检查、维护和卸载
 
 ```bash
+tg2cloud-webdav
 tg2cloud-webdav status --edition openlist
 tg2cloud-webdav print-config --edition openlist
 tg2cloud-webdav check --edition openlist

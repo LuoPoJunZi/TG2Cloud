@@ -141,7 +141,7 @@ try:
     pinned = ReleaseClient().resolve(tag)
     identity = {"source": "stable-release", "tag": tag, "commit": pinned.commit, "archive_sha256": hashes[0]}
     (source / ".external-webdav-source.json").write_text(json.dumps(identity))
-    print("外部 WebDAV 正式源码已验证：" + tag + " / " + pinned.commit, flush=True)
+    print("外部 WebDAV 正式源码已验证：" + tag, flush=True)
 except Exception:
     print("外部 WebDAV 引导失败：正式资源尚未包含本功能或校验／网络失败；未使用 main、未修改实例。", file=sys.stderr)
     sys.exit(1)

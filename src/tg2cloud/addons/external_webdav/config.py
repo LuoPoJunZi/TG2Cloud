@@ -8,12 +8,14 @@ import json
 import os
 import re
 import secrets
+import string
 import subprocess  # nosec B404
 from pathlib import Path, PurePosixPath
 
 OWNER = "tg2cloud.external_webdav"
 ROOT = Path("/opt/tg2cloud-webdav")
 HASH = re.compile(r"\$6\$rounds=200000\$[A-Za-z0-9./]{16}\$[A-Za-z0-9./]{86}")
+INPUT_ERROR = "密码不能为空；仅支持不含空白的可打印 ASCII 字符，最多 128 位。"
 
 
 def logical_path(value: str, *, allow_root: bool = False) -> str:
@@ -53,21 +55,18 @@ def username(value: str, bot_user: str = "") -> str:
 
 
 def password(value: str) -> str:
-    classes = sum(bool(re.search(pattern, value)) for pattern in (r"[a-z]", r"[A-Z]", r"[0-9]", r"[^A-Za-z0-9]"))
-    if (not 16 <= len(value) <= 128 or any(not 33 <= ord(c) <= 126 for c in value)
-            or len(set(value)) < 10 or classes < (2 if len(value) >= 24 else 3)
-            or any(word in value.casefold() for word in ("password", "123456", "qwerty"))):
-        raise ValueError("密码过弱：请用 16～128 位无空白 ASCII 强密码，或使用安全随机生成。")
+    # User-selected backend credentials have no minimum length/composition
+    # policy here. Keep bounded, single-line input for Basic Auth and OpenSSL.
+    if not 1 <= len(value) <= 128 or any(not 33 <= ord(c) <= 126 for c in value):
+        raise ValueError(INPUT_ERROR)
     return value
 
 
 def new_password() -> str:
     while True:
-        value = secrets.token_urlsafe(30)
-        try:
-            return password(value)
-        except ValueError:
-            continue
+        value = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(9))
+        if all(any(char in group for char in value) for group in (string.ascii_lowercase, string.ascii_uppercase, string.digits)):
+            return value
 
 
 def password_hash(value: str, *, existing: str = "", executable: str = "openssl") -> str:

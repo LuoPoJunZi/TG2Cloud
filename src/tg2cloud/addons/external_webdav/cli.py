@@ -10,7 +10,61 @@ import sys
 import tempfile
 from pathlib import Path
 
+from tg2cloud.cli.terminal import Terminal
+from tg2cloud.deployment.configuration import plain
+
 ACTIONS = ("install", "status", "check", "enable", "disable", "configure", "uninstall", "upgrade", "print-config")
+ACTION_LABELS = ("安装外部 WebDAV", "查看运行状态", "检查连接与配置", "启用访问", "停用访问",
+                 "修改域名或账号配置", "卸载外部 WebDAV", "升级附加功能", "查看手机连接配置")
+
+
+class WebDAVTerminal(Terminal):
+    """Add-on-only password hints/display; leave main installer prompts intact."""
+
+    def ask(self, prompt: str, *, default: str = "", secret: bool = False, validate=plain) -> str:
+        if not secret:
+            return super().ask(prompt, default=default, validate=validate)
+        from tg2cloud.addons.external_webdav.config import INPUT_ERROR
+        while True:
+            value = super().ask(prompt, default=default, secret=True, validate=lambda text: text)
+            try:
+                return validate(value)
+            except ValueError:
+                # Never include the rejected value or raw validator exception.
+                self.output.write(INPUT_ERROR + "\n")
+                self.output.flush()
+
+    def show_password(self, value: str) -> None:
+        from tg2cloud.addons.external_webdav.config import password
+        password(value)
+        if not self.output.isatty():
+            raise RuntimeError("密码仅允许向当前私有终端显示。")
+        self.output.write("密码：" + value + "\n")
+        self.output.flush()
+
+    def confirm(self, prompt: str) -> bool:
+        return self.ask(prompt + " [y/N]", validate=lambda value: value.strip().lower()) == "y"
+
+
+def choose(ui, log, title: str, choices: tuple[tuple[str, str], ...], *, default: str = "") -> str:
+    log(title)
+    numbers = {}
+    for index, (key, label) in enumerate(choices, 1):
+        numbers[str(index)] = key
+        log(f"  {index}. {label}")
+    log("  0. 退出")
+
+    def selected(value: str) -> str:
+        value = value.strip()
+        if value == "0":
+            return ""
+        if value in numbers:
+            return numbers[value]
+        if value in numbers.values():
+            return value  # Existing interactive names remain accepted.
+        raise ValueError("请选择菜单中的序号。")
+
+    return ui.ask("输入序号", default=default, validate=selected)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -47,7 +101,6 @@ def main(argv: list[str] | None = None) -> int:
             signal.signal(getattr(signal, name), interrupted)
     from tg2cloud.addons.external_webdav import discovery
     from tg2cloud.addons.external_webdav.service import Service
-    from tg2cloud.cli.terminal import Terminal
     from tg2cloud.deployment.host import LocalSession, SafeLog
     from tg2cloud.deployment.profiles import PRODUCTS
 
@@ -61,24 +114,28 @@ def main(argv: list[str] | None = None) -> int:
         elif os.name != "posix" or os.geteuid() != 0:
             raise ValueError("本地状态仅允许 Linux root 读取。")
         if args.edition is None or args.action is None or args.action not in {"status", "print-config"}:
-            ui = Terminal()
+            ui = WebDAVTerminal()
+            from tg2cloud.version import VERSION
+            log("TG2Cloud 外部 WebDAV v" + VERSION)
+            log("独立只读文件访问，不改变 Bot 的上传配置。")
         if args.edition is None:
             # Never silently choose when two Editions exist. Selection is cheap
             # and explicit even before probing a custom instance directory.
-            args.edition = ui.ask("选择 Edition：clouddrive2 / openlist", validate=lambda value: value if value in PRODUCTS else "")
+            args.edition = choose(ui, log, "请选择存储网关：", (("clouddrive2", "CloudDrive2"), ("openlist", "OpenList")))
+            if not args.edition:
+                return 0
             if args.edition not in PRODUCTS:
                 raise ValueError("必须明确选择 Edition。")
         service = Service(PRODUCTS[args.edition], session, log, ui)
+        if ui is not None:
+            log("当前网关：" + PRODUCTS[args.edition].display_name)
         if args.action is None:
-            log("TG2Cloud 外部 WebDAV（独立功能，不进入主安装向导）")
-            log("操作：" + " / ".join(ACTIONS))
-            args.action = ui.ask("选择操作", default="status" if service.record() else "install",
-                                 validate=lambda value: value if value in ACTIONS else "")
+            args.action = choose(ui, log, "请选择操作：", tuple(zip(ACTIONS, ACTION_LABELS)), default="2" if service.record() else "1")
+            if not args.action:
+                return 0
             if args.action not in ACTIONS:
                 raise ValueError("未知操作。")
         if args.action in {"install", "configure"}:
-            identity = source_identity(source_root())
-            log("附加功能代码来源：" + identity.get("source", "unknown") + "；正式资产标记 " + identity.get("tag", "无（本地审阅源码）"))
             changed = service.configure(install_dir=args.install_dir, install=args.action == "install", sample_file=args.sample_file)
             if changed and service.record() is not None and service.record()["phase"] == "enabled":
                 with service.locked():

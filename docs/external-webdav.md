@@ -16,6 +16,16 @@ bash /path/to/TG2Cloud/install-webdav.sh install --edition openlist
 
 无参数进入自己的向导，不进入主安装菜单；双 Edition 必须明确选择。自定义目录用 `--install-dir /opt/your-instance`，必须与 Compose 标签、持久化挂载和实例身份一致。不接管手工外部后端或部分实例。
 
+### 待发布的交互优化
+
+当前本地源码的向导改用中文编号菜单，选择网关后选择安装、状态、检查、启停、配置、卸载、升级或手机配置；`0` 退出。原英文子命令及参数保持兼容。此交互改动尚未进入稳定 Release，以上在线命令及已安装的离线代码不会自动获得更新。
+
+向导读取当前实例的 Bot 保存子目录；未设置时显示“使用账号根目录”。原生账号根目录仍须后台核对，只有实例、Bot 目录绑定和网关镜像均未改变时，才提供此前确认值供回车复用。计划、后台建号和手机配置均使用本次实际目录，没有固定网盘路径。
+
+手动输入的密码不设最低长度或字符种类要求；仍拒绝空值、空白、控制字符、非 ASCII 和超过 128 位的输入，并给出不包含输入值的提示。回车生成 9 位大小写字母及数字随机密码。短密码保护较弱，建议使用生成密码或自行设置更长的独特密码。这里的输入规则不代替后端自身的密码要求。
+
+确认安装计划后，建号说明和最后的手机配置各向当前私有终端显示本次密码，不再单独询问是否显示。请避免旁观、录屏或分享终端历史。密码不进入日志、命令参数或持久化记录；以后运行 status/print-config 不显示密码。安装计划简化内部文件列表，安装成功后提示运行 `tg2cloud-webdav` 重新打开离线管理菜单。主安装与 Bot 不变。
+
 独立在线入口如下；正式 Release 缺少功能协议、源码包或校验清单时失败，不退回 main 业务代码。无需重新运行主安装向导：
 
 ```bash
@@ -25,6 +35,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 安装成功提供本地离线命令，不会每次 status 下载代码：
 
 ```bash
+tg2cloud-webdav
 tg2cloud-webdav status --edition openlist
 tg2cloud-webdav print-config --edition openlist
 tg2cloud-webdav check --edition openlist
@@ -79,8 +90,10 @@ CloudDrive2 改用 `--edition clouddrive2`。status/print-config 仅显示登记
 端口：443
 根路径：/dav/
 用户名：新外部专用用户名
-密码：使用新设置的密码（默认不回显）
+密码：使用新设置的外部专用密码
 ```
+
+待发布向导在本次建号及完成页的私有终端显示密码；后续查看配置只提示使用已设置的密码，不存储明文用于回显。
 
 没有默认生产域名。Nginx Basic Auth 文件只含该账号：随机盐、SHA512-crypt、200000 rounds；同一组新凭据再传给本地后端，不替换为 Bot 凭据。其他后端有效用户、Bot、管理员也不能通过此新域名。依据 [Nginx 支持的 crypt 格式](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html)，实际镜像由隔离集成和发布前实机确认。
 
