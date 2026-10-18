@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import copy
 import json
+import re
 import shutil
 import subprocess
 import sys
@@ -182,6 +183,18 @@ class SharedStateTests(unittest.TestCase):
                 self.assertIn("if ($request_method !~ ^(GET|HEAD|OPTIONS|PROPFIND)$) { return 405; }", server_policy)
                 self.assertNotIn("if ($request_method", locations)
                 self.assertEqual(locations.count("limit_except GET HEAD OPTIONS PROPFIND { deny all; }"), 2)
+
+    def test_uri_guard_rejects_backslashes_without_breaking_regex_alternation(self):
+        text = nginx.render_route(route())
+        pattern = re.search(r'if \(\$request_uri ~\* "([^"]+)"\)', text).group(1)
+        self.assertIn(r"\x5c", pattern)
+        for path in (r"/dav/a\b", "/dav/a%5cb", "/dav/a%255Cb", "/dav/a%25255cb", "/dav/a%2fb",
+                     "/dav/a%252fb", "/dav/%252e%252e/x", "/dav/a%00b"):
+            with self.subTest(path=path):
+                self.assertIsNotNone(re.search(pattern, path, re.IGNORECASE))
+        for path in ("/dav/中文 video.mp4", "/dav/%E4%B8%AD%E6%96%87%20video.mp4", "/dav/file%25name.mp4"):
+            with self.subTest(path=path):
+                self.assertIsNone(re.search(pattern, path, re.IGNORECASE))
 
     def test_last_management_removal_keeps_proxy_alive(self):
         manager = DomainProxyManager(Mock(), PRODUCTS["clouddrive2"], {}, Mock())

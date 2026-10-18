@@ -163,8 +163,10 @@ class ExternalNginxTests(unittest.TestCase):
                     self.assertEqual(request("OPTIONS", "/dav/video.mp4")[0], 204)
                     for path in ("/davevil/", "/admin"):
                         self.assertEqual(request("GET", path)[0], 404)
-                    for path in ("/dav/../admin", "/dav/%2e%2e/admin", "/dav/%252e%252e/admin", "/dav/a%2fb", "/dav/a%5cb", "/dav//a"):
-                        self.assertEqual(request("GET", path)[0], 400)
+                    for path in ("/dav/../admin", "/dav/%2e%2e/admin", "/dav/%252e%252e/admin", "/dav/a%2fb",
+                                 "/dav/a%252fb", "/dav/a%5cb", "/dav/a%255cb", "/dav/a%25255cb", r"/dav/a\b", "/dav//a"):
+                        with self.subTest(path=path):
+                            self.assertEqual(request("GET", path)[0], 400)
                     self.assertEqual(request("GET", "/dav/redirect.mp4")[0], 502)
                     changed = SECRET + "-rotated"
                     current["password"] = changed

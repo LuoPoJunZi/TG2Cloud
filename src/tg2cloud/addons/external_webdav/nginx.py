@@ -31,7 +31,9 @@ limit_req_zone ${prefix}_listing zone={prefix}_propfind:1m rate=2r/s;
     # Check original encoding as well as normalized location matching. Keep
     # normal Unicode/%20/%25 filenames; reject encoded separators and traversal.
     if ($args != "") { return 400; }
-    if ($request_uri ~* "(?:\\|%(?:25)*5c|%(?:25)*2f|%25(?:25)*(?:2e|00)|%00)") { return 400; }
+    # Hex avoids a literal backslash consuming the regex alternation when
+    # Nginx unescapes quoted configuration arguments before PCRE sees them.
+    if ($request_uri ~* "(?:\x5c|%(?:25)*5c|%(?:25)*2f|%25(?:25)*(?:2e|00)|%00)") { return 400; }
     if ($request_uri ~* "(?:^|/)(?:\.|%2e){1,2}(?:/|$)") { return 400; }
     if ($request_uri ~ "//") { return 400; }
 """
