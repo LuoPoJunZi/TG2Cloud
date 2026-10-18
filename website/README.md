@@ -2,7 +2,7 @@
 
 TG2Cloud 中文网页文档。包含品牌首页、31 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
-**正文基准：TG2Cloud v1.3.0；资料核对日期：2026-10-17。** 本版以 Linux 一键脚本为主，包含模块化源码、长描述命名增强及首次安装磁盘推荐；源码包及 SHA256 的实际发布状态以 GitHub Release 和对应 Actions 为准。Windows EXE 停留在 v1.2.1。CloudDrive2 旧候选已在授权备份后人工迁移到正式版，用户确认升级后使用验收完成；OpenList 脚本实机验收暂缓，首次安装、标准自动升级、故障回退和 NAS 等另行验证，见[验收记录](../docs/development/V130-ACCEPTANCE.md)。
+**正文基准：TG2Cloud v1.3.1；资料核对日期：2026-10-18。** 本版准备发布独立只读外部 WebDAV，主安装与 Bot 菜单保持原行为；正式完成前下载仍指向 v1.3.0。外部入口的隔离 Nginx/认证/Range 回归已通过，原生两版账号、手机、ACME 和 ARM64 仍需实机验收。Windows EXE 停留在 v1.2.1；历史 CloudDrive2 v1.3.0 使用验收见[原记录](../docs/development/V130-ACCEPTANCE.md)，不扩展为新版全部验收结论。
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 

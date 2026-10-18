@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前版本 **v1.3.0**，后续以 Linux 脚本维护；Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 本次升级及用户验收范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表所有部署与恢复场景均已通过。
+当前源码 **v1.3.1（发布准备中）**，以 Linux 脚本维护；正式下载以 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) 为准。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。历史 CloudDrive2 v1.3.0 升级范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表新版所有部署与恢复场景均已通过。
 
 ## 开始使用
 
@@ -76,7 +76,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 使用文档
 
-可选附加功能：[外部 WebDAV（待发布）](docs/external-webdav.md)。独立安装，通过新 HTTPS 域名只读访问已有上传目录；不复用 Bot/管理员账号，不加入主安装流程。当前 v1.3.0 尚不包含此功能。
+可选附加功能：[外部 WebDAV（计划纳入 v1.3.1）](docs/external-webdav.md)。独立安装，通过新 HTTPS 域名只读访问已有上传目录；不复用 Bot/管理员账号，不加入主安装流程。正式 Release 完成后启用公开安装入口。
 
 按主题查阅仓库内文档；全部文档见[仓库文档目录](docs/README.md)，网页版见[文档网站](https://tg2cloud.pages.dev/)。
 

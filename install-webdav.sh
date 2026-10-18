@@ -35,7 +35,7 @@ CHECK
 fi
 for argument in "$@"; do
   case "$argument" in
-    -h|--help) printf '独立外部 WebDAV：install/status/check/enable/disable/configure/uninstall/upgrade/print-config\n参数：--edition clouddrive2|openlist --install-dir DIR --sample-file RELATIVE_FILE\n远程首次安装只执行经过校验的最新正式 Release；本功能尚待发布。\n'; exit 0 ;;
+    -h|--help) printf '独立外部 WebDAV：install/status/check/enable/disable/configure/uninstall/upgrade/print-config\n参数：--edition clouddrive2|openlist --install-dir DIR --sample-file RELATIVE_FILE\n远程首次安装要求包含本功能的正式 Release（v1.3.1 起），并校验源码包；不使用 main 业务代码。\n'; exit 0 ;;
     status|check|enable|disable|configure|uninstall|upgrade|print-config)
       printf '尚无离线维护命令；先安装包含本功能的正式 Release。\n' >&2; exit 2 ;;
   esac

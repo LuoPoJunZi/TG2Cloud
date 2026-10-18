@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 17 日**，对应 TG2Cloud **v1.3.0** 的 Linux 模块化源码和脚本说明。源码包、SHA256 与不可变 Tag 的实际发布结果以 GitHub Release 及对应 Actions 为准。历史 EXE 停留在 v1.2.1。CloudDrive2 旧候选经授权人工迁移到正式版，用户确认升级后使用验收完成；OpenList、首次安装、标准自动升级、故障回退与 NAS 等仍需独立验证。
+本次内容核对日期为 **2026 年 10 月 18 日**，对应 TG2Cloud **v1.3.1** 的独立外部 WebDAV 与 Linux 脚本说明，当前待发布，下载仍以正式 v1.3.0 为准。源码包、SHA256 与不可变 Tag 的结果以 GitHub Release 和对应 Actions 为准。历史 v1.3.0 CloudDrive2 迁移不等于本版附加功能已实机验收；原生账号、手机、公网 ACME 和 ARM64 仍需单独核对。
 
 ## 主要来源
 
@@ -21,11 +21,11 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，产品为 1.3.0；三个入口固定到已公开且通过 CI 的新布局辅助提交，业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
+本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，源码为 1.3.1；三个入口须在辅助提交通过 CI 后更新固定提交，业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.3.0；依赖和历史版本不机械替换。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.3.1；依赖和历史版本不机械替换。
 
 导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 

@@ -2,6 +2,17 @@
 
 TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发布说明的整理，不把历史 TG115 的版本号当成 TG2Cloud 发布版本。
 
+## TG2Cloud v1.3.1
+
+资料核对日期：2026-10-18，待发布。当前下载仍为 [v1.3.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0)，本轮改动见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+
+- 独立 `install-webdav.sh` 和离线维护命令；主安装不询问或默认启用，不改 Bot 配置与菜单。
+- 原生独立只读账号、最终目录确认、专用 HTTPS 域名单账号门禁和 Range 读取；不复用 Bot/管理员密码。
+- 共享代理 schema 2、认证文件轮换、管理路由保留、证书续期与卸载依赖保护。
+- 修正只读方法检查与编码反斜杠拦截，隔离 Nginx 覆盖两版认证、中文/编码、写方法拒绝、密码轮换和视频 Range。
+
+不新增数据库迁移、Bot 配置或依赖，不升级网关镜像。原生网关账号/目录、手机、公网 ACME 和 ARM64 尚未实机验收；历史 v1.3.0 CloudDrive2 记录不作为本版附加功能验收。
+
 ## TG2Cloud v1.3.0
 
 版本与资料核对日期：2026-10-17。本版以 Linux 一键脚本维护 CloudDrive2 和 OpenList；Windows EXE 停留在 v1.2.1，历史下载继续保留。实际发布状态见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.3.0/CHANGELOG.md)及 [v1.3.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0)。
