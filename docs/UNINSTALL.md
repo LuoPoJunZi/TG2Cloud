@@ -2,11 +2,11 @@
 
 `uninstall.sh` 适用于标准目录下的 CloudDrive2 / OpenList 受管 Docker 部署，包括公网 VPS 的 HTTPS 和独立内网管理入口。它独立于 `install.sh`、`install-lan.sh` 和两个 Windows EXE，不改动安装器或 Bot 业务流程。
 
-> 完整清理增强自 v1.2.1 纳入，v1.3.0 继续保留；当前在线引导固定到不可变向导源码 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`，支持下面的选项。原 v1.2.0 Tag 保持原行为，历史 EXE 停留在 v1.2.1。用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍需新的实机验收**。本次 CloudDrive2 升级确认不等于卸载通过，不据此扩大到两 Edition、NAS 或新删除行为。
+> 完整清理增强自 v1.2.1 纳入，v1.3.1 继续保留；当前在线引导固定到不可变向导源码 `90648bf0878958b976541f660df69fcb24ea807f`，支持下面的选项及外部 WebDAV 依赖保护。原 v1.2.0 Tag 保持原行为，历史 EXE 停留在 v1.2.1。用户已反馈原保留数据卸载在其 VPS 验收通过；**新增完整清理仍需新的实机验收**。历史 CloudDrive2 升级确认不等于本版卸载通过，不据此扩大到两 Edition、NAS 或新删除行为。
 
 ## 在线一键入口
 
-待发布外部 WebDAV 安装后，先用 `tg2cloud-webdav uninstall --edition openlist`（或 `clouddrive2`）解除对应网关依赖，再主卸载；仅 disable 不解除依赖。附加卸载不删除云端数据或人工原生账号，见[独立功能指南](external-webdav.md)。
+v1.3.1 外部 WebDAV 安装后，先用 `tg2cloud-webdav uninstall --edition openlist`（或 `clouddrive2`）解除对应网关依赖，再主卸载；仅 disable 不解除依赖。附加卸载不删除云端数据或人工原生账号，见[独立功能指南](external-webdav.md)。
 
 源码的本地帮助入口为 `python3 scripts/run_source.py uninstall --help`，业务位于公共 `deployment/uninstall.py`。在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交；确认、归属检查、保留数据和共享资源保护不因目录整理改变。本轮未执行真实卸载。详见[Linux 重构说明](development/LINUX-REFACTOR.md)。
 

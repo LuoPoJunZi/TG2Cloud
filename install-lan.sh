@@ -22,7 +22,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this reviewed immutable pin only after the LAN module passes CI/review.
-installer_commit="ee6feef5cfd35e50c315cddf91ab0cb35c40a384"
+installer_commit="90648bf0878958b976541f660df69fcb24ea807f"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '内网向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2
@@ -67,6 +67,16 @@ class Redirect(HTTPRedirectHandler):
 files = (
     'scripts/run_source.py',
     'src/tg2cloud/__init__.py',
+    'src/tg2cloud/addons/__init__.py',
+    'src/tg2cloud/addons/external_webdav/__init__.py',
+    'src/tg2cloud/addons/external_webdav/__main__.py',
+    'src/tg2cloud/addons/external_webdav/cli.py',
+    'src/tg2cloud/addons/external_webdav/config.py',
+    'src/tg2cloud/addons/external_webdav/discovery.py',
+    'src/tg2cloud/addons/external_webdav/nginx.py',
+    'src/tg2cloud/addons/external_webdav/releases.py',
+    'src/tg2cloud/addons/external_webdav/service.py',
+    'src/tg2cloud/addons/external_webdav/verification.py',
     'src/tg2cloud/cli/__init__.py',
     'src/tg2cloud/cli/__main__.py',
     'src/tg2cloud/cli/commands.py',

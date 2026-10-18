@@ -7,7 +7,7 @@
 | 路径 | 职责与维护边界 |
 | --- | --- |
 | `install.sh`、`install-lan.sh`、`uninstall.sh` | 保留根目录的公开单行命令入口 |
-| `install-webdav.sh`、`src/tg2cloud/addons/external_webdav/` | 待发布独立只读附加功能，不加入主安装或 Bot 菜单 |
+| `install-webdav.sh`、`src/tg2cloud/addons/external_webdav/` | v1.3.1 独立只读附加功能，不加入主安装或 Bot 菜单 |
 | `src/tg2cloud/` | 共享 Bot、CLI、公共部署、存储、持久化及监测 |
 | `scripts/run_source.py` | 不依赖当前目录或 Bot 依赖的受控源码入口 |
 | `packaging/` | 共用 Dockerfile、两版 Compose、Shell 钩子和 `app.*` 兼容入口 |

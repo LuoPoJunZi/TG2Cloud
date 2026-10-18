@@ -1,9 +1,9 @@
-# 外部 WebDAV（独立附加功能，待发布）
+# 外部 WebDAV（v1.3.1 独立附加功能）
 
 通过单独 HTTPS 域名，在手机文件管理器或播放器中只读访问 Bot 已有上传目录。共享原网关数据，不复制文件、不重新安装或挂载云盘；仍依赖 CloudDrive2/OpenList 和共享 Nginx/Certbot，不是完全独立的文件系统。
 
-::: warning 尚未发布
-当前稳定版 v1.3.0 不含本功能。以下是本地待发布实现，不代表线上命令可用，也不代表真实两版账号、手机、ARM64 或 ACME 已验收。
+::: warning 验证范围
+本功能自 v1.3.1 提供，要求对应正式稳定源码资产。隔离 Nginx 认证、只读、编码、密码轮换和 Range 已通过；原生两版账号/目录、手机、ARM64 与公网 ACME 尚未端到端实机验收。发布与资产状态以 GitHub Release 为准。
 :::
 
 ## 与主安装的关系
@@ -21,7 +21,7 @@ bash /path/to/TG2Cloud/install-webdav.sh install --edition clouddrive2
 bash /path/to/TG2Cloud/install-webdav.sh install --edition openlist
 ```
 
-两个 Edition 并存需明确选择，支持身份一致的 `--install-dir /opt/custom`；无参数为自己的向导。下面仅为**未来发布后的开发目标**，当前不能当作已上线命令：
+两个 Edition 并存需明确选择，支持身份一致的 `--install-dir /opt/custom`；无参数为自己的向导。独立在线命令如下，不需要重新运行主安装：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-webdav.sh)
@@ -91,6 +91,6 @@ uninstall 只移除本功能路由、活动哈希和记录，不删云文件、B
 | 429 | 降低并发/枚举，等冷却 |
 | 502 | 网关/回环端口/认证、本地读取能力或上游重定向被拒绝 |
 
-代理升级为 schema 2；未知版本拒绝覆盖，不自动降级。原 v1.3.0 严格旧工具会停止，不用它维护新状态；更旧无校验脚本或桌面恢复包禁止覆盖。后续公开 helper A、再由入口 B 固定 A 并通过 CI，正式 Release 包含本功能完整源码与协议后，才能上线公开安装命令。当前未提升版本或改旧 Tag。
+代理升级为 schema 2；未知版本拒绝覆盖，不自动降级。原 v1.3.0 严格旧工具会停止，使用 v1.3.1 起的匹配工具维护；更旧无校验脚本或桌面恢复包禁止覆盖。主入口先公开验证 helper A，再由 B 固定；附加入口只执行包含本功能完整源码与协议的正式资产。历史 Tag 不变。
 
-发布前须完成真实两版原生权限、外网手机播放、续期 dry-run、ARM64、配置失败/中断、启停/轮换/升级、共享路由保留及备份隔离恢复验收。写操作负面验证仅用模拟后端或明确隔离对象，绝不对真实目录 `DELETE /dav/`。
+实际开放前核对原生权限、外网手机播放、续期 dry-run、所用架构、配置失败/中断、启停/轮换/升级、共享路由保留及备份隔离恢复；这些实机项不因版本发布而写成通过。写操作负面验证仅用模拟后端或明确隔离对象，绝不对真实目录 `DELETE /dav/`。

@@ -2,6 +2,8 @@
 
 本文描述 v1.3.0 的 Linux 模块化布局。Windows 部署器停留在 v1.2.1；历史版本、桌面恢复 ZIP、本地归档和用户数据保留。运行支持仍为 Debian/Ubuntu x86_64、rootful Docker；宿主 Python 3.10+，Bot 镜像 Python 3.12。ARM64 和其他 NAS 系统不因源码重排自动获得支持。
 
+v1.3.1 沿用此布局，在 `addons/external_webdav/` 提供独立只读附加功能；不是主安装向导的一部分。其宿主预检接受 ARM64，仍不等于主安装器新增该架构支持。辅助源码 A/B 发布流程、递归指纹和历史布局验证继续适用，兼容说明见[独立功能指南](../external-webdav.md)。
+
 ## 源码与职责
 
 ```text

@@ -4,11 +4,13 @@ TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本（测试阶段）](LAN-INSTALL.md)。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前正式版本为 v1.3.0。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。首次安装、无需人工接管的正式版自动升级与故障回退仍需独立验证；OpenList 脚本实机验收暂缓。详见[验收记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
+> 当前源码为 v1.3.1，正式状态以 GitHub Release 为准。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录不代表新版实机验收；首次安装、正式版自动升级与回退仍需独立验证，OpenList 脚本实机验收暂缓。详见[验收记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
 
 ## 支持范围
 
 v1.3.0 已发布 `src/tg2cloud` 新布局；本地可运行 `python3 scripts/run_source.py install --help`。在线一键命令 URL 不变，使用本版已验证 helper pin 和正式稳定 payload；修改本地源码或仅推送文档不会更新 VPS。迁移与本地预检说明见[Linux 重构](development/LINUX-REFACTOR.md)。
+
+v1.3.1 的[外部 WebDAV](external-webdav.md) 是独立可选入口，主安装不增加询问。附加功能启用后共享代理为 schema 2，后续管理和主卸载须使用匹配的新脚本；主卸载前先独立 uninstall 附加入口，不删除网盘文件。
 
 | 场景 | 行为 |
 | --- | --- |
@@ -116,7 +118,9 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到不可变源码 commit，不逐文件追随移动的 `main`。v1.3.0 向导包含磁盘推荐；准确的辅助源码身份由三个入口中的 `installer_commit` 给出。新向导先经过 CI，再更新三个入口的 pin；源码发布检查会拒绝 pin 与新版本辅助文件不一致的情况。业务 payload 仍只取最新正式稳定 Release。
 
-v1.3.0 的三个在线入口固定向导 commit 为 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`，模块版本为 `1.3.0`；对应 Linux 回归、宿主 Python 3.10／3.13 和仓库检查通过。正式 payload 的 Tag commit 为 `27874c12c6166e12f2f57759199576cffb9f3234`，与向导 commit 分别核对，不要求两者相同。
+v1.3.1 的三个在线入口固定向导 commit 为 `90648bf0878958b976541f660df69fcb24ea807f`，模块版本为 `1.3.1`；该辅助提交的 Linux/Docker、宿主 Python 3.10／3.13 和公共输入检查通过。正式 payload 的 Tag commit 与向导 commit 分别核对，不要求两者相同。
+
+历史 v1.3.0 的辅助提交仍为 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`，Tag commit 为 `27874c12c6166e12f2f57759199576cffb9f3234`；不改写旧版，也不用旧辅助工具覆盖 schema 2 代理。
 
 这是向导源码身份，不是要部署的 Bot 版本。独立脚本另行通过 GitHub `/releases/latest` 排除草稿及预发布，解析正式 Tag 到不可变 commit；所有实际安装的 payload 来自这个正式 commit。向导会核对 Tag、commit 和 payload 版本。Release Tag 在引导后变化、API 限流、辅助模块缺失或版本不匹配时停止；不会退回 `main` 或 RC 的业务代码。
 

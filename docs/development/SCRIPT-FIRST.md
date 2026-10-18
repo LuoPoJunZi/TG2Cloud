@@ -2,6 +2,10 @@
 
 从 v1.3.0 起以 Linux 一键脚本为主入口，CloudDrive2 和 OpenList 两个 Edition 继续维护。最后一个 Windows 部署器版本为 v1.2.1，历史 Tag、Release、EXE 和原校验文件保留。
 
+## v1.3.1 独立附加功能
+
+v1.3.1 沿用 Linux Python + Bash 架构，新增独立 `install-webdav.sh`，不加入公网/内网主安装或 Bot 菜单。主入口 helper 必须包含兼容 proxy schema 2 的共享代码；旧工具拒绝或禁止维护新状态，详见[外部 WebDAV](../external-webdav.md)。原生两版账号、手机、ACME 和 ARM64 尚未端到端实机验收。发布授权仍不包含部署真实实例。
+
 ## v1.3.0 发布核对
 
 2026-10-17 重新准备 v1.3.0，包含新 Linux 源码布局、命名增强及已验证的依赖修复。发布前重新核对 GitHub，远端当时没有 v1.3.0 Tag 或 Release；此前旧布局的构建记录不能作为本次发布结果。实际源码和资产以[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.0) 及其对应 Tag 为准，不覆盖其他历史版本。

@@ -17,6 +17,8 @@ git rev-parse HEAD
 
 下表为正式 v1.3.0 已发布的 Linux / Python + Bash 结构；上面的标签命令用于复现该版本。main 可能包含发布后的检查或文档更新，应另外记录提交号。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
+v1.3.1 沿用该结构，独立附加功能在 `src/tg2cloud/addons/external_webdav/`，专用入口为 `install-webdav.sh`。当前 main 用于发布准备，正式 Release 完成前不把公开入口下载成功当作实机安装通过。
+
 | 路径 | 用途 |
 | --- | --- |
 | `src/tg2cloud/deployment/profiles.py` | 两 Edition 的标识、路径和载荷清单 |
@@ -51,6 +53,8 @@ python scripts/run_source.py uninstall --help
 新 Docker 上下文由 `python .github/scripts/build_payload.py --edition all --directory build/local-contexts` 组装，不直接在 packaging 目录构建。部署后仍保留外层 `app/`、`data/tg115.db`、`data/bot.session` 和旧 `app.*` 维护命令。递归指纹使用显式 v2 协议；不确定的旧代码拒绝自动覆盖。
 
 v1.3.0 在线 helper 已切换新布局，固定到已公开且通过 CI 的提交 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`。后续升级仍须先公开辅助提交 A 并通过 CI，再在入口提交 B 更新清单和 pin；不能改成 moving main。CloudDrive2 本次人工迁移及用户验收记录与自动测试分开，完整步骤见[重构与兼容说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LINUX-REFACTOR.md)和[验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。
+
+v1.3.1 辅助提交 A 为 `90648bf0878958b976541f660df69fcb24ea807f`，已通过 Linux/Docker 和宿主 Python 3.10/3.13 CI；三个入口在 B 更新递归清单并固定 A。附加功能使用正式源码资产和 SHA256，不复用历史 v1.3.0 helper 维护 schema 2。
 
 v1.1.1 至 v1.2.1 的 Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。历史 EXE 和对应 SHA256 保留，不由新工作流重写。
 

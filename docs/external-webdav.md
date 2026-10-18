@@ -1,8 +1,8 @@
-# 外部 WebDAV（独立可选附加功能，待发布）
+# 外部 WebDAV（v1.3.1 独立可选附加功能）
 
 让手机文件管理器或播放器通过独立 HTTPS 域名，只读访问 Bot 已有上传目录。不复制数据、不重装网关、不重复挂载网盘、不新增 FUSE，也不是独立于 CloudDrive2/OpenList 的文件系统；底层网关和共享 Nginx/Certbot 必须继续可用。
 
-当前正式版仍为 **v1.3.0**，不含本功能。下面描述本地待发布实现，不代表公开命令已上线或实机验收通过。
+本功能自 **v1.3.1** 提供，安装要求包含本功能的正式稳定源码包和 SHA256 清单；实际发布状态以 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) 为准。已通过隔离 Nginx 认证、只读/编码路径、Range 和密码轮换回归；原生两版账号/目录、手机、公网 ACME 和 ARM64 尚未端到端实机验收。
 
 ## 独立入口
 
@@ -16,7 +16,7 @@ bash /path/to/TG2Cloud/install-webdav.sh install --edition openlist
 
 无参数进入自己的向导，不进入主安装菜单；双 Edition 必须明确选择。自定义目录用 `--install-dir /opt/your-instance`，必须与 Compose 标签、持久化挂载和实例身份一致。不接管手工外部后端或部分实例。
 
-下面仅为**发布后的开发目标**，当前不能作为已可用安装命令宣传。正式 Release 缺少功能协议、源码包或校验清单时失败，不退回 main 业务代码：
+独立在线入口如下；正式 Release 缺少功能协议、源码包或校验清单时失败，不退回 main 业务代码。无需重新运行主安装向导：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-webdav.sh)
@@ -113,15 +113,15 @@ CloudDrive2 改用 `--edition clouddrive2`。status/print-config 仅显示登记
 
 最低写入端必须理解 **proxy schema 2 + external WebDAV API 1**，不能仅按相同产品版本号判断。首次安装从旧 schema 1 锁内迁移，未知版本/字段拒绝。本功能不改 Bot 数据库和环境变量。
 
-当前 v1.3.0 helper 及严格版本检查的历史 Python 工具遇 schema 2 会拒绝操作，不能继续用它们维护新代理。更旧、没有状态版本校验的手工脚本/历史桌面工具无法保证安全，安装后禁止使用；不把旧恢复包覆盖到新代理，不手改 version 为 1。
+旧 v1.3.0 helper 及严格版本检查的历史 Python 工具遇 schema 2 会拒绝操作，须使用 v1.3.1 起的匹配维护工具。更旧、没有状态版本校验的手工脚本/历史桌面工具无法保证安全，安装后禁止使用；不把旧恢复包覆盖到新代理，不手改 version 为 1。
 
-发布门槛：
+发布与部署验收要求：
 
-1. 两版原生账号/权限、手机、ACME、ARM64 单独实机验收；未执行不得写通过。
-2. 获授权后统一准备下一正式版本，不改现有 v1.3.0 Tag/资产。
-3. 先公开并验证含 add-on 和共享模块的 helper 提交 A，再生成三个主入口候选，在 B 固定 A；本轮保留真实有效旧 pin，严格发布校验继续阻挡不一致 helper，不能造 SHA 或自指提交。
+1. 实际开放前在自己的环境核实原生账号/目录只读权限、手机、ACME 及所用架构；本版这些实机项尚未执行，不因正式发布改写为通过。
+2. v1.3.1 单独创建新 Tag/资产，不覆盖 v1.3.0 或历史 EXE。
+3. 先公开并验证含 add-on 和共享模块的 helper 提交 A，再由入口 B 固定 A；严格发布校验阻挡不一致 helper，不能造 SHA 或自指提交。
 4. 新源码资产包含本入口、`packaging/external-webdav.json`、全部模块及更新的显式清单。Release 生成/核验源码归档和 `SHA256SUMS.txt`，校验和不是数字签名。
-5. 稳定 Release 发布后才验证公开一键命令并更新“待发布”；不新增 Windows 构建。
+5. 稳定 Release 发布后验证公开命令与资产下载；不新增 Windows 构建。CI 中合成后端不能代替原生账号/会员能力与权限审计。
 
 ## 排查
 
@@ -151,4 +151,4 @@ shellcheck install-webdav.sh
 TG2CLOUD_TEST_EXTERNAL_WEBDAV_DOCKER=1 PYTHONPATH=src python3 -B -m unittest discover -s tests -p test_docker.py -v
 ```
 
-发布前分别核实两版原生只读账号/会员/根目录；外部网络浏览中文、播放、拖动；无认证/错误密码/Bot/管理员拒绝；管理 DAV 仍拦截；轮换、启停、域名变更、失败/中断、升级回退、共享路由保留、私密备份隔离恢复和续期 dry-run；比对 Bot 配置、rclone、DB 和容器不变。写方法负面测试只在模拟后端或明确隔离对象进行，绝不发送 `DELETE /dav/` 到真实用户目录。
+实际开放前分别核实两版原生只读账号/会员/根目录；外部网络浏览中文、播放、拖动；无认证/错误密码/Bot/管理员拒绝；管理 DAV 仍拦截；轮换、启停、域名变更、失败/中断、升级回退、共享路由保留、私密备份隔离恢复和续期 dry-run；比对 Bot 配置、rclone、DB 和容器不变。上述是人工验收清单，不是已完成记录。写方法负面测试只在模拟后端或明确隔离对象进行，绝不发送 `DELETE /dav/` 到真实用户目录。
