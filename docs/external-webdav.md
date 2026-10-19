@@ -97,7 +97,7 @@ CloudDrive2 改用 `--edition clouddrive2`。status/print-config 仅显示登记
 
 v1.3.2 向导在本次建号及完成页的私有终端显示密码；后续查看配置只提示使用已设置的密码，不存储明文用于回显。
 
-没有默认生产域名。Nginx Basic Auth 文件只含该账号：随机盐、SHA512-crypt、200000 rounds；同一组新凭据再传给本地后端，不替换为 Bot 凭据。其他后端有效用户、Bot、管理员也不能通过此新域名。依据 [Nginx 支持的 crypt 格式](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html)，实际镜像由隔离集成和发布前实机确认。
+没有默认生产域名。Nginx Basic Auth 文件只含本功能登记且启用的主账号与家人账号，不接受所有后端用户；使用随机盐、SHA512-crypt、200000 rounds。同一组凭据再交给本地后端，不替换为 Bot 凭据。其他后端有效用户、Bot、管理员也不能通过新域名。依据 [Nginx 支持的 crypt 格式](https://nginx.org/en/docs/http/ngx_http_auth_basic_module.html)，实际镜像由隔离集成和发布前实机确认。
 
 仅 `/dav`、`/dav/` 下允许 GET/HEAD/OPTIONS/PROPFIND；其他路径 404、写方法 405、危险路径或查询参数 400。中文、空格和普通 URL 编码保留；禁止编码分隔符、点段穿越、重复危险编码、反斜杠。Depth 仅空值/0/1，不支持 infinity 或带令牌查询链接。Range 保留，响应流式、不落盘缓存。每 IP 每域名普通请求 30/s（burst 90）、PROPFIND 2/s（burst 10）、连接上限 32；不能替代后端只读权限。
 
@@ -105,9 +105,9 @@ v1.3.2 向导在本次建号及完成页的私有终端显示密码；后续查�
 
 ## 状态、事务与维护
 
-- 元数据：`/opt/tg2cloud-webdav/<edition>/config.json`，schema 1，不存明文密码。
+- 元数据：`/opt/tg2cloud-webdav/<edition>/config.json`；原单账号 schema 1 兼容读取，使用 v1.3.3 家庭账号后为 schema 2，不存明文密码。
 - 离线代码及来源：`/opt/tg2cloud-webdav/runtime/<摘要>/`。
-- 单账号密码哈希：`/opt/tg2cloud-proxy/external-auth/<edition>.htpasswd`。
+- 该 Edition 的主账号及已启用家人账号哈希：`/opt/tg2cloud-proxy/external-auth/<edition>.htpasswd`。
 - 元数据回退点：本 Edition `backups/`；共享代理备份：`/opt/tg2cloud-proxy-backups`。
 
 元数据/备份 0600/0700；认证目录 0750、哈希 0640，组取固定镜像实际 worker GID。仅认证目录只读挂载，不挂整个私密状态目录。目录 bind mount 识别原子替换的新 inode，成功前核对容器实际读取的摘要。
@@ -127,6 +127,15 @@ v1.3.2 向导在本次建号及完成页的私有终端显示密码；后续查�
 ## 状态兼容与发布步骤
 
 最低写入端必须理解 **proxy schema 2 + external WebDAV API 1**，不能仅按相同产品版本号判断。首次安装从旧 schema 1 锁内迁移，未知版本/字段拒绝。本功能不改 Bot 数据库和环境变量。
+
+| 状态／协议 | 版本含义 | 兼容注意 |
+| --- | --- | --- |
+| 共享代理 schema 2 | 管理与附加路由可共存。 | 旧 schema 1 写入端应拒绝，不能覆盖新路由。 |
+| 附加配置 schema 1 | 原单账号配置。 | v1.3.3 工具兼容读取。 |
+| 附加配置 schema 2 | 含家人账号记录。 | v1.3.2 及更旧附加工具不能操作；不要手动降 schema。 |
+| External WebDAV API 1 | 附加功能的发布能力标记。 | 不等于上述两个状态文件必须都是 schema 1。 |
+
+更新主 Bot 不会自动更新附加离线工具；先用正式入口升级对应工具，再按实际账号逐一检查。共享代理备份也不包含附加目录全部元数据，独立备份范围见[备份指南](BACKUP-RESTORE.md)。
 
 旧 v1.3.0 helper 及严格版本检查的历史 Python 工具遇 schema 2 会拒绝操作，须使用 v1.3.1 起的匹配维护工具。更旧、没有状态版本校验的手工脚本/历史桌面工具无法保证安全，安装后禁止使用；不把旧恢复包覆盖到新代理，不手改 version 为 1。
 

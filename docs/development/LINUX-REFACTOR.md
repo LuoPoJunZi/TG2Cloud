@@ -7,9 +7,10 @@ v1.3.1 沿用此布局，在 `addons/external_webdav/` 提供独立只读附加�
 ## 源码与职责
 
 ```text
-install.sh / install-lan.sh / uninstall.sh
+install.sh / install-lan.sh / uninstall.sh / install-webdav.sh
 scripts/run_source.py
 src/tg2cloud/
+  addons/          独立附加功能，external_webdav 不加入主安装或 Bot 菜单
   cli/             参数、终端输入、确认与预览
   deployment/      配置、正式版本下载、身份、预检、安装/升级/卸载
     proxy/         HTTPS、证书、状态、备份维护与独立 LAN 网关
@@ -24,6 +25,8 @@ requirements/      bot.lock.txt / dev.lock.txt
 ```
 
 包初始化不导入 Telethon、cryptg 或 psutil。CLI 不导入 Bot 运行层；安装、内网和卸载使用公共部署模块，不通过另一个入口复用业务。任务阶段沿用 MediaSource / Destination / UploadStream 和仓库接口；应用装配保留 `TransferService` 接口。取消/遗留清理规则原样迁出，核心与展示尚保留应用组合对象的窄接口，不宣称已实现完全无状态的任务服务器。
+
+当前命名规则位于 `domain/naming.py`，因为它是可离线测试的纯业务规则，不负责接入 Telegram 或读写网盘。`telegram/handlers.py` 只提供实际送达的消息文字与附件元数据，之后仍由原任务服务持久化与传输。家庭授权的用户上下文在 `domain/actors.py`，数据保存在既有业务 DB；独立外部 WebDAV 的授权与状态不混入 Bot。详细产品边界见[命名](../NAMING.md)、[家庭共享](../FAMILY-SHARING.md)与[配置参考](../CONFIGURATION.md)。
 
 ## 主要旧路径映射
 
@@ -52,6 +55,8 @@ requirements/      bot.lock.txt / dev.lock.txt
 python3 /path/to/TG2Cloud/scripts/run_source.py install --help
 python3 /path/to/TG2Cloud/scripts/run_source.py lan --help
 python3 /path/to/TG2Cloud/scripts/run_source.py uninstall --help
+python3 /path/to/TG2Cloud/scripts/run_source.py manage --help
+python3 /path/to/TG2Cloud/scripts/run_source.py webdav --help
 bash /path/to/TG2Cloud/install.sh --edition clouddrive2 --check
 ```
 

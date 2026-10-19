@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前版本 **v1.3.3**，以 Linux 脚本维护；稳定源码包与校验清单见 [v1.3.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。历史 CloudDrive2 v1.3.0 升级范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表新版所有部署与恢复场景均已通过。
+当前正式版本 **v1.3.3**，以 Linux 脚本维护；源码包与校验清单见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3)。**v1.3.4 命名增强正在准备发布**，不因更新文档而更新已部署 Bot。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 v1.3.3 正式升级及用户转存确认见[验收记录](docs/development/V133-ACCEPTANCE.md)，不外推其他版本、部署与恢复场景。
 
 ## 开始使用
 
@@ -42,7 +42,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 两个 Edition 共用转存能力，但网关配置不同；各自的实例数据互相独立。已有实例升级使用对应入口并保留配置，不需要先卸载。
 
-v1.3.2 统一安装与管理：公网／内网入口选择 Edition 后，未安装则确认进入对应向导，已安装则显示管理菜单（含卸载）；确认安装管理命令后，本机可直接运行 `tg2cloud`。卸载仅作用于所选 Edition，最后一套完整卸载后核验并清理快捷命令及管理代码。独立卸载 URL 保留作兼容／救援；旧主机需显式更新，见[运维指南](docs/OPERATIONS.md#本地管理菜单)。
+公网／内网入口选择 Edition 后，新装进入向导，已有实例进入管理菜单；确认安装管理工具后，可直接运行 `tg2cloud`。卸载仅作用于所选 Edition，旧卸载 URL 保留救援。菜单、更新与清理边界见[运维指南](docs/OPERATIONS.md#本地管理菜单)。
 
 ## 快速安装
 
@@ -78,7 +78,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 使用文档
 
-v1.3.3：[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人转存、共用保存目录及各自的外部只读账号；安装仍只填一个管理员 ID。视频多语言命名增强及边界见[命名说明](docs/RECOVERY.md#多语言候选评分与随机名称增强)。已有实例与离线工具需显式升级。
+v1.3.3 起，[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人转存、共用保存目录及各自的外部只读账号；安装仍只填一个管理员 ID。v1.3.4 候选增强网址污染名、图片自身说明及一图一视频同标题；完整规则与边界见[命名指南](docs/NAMING.md)。已有实例与离线工具需显式升级。
 
 可选附加功能：[外部 WebDAV](docs/external-webdav.md)。独立安装，通过新 HTTPS 域名只读访问已有上传目录；不复用 Bot/管理员账号，不加入主安装流程。v1.3.1 起提供专用在线安装与离线维护入口。
 
@@ -88,8 +88,11 @@ v1.3.3：[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人转存
 | --- | --- |
 | 安装与配置 | [公网 VPS 安装 / 升级](docs/VPS-INSTALL.md) · [局域网 / NAS 安装](docs/LAN-INSTALL.md) · [填写信息清单](docs/填写信息清单.md) |
 | 网关与首次转存 | [CloudDrive2 / OpenList 配置与验收](docs/STORAGE.md) · [Bot 使用、菜单与命令](docs/BOT-USAGE.md) |
+| 命名与常见问题 | [视频、说明及媒体组命名](docs/NAMING.md) · [FAQ](docs/FAQ.md) |
+| 配置与备份 | [配置字段及运行目录](docs/CONFIGURATION.md) · [备份范围与恢复预检](docs/BACKUP-RESTORE.md) |
+| 家庭与手机读取 | [Bot 家人授权](docs/FAMILY-SHARING.md) · [外部 WebDAV 只读入口](docs/external-webdav.md) |
 | 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) |
-| 升级验收 | [v1.3.0 CloudDrive2 升级记录与未验证范围](docs/development/V130-ACCEPTANCE.md) |
+| 升级验收 | [v1.3.3 正式升级与转存确认](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 历史迁移](docs/development/V130-ACCEPTANCE.md) |
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |
 | 版本与发布 | [CHANGELOG](CHANGELOG.md) · [发布说明](RELEASE_NOTES.md) |

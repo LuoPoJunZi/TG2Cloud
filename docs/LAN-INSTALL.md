@@ -93,7 +93,7 @@ bash ./install-lan.sh --edition openlist --lan-ip 192.168.26.5 --check
 bash ./install-lan.sh --edition openlist
 ```
 
-不要使用 `curl | bash` 或把秘密放入命令参数。密码输入复用私有终端读取与隐藏回显；脱敏日志不会输出完整配置。安装后，凭据逐项确认才会显示，不建议录屏。
+不要使用 `curl | bash` 或把秘密放入命令参数。密码通过私有终端隐藏读取；默认中文新装确认后会在后台建号步骤集中显示所需凭据，显式参数兼容流程与后续查看凭据仍逐项确认。凭据不写普通日志，不建议录屏。
 
 下方维护示例使用本地 `bash ./install-lan.sh`；也可替换为上面的 `bash <(curl -fsSL …/install-lan.sh)` 在线入口，保留相同的 `--edition`、`--verify` 或 `--show-credentials` 参数。
 
@@ -169,3 +169,15 @@ bash ./install-lan.sh --edition openlist --show-credentials
 - **旧 Docker、非受管实例或手改配置**：人工核对，不提供强制接管参数。
 
 已收到的 CloudDrive2 实机日志显示内网入口及 WebDAV 的认证、列目录、写入、大小复验、改名和清理均通过。这不替代不同 NAS 系统、OpenList、跨版本升级与回退、外部浏览器或真实 Telegram 云盘转存验收；其他项目仍需单独检查。
+
+## 安装后检查与长期使用
+
+1. 从另一台可信内网设备打开实际 IP＋端口；Linux 本机能打开不能证明跨设备可达。
+2. 在管理页挂载云存储并创建 Bot 专用用户，再显式确认 WebDAV 写入验收。
+3. 向 Bot 发送自己的小文件，在网关及云存储客户端核对，不把 `HTTPS=NOT_APPLICABLE` 当成文件转存结果。
+4. 使用 `tg2cloud` 维护、升级和管理家人；菜单保留已记录 LAN 模式，不隐式申请域名或切公网。
+5. 长期固定主机 IP，单独备份 LAN 状态和业务资料。不能仅复制业务升级包就认为内网入口可恢复。
+
+当前没有一键更换 LAN IP 或 LAN→公网的转换命令。地址变化、身份记录损坏或希望改为 HTTPS 时先保留数据，审阅独立迁移方案，不手工改状态去绕过检查。外部 WebDAV 仍要求独立公网 HTTPS／ACME 条件，内网安装成功不表示该附加功能也能自动在家庭网络签证书。
+
+字段与目录见[配置参考](CONFIGURATION.md)，备份见[备份指南](BACKUP-RESTORE.md)，常见 NAS、网络与容量问题见 [FAQ](FAQ.md)。

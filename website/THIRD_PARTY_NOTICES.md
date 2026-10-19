@@ -1,6 +1,6 @@
 # 来源、致谢与素材说明
 
-资料核对日期：2026-10-18。对应版本：TG2Cloud v1.3.3；本轮同步家庭共享、多语言命名与资源页说明。正式源码资产、实际 SHA256 与公开摘要已下载核对，辅助提交、入口提交和同标签 Actions 均通过。历史 v1.2.1 EXE 下载保留。发布成功不是实机验收结论。
+资料核对日期：2026-10-19。对应版本：TG2Cloud v1.3.4 候选，待发布；本轮同步说明正文、污染原名、图片与媒体组命名说明及使用文档。正式下载基线仍为 v1.3.3，候选的远端 CI、资产和实机结果尚需分别核验。历史 v1.2.1 EXE 下载和以下许可／来源说明保留。发布成功不是实机验收结论。
 
 ## 主项目与上游
 
@@ -17,10 +17,10 @@ TG2Cloud 的公开 LICENSE 为 MIT，版权行为 `Copyright (c) 2026 TG115 Cont
 - 运行维护：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md
 - VPS 单行脚本：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md
 - CHANGELOG：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md
-- 产品参数：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/deployer_products.py
+- 产品参数：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/src/tg2cloud/deployment/profiles.py
 - 迁移说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/MIGRATION_FROM_TG115.md
-- 安全说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/SECURITY.md
-- 贡献说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CONTRIBUTING.md
+- 安全说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md
+- 贡献说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md
 
 README 与 main 分支可能在之后更新。正式 Release 的确定行为应以对应标签、发布说明及用户实际验收为准。
 

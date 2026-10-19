@@ -86,7 +86,10 @@ class MultilingualNamingTests(unittest.TestCase):
                       "Node.js 入门教程", "ASP.NET Core 教程", "Ubuntu 24.04 安装教程", "C# 基础教程",
                       "高清时代", "HDR 摄影教程", "花样年华 2000", "Bye Bye", "AC/DC Live 2026"):
             with self.subTest(title=title):
-                self.assertEqual(video_file_name("123.mp4", title, "f.mp4"), safe_file_name(title + ".mp4", "f.mp4"))
+                # A caption is not an attachment path: AC/DC must retain both
+                # words, while raw filename basename protection stays unchanged.
+                expected = "AC_DC Live 2026.mp4" if title == "AC/DC Live 2026" else safe_file_name(title + ".mp4", "f.mp4")
+                self.assertEqual(video_file_name("123.mp4", title, "f.mp4"), expected)
 
     def test_explicit_numeric_titles_episode_year_and_versions(self):
         for caption, expected in (("标题：1984", "1984"), ("《1917》", "1917"), ("Title: 2001", "2001"),
@@ -229,11 +232,11 @@ class CaptionIngestionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(len(self.db.list_recent()), 2)
         self.assertTrue(all(task["file_name"] == "Ab83Kd91X.mp4" for task in self.db.list_recent()))
 
-    async def test_documents_audio_and_single_photos_keep_existing_names(self):
+    async def test_nonvisual_documents_keep_names_weak_images_use_received_caption(self):
         for ident, name, mime in ((1, "123.pdf", "application/pdf"), (2, "123.mp3", "audio/mpeg"),
                                    (3, "123.jpg", "image/jpeg"), (4, "123.zip", "application/zip")):
-            await self.service._on_message(self.event(self.message(ident, "标题：不覆盖非视频", name=name, mime=mime)))
-            self.assertEqual(self.db.get(ident)["file_name"], name)
+            await self.service._on_message(self.event(self.message(ident, "标题：图片说明", name=name, mime=mime)))
+            self.assertEqual(self.db.get(ident)["file_name"], "图片说明.jpg" if mime == "image/jpeg" else name)
 
     async def test_same_generated_title_keeps_original_conflict_and_dedup_rules(self):
         self.service.rclone = FakeRclone()

@@ -11,7 +11,9 @@ from tg2cloud.domain.actors import current_user, user_event
 from tg2cloud.domain.naming import (
     album_file_name,
     caption_candidate,
+    media_file_name,
     safe_file_name,
+    video_extension,
     video_file_name,
 )
 from tg2cloud.domain.states import FAILED_STATES
@@ -47,6 +49,26 @@ class TelegramHandlers:
         if photo_id is not None:
             return f"photo:{photo_id}"
         return None
+
+    @staticmethod
+    def _media_kind(message: Any) -> str:
+        mime = str(getattr(getattr(message, "file", None), "mime_type", ""))
+        if getattr(message, "video", None) or mime.startswith("video/"):
+            return "视频"
+        if getattr(message, "photo", None) or mime.startswith("image/"):
+            return "图片"
+        return ""
+
+    @staticmethod
+    def _album_extension(message: Any, kind: str) -> str:
+        file = getattr(message, "file", None)
+        if not file:
+            return ".bin"
+        extension = (video_extension(file.name or "", getattr(file, "ext", None) or "")
+                     if kind == "视频" else file.ext or Path(file.name or "").suffix or ".jpg")
+        # Use the same validation as the final name before deciding whether two
+        # suffixes really distinguish a pair (unknown/invalid types become bin).
+        return Path(album_file_name("media", kind, None, extension)).suffix
 
     @staticmethod
     def _media_caption(message: Any, fallback: str = "") -> str:
@@ -98,17 +120,21 @@ class TelegramHandlers:
             except Exception:  # noqa: BLE001 - optional naming must not prevent ingestion
                 self.log.warning("媒体组标题识别失败，使用原有文件命名；未影响任务接收。")
         numbers = {"视频": 0, "图片": 0}
+        kinds = [self._media_kind(message) for message in messages]
+        extensions = [self._album_extension(message, kind) if title and kind else ""
+                      for message, kind in zip(messages, kinds)]
+        # A verified cover/video pair is unambiguous: different real suffixes
+        # distinguish the two files. Larger groups retain existing kind counters.
+        pair = (len(messages) == 2 and set(kinds) == {"视频", "图片"}
+                and all(message.file for message in messages)
+                and len({extension.casefold() for extension in extensions}) == 2)
         deliveries = []
-        for message in messages:
+        for message, kind, extension in zip(messages, kinds, extensions):
             file = message.file
-            mime = str(getattr(file, "mime_type", ""))
-            kind = ("视频" if getattr(message, "video", None) or mime.startswith("video/")
-                    else "图片" if getattr(message, "photo", None) or mime.startswith("image/") else "")
             name = None
             if title and kind and file:
                 numbers[kind] += 1
-                extension = file.ext or Path(file.name or "").suffix or (".jpg" if kind == "图片" else ".bin")
-                name = album_file_name(title, kind, numbers[kind], extension)
+                name = album_file_name(title, kind, None if pair else numbers[kind], extension)
             proxy = SimpleNamespace(sender_id=message.sender_id, chat_id=message.chat_id,
                                     is_private=True, message=message, raw_text=self._media_caption(message),
                                     reply=message.reply)
@@ -136,7 +162,10 @@ class TelegramHandlers:
             if self.db.has_message(int(event.chat_id), int(message.id)):
                 return
         text = (event.raw_text or "").strip()
-        if text.startswith("/") and not album_delivery:
+        # Captions belong to their media, even when they look like /start or a
+        # path. Only text-only/non-downloadable messages dispatch commands.
+        downloadable = bool(getattr(message, "media", None) and getattr(message, "file", None))
+        if text.startswith("/") and not album_delivery and not downloadable:
             await self._handle_command(event, text)
             return
 
@@ -155,12 +184,18 @@ class TelegramHandlers:
             return
         fallback = f"telegram-{message.id}{message.file.ext or '.bin'}"
         file_name = safe_file_name(message.file.name or "", fallback)
-        if getattr(message, "video", None) or str(getattr(message.file, "mime_type", "")).startswith("video/"):
+        kind = self._media_kind(message)
+        if kind:
             try:
-                file_name = video_file_name(message.file.name or "", self._media_caption(message, text),
-                                            fallback, getattr(message, "entities", ()))
+                if kind == "视频":
+                    file_name = video_file_name(message.file.name or "", self._media_caption(message, text),
+                                                fallback, getattr(message, "entities", ()),
+                                                media_extension=getattr(message.file, "ext", None) or "")
+                else:
+                    file_name = media_file_name(message.file.name or "", self._media_caption(message, text),
+                                                fallback, getattr(message, "entities", ()))
             except Exception:  # noqa: BLE001 - keep the safe original if optional metadata is malformed
-                self.log.warning("视频标题识别失败，使用原有文件命名；未影响任务接收。")
+                self.log.warning("媒体标题识别失败，使用原有文件命名；未影响任务接收。")
         if album_name:
             file_name = album_name
         task, created = self.db.create_task(

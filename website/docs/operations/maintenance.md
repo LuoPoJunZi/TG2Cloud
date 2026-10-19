@@ -61,7 +61,7 @@ sudo /opt/tg2cloud-openlist/manage.sh check
 sudo /opt/tg2cloud-clouddrive2/manage.sh restart
 ```
 
-OpenList 对应替换为 `/opt/tg2cloud-openlist/manage.sh`。`restart` 仅用于重启，不负责把你在电脑上刚改的表单应用到 VPS。
+CloudDrive2 此命令只重启 Bot。OpenList 的 `manage.sh restart` 会同时重启网关与 Bot；只重启其 Bot 应用 `restart-bot`，或使用 `tg2cloud` 的服务控制菜单明确选择对象。普通重启不重新创建容器环境，配置应用另看[配置修改](/operations/update/)。
 
 停止或启动时使用对应脚本的 `stop`、`start`；会影响服务可用性，操作前留意当前任务。
 
@@ -77,7 +77,7 @@ OpenList 对应替换为 `/opt/tg2cloud-openlist/manage.sh`。`restart` 仅用�
 
 ## OpenList 认证与限流诊断
 
-当前 v1.2.1 源码的 Bot `/doctor` 显示最近实际探测时间、401/429 分类和下一次允许探测的剩余时间，状态首页仍保持简洁。
+当前 Bot `/doctor` 保留最近实际探测时间、401／429 分类和下一次允许探测的剩余时间，状态首页仍保持简洁。
 
 | 结果 | 只读探测策略 | 应如何处理 |
 | --- | --- | --- |
@@ -88,13 +88,13 @@ OpenList 对应替换为 `/opt/tg2cloud-openlist/manage.sh`。`restart` 仅用�
 
 ## HTTPS 维护入口
 
-两版部署器的“HTTPS 管理入口”底部都有“维护工具”：共享代理备份、完整性核验、隔离解包、历史备份管理与当前域名续期 dry-run。它们不会升级 Bot，也不备份业务数据库或云端文件。
+Linux 使用 `tg2cloud` 菜单 6 检查／修复 HTTPS 和执行当前域名续期 dry-run，菜单 7 备份、列出、校验／隔离解包最近代理备份以及确认清理。它们不升级 Bot，也不备份业务 DB 或云端文件；旧“维护工具”按钮属于历史 Windows 界面。
 
 操作范围、执行时限与警告见 [域名访问与 HTTPS](/deploy/domain-https/)；敏感备份与删除边界见 [备份与恢复](/operations/backup/)。不要把维护工具当作在线覆盖恢复。
 
 ## 发现旧 TG115
 
-桌面状态会把旧 TG115 独立提示，不会把它当作 TG2Cloud 已安装。当前管理脚本仅面向本 Edition 的 TG2Cloud 命名空间，不会替你升级或删除旧实例。
+当前 CLI 发现对应旧 TG115 而无完整 TG2Cloud 时停止，不按早期桌面“只提示继续”的规则接管。维护仅面向已核验的本 Edition，不替你迁移或删除旧实例。
 
 ## 提交问题前
 

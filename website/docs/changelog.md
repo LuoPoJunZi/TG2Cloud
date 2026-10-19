@@ -2,6 +2,20 @@
 
 TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发布说明的整理，不把历史 TG115 的版本号当成 TG2Cloud 发布版本。
 
+## TG2Cloud v1.3.4
+
+候选与资料核对日期：2026-10-19。**待发布**，正式下载基线仍为 [v1.3.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3)。本轮不部署 VPS；源码、远端 CI 与发布资产应分别核验，详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+
+### 待发布边界修复
+
+- 媒体斜杠说明正常接收；改善表情标题、正常作品名与推广／凭据区分、相邻作品名／集数、斜杠文字、中文旁域名及尾部画质过滤。
+- 网址、账号或处理前缀污染的视频原名可使用实际可靠正文；无原名、数字／默认／污染名的单图片可使用自身说明，不借用无关消息。
+- 同组恰好一图一视频、真实后缀可区分时共用无编号标题；多成员、同类或后缀不明确继续编号。真实后缀和正常 MKV 格式保留，明显错误的视频后缀保守修正。
+- 保留正常原名、隐藏实体、鉴权、去重、无说明兜底、原名记录与远端冲突保护；不改历史任务，不增依赖、数据库迁移或传输流程，不抓评论／频道，不做 OCR。
+- 补全仓库命名、配置、备份恢复和 FAQ 文档，网站独立同步，README 保留简短入口和原致谢许可。
+
+新规则示例和限制见[第一次转存](/usage/first-transfer/)。本地隔离回归不等于真实 Telegram、两版网关、手机或升级验收；用户确认的 CloudDrive2 v1.3.3 转存不扩大为本候选结论。
+
 ## TG2Cloud v1.3.3
 
 版本日期：2026-10-18。[v1.3.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3) 已正式发布；辅助提交、入口提交与同标签 Actions 均通过，实际源码包与 SHA256 已下载核对。详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
@@ -11,6 +25,8 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 视频命名增量增强 Unicode 多语言、混合随机 ID、广告域名与元数据过滤，同条消息及本组说明共用候选评分；可靠原名、扩展名、媒体组指定名称、无说明回退及既有去重保留。识别异常不阻止接收，不抓评论／频道，不增依赖。示例与限制见[第一次转存](/usage/first-transfer/)；真实 Telegram 或网关验收仍需独立完成。
 
 资源页移除文件系统容量清单，后台磁盘采样与安全保护不变。新增回归与既有恢复、权限、转存检查共同运行；自动检查不代替[历史实机记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)之外的新验收。
+
+发布后补充（2026-10-19）：用户确认 CloudDrive2 v1.3.3 升级后的实际转存验收完成；不扩大为 OpenList、家庭共享或所有异常路径的验收。
 
 ## TG2Cloud v1.3.2
 

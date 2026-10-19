@@ -135,8 +135,9 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
         description = "青海湖环线自驾实拍，清晨湖岸与沿途补给点完整记录"
         video = self.album_message(2, "video", description, name="精选资源关注频道@sample.mp4")
         await self.service._on_album(self.album_event([photo, video]))
-        self.assertEqual(self.db.get(1)["file_name"], description.replace("，", ",") + "-图片01.jpg")
-        self.assertEqual(self.db.get(2)["file_name"], description.replace("，", ",") + "-视频01.mp4")
+        # A single cover and video share the description without kind counters.
+        self.assertEqual(self.db.get(1)["file_name"], description.replace("，", ",") + ".jpg")
+        self.assertEqual(self.db.get(2)["file_name"], description.replace("，", ",") + ".mp4")
 
     async def test_single_promotional_video_preserves_original_name_and_existing_task(self):
         original = "精选资源关注TG频道@sample_G01_S01.mp4"
@@ -167,8 +168,8 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
                     )]
         with patch.object(messages[0], "reply", new=AsyncMock()), patch.object(messages[1], "reply", new=AsyncMock()):
             await self.service._on_album(events.Album.Event(messages))
-        self.assertEqual(self.db.get(1)["file_name"], "真实对象测试标题-视频01.mp4")
-        self.assertEqual(self.db.get(2)["file_name"], "真实对象测试标题-图片01.jpg")
+        self.assertEqual(self.db.get(1)["file_name"], "真实对象测试标题.mp4")
+        self.assertEqual(self.db.get(2)["file_name"], "真实对象测试标题.jpg")
 
     async def test_album_and_new_message_race_only_register_and_ack_once(self):
         video = self.album_message(1, "video")
@@ -187,7 +188,7 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
             release.set()
             await fallback
         self.assertEqual(len(self.db.list_recent()), 2)
-        self.assertEqual(self.db.get(1)["file_name"], "媒体组测试标题-视频01.mp4")
+        self.assertEqual(self.db.get(1)["file_name"], "媒体组测试标题.mp4")
         video.reply.assert_awaited_once()
         photo.reply.assert_awaited_once()
 
@@ -206,7 +207,7 @@ class MetadataIntegrationTests(unittest.IsolatedAsyncioTestCase):
         photo = self.album_message(2, "photo", "迟到的标题")
         await self.service._on_album(self.album_event([video, photo]))
         self.assertEqual(self.db.get(1)["file_name"], "123456.mp4")
-        self.assertEqual(self.db.get(2)["file_name"], "迟到的标题-图片01.jpg")
+        self.assertEqual(self.db.get(2)["file_name"], "迟到的标题.jpg")
         video.reply.assert_awaited_once()
 
     async def test_album_without_title_keeps_originals_and_never_reuses_previous_group(self):

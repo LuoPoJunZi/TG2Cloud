@@ -2,13 +2,13 @@
 
 先明确哪些数据被包含，哪些没有被包含。备份包本身可能含敏感凭据，不能公开上传。
 
-v1.3.0 继续保留下述备份范围。本次 CloudDrive2 人工迁移已校验归档和 SQLite、保留旧镜像与回退点，用户确认升级后使用验收通过，但没有做故障注入或灾难恢复启动演练；不能把这次专用实例的人工备份当作安装器新增的通用完整备份功能，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。下文弹窗和菜单均指 v1.2.1 历史界面，不表示新版终端提供同名菜单。
+v1.3.3 继续保留下面的备份边界。当前 Linux 使用 `tg2cloud` → 7 备份管理，代理检查／修复／续期 dry-run 在菜单 6；不提供覆盖生产数据的 Restore。CloudDrive2 正式 v1.3.2 → v1.3.3 升级和用户转存已确认，但不等于灾难恢复验收，范围见[记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)。
 
 ## v1.2.1：离线业务快照预检
 
-v1.2.1 提供可选 `app.backup_bundle` 工具，仅接受人工准备的静止副本，覆盖标准 `.env`、Compose、业务 DB、Telegram Session、rclone 配置及所选网关配置。现有业务升级/手动备份不应假设包含 Telegram Session。下载、日志、云端文件和共享 HTTPS 仍须分别处理。
+离线工具从 v1.2.1 提供；当前源码使用 `tg2cloud.persistence.bundle`，已安装镜像保留 `app.backup_bundle` 兼容。只接受人工准备的静止副本，覆盖 `.env`、Compose、业务 DB、Session、rclone 和所选网关配置。下载、程序、日志、云端文件、HTTPS、LAN 与附加状态另行保护，业务回退点不能假设含 Session。
 
-工具生成版本/内容/SHA256 清单，在新私密目录检查归档和 SQLite 后清理；拒绝路径穿越、链接、重复成员、版本不兼容与不足空间。不覆盖生产文件，不自动启动服务，不提供一键 Restore，也不把结构通过写成服务恢复成功。完整前提、命令和回退步骤见[恢复指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/RECOVERY.md)。旧 v1.2.0 不包含本节新增工具。
+工具生成版本／内容／SHA256 清单，在新私密目录检查归档和 SQLite 后清理；拒绝穿越、链接、重复成员、版本不兼容与不足空间。不覆盖生产文件或自动启动服务。当前布局的准确命令、前置静止副本和完整范围见[独立备份指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/BACKUP-RESTORE.md)。
 
 ## CloudDrive2 Edition
 
@@ -26,7 +26,7 @@ v1.2.1 提供可选 `app.backup_bundle` 工具，仅接受人工准备的静止�
 
 两个 Edition 的现有备份都**不包含** `/opt/tg2cloud-proxy`。强制 HTTPS 之后，仅恢复 Edition 数据仍不足以恢复管理入口。
 
-当前 v1.2.1 源码可在任一 Edition 的“HTTPS 管理入口 → 维护工具”中选择“备份共享代理”，保存以下内容：
+当前在任一已核验 Edition 的 `tg2cloud` → 7 → 创建共享代理备份，保存以下内容：
 
 - `state/domains.json`：两个 Edition 的域名与后端端口映射；
 - `docker-compose.yml`、`nginx/nginx.conf` 和 `nginx/conf.d/`：共享代理与续期配置；
@@ -45,11 +45,11 @@ v1.1.5 使用分块 SHA256 和兼容的 UTC 日期接口，宿主维护助手支
 
 ## 代理历史备份与清理预览
 
-在“维护工具 → 管理历史代理备份”查看时间、大小和完整性，并选择历史归档进行核验或隔离解包。
+使用 `tg2cloud` → 7 列出共享代理归档、校验／隔离解包最近一份；清理采用以下确认流程，不提供生产恢复。
 
-1. 设置保留最新份数，默认 5 份，可选择 1～50 份。
-2. 点击“预览清理”，只列出拟删除归档、对应校验文件和空间，不执行删除。
-3. 核对保留备份与清单后，再点击“执行清理”；二次确认默认取消。
+1. 选择清理旧代理备份，当前菜单固定保留最近 5 份有效备份。
+2. 查看拟删除归档、对应校验文件和空间，此时不执行删除。
+3. 核对清单后确认，默认取消；不要把底层历史参数当成当前菜单的可调选项。
 
 清理要求所有候选备份校验通过，并至少保留一份有效备份。新增/修改备份或改变保留数量后，必须重新预览；工具只删除确认清单中的归档及校验文件，不递归清空目录，也不处理无关文件。
 
@@ -94,7 +94,7 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh prune-backups 5
 
 ## 恢复不是一键承诺
 
-v1.2.1 没有正式自动 Restore。旧 TG115 的队列/数据库迁移也未被声明完成真实环境验收。
+当前也没有正式生产自动 Restore。旧 TG115 的队列／数据库迁移仍没有完整实机验收声明。
 
 备份可读取不等于恢复已验证。重要部署应在受控环境制定恢复步骤，并保留独立可恢复副本；不要边猜数据库位置边覆盖生产实例。
 

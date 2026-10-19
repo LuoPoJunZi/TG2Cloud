@@ -257,6 +257,9 @@ class UserDocumentationTests(unittest.TestCase):
         "docs/VPS-INSTALL.md", "docs/LAN-INSTALL.md", "docs/填写信息清单.md",
         "docs/README-小白使用说明.md", "docs/development/REPOSITORY.md",
         "docs/development/SCRIPT-FIRST.md", "docs/development/LINUX-REFACTOR.md",
+        "docs/NAMING.md", "docs/CONFIGURATION.md", "docs/BACKUP-RESTORE.md", "docs/FAQ.md",
+        "docs/FAMILY-SHARING.md", "docs/external-webdav.md", "docs/UNINSTALL.md",
+        "docs/MIGRATION_FROM_TG115.md", "docs/第三方组件说明.md", "docs/development/V133-ACCEPTANCE.md",
     )
 
     def test_readmes_and_index_offer_standalone_bot_and_storage_guides(self):

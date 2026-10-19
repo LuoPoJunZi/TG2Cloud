@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current version: **v1.3.3**, maintained through Linux scripts. Source archives and checksums are available in the [v1.3.3 stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). The [historical CloudDrive2 v1.3.0 acceptance record](docs/development/V130-ACCEPTANCE.md) does not certify every scenario in this new version.
+Current stable version: **v1.3.3**, maintained through Linux scripts. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3). **v1.3.4 naming improvements are being prepared for release**; updating documentation does not update a running Bot. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify other versions, deployment or recovery scenarios.
 
 ## Getting started
 
@@ -44,7 +44,7 @@ Both editions share transfer capabilities but have different gateway configurati
 
 ## Quick start
 
-v1.3.2 unifies installation and management: the public/LAN entries offer setup for a missing Edition or its maintenance menu, including uninstall, for an existing instance. After confirming manager installation, run `tg2cloud` locally. Uninstall remains Edition-scoped; removing the last instance in full also removes verified manager code and its command when unused. The standalone uninstall URL stays available for compatibility/recovery. Existing hosts require an explicit update; see the [operations guide](docs/OPERATIONS.md#本地管理菜单).
+The public/LAN entries offer setup for a missing Edition or its maintenance menu for an existing instance. After confirming manager installation, run `tg2cloud` locally. Uninstall stays Edition-scoped; the standalone URL remains available for recovery. Menu, update and cleanup boundaries are in the [operations guide](docs/OPERATIONS.md#本地管理菜单).
 
 Requires Debian / Ubuntu x86_64, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
 
@@ -82,14 +82,17 @@ Optional add-on: [External WebDAV](docs/external-webdav.md). Available since v1.
 
 Browse the repository guides by topic below. Most are in Chinese; see the [full documentation index](docs/README.md) or the [documentation website](https://tg2cloud.pages.dev/).
 
-v1.3.3: [family sharing](docs/FAMILY-SHARING.md) adds post-install Bot grants and independent read-only WebDAV accounts for the same shared directory. Installation still takes one administrator ID. See [naming rules](docs/RECOVERY.md#多语言候选评分与随机名称增强) for multilingual caption improvements and limitations. Existing instances and offline managers require an explicit upgrade.
+Since v1.3.3, [family sharing](docs/FAMILY-SHARING.md) provides post-install Bot grants and independent read-only WebDAV accounts for the same shared directory. Installation still takes one administrator ID. The v1.3.4 candidate improves URL-polluted names, individual image captions and shared stems for a cover/video pair. See the [naming guide](docs/NAMING.md) for priorities and limits. Existing instances and offline managers require an explicit upgrade.
 
 | Topic | Repository documents |
 | --- | --- |
 | Installation and configuration | [Public VPS installation / upgrade](docs/VPS-INSTALL.md) · [LAN / NAS installation](docs/LAN-INSTALL.md) · [Information checklist](docs/填写信息清单.md) |
 | Gateway and first transfer | [CloudDrive2 / OpenList configuration and verification](docs/STORAGE.md) · [Bot usage, menus and commands](docs/BOT-USAGE.md) |
+| Naming and common questions | [Video, caption and album naming](docs/NAMING.md) · [FAQ](docs/FAQ.md) |
+| Configuration and backups | [Configuration fields and runtime paths](docs/CONFIGURATION.md) · [Backup scope and restore preflight](docs/BACKUP-RESTORE.md) |
+| Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) |
-| Upgrade acceptance | [v1.3.0 CloudDrive2 upgrade evidence and untested scenarios](docs/development/V130-ACCEPTANCE.md) |
+| Upgrade acceptance | [v1.3.3 official upgrade and transfer confirmation](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 historical migration](docs/development/V130-ACCEPTANCE.md) |
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |
 | Versions and releases | [Changelog](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md) |
