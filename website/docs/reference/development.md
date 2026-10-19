@@ -7,15 +7,15 @@
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.3.4
 git rev-parse HEAD
 ```
 
-本文档对应待发布的 v1.3.4 候选。main 用于当前开发并须记录提交号；可下载的稳定基线仍为 v1.3.3，见[下载页](/download/)。复现已发布版本时使用对应标签，不能把后续修改当成 Release 行为。
+本文档对应已发布的 v1.3.4，见[下载页](/download/)。main 用于当前开发并须记录提交号；复现已发布版本时使用对应标签，不能把后续修改当成 Release 行为。
 
 ## 关键目录与入口
 
-下表为 v1.3.4 候选继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
+下表为 v1.3.4 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
 v1.3.1 沿用该结构，独立附加功能在 `src/tg2cloud/addons/external_webdav/`，专用入口为 `install-webdav.sh`。源码包已正式发布；下载、构建或发布成功都不等于实机安装通过。
 
@@ -60,7 +60,7 @@ v1.3.2 辅助提交 A 为 `1879a8e1c498fbabaf7ba26ba4b9810f1cfd44e6`，已通过
 
 v1.3.3 辅助提交 A 为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`，已通过同样五个公开 CI；三个入口 B 同步家庭授权与附加账号模块清单并逐文件匹配 A。临时测试夹具不要求 root，但生产认证文件仍强制受管属主和读取权限，改属主失败保留旧认证文件。业务来源仍为正式稳定 Release，不代表真实 Telegram、网关或 VPS 验收。
 
-v1.3.4 辅助提交 A 为 `72be98e6b15075f71c58dd6ee110e47db2f42ce0`，Linux／Docker／WebDAV、宿主 Python 3.10／3.13、网站、仓库与文档五项公开 CI 已通过；当前入口 B 同步三个 pin 并严格匹配 A，不使用 moving main。该结果只证明辅助提交，不代表入口 B 或同标签 Release 已成功；v1.3.4 仍待发布，正式业务下载仍为 v1.3.3，新代码实机验收尚未执行。工作流记录见[重构与兼容说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LINUX-REFACTOR.md#递归指纹与发布门槛)。
+v1.3.4 辅助提交 A 为 `72be98e6b15075f71c58dd6ee110e47db2f42ce0`，辅助 A 与固定入口 B 各五项公开 CI、[同标签发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39204327020)均已通过；三个入口 pin 严格匹配 A，不使用 moving main。正式标签 commit 为 `ef35d133a9e25572ff5f8363819d5c8e8984e74c`，实际源码包、SHA256 与 GitHub digest 已核验；本版真实 VPS、Telegram 和用户网关验收尚未执行。工作流记录见[重构与兼容说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LINUX-REFACTOR.md#递归指纹与发布门槛)。
 
 v1.1.1 至 v1.2.1 的 Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。历史 EXE 和对应 SHA256 保留，不由新工作流重写。
 

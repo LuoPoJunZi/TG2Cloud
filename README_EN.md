@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **v1.3.3**, maintained through Linux scripts. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3). **v1.3.4 naming improvements are being prepared for release**; updating documentation does not update a running Bot. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify other versions, deployment or recovery scenarios.
+Current stable version: **v1.3.4**, maintained through Linux scripts. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.4). The image/video naming improvements require an actual Bot upgrade; updating documentation does not update a running instance. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [historical v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify v1.3.4 or other deployment or recovery scenarios.
 
 ## Getting started
 
@@ -82,7 +82,7 @@ Optional add-on: [External WebDAV](docs/external-webdav.md). Available since v1.
 
 Browse the repository guides by topic below. Most are in Chinese; see the [full documentation index](docs/README.md) or the [documentation website](https://tg2cloud.pages.dev/).
 
-Since v1.3.3, [family sharing](docs/FAMILY-SHARING.md) provides post-install Bot grants and independent read-only WebDAV accounts for the same shared directory. Installation still takes one administrator ID. The v1.3.4 candidate improves URL-polluted names, individual image captions and shared stems for a cover/video pair. See the [naming guide](docs/NAMING.md) for priorities and limits. Existing instances and offline managers require an explicit upgrade.
+Since v1.3.3, [family sharing](docs/FAMILY-SHARING.md) provides post-install Bot grants and independent read-only WebDAV accounts for the same shared directory. Installation still takes one administrator ID. Version 1.3.4 improves URL-polluted names, individual image captions and shared stems for a cover/video pair. See the [naming guide](docs/NAMING.md) for priorities and limits. Existing instances and offline managers require an explicit upgrade.
 
 | Topic | Repository documents |
 | --- | --- |

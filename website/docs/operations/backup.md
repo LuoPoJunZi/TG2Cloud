@@ -2,7 +2,7 @@
 
 先明确哪些数据被包含，哪些没有被包含。备份包本身可能含敏感凭据，不能公开上传。
 
-v1.3.3 继续保留下面的备份边界。当前 Linux 使用 `tg2cloud` → 7 备份管理，代理检查／修复／续期 dry-run 在菜单 6；不提供覆盖生产数据的 Restore。CloudDrive2 正式 v1.3.2 → v1.3.3 升级和用户转存已确认，但不等于灾难恢复验收，范围见[记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)。
+v1.3.4 继续保留下面的备份边界。当前 Linux 使用 `tg2cloud` → 7 备份管理，代理检查／修复／续期 dry-run 在菜单 6；不提供覆盖生产数据的 Restore。CloudDrive2 正式 v1.3.2 → v1.3.3 升级和用户转存已确认，但不等于本版或灾难恢复验收，范围见[记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)。
 
 ## v1.2.1：离线业务快照预检
 

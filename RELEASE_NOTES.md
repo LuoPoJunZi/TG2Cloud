@@ -42,18 +42,18 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 下载与发布状态
 
-当前为 **v1.3.4 待发布候选**，尚不能从稳定入口取得本版 Bot。正式下载基线仍为 [v1.3.3](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3)；候选发布需要先公开并验证辅助提交 A、更新固定入口 B，再通过同标签 Actions 发布。
+**v1.3.4 已正式发布**，见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.4)。标签固定到提交 `ef35d133a9e25572ff5f8363819d5c8e8984e74c`；辅助提交 A 与入口 B 各五项 CI，以及[同标签发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39204327020)全部成功。正式源码包和校验清单已实际下载，逐资产 GitHub digest、SHA256 与源码归档核验一致，不覆盖历史版本。
 
-| 本版发布后资产 | 用途 |
+| 正式资产 | 用途 |
 | --- | --- |
-| `TG2Cloud-v1.3.4-source.tar.gz` | 同标签公共源码与两 Edition 资源 |
-| `SHA256SUMS.txt` | Actions 为实际源码包生成的校验清单 |
+| [TG2Cloud-v1.3.4-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.3.4/TG2Cloud-v1.3.4-source.tar.gz) | 同标签公共源码与两 Edition 资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.3.4/SHA256SUMS.txt) | Actions 为实际源码包生成的校验清单 |
 
-正式资产出现后，将两文件放在同一目录执行 `sha256sum -c SHA256SUMS.txt`。校验和不是数字签名，不混用其他版本清单。Windows 历史资产见 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)，本版不构建 EXE。
+将两文件放在同一目录执行 `sha256sum -c SHA256SUMS.txt`。校验和不是数字签名，不混用其他版本清单。Windows 历史资产见 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)，本版不构建 EXE。
 
 ## 验证与兼容边界
 
-命名和接收流程使用合成文字、临时 SQLite 及离线 Telegram 对象回归，不使用用户媒体或生产凭据。本轮本地检查、远端 CI 与正式资产核验分别记录；待同标签工作流完成后，以其真实结果作为正式发布依据，不把候选源码或 main 上的版本文字当作已发布。
+本地完整回归共 864 项：838 执行成功、26 项既有环境跳过、0 失败；Python 3.10 CLI 共 393 项：382 执行成功、11 项环境跳过。Node.js 22 文档构建及 19 项网站测试通过；远端同标签 Linux／Docker／WebDAV 与发布检查成功。命名和接收回归使用合成文字、临时 SQLite 及离线 Telegram 对象，不使用用户媒体或生产凭据。环境跳过不冒充已执行的集成验收。
 
 **v1.3.4 尚未进行真实 VPS 升级、Telegram 转存或用户网盘验收。** 需升级测试实例后，分别验证单视频、单图片、一图一视频、多成员、无说明、正常原名和重名保护；CloudDrive2 / OpenList、家庭权限、手机／Range、公网 ACME、ARM64 和故障回退仍按实际环境单独验收。用户对 CloudDrive2 v1.3.3 实际转存的确认不扩大为本版结论，见 [v1.3.3 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)与 [v1.3.0 历史迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。
 

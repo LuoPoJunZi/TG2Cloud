@@ -115,7 +115,7 @@ v1.3.2 辅助提交 A 为 `1879a8e1c498fbabaf7ba26ba4b9810f1cfd44e6`，已通过
 
 v1.3.3 辅助提交 A 为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`，家庭授权宿主模块与附加账号管理纳入三个入口的递归下载清单，已通过上述五个公开 CI。非 root Linux 的测试仅隔离临时认证文件的改属主边界，另有失败保留旧文件的回归；生产 root 属主和 Nginx 读取权限不变。入口 B 逐文件匹配 A，业务代码仍只取正式稳定 Release；无真实 VPS、Telegram 或用户网盘验收。
 
-v1.3.4 辅助提交 A 为 `72be98e6b15075f71c58dd6ee110e47db2f42ce0`，已通过五项公开 CI：[Linux／Docker／WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203774328)、[宿主 Python 3.10／3.13](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203777026)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203780700)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203783921)与[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203786827)。当前入口 B 据此更新三个 pin，保持逐文件匹配与正式稳定业务来源；命名候选尚待同标签发布，业务下载基线仍为 v1.3.3。辅助 CI 不等于入口 B／Release 已通过，也不等于真实 VPS、Telegram 或网盘验收。
+v1.3.4 辅助提交 A 为 `72be98e6b15075f71c58dd6ee110e47db2f42ce0`，已通过五项公开 CI：[Linux／Docker／WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203774328)、[宿主 Python 3.10／3.13](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203777026)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203780700)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203783921)与[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39203786827)。固定入口 B 的五项 CI 与[同标签发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39204327020)也已成功；三个 pin 逐文件匹配 A，业务 v1.3.4 正式标签 commit 为 `ef35d133a9e25572ff5f8363819d5c8e8984e74c`。实际源码包、SHA256 清单、GitHub 资产摘要与源码归档核验通过，历史 Tag／资产未覆盖；这些结果不等于本版真实 VPS、Telegram 或网盘验收。
 
 ## 验收范围
 
