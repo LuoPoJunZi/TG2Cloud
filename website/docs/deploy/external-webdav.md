@@ -8,7 +8,7 @@
 
 ## 家庭只读账号（v1.3.3）
 
-下述多账号菜单为 v1.3.3 候选能力，发布前 v1.3.2 稳定版尚不包含。单独升级离线附加工具后，可在 `tg2cloud-webdav` 的“10. 用户管理”添加、检查、启停、更改密码或移除新增家庭账号；亦可运行 `tg2cloud-webdav users --edition clouddrive2`，OpenList 使用 `--edition openlist`。不增加 Bot 命令、不进入主安装、不创建第二个域名或个人目录。
+下述多账号菜单由 v1.3.3 提供，v1.3.2 及更旧版本尚不包含。单独升级离线附加工具后，可在 `tg2cloud-webdav` 的“10. 用户管理”添加、检查、启停、更改密码或移除新增家庭账号；亦可运行 `tg2cloud-webdav users --edition clouddrive2`，OpenList 使用 `--edition openlist`。不增加 Bot 命令、不进入主安装、不创建第二个域名或个人目录。
 
 每个账号都需在网关后台人工创建，根目录／base path 必须直接指向向导显示的实际共同目录，只授予读取／列表。CloudDrive2 版本或会员能力不支持独立只读用户时停止，不用 Bot 或管理员凭据替代。外部授权与 Bot 家人名单互不绑定、分别撤销；不因停用 Bot 用户自动关闭手机访问。
 

@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-正在准备 **v1.3.3**，以 Linux 脚本维护；当前可下载的稳定源码包与校验清单仍见 [v1.3.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.2)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。历史 CloudDrive2 v1.3.0 升级范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表新版所有部署与恢复场景均已通过。
+当前版本 **v1.3.3**，以 Linux 脚本维护；稳定源码包与校验清单见 [v1.3.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。历史 CloudDrive2 v1.3.0 升级范围见[验收记录](docs/development/V130-ACCEPTANCE.md)，不代表新版所有部署与恢复场景均已通过。
 
 ## 开始使用
 
@@ -78,7 +78,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 使用文档
 
-v1.3.3 待发布：[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人转存、共用保存目录及各自的外部只读账号；安装仍只填一个管理员 ID。视频多语言命名增强及边界见[命名说明](docs/RECOVERY.md#多语言候选评分与随机名称增强)。
+v1.3.3：[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人转存、共用保存目录及各自的外部只读账号；安装仍只填一个管理员 ID。视频多语言命名增强及边界见[命名说明](docs/RECOVERY.md#多语言候选评分与随机名称增强)。已有实例与离线工具需显式升级。
 
 可选附加功能：[外部 WebDAV](docs/external-webdav.md)。独立安装，通过新 HTTPS 域名只读访问已有上传目录；不复用 Bot/管理员账号，不加入主安装流程。v1.3.1 起提供专用在线安装与离线维护入口。
 
