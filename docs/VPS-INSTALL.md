@@ -120,7 +120,9 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到不可变源码 commit，不逐文件追随移动的 `main`。v1.3.0 向导包含磁盘推荐；准确的辅助源码身份由三个入口中的 `installer_commit` 给出。新向导先经过 CI，再更新三个入口的 pin；源码发布检查会拒绝 pin 与新版本辅助文件不一致的情况。业务 payload 仍只取最新正式稳定 Release。
 
-v1.3.3 的三个在线入口固定向导 commit 为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`，模块版本为 `1.3.3`；该辅助提交的 Linux/Docker、宿主 Python 3.10／3.13、网站及公共输入检查通过。正式 payload 的 Tag commit 与向导 commit 分别核对，不要求两者相同。
+v1.3.4 的三个入口固定向导 commit 为 `72be98e6b15075f71c58dd6ee110e47db2f42ce0`，模块版本为 `1.3.4`；该辅助提交 A 的 Linux／Docker／WebDAV、宿主 Python 3.10／3.13、仓库、文档与网站五项公开 CI 已通过。入口 B 按此 A 更新 pin，正式 payload 仍只取稳定 Release；本版候选尚未发布，当前业务下载基线仍为 v1.3.3。正式 payload 的 Tag commit 与向导 commit 分别核对，不要求两者相同。
+
+历史 v1.3.3 的向导 commit 为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`，模块版本为 `1.3.3`；该辅助提交的五项公开 CI 已通过，历史 Tag 和资产不修改。
 
 历史 v1.3.0 的辅助提交仍为 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`，Tag commit 为 `27874c12c6166e12f2f57759199576cffb9f3234`；不改写旧版，也不用旧辅助工具覆盖 schema 2 代理。
 

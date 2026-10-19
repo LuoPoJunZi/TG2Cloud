@@ -60,6 +60,8 @@ v1.3.2 辅助提交 A 为 `1879a8e1c498fbabaf7ba26ba4b9810f1cfd44e6`，已通过
 
 v1.3.3 辅助提交 A 为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`，已通过同样五个公开 CI；三个入口 B 同步家庭授权与附加账号模块清单并逐文件匹配 A。临时测试夹具不要求 root，但生产认证文件仍强制受管属主和读取权限，改属主失败保留旧认证文件。业务来源仍为正式稳定 Release，不代表真实 Telegram、网关或 VPS 验收。
 
+v1.3.4 辅助提交 A 为 `72be98e6b15075f71c58dd6ee110e47db2f42ce0`，Linux／Docker／WebDAV、宿主 Python 3.10／3.13、网站、仓库与文档五项公开 CI 已通过；当前入口 B 同步三个 pin 并严格匹配 A，不使用 moving main。该结果只证明辅助提交，不代表入口 B 或同标签 Release 已成功；v1.3.4 仍待发布，正式业务下载仍为 v1.3.3，新代码实机验收尚未执行。工作流记录见[重构与兼容说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LINUX-REFACTOR.md#递归指纹与发布门槛)。
+
 v1.1.1 至 v1.2.1 的 Release 等待同一不可变标签的 Linux 验证与 Windows 构建全部成功。历史 EXE 和对应 SHA256 保留，不由新工作流重写。
 
 v1.1.2 进一步核对 Tag、共享版本源、Windows 版本资源、CHANGELOG 和 Release Notes 的一致性；维护助手与备份对话框纳入打包自检。已有 Release 不会被新运行覆盖，本地 EXE 的校验值不作为 Actions 产物校验值。
