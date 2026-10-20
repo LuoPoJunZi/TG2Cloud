@@ -10,6 +10,8 @@
 
 ## Python 检查
 
+待发布的原生平台验证使用 `ubuntu-24.04`（AMD64）和 `ubuntu-24.04-arm`（ARM64），不设置 QEMU；CLI Python 3.10 / 3.13 两架构均测试。完整 runtime job 保留原有回归，并执行两 Edition 候选、原生扩展／rclone、隔离网关 HTTP／FUSE 与代理测试。Release 等待两架构成功但只上传一次源码；历史 Tag 按当时能力验证。命令、缺失条件与 helper A/B 发布步骤见[双架构说明](../docs/ARCHITECTURES.md)，未运行项不得写成通过。
+
 完整检查使用 Python 3.12 / 3.13 和 `requirements/dev.lock.txt`，不需要 PySide6、Paramiko 或 PyInstaller。cryptography 显式作为证书夹具测试依赖，不进入 Bot 容器。依赖定义在 `pyproject.toml`，两份哈希锁文件由其中固定的同一 uv 版本统一生成，不单独手改版本；生成时从 Bot Dockerfile 读取 Python 3.12 作为解析下限，不能使用维护者当前 Python 版本作为下限而漏掉条件依赖。宿主 CLI 仍支持 Python 3.10+、只用标准库，不安装这两份 Bot／开发锁文件。请在隔离虚拟环境中准备：
 
 ```bash

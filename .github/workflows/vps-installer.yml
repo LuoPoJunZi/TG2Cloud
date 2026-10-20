@@ -15,6 +15,7 @@ on:
       - "pyproject.toml"
       - "requirements/**"
       - "tests/test_vps_installer.py"
+      - "tests/test_architecture.py"
       - "tests/test_lan*.py"
       - "tests/test_uninstaller.py"
       - "tests/test_proxy_host_compat.py"
@@ -40,6 +41,7 @@ on:
       - "pyproject.toml"
       - "requirements/**"
       - "tests/test_vps_installer.py"
+      - "tests/test_architecture.py"
       - "tests/test_lan*.py"
       - "tests/test_uninstaller.py"
       - "tests/test_proxy_host_compat.py"
@@ -61,10 +63,12 @@ env:
 
 jobs:
   offline-linux:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ matrix.runner }}
     strategy:
+      fail-fast: false
       matrix:
         python: ["3.10", "3.13"]
+        runner: [ubuntu-24.04, ubuntu-24.04-arm]
     env:
       PYTHONDONTWRITEBYTECODE: "1"
       PYTHONIOENCODING: utf-8
@@ -96,7 +100,9 @@ jobs:
         if: matrix.python == '3.13'
         env:
           TG2CLOUD_TEST_LAN_DOCKER: "1"
-        run: python -B -m unittest discover -s tests -p test_lan_gateway_docker.py -v
+        run: |
+          python -B -m tg2cloud.deployment.architecture docker
+          python -B -m unittest discover -s tests -p test_lan_gateway_docker.py -v
       - name: Python lint and syntax
         run: |
           python .github/scripts/check_python.py lint --scope cli

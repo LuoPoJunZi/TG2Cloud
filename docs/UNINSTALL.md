@@ -34,7 +34,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 本地源码运行
 
-在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu x86_64、Python 3.10+、Bash、本机默认 Docker；涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`。不会替你安装、升级、重启或卸载系统软件。
+在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.3.4 限 AMD64，待发布源码统一支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
 
 先只读查看范围：
 

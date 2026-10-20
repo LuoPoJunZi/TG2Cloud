@@ -14,7 +14,7 @@
 
 ### 能在任意 NAS、ARM 或 Docker Desktop 安装吗？
 
-主安装面向 Debian/Ubuntu x86_64、root、受支持的本机 rootful Docker；内网另要求 Docker 28+。外部 WebDAV 的 ARM64 预检支持不等于主安装已支持 ARM64。DSM／QTS 等不保证可直接运行，可使用符合条件的 Linux 虚拟机；内网填写虚拟机自身 IP。见[内网支持范围](LAN-INSTALL.md#支持范围与边界)。
+正式 v1.3.4 主安装仍限 Debian/Ubuntu AMD64；本地待发布源码统一支持原生 AMD64 / ARM64，必须发布包含修改的稳定包和 helper 后才可通过线上命令使用。要求 root、64 位用户态和本机 rootful Docker，内网另要求 Docker 28+；不会默认使用 QEMU。DSM／QTS 等不保证可直接运行，可使用符合条件的 Linux 虚拟机并填写虚拟机自身 IP。镜像证据和 Oracle 验收见[双架构说明](ARCHITECTURES.md)。
 
 ### 更新仓库、运行管理菜单、重启容器，会自动更新 Bot 吗？
 

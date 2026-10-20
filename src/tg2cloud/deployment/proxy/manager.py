@@ -763,6 +763,10 @@ fi
         return remote
 
     def _install_config(self, state: dict[str, Any], *, candidate: str = "") -> None:
+        from tg2cloud.deployment import architecture
+        architecture.check_docker(self.session)
+        for image in (NGINX_IMAGE, CERTBOT_IMAGE):
+            architecture.ensure_image(self.session, image)
         files = render_config_set(state, candidate_domain=candidate)
         active_domains = certificate_domains(state)
         external_auth = state.get("version") == 2
@@ -776,10 +780,17 @@ fi
             self.session.run(f"rm -rf -- {remote}", timeout=20)
 
     def _compose(self, arguments: str, *, timeout: float = 180) -> tuple[int, str]:
-        return self._run(
+        result = self._run(
             f"docker compose -f {PROXY_ROOT}/docker-compose.yml {arguments}",
             timeout=timeout,
         )
+        if result[0] == 0 and arguments.startswith("up "):
+            from tg2cloud.deployment import architecture
+            if "certbot" in arguments:
+                architecture.check_container(self.session, PROXY_CERTBOT_CONTAINER, require_running=True)
+            if "nginx" in arguments:
+                architecture.check_container(self.session, PROXY_NGINX_CONTAINER, require_running=True)
+        return result
 
     def _activate(self, state: dict[str, Any], *, candidate: str = "") -> None:
         self._install_config(state, candidate=candidate)

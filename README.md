@@ -46,7 +46,9 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 ## 快速安装
 
-要求 Debian / Ubuntu x86_64、root、Python 3.10+、curl 和可交互终端；主机需能访问 GitHub、Telegram、镜像仓库及目的端。CloudDrive2 还需要 `/dev/fuse`。
+要求 Debian / Ubuntu、64 位原生用户态、root、Python 3.10+、curl 和可交互终端；主机需能访问 GitHub、Telegram、镜像仓库及目的端。CloudDrive2 还需要 `/dev/fuse`。
+
+待发布 v1.4.0 源码统一支持 AMD64 / ARM64（`linux/amd64` / `linux/arm64`），不使用 QEMU；当前正式 v1.3.4 及在线 helper 仍保留原 AMD64 限制，不能仅更新文档就用于 ARM64 安装。发布门槛、镜像核验与 Oracle Cloud 步骤见[双架构说明](docs/ARCHITECTURES.md)。
 
 ### 公网 VPS
 

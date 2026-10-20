@@ -46,7 +46,9 @@ Both editions share transfer capabilities but have different gateway configurati
 
 The public/LAN entries offer setup for a missing Edition or its maintenance menu for an existing instance. After confirming manager installation, run `tg2cloud` locally. Uninstall stays Edition-scoped; the standalone URL remains available for recovery. Menu, update and cleanup boundaries are in the [operations guide](docs/OPERATIONS.md#本地管理菜单).
 
-Requires Debian / Ubuntu x86_64, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
+Requires Debian / Ubuntu with native 64-bit userspace, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
+
+The unreleased v1.4.0 source supports native AMD64 / ARM64 (`linux/amd64` / `linux/arm64`), without QEMU. The current stable v1.3.4 and online helper still have the previous AMD64 restriction; documentation updates alone do not enable ARM64 installation. See [architecture evidence, Oracle Cloud checks and publication prerequisites](docs/ARCHITECTURES.md).
 
 ### Public VPS
 

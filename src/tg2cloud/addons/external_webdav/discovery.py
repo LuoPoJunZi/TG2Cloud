@@ -2,29 +2,19 @@
 from __future__ import annotations
 
 import json
-import os
-import platform
-import re
 import shutil
-from pathlib import Path
 
 from tg2cloud.addons.external_webdav.config import decode
-from tg2cloud.deployment import instances
+from tg2cloud.deployment import architecture, instances, preflight
 
 
-def host(session) -> None:
-    if platform.system() != "Linux" or os.geteuid() != 0 or platform.machine().lower() not in {"x86_64", "amd64", "aarch64", "arm64"}:
-        raise ValueError("需本机 Linux root，x86_64 或 ARM64；实际网关架构仍需独立验收。")
-    if not re.search(r'(?m)^ID="?(?:debian|ubuntu)"?$', Path("/etc/os-release").read_text()):
-        raise ValueError("当前支持 Debian/Ubuntu；不修改其他系统。")
-    if any(os.environ.get(key) for key in ("DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS_VERIFY", "COMPOSE_FILE", "COMPOSE_PROJECT_NAME")):
-        raise ValueError("拒绝继承远程 Docker 或 Compose 覆盖环境。")
+def host(session, *, log=None) -> None:
+    preflight.validate_host(log=log)
+    architecture.check_environment()
     for tool in ("docker", "bash", "openssl", "curl", "ss", "ip", "getent", "flock", "timeout"):
         if not shutil.which(tool):
             raise ValueError("缺少工具 " + tool + "；请人工准备，不自动安装系统软件。")
-    code, output = session.run("docker context inspect --format '{{.Endpoints.docker.Host}}' && docker info --format '{{json .SecurityOptions}}'", timeout=20)
-    if code or not output.startswith("unix:///var/run/docker.sock\n") or "rootless" in output.lower():
-        raise ValueError("只支持本机默认 rootful Docker daemon。")
+    architecture.check_docker(session)
 
 
 def selected(product, directory, session, log, *, require_running: bool = True):

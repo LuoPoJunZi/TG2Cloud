@@ -7,13 +7,21 @@
 | 项目 | 基础建议 | 说明 |
 | --- | --- | --- |
 | VPS | 2 核 / 4GB 内存 / 50GB SSD | 批量使用可考虑 4 核 / 8GB / 80～100GB |
-| 系统 | Debian／Ubuntu x86_64 | 一键脚本不承诺兼容所有 NAS 或 ARM |
+| 系统 | Debian／Ubuntu、原生 64 位用户态 | 正式 v1.3.4 主入口限 AMD64；待发布源码增加 ARM64，不等于兼容所有 NAS |
 | 登录权限 | 以 root 运行脚本 | 使用自己的 SSH 终端登录主机 |
 | 本地设备 | 可用的终端和浏览器 | Windows、macOS、Linux 均可；历史 EXE 仅支持 Windows |
 | 网络 | VPS 可达 Telegram、镜像仓库及目的端 | 按实际文件量准备流量 |
 | CloudDrive2 | 受管容器需要 `/dev/fuse` | OpenList Edition 产品配置不要求 FUSE |
 
 公网 VPS 的受管 CloudDrive2/OpenList 还需要一个指向当前 VPS 的独立域名，并允许公网 TCP 80/443 入站。没有可用 IPv6 时不要配置 AAAA；Cloudflare 首次签发证书时使用“仅 DNS”。可信内网使用独立 LAN 入口、私有 IPv4 和 HTTP，不对公网开放。
+
+## 原生 AMD64 / ARM64（待发布）
+
+新源码将 x86_64／amd64 统一为 `linux/amd64`，aarch64／arm64 统一为 `linux/arm64`，核对 64 位 Python、dpkg 用户态、本机 rootful Docker 及实际镜像；不安装 QEMU、不接受远端 daemon 或强制平台覆盖。两 Edition 和公网／内网／外部 WebDAV 共用规则，不增加 ARM 专用入口。
+
+当前线上 helper 和正式 v1.3.4 仍是原 AMD64 主安装逻辑，必须先完成新辅助代码和稳定包发布，不能仅凭网页更新执行 ARM 安装。镜像索引与 ARM wheel 元数据已核验，但本轮未运行原生 ARM／Oracle 网关。完整证据、原生 CI 和发布门槛见[仓库双架构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/ARCHITECTURES.md)。
+
+Oracle Ampere A1 的 Ubuntu 24.04／26.04、Debian ARM64 需确认 `uname -m` 为 aarch64／arm64、`getconf LONG_BIT` 为 64、`dpkg --print-architecture` 为 arm64。检查 Docker／Compose 与 `/dev/fuse`；CloudDrive2 仍需 FUSE 和原权限，OpenList 不要求 FUSE。脚本不会调整 Oracle 安全组或防火墙，真实挂载、HTTPS、转存和回退仍需独立验收。
 
 脚本资源评估要求 CloudDrive2 至少约 1800MB 内存，OpenList 至少约 900MB；此外还要满足任务预算、保留线、Docker 数据盘和 inode 检查。50GB 是推荐磁盘容量，不是唯一硬门槛。首次安装可选推荐预算，最终以实时探测和执行前复检为准。
 

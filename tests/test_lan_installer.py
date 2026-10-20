@@ -90,7 +90,7 @@ class AddressEnvironmentTests(unittest.TestCase):
         session.run.assert_not_called()
 
     def test_environment_accepts_absent_or_default_rootful_docker_without_installing(self):
-        for responses in ([(0, ""), (1, "")], [(0, ""), (0, ""), (0, '"unix:///var/run/docker.sock"'), (0, '{"version":"28.0.0","security":[]}')]):
+        for responses in ([(0, ""), (1, "")], [(0, ""), (0, ""), (0, '"unix:///var/run/docker.sock"'), (0, '{"os":"linux","arch":"' + lan.architecture.normalize_architecture(lan.architecture.platform.machine()) + '","version":"28.0.0","security":[]}')]):
             session = Mock()
             session.run.side_effect = responses
             with patch.object(tgdep_preflight, "validate_host") as host, patch.dict(os.environ, {}, clear=True):
@@ -99,14 +99,15 @@ class AddressEnvironmentTests(unittest.TestCase):
             self.assertFalse(any("apt" in call.args[0] for call in session.run.call_args_list))
 
     def test_remote_daemon_compose_injection_missing_tool_rootless_and_nondefault_context_rejected(self):
+        native = lan.architecture.normalize_architecture(lan.architecture.platform.machine())
         for name in ("DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_CERT_PATH", "COMPOSE_FILE", "COMPOSE_PROJECT_NAME", "COMPOSE_PROFILES"):
             session = Mock()
             with self.subTest(variable=name), patch.object(tgdep_preflight, "validate_host"), patch.dict(os.environ, {name: "external"}, clear=True), self.assertRaises(ValueError):
                 lan.validate_environment(session)
             session.run.assert_not_called()
         for responses in ([(1, "")], [(0, ""), (0, ""), (0, '"tcp://external:2375"')],
-                          [(0, ""), (0, ""), (0, '"unix:///var/run/docker.sock"'), (0, '{"version":"28.0.0","security":["name=rootless"]}')],
-                          [(0, ""), (0, ""), (0, '"unix:///var/run/docker.sock"'), (0, '{"version":"27.5.1","security":[]}')]):
+                          [(0, ""), (0, ""), (0, '"unix:///var/run/docker.sock"'), (0, json.dumps({"os": "linux", "arch": native, "version": "28.0.0", "security": ["name=rootless"]}))],
+                          [(0, ""), (0, ""), (0, '"unix:///var/run/docker.sock"'), (0, json.dumps({"os": "linux", "arch": native, "version": "27.5.1", "security": []}))]):
             session = Mock()
             session.run.side_effect = responses
             with self.subTest(responses=responses), patch.object(tgdep_preflight, "validate_host"), patch.dict(os.environ, {}, clear=True), self.assertRaises(ValueError):
@@ -356,6 +357,8 @@ class PlanExecutionTests(unittest.TestCase):
         self.instance = instance(self.product)
         self.patches = {}
         self.stack.enter_context(patch.object(lan, "validate_environment"))
+        self.stack.enter_context(patch.object(lan.architecture, "ensure_image"))
+        self.stack.enter_context(patch.object(lan.architecture, "check_container"))
         mocks = {"load_state": lan.state_for(self.product, IP), "reject_https_route": None,
                  "validate_local_ip": IP, "inspect_lan": None, "check_port": None,
                  "check_backend": None, "check_entry": None, "wait_for_entry": None, "save_state": None}

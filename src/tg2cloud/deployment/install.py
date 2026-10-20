@@ -7,6 +7,7 @@ from pathlib import Path
 
 from tg2cloud.cli import terminal
 from tg2cloud.deployment import (
+    architecture,
     configuration,
     instances,
     payload,
@@ -40,6 +41,7 @@ def make_plan(
 ) -> Plan:
     action = upgrade.action_for(instance, release)
     if action in {"install", "upgrade"}:
+        architecture.require_payload(source)
         payload.payload_sources(source, instance.product)
     if instance.present:
         if old_source is None:
@@ -99,6 +101,7 @@ def apply_base(plan: Plan, release: releases.Release, source: Path, session: Loc
     instance = plan.instance
     if plan.action not in {"install", "upgrade"}:
         return
+    architecture.check_docker(session, allow_missing=True)
     with tempfile.TemporaryDirectory(prefix="tg2cloud-cli-payload-") as private:
         root = Path(private)
         payload_dir = root / "payload"
@@ -115,6 +118,8 @@ def apply_base(plan: Plan, release: releases.Release, source: Path, session: Loc
         code, output = session.run(command, stream=log, timeout=2400)
         if code or "TG2CLOUD_RESULT=SUCCESS" not in output.splitlines() or "TG2CLOUD_BOT_HEALTH=healthy" not in output.splitlines():
             raise RuntimeError("基础安装/升级失败；请核对现有安装器的回退结果和备份，不假定已恢复")
+    architecture.check_container(session, instance.product.bot_container, require_running=True)
+    architecture.check_container(session, instance.product.storage_container, require_running=True)
     if instance.present and configuration.regular_private(instance.directory / ".env") != instance.raw_config:
         raise RuntimeError("升级后 .env 字节发生变化，停止后续操作；请核对备份")
     upgrade.record_release(instance.directory, release)

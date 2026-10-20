@@ -23,6 +23,7 @@ from pathlib import Path
 from tg2cloud.cli import terminal
 from tg2cloud.cli.presentation import InstallerLog, edition_menu
 from tg2cloud.deployment import (
+    architecture,
     configuration,
     install,
     instances,
@@ -76,29 +77,16 @@ def validate_local_ip(value: str, session: LocalSession) -> str:
     raise ValueError("该地址不属于本机已启用的内网网卡；虚拟机请填虚拟机地址，不填 NAS 宿主机地址")
 
 
-def validate_environment(session: LocalSession) -> None:
-    preflight.validate_host()
+def validate_environment(session: LocalSession, *, log=None) -> None:
+    preflight.validate_host(log=log)
     # Do not install onto a remote daemon, or inherit arbitrary Compose inputs.
-    forbidden = ("DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH",
-                 "COMPOSE_FILE", "COMPOSE_PROJECT_NAME", "COMPOSE_PROFILES", "COMPOSE_ENV_FILES")
-    if any(os.environ.get(name) for name in forbidden):
-        raise ValueError("请使用本机默认 Docker/Compose 环境；不接受远端 daemon 或外部 Compose 覆盖")
+    architecture.check_environment()
     code, _ = session.run("command -v ip >/dev/null 2>&1", timeout=10)
     if code:
         raise ValueError("缺少 iproute2；请先人工安装，不在信息收集前安装软件")
-    available, _ = session.run("command -v docker >/dev/null 2>&1", timeout=10)
-    if available:
+    info = architecture.check_docker(session, allow_missing=True)
+    if info is None:
         return
-    code, output = session.run("docker context inspect --format '{{json .Endpoints.docker.Host}}'", timeout=15)
-    if code or json.loads(output) != "unix:///var/run/docker.sock":
-        raise ValueError("首版仅支持本机默认 rootful Docker，不接管自定义/远端 Docker context")
-    template = '{"version":{{json .ServerVersion}},"security":{{json .SecurityOptions}}}'
-    code, output = session.run("docker info --format " + shlex.quote(template), timeout=15)
-    if code:
-        raise ValueError("Docker 不可用或为 rootless；内网入口需要 Linux rootful host 网络")
-    info = json.loads(output)
-    if any("rootless" in item for item in info.get("security", [])):
-        raise ValueError("Docker 不可用或为 rootless；内网入口需要 Linux rootful host 网络")
     version = info.get("version", "")
     if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+(?:[-+].*)?", version) or int(version.split(".")[0]) < 28:
         raise ValueError("内网模式要求 Docker Engine 28+，避免旧版回环端口被同网段直接访问；请人工升级，不重启其他容器")
@@ -385,6 +373,7 @@ def make_plan(instance, release, source, baseline, session, log, ui=None, *, add
         upgrade.assert_unmodified(instance, baseline)
     action = upgrade.action_for(instance, release)
     if action in {"install", "upgrade"}:
+        architecture.require_payload(source)
         payload.payload_sources(source, product)
         instances.check_foreign_gateway(product, session)
         if action == "upgrade" and payload.gateway_image(source, product) != instance.gateway_image:
@@ -481,6 +470,7 @@ def execute(plan: Plan, release, source, baseline, session, log, ui, *, verify=F
             except (ValueError, OSError):
                 pass  # Repair only the already validated, managed LAN entry.
         if not entry_healthy:
+            architecture.ensure_image(session, NGINX_IMAGE)
             for arguments in ("config --quiet", "pull lan", "run --rm --no-deps lan -t", "up -d lan"):
                 code, _ = session.run(compose_command(product, arguments), stream=log, timeout=180)
                 if code:
@@ -488,6 +478,7 @@ def execute(plan: Plan, release, source, baseline, session, log, ui, *, verify=F
         entry = inspect_lan(product, session, instances.docker_inventory(session))
         if not entry or not entry.get("running"):
             raise RuntimeError("内网入口容器未运行；不冒充成功")
+        architecture.check_container(session, container_name(product), require_running=True)
         wait_for_entry(product, plan.address)
         log("TG2CLOUD_LAN_BASE=OK；TG2CLOUD_LAN_ENTRY=OK；HTTPS=NOT_APPLICABLE")
         log(f"{product.display_name} 内网管理页：http://{plan.address}:{product.management_port}")
@@ -524,7 +515,7 @@ def main(argv=None, *, friendly=None) -> int:
         if (args.check or args.show_credentials) and not args.edition:
             raise ValueError("只读检查/凭据显示请明确 --edition")
         session = LocalSession(log)
-        validate_environment(session)
+        validate_environment(session, log=log)
         if not args.edition:
             ui = terminal.Terminal()
             ui.friendly = friendly

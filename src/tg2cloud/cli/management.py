@@ -3,13 +3,12 @@ from __future__ import annotations
 
 import argparse
 import json
-import os
 import shlex
 from pathlib import Path
 
 from tg2cloud.cli import terminal
 from tg2cloud.cli.presentation import InstallerLog, edition_menu
-from tg2cloud.deployment import instances, preflight, runtime, uninstall
+from tg2cloud.deployment import architecture, instances, preflight, runtime, uninstall
 from tg2cloud.deployment.host import LocalSession, SafeLog, edition_lock
 from tg2cloud.deployment.profiles import PRODUCTS
 from tg2cloud.deployment.proxy import lan
@@ -50,10 +49,7 @@ class Management:
         self.mode_hint = mode_hint
 
     def discover(self):
-        forbidden = ("DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH",
-                     "COMPOSE_FILE", "COMPOSE_PROJECT_NAME", "COMPOSE_PROFILES", "COMPOSE_ENV_FILES")
-        if any(os.environ.get(key) for key in forbidden):
-            raise ValueError("只允许本机默认 Docker 环境；拒绝远端 daemon 和 Compose 覆盖")
+        architecture.check_environment()
         code, _ = self.session.run("command -v docker >/dev/null 2>&1", timeout=10)
         if code == 0:
             uninstall.validate_environment(self.session)
@@ -285,7 +281,7 @@ def main(argv=None, *, mode_hint=None) -> int:
     args = parser.parse_args(argv)
     log, ui = InstallerLog(SafeLog()), None
     try:
-        preflight.validate_host()
+        preflight.validate_host(log=log)
         if mode_hint not in {None, "public", "lan"}:
             raise ValueError("不支持的安装模式")
         source = Path(__file__).resolve().parents[3]

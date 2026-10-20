@@ -110,7 +110,7 @@ def main(argv: list[str] | None = None) -> int:
         # Help has already exited above. Offline status still needs local Linux
         # root/private records, but never contacts GitHub, Docker or the gateway.
         if args.action not in {"status", "print-config"}:
-            discovery.host(session)
+            discovery.host(session, log=log)
         elif os.name != "posix" or os.geteuid() != 0:
             raise ValueError("本地状态仅允许 Linux root 读取。")
         if args.edition is None or args.action is None or args.action not in {"status", "print-config"}:

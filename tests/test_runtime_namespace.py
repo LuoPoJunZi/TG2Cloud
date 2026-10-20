@@ -18,10 +18,15 @@ ROOT = Path(__file__).resolve().parents[1]
 CONTAINER_CHECK = """
 import os
 import pwd
+import platform
+import subprocess
 import sys
 from pathlib import Path
 from tg2cloud.app import TransferService
 from tg2cloud.deployment.check import code_fingerprint, main
+import cryptg
+import psutil
+import telethon
 
 assert os.getuid() == 10001 and os.getgid() == 10001
 assert pwd.getpwuid(os.getuid()).pw_name == 'tg2cloud'
@@ -38,6 +43,14 @@ assert not Path('config.env').exists()
 assert not Path('.env').exists()
 assert code_fingerprint().startswith('tg2cloud-code-v2:sha256:') and len(code_fingerprint().rsplit(':',1)[1]) == 64
 assert TransferService is not None
+assert platform.machine().lower() in ('x86_64', 'amd64', 'aarch64', 'arm64')
+# Exercise native extensions, not just package metadata or wheel names.
+sample = b'0123456789abcdef' * 2
+key, iv = bytes(range(32)), bytes(reversed(range(32)))
+assert cryptg.decrypt_ige(cryptg.encrypt_ige(sample, key, iv), key, iv) == sample
+assert psutil.virtual_memory().total > 0 and psutil.Process().pid > 0
+assert telethon.TelegramClient is not None
+assert subprocess.run(['rclone', 'version'], check=True, capture_output=True).stdout.startswith(b'rclone ')
 sys.argv = ['deployment_check', '--validate-only']
 assert main() == 0
 print('TG2CLOUD_CONTAINER_RUNTIME=OK')

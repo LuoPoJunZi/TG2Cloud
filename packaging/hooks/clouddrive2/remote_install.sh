@@ -144,6 +144,13 @@ trap cleanup_release_stage EXIT
   || fail "检测到旧 TG115 安装目录 /opt/tg115；TG2Cloud 不会静默覆盖，请先按迁移文档处理"
 SOURCE_DIR="$(realpath -e -- "$SOURCE_DIR")"
 CONFIG_FILE="$(realpath -e -- "$CONFIG_FILE")"
+native_check() (
+  # Resolve Python modules from the verified payload, never the caller's cwd.
+  cd -- "$SOURCE_DIR"
+  PYTHONPATH="$SOURCE_DIR/app" python3 -B -m tg2cloud.deployment.architecture "$@"
+)
+NATIVE_PLATFORM="$(native_check host)" || fail "需要原生 64 位 Debian/Ubuntu AMD64 或 ARM64"
+native_check docker --allow-missing || fail "本机 Docker 平台检查失败"
 [[ -f "$SOURCE_DIR/preserve_runtime_config.sh" ]] \
   || fail "部署包缺少现有配置保护脚本"
 # shellcheck source=packaging/hooks/clouddrive2/preserve_runtime_config.sh
@@ -194,12 +201,6 @@ case "${ID:-}" in
 esac
 [[ -n "${VERSION_CODENAME:-}" ]] || fail "系统缺少 VERSION_CODENAME，无法配置软件源"
 
-ARCH="$(uname -m)"
-case "$ARCH" in
-  x86_64|amd64|aarch64|arm64) ;;
-  *) fail "当前 CPU 架构暂不支持：$ARCH" ;;
-esac
-
 TOTAL_MEM_MB="$(awk '/MemTotal/ {print int($2/1024)}' /proc/meminfo)"
 CPU_CORES="$(getconf _NPROCESSORS_ONLN 2>/dev/null || nproc)"
 INSTALL_PROBE_PATH="$INSTALL_DIR"
@@ -248,6 +249,7 @@ if ! docker compose version >/dev/null 2>&1; then
   apt-get install -y docker-compose-plugin
 fi
 docker compose version >/dev/null 2>&1 || fail "Docker Compose v2 不可用"
+native_check docker || fail "Docker daemon 必须与宿主原生平台一致"
 
 for target_container in "$BOT_CONTAINER" tg2cloud-clouddrive2; do
   if docker container inspect "$target_container" >/dev/null 2>&1; then
@@ -330,7 +332,9 @@ install -m 600 "$CONFIG_FILE" "$RELEASE_STAGE/.env"
 # Accept configuration produced by older Windows deployers as well.
 sed -i 's/\r$//' "$RELEASE_STAGE/.env"
 (cd "$RELEASE_STAGE" && docker compose config --quiet)
-docker build --tag "$CANDIDATE_TAG" "$RELEASE_STAGE"
+native_check prepare "$RELEASE_STAGE/docker-compose.yml" --service clouddrive2
+docker build --platform "$NATIVE_PLATFORM" --tag "$CANDIDATE_TAG" "$RELEASE_STAGE"
+native_check image "$CANDIDATE_TAG"
 docker run --rm --read-only --tmpfs /tmp --entrypoint python \
   --env-file "$RELEASE_STAGE/.env" "$CANDIDATE_TAG" \
   -m app.deployment_check --validate-only
@@ -433,7 +437,7 @@ fi
 
 printf 'TG2CLOUD_STAGE=BOT\n'
 log "构建 TG2Cloud Bot 容器"
-docker compose build "$BOT_SERVICE"
+BUILDX_BUILDER=default docker compose build "$BOT_SERVICE"
 bash "$INSTALL_DIR/manage.sh" validate
 docker compose up -d --no-deps "$BOT_SERVICE"
 
@@ -466,6 +470,10 @@ fi
 
 log "核对运行中的环境配置、代码指纹和基础健康状态"
 bash "$INSTALL_DIR/manage.sh" ready
+native_check container "$BOT_CONTAINER"
+if [[ "${DEPLOY_CLOUDDRIVE2:-true}" == "true" ]]; then
+  native_check container "${EXISTING_CD2:-tg2cloud-clouddrive2}"
+fi
 ROLLBACK_ARMED=false
 # shellcheck disable=SC1091
 source "$INSTALL_DIR/backup_retention.sh"

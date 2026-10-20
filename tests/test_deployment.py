@@ -649,7 +649,7 @@ class DeploymentStructureTests(unittest.TestCase):
         )
         docker_ready = script.index("docker compose version >/dev/null 2>&1 || fail")
         storage_check = script.index("DOCKER_ROOT_DIR=", docker_ready)
-        candidate_build = script.index('docker build --tag "$CANDIDATE_TAG"')
+        candidate_build = script.index('docker build --platform "$NATIVE_PLATFORM" --tag "$CANDIDATE_TAG"')
         self.assertLess(docker_ready, storage_check)
         self.assertLess(storage_check, candidate_build)
         self.assertIn("Docker 数据文件系统空间不足", script)

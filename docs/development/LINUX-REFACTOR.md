@@ -1,5 +1,7 @@
 # Linux Python + Bash 重构（v1.3.0）
 
+后续待发布双架构改动沿用本文结构，不重做架构或数据迁移；当前源码与正式 v1.3.4 的支持差异、原生 CI 和发布门槛见[AMD64 / ARM64 说明](../ARCHITECTURES.md)。下文 v1.3.0／v1.3.1 支持范围为历史事实。
+
 本文描述 v1.3.0 的 Linux 模块化布局。Windows 部署器停留在 v1.2.1；历史版本、桌面恢复 ZIP、本地归档和用户数据保留。运行支持仍为 Debian/Ubuntu x86_64、rootful Docker；宿主 Python 3.10+，Bot 镜像 Python 3.12。ARM64 和其他 NAS 系统不因源码重排自动获得支持。
 
 v1.3.1 沿用此布局，在 `addons/external_webdav/` 提供独立只读附加功能；不是主安装向导的一部分。其宿主预检接受 ARM64，仍不等于主安装器新增该架构支持。辅助源码 A/B 发布流程、递归指纹和历史布局验证继续适用，兼容说明见[独立功能指南](../external-webdav.md)。

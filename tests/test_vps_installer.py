@@ -30,6 +30,7 @@ import tg2cloud.deployment.preflight as tgdep_preflight
 import tg2cloud.deployment.releases as tgdep_releases
 import tg2cloud.deployment.upgrade as tgdep_upgrade
 from tg2cloud.cli import vps as cli
+from tg2cloud.deployment import architecture
 from tg2cloud.deployment.host import LocalFiles, LocalSession, SafeLog, edition_lock
 from tg2cloud.deployment.profiles import PRODUCTS
 from tg2cloud.deployment.proxy.manager import ProxyEnvironment, ProxyReport
@@ -82,6 +83,7 @@ class TerminalTests(unittest.TestCase):
     def setUp(self):
         self.contexts = ExitStack()
         self.addCleanup(self.contexts.close)
+        self.contexts.enter_context(patch.object(architecture, "check_docker"))
 
     def fixture(self, text="", *, terminal=True):
         source, output = io.BytesIO(text.encode()), io.BytesIO()
@@ -321,6 +323,9 @@ class StandaloneBootstrapTests(unittest.TestCase):
     """Exercise the downloaded entry without network or deployment calls."""
 
     def setUp(self):
+        native = patch.object(architecture, "check_docker")
+        native.start()
+        self.addCleanup(native.stop)
         content = (ROOT / "install.sh").read_text(encoding="utf-8")
         self.embedded = content.split("<<'PY' &\n", 1)[1].split("\nPY\n", 1)[0]
         constants = {node.targets[0].id: node.value.value for node in ast.parse(self.embedded).body
@@ -716,6 +721,12 @@ class ConfigPayloadTests(unittest.TestCase):
 
 class InstanceTests(unittest.TestCase):
     def setUp(self):
+        # Orchestration fixtures have no daemon. Native platform refusal and
+        # actual image inspection are exercised in test_architecture.py.
+        for name in ("check_docker", "check_container"):
+            boundary = patch.object(architecture, name)
+            boundary.start()
+            self.addCleanup(boundary.stop)
         self.private = tempfile.TemporaryDirectory()
         self.addCleanup(self.private.cleanup)
         # Windows hosted runners may expose TEMP through an 8.3 alias or a
@@ -768,20 +779,23 @@ class InstanceTests(unittest.TestCase):
     def containers(self):
         labels = {"com.docker.compose.project.working_dir": str(self.directory),
                   "com.docker.compose.project": "tg2cloud-openlist", "com.docker.compose.service": self.product.bot_service}
-        bot = {"labels": labels, "image": "bot", "running": False, "mounts": [
+        bot = {"labels": labels, "image": "bot", "image_id": "sha256:" + "a" * 64, "running": False, "mounts": [
             {"Type": "bind", "Destination": "/" + name, "Source": str(self.directory / name)}
             for name in ("data", "config", "downloads", "logs")
         ]}
-        gateway = {"labels": {**labels, "com.docker.compose.service": "openlist"}, "image": self.instance.gateway_image,
+        gateway = {"labels": {**labels, "com.docker.compose.service": "openlist"}, "image": self.instance.gateway_image, "image_id": "sha256:" + "b" * 64,
                    "mounts": [{"Type": "bind", "Destination": "/opt/openlist/data", "Source": str(self.directory / "openlist/data")}]}
         return bot, gateway
 
     def discover(self, bot, gateway, actual=None):
         session = Mock()
         services = {self.product.bot_service: {"container_name": self.product.bot_container}, "openlist": {"container_name": self.product.storage_container}}
-        session.run.return_value = (0, json.dumps({"services": services}))
-        if actual is not None:
-            session.run.side_effect = [(0, json.dumps({"services": services})), (0, json.dumps(actual))]
+        def query(command, **_kwargs):
+            if command.startswith("docker image inspect "):
+                self.assertTrue(command.endswith((bot["image_id"], gateway["image_id"])))
+                return 0, json.dumps({"os": "linux", "arch": architecture.normalize_architecture(architecture.platform.machine())})
+            return 0, json.dumps(actual if command.startswith("docker exec ") else {"services": services})
+        session.run.side_effect = query
         with patch.object(tgdep_configuration, "checked_directory", return_value=self.directory), patch.object(tgdep_instances, "inspect_container", side_effect=[bot, gateway]), patch.object(tgdep_configuration, "regular_private", side_effect=lambda path: path.read_bytes()):
             return tgdep_instances.discover(self.product, {self.product.bot_container, self.product.storage_container}, session, self.log)
 

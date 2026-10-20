@@ -6,7 +6,7 @@ import shlex
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from tg2cloud.deployment import configuration, releases
+from tg2cloud.deployment import architecture, configuration, releases
 from tg2cloud.deployment.fingerprints import deployed_fingerprint
 from tg2cloud.deployment.host import LocalSession, SafeLog
 from tg2cloud.deployment.profiles import ProductProfile
@@ -14,7 +14,7 @@ from tg2cloud.deployment.profiles import ProductProfile
 
 def inspect_container(session: LocalSession, name: str) -> dict:
     template = ('{"image":{{json .Config.Image}},"running":{{json .State.Running}},'
-                '"labels":{{json .Config.Labels}},"mounts":{{json .Mounts}}}')
+                '"labels":{{json .Config.Labels}},"mounts":{{json .Mounts}},"image_id":{{json .Image}}}')
     code, output = session.run(
         "docker container inspect --format " + shlex.quote(template) + " " + shlex.quote(name), timeout=15,
     )
@@ -119,6 +119,8 @@ def discover(
     if (services[product.bot_service].get("container_name") != product.bot_container
             or services["openlist" if product.is_openlist else "clouddrive2"].get("container_name") != product.storage_container):
         raise ValueError("Compose 与容器身份不一致")
+    for container in (bot, gateway):
+        architecture.check_image(session, container.get("image_id", ""))
     if bot.get("running"):
         script = (
             "from app import __version__; from app.deployment_check import code_fingerprint; "

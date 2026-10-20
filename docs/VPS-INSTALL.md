@@ -25,7 +25,7 @@ v1.3.1 的[外部 WebDAV](external-webdav.md) 是独立可选入口，主安装�
 | 手工修改过程序、Compose 或 Dockerfile | 停止，请先人工核对；不提供强制覆盖参数 |
 | 新稳定版更换云网关镜像 digest | 停止自动升级；不隐式迁移 OpenList/CloudDrive2 数据库，先备份并在隔离环境验证网关迁移；不使用旧 EXE 绕过检查 |
 
-首版面向 Debian/Ubuntu、x86_64、root、Python 3.10+、Bash 和可交互终端。系统需有可用 CA 根证书和时区数据库。CloudDrive2 仍需 `/dev/fuse`，内存和磁盘条件沿用部署器的资源检查。
+正式 v1.3.4 面向 Debian/Ubuntu AMD64；本地待发布源码增加原生 ARM64，与 AMD64 共用检查和入口，仍要求 root、64 位用户态、Python 3.10+、Bash 和可交互终端。需先发布匹配的新稳定包及 helper，不能用当前线上命令宣称 ARM64 已修复。镜像证据、Oracle Cloud 与发布步骤见[双架构说明](ARCHITECTURES.md)。系统需有可用 CA 根证书和时区数据库，CloudDrive2 仍需 `/dev/fuse`，内存和磁盘检查不变。
 
 缺少 Python 时请先自行确认系统环境，并安装 `python3`、`ca-certificates`、`tzdata`。脚本不会在信息收集与确认前自动安装软件。APT/Docker 的安装权限只在首次基础安装的最终确认后交给现有安装器；升级要求已有 Docker daemon 和 Compose 可用，不自动升级 Docker 引擎。
 

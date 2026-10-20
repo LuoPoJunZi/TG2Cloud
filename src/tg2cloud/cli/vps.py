@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfoNotFoundError
 from tg2cloud.cli import terminal
 from tg2cloud.cli.presentation import InstallerLog, edition_menu
 from tg2cloud.deployment import (
+    architecture,
     configuration,
     install,
     instances,
@@ -45,10 +46,11 @@ def main(argv: list[str] | None = None, *, friendly: bool | None = None) -> int:
             raise ValueError("--show-credentials 必须单独使用，不能与检查、HTTPS 修复或验收组合")
         if args.show_credentials and not args.edition:
             raise ValueError("查看凭据请显式指定 --edition，不进入安装/升级选择向导")
-        preflight.validate_host()
+        preflight.validate_host(log=log)
         if args.install_dir and (not args.edition or args.edition == "both"):
             raise ValueError("--install-dir 必须搭配单个 --edition")
         session = LocalSession(log)
+        architecture.check_docker(session, allow_missing=True)
         inventory = instances.docker_inventory(session)
         if not args.edition:
             if args.check:

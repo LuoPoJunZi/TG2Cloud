@@ -1,13 +1,10 @@
 from __future__ import annotations
 
 import os
-import platform
-import re
 import shutil
-from pathlib import Path
 
 from tg2cloud.cli import terminal
-from tg2cloud.deployment import configuration, instances
+from tg2cloud.deployment import architecture, configuration, instances
 from tg2cloud.deployment.host import LocalSession, SafeLog
 from tg2cloud.deployment.profiles import ProductProfile
 from tg2cloud.deployment.resources import (
@@ -19,16 +16,15 @@ from tg2cloud.deployment.resources import (
 )
 
 
-def validate_host() -> None:
-    if platform.system() != "Linux" or os.geteuid() != 0:
+def validate_host(*, log=None) -> None:
+    host = architecture.detect_host()
+    if os.geteuid() != 0:
         raise ValueError("请在 Linux VPS 以 root 运行；Windows 用户可通过 SSH 登录后运行脚本")
-    if platform.machine() not in {"x86_64", "amd64"}:
-        raise ValueError("首版仅支持 Debian/Ubuntu x86_64 Docker VPS")
-    release = Path("/etc/os-release").read_text(encoding="utf-8")
-    if not re.search(r'(?m)^ID=(?:"?(?:debian|ubuntu)"?)$', release):
-        raise ValueError("首版仅支持 Debian/Ubuntu；不猜测其他发行版的安装方式")
     if shutil.which("bash") is None:
         raise ValueError("缺少 Bash")
+    architecture.check_environment()
+    if log:
+        host.describe(log)
 
 
 def probe_resources(instance: instances.Instance, session: LocalSession):

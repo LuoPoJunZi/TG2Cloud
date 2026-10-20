@@ -27,6 +27,7 @@ jobs:
       release_title: ${{ steps.metadata.outputs.release_title }}
       release_artifact: ${{ steps.metadata.outputs.release_artifact }}
       is_prerelease: ${{ steps.metadata.outputs.is_prerelease }}
+      native_matrix: ${{ steps.platforms.outputs.matrix }}
     steps:
       - name: Resolve an existing version tag (including manual retry)
         id: target
@@ -57,6 +58,17 @@ jobs:
           RELEASE_TAG: ${{ steps.target.outputs.release_tag }}
         run: python3 .github/scripts/release_metadata.py --tag "${RELEASE_TAG}" --github-output "${GITHUB_OUTPUT}"
 
+      - name: Select validation platforms from the immutable tag capability
+        id: platforms
+        run: |
+          if [[ -f .github/scripts/check_native_architecture.py ]]; then
+            echo 'matrix={"include":[{"runner":"ubuntu-24.04","arch":"amd64"},{"runner":"ubuntu-24.04-arm","arch":"arm64"}]}' >> "${GITHUB_OUTPUT}"
+          else
+            # Historical immutable releases predate native ARM support. Keep
+            # their AMD64 retry behavior; never claim they were ARM tested.
+            echo 'matrix={"include":[{"runner":"ubuntu-24.04","arch":"amd64"}]}' >> "${GITHUB_OUTPUT}"
+          fi
+
       - name: Check public repository inputs before packaging
         run: python3 -B .github/scripts/check_repository.py
 
@@ -82,7 +94,10 @@ jobs:
   linux-validation:
     needs: prepare
     if: needs.prepare.outputs.publish == 'true'
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.prepare.outputs.native_matrix) }}
+    runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
     env:
@@ -106,7 +121,7 @@ jobs:
         run: |
           if [[ -f src/tg2cloud/version.py ]]; then
             sudo apt-get update
-            sudo apt-get install -y shellcheck rclone
+            sudo apt-get install -y shellcheck rclone fuse3 kmod
             python -m pip install -r requirements/dev.lock.txt
           else
             sudo apt-get update
@@ -183,6 +198,10 @@ jobs:
             pip-audit -r payload_clouddrive2/requirements.txt
           fi
 
+      - name: Verify native platform before candidate builds
+        if: hashFiles('.github/scripts/check_native_architecture.py') != ''
+        run: python .github/scripts/check_native_architecture.py --expected '${{ matrix.arch }}'
+
       - name: Validate edition Compose and build the runtime image
         run: |
           if [[ -f src/tg2cloud/version.py ]]; then
@@ -205,6 +224,16 @@ jobs:
           TG2CLOUD_TEST_DOCKER: "1"
         run: python -m unittest discover -s tests -p test_runtime_namespace.py -v
 
+      - name: Native platform, gateway HTTP and FUSE validation
+        if: hashFiles('.github/scripts/check_native_architecture.py') != ''
+        timeout-minutes: 15
+        env:
+          TG2CLOUD_TEST_NATIVE_DOCKER: "1"
+        run: |
+          sudo modprobe fuse
+          test -c /dev/fuse
+          python -B -m unittest discover -s tests -p test_native_gateways_docker.py -v
+
       - name: Isolated LAN Nginx checks (no product deployment)
         env:
           TG2CLOUD_TEST_LAN_DOCKER: "1"
@@ -217,9 +246,11 @@ jobs:
         run: python -B -m unittest discover -s tests -p test_docker.py -v
 
       - name: Package immutable source once and verify bootstrap pins and SHA256
+        if: matrix.arch == 'amd64'
         run: python .github/scripts/source_release.py build --tag "${RELEASE_TAG}" --directory build/source-release
 
       - name: Upload validated source package
+        if: matrix.arch == 'amd64'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ env.RELEASE_ARTIFACT }}

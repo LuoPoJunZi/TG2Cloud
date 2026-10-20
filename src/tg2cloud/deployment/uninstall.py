@@ -537,13 +537,11 @@ def execute(plan: Plan, session: LocalSession, log: SafeLog) -> None:
 
 def validate_environment(session: LocalSession) -> None:
     preflight.validate_host()
-    forbidden = ("DOCKER_HOST", "DOCKER_CONTEXT", "DOCKER_TLS_VERIFY", "DOCKER_CERT_PATH",
-                 "COMPOSE_FILE", "COMPOSE_PROJECT_NAME", "COMPOSE_PROFILES", "COMPOSE_ENV_FILES")
-    if any(os.environ.get(key) for key in forbidden):
-        raise UninstallError("只允许本机默认 Docker 环境；拒绝远端 daemon 和 Compose 覆盖")
-    code, output = session.run("docker context inspect --format '{{json .Endpoints.docker.Host}}'", timeout=15)
-    if code or json.loads(output) != "unix:///var/run/docker.sock":
-        raise UninstallError("Docker 不可用或不是本机默认 daemon；不安装、不重启 Docker")
+    from tg2cloud.deployment import architecture
+    try:
+        architecture.check_docker(session)
+    except ValueError as exc:
+        raise UninstallError(str(exc)) from None
 
 
 def manager_in_use(session: LocalSession) -> bool:

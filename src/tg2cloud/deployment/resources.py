@@ -7,6 +7,8 @@ import re
 import shlex
 from dataclasses import dataclass, replace
 
+from tg2cloud.deployment.architecture import ALIASES
+
 GIB = 1024**3
 PROBE_BEGIN = "TG2CLOUD_VPS_PROBE_BEGIN"
 PROBE_END = "TG2CLOUD_VPS_PROBE_END"
@@ -14,7 +16,7 @@ PROBE_END = "TG2CLOUD_VPS_PROBE_END"
 LEGACY_PROBE_BEGIN = "TG115_VPS_PROBE_BEGIN"
 LEGACY_PROBE_END = "TG115_VPS_PROBE_END"
 SAFE_INSTALL_DIR = re.compile(r"/opt/[A-Za-z0-9._-]+(?:/[A-Za-z0-9._-]+)*")
-SUPPORTED_ARCHITECTURES = {"x86_64", "amd64", "aarch64", "arm64"}
+SUPPORTED_ARCHITECTURES = set(ALIASES)
 
 
 @dataclass(frozen=True)

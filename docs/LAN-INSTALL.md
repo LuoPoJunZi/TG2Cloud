@@ -8,10 +8,10 @@ TG2Cloud 后续以 Linux 脚本为主要维护入口，Windows 部署器停留�
 
 当前源码入口为 `python3 scripts/run_source.py lan --help`；公共在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交。CLI 与 VPS 入口共享部署模块，不导入另一个向导；内网 IP 收集和 HTTPS 边界不变。见[Linux 重构说明](development/LINUX-REFACTOR.md)。
 
-- Debian/Ubuntu、x86_64、root、Python 3.10+、Bash、curl（在线入口）、iproute2、CA 证书、时区数据库及可交互终端。
+- Debian/Ubuntu、64 位原生用户态、root、Python 3.10+、Bash、curl（在线入口）、iproute2、CA 证书、时区数据库及可交互终端。正式 v1.3.4 主入口仍限 AMD64；本地待发布源码支持 AMD64 / ARM64，须先发布匹配稳定包和 helper，见[双架构说明](ARCHITECTURES.md)。
 - 本机默认 rootful Docker Engine 28+、Compose v2；不支持远端 Docker、rootless 或外部 Compose 覆盖。Docker 尚未安装时，由原安装器在最终确认后安装；已安装的旧引擎需要人工升级，脚本不会为此重启 NAS 上的其他容器。
 - CloudDrive2 仍需要 `/dev/fuse`，容量和磁盘保护沿用原安装器。容器权限、APT 依赖安装等原有要求不会因“内网模式”消失。
-- 首版不承诺直接支持 DSM、QTS、Unraid、OpenWrt、ARM NAS 或 Docker Desktop。这类 NAS 建议先建立符合上述条件的 Debian/Ubuntu 虚拟机，并填写**虚拟机自己的 IP**。
+- 不承诺直接支持 DSM、QTS、Unraid、OpenWrt 或 Docker Desktop。原生 ARM64 不等于支持所有 ARM NAS 的厂商系统；可建立符合条件的 Debian/Ubuntu 虚拟机，填写**虚拟机自己的 IP**。
 - 必须能连接 GitHub、Docker 镜像源、Telegram 和使用的云存储。内网安装不是离线安装。
 - 只接受本机启用网卡上的 `10.x.x.x`、`172.16.x.x`—`172.31.x.x`、`192.168.x.x` 标准 IPv4。拒绝公网、回环、通配地址、域名、URL、端口和 Docker 自动桥接网卡；不自动猜测安装位置。
 

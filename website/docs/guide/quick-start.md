@@ -14,7 +14,7 @@
 默认向导使用中文编号与分段提示：WebDAV 用户名回车默认 tg2cloud、密码回车生成 8 位，保存子目录可留空，账号根目录在自己的后台设置。新装不再询问时区，默认 Asia/Shanghai；升级保留原有配置。计划确认后安装离线 `tg2cloud` 菜单，首次建号凭据只向当前私有终端汇总显示，请勿录屏。已部署主机需重新运行相应入口并确认升级，不会自动改变。菜单边界见[本地管理](/operations/maintenance/)。
 :::
 
-1. 通过 SSH 登录自己的 Debian／Ubuntu x86_64 主机，准备 Telegram 配置；公网 VPS 还需正确解析的管理域名。
+1. 通过 SSH 登录自己的 Debian／Ubuntu 原生 64 位主机，准备 Telegram 配置；公网 VPS 还需正确解析的管理域名。正式 v1.3.4 主入口仍限 AMD64，待发布 ARM64 与 Oracle 条件见[部署前准备](/guide/prerequisites/)，不能把本地源码改动当作线上已生效。
 2. 从[下载页](/download/)选择公网或内网入口，运行单行命令并选择 CloudDrive2／OpenList。
 3. 首次安装选择流式优先、均衡或手动磁盘预算，填写 Telegram 和专用 WebDAV 信息；已有完整实例升级复用原配置。
 4. 核对计划后确认执行。公网向导配置 HTTPS；可信内网向导使用手填私有 IPv4 和固定管理端口。

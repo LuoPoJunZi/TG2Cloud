@@ -505,6 +505,7 @@ class ManagerCleanupTests(unittest.TestCase):
 
 class FriendlyInstallTests(unittest.TestCase):
     def setUp(self):
+        enter_context(self, patch.object(vps.architecture, "check_docker"))
         enter_context(self, patch.object(runtime, "lifecycle_lock", side_effect=lambda: nullcontext()))
 
     def test_confirmed_installer_creates_offline_command_but_check_and_cancel_do_not(self):

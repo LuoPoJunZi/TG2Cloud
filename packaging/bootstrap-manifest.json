@@ -23,6 +23,7 @@
     "src/tg2cloud/cli/vps.py",
     "src/tg2cloud/config.py",
     "src/tg2cloud/deployment/__init__.py",
+    "src/tg2cloud/deployment/architecture.py",
     "src/tg2cloud/deployment/check.py",
     "src/tg2cloud/deployment/compatibility.py",
     "src/tg2cloud/deployment/configuration.py",

@@ -1,62 +1,50 @@
-**TG2Cloud v1.3.4** 改善图片／视频的说明命名和媒体组名称，并补全 Linux 使用与恢复文档。保留 CloudDrive2 / OpenList 共用 Bot 核心、Python＋Bash 架构，以及现有下载、上传和安全恢复流程；Windows EXE 停留在 v1.2.1。
+## TG2Cloud v1.4.0 · 原生 AMD64 / ARM64
+
+Linux 一键脚本增加原生 ARM64 支持，继续维护 AMD64；两个 Edition 共用 Python + Bash 核心，不提供新版 Windows EXE。Oracle Cloud／真实 VPS 的安装、升级和转存由用户在发布后验收，不能将自动化检查写成实机通过。
 
 ## 本次更新
 
-- **有效说明优先**：网址、账号或处理前缀污染的视频原名，可使用实际送达的可靠正文；无原名、数字／默认名或污染名的单图片也可使用自身说明。正常有意义的原名、无说明兜底和原名记录保留。
-- **一图一视频同标题**：同一验证媒体组恰好一张图片和一个视频、真实后缀可区分时，共用标题，例如 `城市夜景旅行记录.jpg` 与 `城市夜景旅行记录.MP4`。多成员、同类媒体或无法区分后缀时继续种类编号，不覆盖远端同名文件。
-- **识别边界修复**：接收以 `/` 开头的媒体说明；区分正常作品名与推广／凭据字段；识别表情标题标签和同条说明的相邻作品名／集数；保留斜杠两侧文字，改善紧贴中文的域名和尾部画质过滤。
-- **扩展名与安全**：明确的视频元数据可修正明显不符的原名后缀，正常 MKV 等视频格式保留；沿用 Unicode 规范化、路径清理、UTF-8 长度限制、隐藏实体处理、鉴权、去重及远端冲突保护。提取异常回退原安全名称，不阻断接收。
-- **文档补齐**：新增命名、配置、备份恢复预检和 FAQ 专题，完善安装、管理、家人授权、网关与卸载说明；README 保持简短并直接导航仓库文档，网站独立同步。
-
-不新增依赖、环境变量、任务数据库结构迁移或网关镜像，不更改主安装、Bot 菜单、传输和两后端提交策略。不抓评论、来源频道或网页，不做 OCR；未实际收到的文字不会被猜测。旧任务和远端文件不追溯改名。
+- 将 x86_64／amd64、aarch64／arm64 统一为 linux/amd64、linux/arm64；核对 Linux 发行版、64 位 Python、dpkg 用户态、本机 rootful Docker 与实际镜像平台，不配置 QEMU。
+- 公网、内网、管理、卸载及独立外部 WebDAV 共用检测。拒绝远端 daemon、异平台镜像，以及进程／候选 .env 中的平台或构建器覆盖。
+- 两 Edition 在停止旧 Bot 前检查原生基础和网关候选，启动后核对容器实际 Image ID，保留既有健康、备份、配置保留、升级和回退保护。
+- 保留 Python、CloudDrive2、OpenList 的固定多架构索引摘要及原 Nginx／Certbot 版本，不升级依赖或改成 latest。
+- 新增原生 AMD64／ARM64 CI、CLI Python 3.10／3.13 检查、原生扩展及 rclone 运行检查、隔离网关 HTTP／FUSE 与代理测试；发布等待两个平台通过，仅打包和上传一次源码。
+- 同步仓库及网站的安装、支持范围、镜像证据和 Oracle 验收说明；保留原命名、家庭共享、外部只读账号及任务恢复能力。
 
 ## 安装与升级
 
-公网 VPS：
+同一入口自动识别原生平台：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-可信内网：
+已有实例建议先执行只读预检，OpenList 将 Edition 改为 openlist：
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
 ```
 
-已有实例先追加 `--edition clouddrive2 --check`（OpenList 使用 `openlist`）只读预检，核对备份和升级计划后重新进入菜单，确认“安装 / 升级”。保留 `.env`、数据库、Telegram Session、rclone、目录、预算和 Edition 身份，不需要卸载重装。只有实例实际升级后，新命名才会用于新接收的媒体；旧任务重复转发仍遵守原去重和恢复规则。
+预检通过后，运行不带 --check 的入口并确认安装／升级。可信内网仍用 install-lan.sh，外部只读功能仍独立使用 install-webdav.sh，不加入主安装向导。详见[安装指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)、[双架构与 Oracle 验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/ARCHITECTURES.md)。
 
-主安装要求 Debian / Ubuntu x86_64、rootful Docker 和宿主 Python 3.10+。日常使用离线 `tg2cloud`；单纯查看状态、重启容器或更新仓库文档不会更新 Bot。操作见[安装指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)、[命名指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/NAMING.md)和[运维指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md)。
+## 兼容与数据
 
-## 家庭共享与独立外部 WebDAV
+要求 Debian / Ubuntu、原生64位用户态、root、宿主 Python 3.10+、本机默认 rootful Docker；内网仍要求 Docker Engine 28+。CloudDrive2 仍需 /dev/fuse 及原网关权限，OpenList 不新增 FUSE 要求。不支持其他 CPU、32位 ARM、远端 Docker 或 Docker Desktop。
 
-继续保留 v1.3.3 起的家庭共享：安装只填一个固定管理员 ID，之后在 `tg2cloud` 的“10. Bot 用户管理”授权家人；成员管理自己的任务，共用保存目录与资源。Bot 授权与手机读取账号互相独立，详见[家庭共享](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/FAMILY-SHARING.md)。
+无需数据库迁移或调整普通用户配置。保留 .env、data/tg115.db、Telegram Session、rclone 配置、下载、日志、网关数据、容器身份与备份；不要卸载重装，不用旧 EXE 覆盖。若使用了自定义 Docker 平台／构建器覆盖，需先人工核对，程序会安全停止，不隐式模拟执行。
 
-外部 WebDAV 仍为独立附加功能，不加入主安装或 Bot 菜单。需要时单独运行：
+## 发布资源与校验
 
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-webdav.sh)
-```
+GitHub Actions 从同一不可变 v1.4.0 Tag 验证、打包 Linux 源码；Release 复用同一次构建产物，包含 TG2Cloud-v1.4.0-source.tar.gz 和 SHA256SUMS.txt。下载后执行 sha256sum -c SHA256SUMS.txt；校验和不是数字签名，不混用旧版本清单。
 
-它复用原存储网关与共享代理，要求独立原生只读账号、明确目录和专用 HTTPS 域名，不复用 Bot／管理员密码。手机填写 HTTPS、实际域名、443、根路径 `/dav/` 和外部专用凭据；管理域名继续拒绝 `/dav`。附加工具单独显式升级，维护命令为 `tg2cloud-webdav`，例如 `tg2cloud-webdav uninstall --edition openlist` 只卸载所选附加入口，不删除云端文件或后台账号。CloudDrive2 使用 `--edition clouddrive2`。见[完整指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/external-webdav.md)。
+在线辅助代码遵循先公开并验证 A、后固定入口 B 的流程，业务代码只取正式稳定 Release，不以 moving main 或预发布代替。不覆盖历史 Tag／Release，历史 Windows EXE 保留于 v1.2.1。
 
-## 下载与发布状态
+## 验证边界
 
-**v1.3.4 已正式发布**，见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.4)。标签固定到提交 `ef35d133a9e25572ff5f8363819d5c8e8984e74c`；辅助提交 A 与入口 B 各五项 CI，以及[同标签发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39204327020)全部成功。正式源码包和校验清单已实际下载，逐资产 GitHub digest、SHA256 与源码归档核验一致，不覆盖历史版本。
+发布前本地 Python 3.13 完整回归880项：853执行成功、27条件跳过、0失败；Python 3.10 CLI408项：396执行成功、12条件跳过、0失败。新增架构15项、部署脚本21项及网站19项检查通过。远端原生双架构、Docker／WebDAV 与同标签发布检查必须成功后才会发布。
 
-| 正式资产 | 用途 |
-| --- | --- |
-| [TG2Cloud-v1.3.4-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.3.4/TG2Cloud-v1.3.4-source.tar.gz) | 同标签公共源码与两 Edition 资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.3.4/SHA256SUMS.txt) | Actions 为实际源码包生成的校验清单 |
+**Oracle Ubuntu 24.04／26.04、Debian ARM64、真实 Telegram／云存储、网关挂载传播、手机、ACME 及升级故障回退尚未实机验收。** 发布后请核对架构、Docker／Compose、FUSE、HTTPS、WebDAV，再执行小文件／视频／大文件、取消与重启恢复测试，并在云盘官方客户端确认。大小复验不是内容哈希校验或云盘官方最终完成。
 
-将两文件放在同一目录执行 `sha256sum -c SHA256SUMS.txt`。校验和不是数字签名，不混用其他版本清单。Windows 历史资产见 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)，本版不构建 EXE。
+历史范围分别见 [v1.3.3 用户转存确认](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)与 [v1.3.0 历史迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)，不扩大为本版实机结论。
 
-## 验证与兼容边界
-
-本地完整回归共 864 项：838 执行成功、26 项既有环境跳过、0 失败；Python 3.10 CLI 共 393 项：382 执行成功、11 项环境跳过。Node.js 22 文档构建及 19 项网站测试通过；远端同标签 Linux／Docker／WebDAV 与发布检查成功。命名和接收回归使用合成文字、临时 SQLite 及离线 Telegram 对象，不使用用户媒体或生产凭据。环境跳过不冒充已执行的集成验收。
-
-**v1.3.4 尚未进行真实 VPS 升级、Telegram 转存或用户网盘验收。** 需升级测试实例后，分别验证单视频、单图片、一图一视频、多成员、无说明、正常原名和重名保护；CloudDrive2 / OpenList、家庭权限、手机／Range、公网 ACME、ARM64 和故障回退仍按实际环境单独验收。用户对 CloudDrive2 v1.3.3 实际转存的确认不扩大为本版结论，见 [v1.3.3 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)与 [v1.3.0 历史迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。
-
-大小复验仅证明 WebDAV 目的端大小，不是内容哈希或云盘官方最终完成。主卸载前先独立卸载外部入口；完整清理会删除所选本地数据和可识别备份，需保留时使用 `--keep-data` 并准备独立备份。旧工具不得覆盖新代理状态，也不要通过删除数据库／Session 绕过兼容校验。
-
-TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留 MIT 许可证、版权及必要致谢；云存储授权由用户在自己的网关完成。
+TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留 MIT 许可证、版权和必要致谢；网盘授权仍由用户在自己的网关完成。

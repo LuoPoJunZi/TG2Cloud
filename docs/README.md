@@ -22,6 +22,7 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 - [项目说明与下载](../README.md)
 - [English README](../README_EN.md)
 - [填写信息清单](填写信息清单.md)：部署前需要准备的信息，不在文档中保存秘密。
+- [AMD64 / ARM64 与 Oracle Cloud](ARCHITECTURES.md)：待发布原生支持、镜像和依赖证据、实机验收及 helper 发布门槛。
 - [VPS 一键安装与升级](VPS-INSTALL.md)：公网服务器、强制 HTTPS、保留配置升级。
 - [局域网 / NAS 安装](LAN-INSTALL.md)：独立内网入口、支持平台与安全边界。
 - [存储网关配置与 WebDAV 验收](STORAGE.md)：两版后台配置、专用用户权限、根目录／子目录及真实写入验收。

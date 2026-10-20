@@ -23,7 +23,15 @@ env:
 
 jobs:
   linux-products:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: ubuntu-24.04
+            arch: amd64
+          - runner: ubuntu-24.04-arm
+            arch: arm64
+    runs-on: ${{ matrix.runner }}
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -33,7 +41,7 @@ jobs:
       - name: ShellCheck
         run: |
           sudo apt-get update
-          sudo apt-get install -y shellcheck rclone
+          sudo apt-get install -y shellcheck rclone fuse3 kmod
           shellcheck -x \
             packaging/hooks/clouddrive2/backup_retention.sh \
             packaging/hooks/clouddrive2/preserve_runtime_config.sh \
@@ -77,6 +85,9 @@ jobs:
           cp build/ci-contexts/clouddrive2/.env build/ci-contexts/openlist/.env
           OPENLIST_ADMIN_PASSWORD=ci-only-placeholder docker compose -f build/ci-contexts/openlist/docker-compose.yml config --quiet
 
+      - name: Verify native daemon and exact gateway and base images
+        run: python .github/scripts/check_native_architecture.py --expected '${{ matrix.arch }}'
+
       - name: Build Linux Bot image
         run: docker build -t tg2cloud-bot:test build/ci-contexts/clouddrive2
 
@@ -90,3 +101,12 @@ jobs:
         env:
           TG2CLOUD_TEST_DOCKER: "1"
         run: python -m unittest discover -s tests -p test_runtime_namespace.py -v
+
+      - name: Native gateway HTTP, FUSE and proxy executable smoke
+        timeout-minutes: 10
+        env:
+          TG2CLOUD_TEST_NATIVE_DOCKER: "1"
+        run: |
+          sudo modprobe fuse
+          test -c /dev/fuse
+          python -B -m unittest discover -s tests -p test_native_gateways_docker.py -v

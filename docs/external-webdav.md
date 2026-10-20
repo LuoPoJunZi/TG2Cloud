@@ -53,7 +53,7 @@ CloudDrive2 改用 `--edition clouddrive2`。status/print-config 仅显示登记
 
 ## 前置条件与只读预检
 
-附加功能宿主检查接受 Debian/Ubuntu、Linux root、Python 3.10+、x86_64 或 ARM64、本机默认 rootful Docker daemon。事先准备 Bash、OpenSSL、curl、ss/ip、getent、flock、timeout 和 Docker Compose。ARM64 是实现目标，不代表真实 ARM64 网关已验收；原主安装器支持范围不因此扩大。
+附加功能宿主检查接受 Debian/Ubuntu、Linux root、Python 3.10+、原生 64 位 AMD64 或 ARM64、本机默认 rootful Docker daemon。事先准备 Bash、OpenSSL、curl、ss/ip、getent、flock、timeout 和 Docker Compose。待发布源码与主安装共用用户态／daemon／镜像平台检查，不改变独立账号或代理边界；线上正式 v1.3.4 的主安装仍限 AMD64，原生 ARM64 网关未实机验收，见[双架构说明](ARCHITECTURES.md)。
 
 不自动安装依赖、重装/重启 Docker、调用主安装器、停其他代理或开放防火墙。Bot 配置、rclone、数据库、上传目录和原账号不变；不重启 Bot 或网关。安装/检查/启用要求网关运行，关闭/卸载允许网关已停，但仍核验身份。
 
