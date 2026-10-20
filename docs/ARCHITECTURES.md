@@ -1,6 +1,6 @@
 # Linux AMD64 / ARM64（v1.4.0）
 
-2026-10-20：v1.4.0 发布准备中，辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414` 已通过原生双架构与其余四项 CI，三个入口 B 固定 A；**正式业务下载目前仍为 v1.3.4**，同标签发布仍在推进。不得下载 main 业务源码绕过稳定 Release；发布后的 Oracle／真实 VPS 验收由用户执行。
+2026-10-20：[v1.4.0 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0)。辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414` 与固定入口 B `8bd4cf1fd7180f31579f5fe702d2c2d07c3b13f8` 各五项 CI、同标签双架构发布均通过，实际源码包与公开资产摘要已核验。业务只取正式稳定 Release，不下载 main 业务源码代替；Oracle／真实 VPS 验收由用户发布后执行。
 
 ## 支持范围
 
@@ -41,7 +41,7 @@
 
 宿主 CLI 仍仅使用标准库。Bot Python 3.12、Telethon 1.45.0、cryptg 0.6.0、psutil 7.2.2 及两个哈希锁文件不变。PyPI 已核实 Telethon 通用 wheel、cryptg CPython 3.12 manylinux x86_64/aarch64 wheel、psutil CPython abi3 manylinux x86_64/aarch64 wheel；这些 wheel 的 SHA256 已包含在 Bot 锁文件。wheel 存在不是安装／运行验收。
 
-镜像内 rclone、tini、CA 证书沿用 Debian 原生 APT；CloudDrive2 宿主 fuse3、kmod 亦按 `dpkg` 架构安装。不下载硬编码的 x86 二进制。CI 中构建实际镜像并调用 cryptg 加解密、psutil、Telethon 导入、rclone version；这些原生 CI 仍需发布前实际运行。
+镜像内 rclone、tini、CA 证书沿用 Debian 原生 APT；CloudDrive2 宿主 fuse3、kmod 亦按 `dpkg` 架构安装。不下载硬编码的 x86 二进制。两个原生 CI runner 已实际构建镜像并通过 cryptg 加解密、psutil、Telethon 导入、rclone version 检查。
 
 CloudDrive2 保留 `/dev/fuse`、privileged、host PID 与挂载传播权限；OpenList 不因此增加 FUSE 或高权限。Bot 非 root、cap_drop、只读程序目录和回环后端端口不变。Ubuntu 26.04 的 Python 可能高于 CLI CI 的 3.13，本地单元测试不代替对应 Oracle 系统验收。
 
@@ -100,16 +100,18 @@ Release 等待两个原生 job 成功，但只生成和上传一次与 CPU 无�
 | Shell | 四个现有入口、三个候选入口、两版 hooks 的 ShellCheck／Bash 语法和 21 项部署回归通过 |
 | 载荷／发布基础 | 两 Edition 各 84 个源码模块与当前清单逐字节一致、共享指纹一致；版本、Release Notes 格式、候选 bootstrap 与 Bandit 通过 |
 | 网站 | Node.js 22 构建、19 项测试、33 HTML 页面／3652 内部引用检查通过 |
-| 原生 CI | 辅助 A 的 AMD64／ARM64 Bot 构建、原生扩展／rclone、两网关 HTTP／FUSE 和外部 DAV／Range 均通过；四组 CLI、仓库、网站及文档也通过 |
+| 原生 CI | 辅助 A、入口 B 与同标签的 AMD64／ARM64 Bot 构建、原生扩展／rclone、两网关 HTTP／FUSE 和外部 DAV／Range 均通过；A／B 四组 CLI、仓库、网站及文档也通过 |
 
 本地 Windows 没有 Docker daemon／Linux rclone，27 项跳过如实保留；对应的原生集成在 GitHub 两个原生 runner 上另行通过。首轮新测试的空命名卷 copy-up 重置属主问题已修正，只调整隔离卷的 volume-nocopy，不修改生产权限或跳过测试。Oracle Ubuntu 24.04／26.04 与 Debian ARM64、真实 Telegram／云存储、挂载传播读写、HTTPS ACME、外部手机及升级回退仍未实机验收。
 
-发布前必须：
+### 正式发布核验
 
-1. 提交本次源码 A，让原生双架构 CI 实际通过；按用户本次授权先发布 v1.4.0，再由用户执行 Oracle Ubuntu 24.04/26.04 与 Debian ARM64 的真实安装／升级／转存验收，结果另行记录。
-2. 已公开并验证 A，再产生固定入口 B，使用实际公开 A 的 SHA 与匹配清单，不允许伪造或自指 SHA；B 和同标签发布也必须通过检查。
-3. 外部 WebDAV 从正式稳定源码资产加载本包；必须随新 Release 一并包含新部署模块、runtime/bootstrap 清单、hooks 和共享代理代码。
-4. 按授权选择下一个版本、同步版本元数据／网站，严格执行 `source_release.py` 的 pin 和校验清单检查后发布；不覆盖 v1.3.4 Tag／Release。
+- 辅助 A 的[双架构运行](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)、入口 B 的[双架构运行](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39425830276)与[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39425830192)均成功；另三项仓库／文档／网站检查也成功。
+- [v1.4.0 同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)的两个原生 job 和发布 job 均成功；只在 AMD64 job 打包一次平台无关源码，不发布 EXE。
+- 正式 `TG2Cloud-v1.4.0-source.tar.gz` 实际 SHA256：`5e701f3a61dc99cd9e8ce996958ce019954aff5b4ae1eee10b3a92d116734302`。实际下载核验通过 `source_release.py verify`、同次 SHA256 清单与 GitHub digest；校验和不等于数字签名。Windows 本地重打包只作候选检查，不拿其校验值替代 Actions 产物。
+- 三个入口固定真实 A 的 SHA 与匹配清单，严格 pin 校验通过；外部 WebDAV 从正式稳定资产加载新模块。未覆盖历史 Tag／Release、未连接真实 VPS、未创建新 Session 或迁移数据库。
+
+后续发布仍须先公开并验证辅助 A，再生成固定 A 的入口 B，待 B 和同标签检查成功才发布；不使用伪造、自指 pin 或 moving main。用户将执行 Oracle Ubuntu 24.04／26.04、Debian ARM64 及真实云存储安装／升级／转存验收，结果另行记录。
 
 已有 AMD64 的目录、`.env`、`data/tg115.db`、`bot.session`、rclone 配置、容器身份、备份和升级回退保留，不新增数据库迁移或用户环境变量。此前使用远端 context／强制异平台镜像的环境将被明确拒绝，不视为受支持的旧实例。不能通过把磁盘或数据库复制到另一架构直接宣称完成跨 CPU 迁移。
 

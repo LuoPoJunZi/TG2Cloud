@@ -1,12 +1,12 @@
 # VPS 安装与升级脚本
 
-v1.4.0 发布准备：三个主入口已固定辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI 已通过，包含原生 AMD64 / ARM64 的 Bot、网关和 Docker 检查；[实际记录](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)。业务代码仍只取正式稳定 Release，正式发布完成前不会用 main 业务源码代替；Oracle／真实 VPS 验收由用户发布后执行。
+v1.4.0 已正式发布：三个主入口固定辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414`，A／入口 B 各五项 CI、[同标签原生 AMD64／ARM64 发布检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)全部通过，实际源码资产已核验。业务代码只取正式稳定 Release，不用 main 业务源码代替；Oracle／真实 VPS 验收由用户发布后执行。
 
 TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v1.2.1。`install.sh` 是公网 VPS 入口，复用现有 Docker 安装、配置保留、备份、回退、HTTPS 与 WebDAV 验收流程，不另建一套 Bot 或 Compose 实现。
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本](LAN-INSTALL.md)，具体 NAS 环境仍需验收。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前正式版本为 v1.3.4，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录不代表新版实机验收；首次安装、正式版自动升级与回退仍需独立验证，OpenList 脚本实机验收暂缓。详见[验收记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
+> 当前正式版本为 v1.4.0，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录不代表新版实机验收；首次安装、正式版自动升级与回退仍需独立验证，OpenList 脚本实机验收暂缓。详见[验收记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
 
 2026-10-19 补充：专用测试机已完成 CloudDrive2 正式 v1.3.2 → v1.3.3 保留配置升级，用户确认实际转存验收完成。该结论限此 Edition 和此次路径，不扩展到 v1.3.4、首次安装、OpenList 或故障回退。
 
@@ -27,7 +27,7 @@ v1.3.1 的[外部 WebDAV](external-webdav.md) 是独立可选入口，主安装�
 | 手工修改过程序、Compose 或 Dockerfile | 停止，请先人工核对；不提供强制覆盖参数 |
 | 新稳定版更换云网关镜像 digest | 停止自动升级；不隐式迁移 OpenList/CloudDrive2 数据库，先备份并在隔离环境验证网关迁移；不使用旧 EXE 绕过检查 |
 
-正式 v1.3.4 面向 Debian/Ubuntu AMD64；本地待发布源码增加原生 ARM64，与 AMD64 共用检查和入口，仍要求 root、64 位用户态、Python 3.10+、Bash 和可交互终端。需先发布匹配的新稳定包及 helper，不能用当前线上命令宣称 ARM64 已修复。镜像证据、Oracle Cloud 与发布步骤见[双架构说明](ARCHITECTURES.md)。系统需有可用 CA 根证书和时区数据库，CloudDrive2 仍需 `/dev/fuse`，内存和磁盘检查不变。
+正式 v1.4.0 面向 Debian/Ubuntu 原生 AMD64／ARM64，两架构共用检查和入口，仍要求 root、64 位用户态、Python 3.10+、Bash 和可交互终端。匹配 helper 与稳定包均已发布核验；CI 通过不等于 Oracle 或任意 NAS 实机通过。镜像证据、Oracle Cloud 与验证结果见[双架构说明](ARCHITECTURES.md)。系统需有可用 CA 根证书和时区数据库，CloudDrive2 仍需 `/dev/fuse`，内存和磁盘检查不变。
 
 缺少 Python 时请先自行确认系统环境，并安装 `python3`、`ca-certificates`、`tzdata`。脚本不会在信息收集与确认前自动安装软件。APT/Docker 的安装权限只在首次基础安装的最终确认后交给现有安装器；升级要求已有 Docker daemon 和 Compose 可用，不自动升级 Docker 引擎。
 
@@ -122,7 +122,9 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到不可变源码 commit，不逐文件追随移动的 `main`。v1.3.0 向导包含磁盘推荐；准确的辅助源码身份由三个入口中的 `installer_commit` 给出。新向导先经过 CI，再更新三个入口的 pin；源码发布检查会拒绝 pin 与新版本辅助文件不一致的情况。业务 payload 仍只取最新正式稳定 Release。
 
-v1.3.4 的三个入口固定向导 commit 为 `72be98e6b15075f71c58dd6ee110e47db2f42ce0`，模块版本为 `1.3.4`；辅助 A 与固定入口 B 各五项公开 CI、同标签发布检查均通过。正式 payload 来自 v1.3.4 标签提交 `ef35d133a9e25572ff5f8363819d5c8e8984e74c`，源码包与实际 SHA256 已下载核对。正式 payload 的 Tag commit 与向导 commit 分别核对，不要求两者相同；发布不等于本版 VPS 已升级验收。
+v1.4.0 的三个入口固定向导 commit 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，模块版本为 `1.4.0`；辅助 A 与固定入口 B 各五项公开 CI、同标签发布检查均通过。正式 payload 来自 v1.4.0 标签提交 `8bd4cf1fd7180f31579f5fe702d2c2d07c3b13f8`，源码包与实际 SHA256 已下载核对。正式 payload 的 Tag commit 与向导 commit 分别核对，不要求两者相同；发布不等于本版 VPS 已升级验收。
+
+历史 v1.3.4 向导 commit 为 `72be98e6b15075f71c58dd6ee110e47db2f42ce0`，Tag 为 `ef35d133a9e25572ff5f8363819d5c8e8984e74c`；历史资源不覆盖。
 
 历史 v1.3.3 的向导 commit 为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`，模块版本为 `1.3.3`；该辅助提交的五项公开 CI 已通过，历史 Tag 和资产不修改。
 

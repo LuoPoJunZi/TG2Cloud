@@ -4,7 +4,7 @@
 
 完整改动见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
-统一主安装、LAN、维护、卸载与外部 WebDAV 的架构检查，核对内核、64 位用户态、Docker daemon 和镜像原生平台，不自动设置 QEMU。两 Edition、依赖、镜像版本、配置与数据路径不变；新增原生双架构 CI、隔离网关与扩展依赖检查。官方镜像索引及 wheel 已核验，不等于原生 ARM64 或 Oracle 实机通过。版本日期：2026-10-20，待发布；须先完成原生 CI、公开辅助 A／固定入口 B 和稳定包校验。正式下载目前仍为 v1.3.4，Oracle／真实 VPS 由用户发布后验收。见[部署前准备](/guide/prerequisites/)。
+统一主安装、LAN、维护、卸载与外部 WebDAV 的架构检查，核对内核、64 位用户态、Docker daemon 和镜像原生平台，不自动设置 QEMU。两 Edition、依赖、镜像版本、配置与数据路径不变；新增原生双架构 CI、隔离网关与扩展依赖检查。版本日期：2026-10-20，[v1.4.0 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0)；A／B 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)成功，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。Oracle／真实 VPS、云盘与手机仍由用户发布后验收，不能用 CI 代替。见[部署前准备](/guide/prerequisites/)。
 
 TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发布说明的整理，不把历史 TG115 的版本号当成 TG2Cloud 发布版本。
 

@@ -1,6 +1,6 @@
 # 常见问题
 
-适用于当前正式 Linux v1.3.4；旧版本的行为差异另有说明。本文给排查方向，完整命令和风险集中在链接的专题，不重复维护另一套操作流程。
+适用于当前正式 Linux v1.4.0；旧版本的行为差异另有说明。本文给排查方向，完整命令和风险集中在链接的专题，不重复维护另一套操作流程。
 
 ## 安装和升级
 
@@ -14,7 +14,7 @@
 
 ### 能在任意 NAS、ARM 或 Docker Desktop 安装吗？
 
-正式 v1.3.4 主安装仍限 Debian/Ubuntu AMD64；本地待发布源码统一支持原生 AMD64 / ARM64，必须发布包含修改的稳定包和 helper 后才可通过线上命令使用。要求 root、64 位用户态和本机 rootful Docker，内网另要求 Docker 28+；不会默认使用 QEMU。DSM／QTS 等不保证可直接运行，可使用符合条件的 Linux 虚拟机并填写虚拟机自身 IP。镜像证据和 Oracle 验收见[双架构说明](ARCHITECTURES.md)。
+正式 v1.4.0 统一支持 Debian/Ubuntu 原生 AMD64 / ARM64，匹配的稳定源码和 helper 已发布，两个原生 runner 的 CI 已通过。要求 root、64 位用户态和本机 rootful Docker，内网另要求 Docker 28+；不会默认使用 QEMU，不支持 Docker Desktop。DSM／QTS 等不保证可直接运行，可使用符合条件的 Linux 虚拟机并填写虚拟机自身 IP。Oracle、网关真实挂载与转存仍需用户实机验收，见[双架构说明](ARCHITECTURES.md)。
 
 ### 更新仓库、运行管理菜单、重启容器，会自动更新 Bot 吗？
 

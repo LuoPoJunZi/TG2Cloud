@@ -1,6 +1,6 @@
 # 开发与贡献
 
-v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI 已通过，含原生 AMD64 / ARM64 Bot、网关、FUSE、扩展依赖及外部 DAV；[实际运行记录](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)。三个入口 B 使用本次递归清单并固定 A，业务仍只取正式稳定 Release。同标签发布另行验证，Oracle／真实 VPS、用户网盘及手机验收仍由用户在发布后执行。
+v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI 已通过，含原生 AMD64 / ARM64 Bot、网关、FUSE、扩展依赖及外部 DAV；[实际运行记录](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)。三个入口 B 使用本次递归清单并固定 A，B 的五项 CI 及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)均通过，真实发布资产已下载校验。业务仍只取正式稳定 Release；Oracle／真实 VPS、用户网盘及手机验收仍由用户在发布后执行。
 
 这里介绍 TG2Cloud 主项目的开发入口。本文档网站本身的维护方法见 [文档来源与维护](/reference/sources/)。
 
@@ -9,11 +9,11 @@ v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.4.0
 git rev-parse HEAD
 ```
 
-本文档对应待发布 v1.4.0，见[下载页](/download/)。main 用于当前开发并须记录提交号；复现已发布版本时使用对应不可变标签，不能把后续修改当成 Release 行为。
+本文档对应已发布 v1.4.0，见[下载页](/download/)。main 用于当前开发并须记录提交号；复现已发布版本时使用对应不可变标签，不能把后续修改当成 Release 行为。
 
 ## 关键目录与入口
 

@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.4.0
 
-版本日期：2026-10-20，发布准备中。原生双架构自动检查通过后按不可变 Tag 发布 Linux 源码包；Oracle 与真实 VPS 验收由用户在发布后执行，不把 CI 写成实机通过。
+版本日期：2026-10-20。[v1.4.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0) 已正式发布；辅助 A、入口 B 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)全部通过。实际下载源码包、SHA256 清单及 GitHub 资产摘要核验通过。Oracle 与真实 VPS 验收由用户在发布后执行，不把 CI 写成实机通过。
 
 - 公网、内网、维护、卸载与独立外部 WebDAV 复用原生平台检查；识别四种常见名称，核对 64 位用户态、dpkg、本机 rootful daemon 和镜像平台，拒绝异平台／远端／构建器覆盖，不配置 QEMU。
 - 两版 hooks 在停止旧 Bot 前检查原生基础和网关镜像，候选显式按宿主构建，启动后检查实际 Image ID，保留原有健康、WebDAV、备份和回退流程。不变更镜像版本、Python 依赖、数据库、配置和数据目录。

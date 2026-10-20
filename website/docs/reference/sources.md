@@ -1,13 +1,13 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 20 日**，对应 TG2Cloud **v1.4.0**（待发布）。本轮准备原生 AMD64 / ARM64 兼容，镜像索引和 wheel 元数据已核验，本地回归已执行；原生双架构 CI、helper A／固定入口 B 和同标签发布仍按实际结果更新。现有正式下载保留 v1.3.4；Oracle／真实 VPS、Telegram、网盘、ACME 和手机验收由用户发布后执行。
+本次内容核对日期为 **2026 年 10 月 20 日**，对应正式 TG2Cloud **v1.4.0**。本轮发布原生 AMD64 / ARM64 兼容，镜像索引和 wheel 元数据已核验，本地回归、原生双架构 CI、helper A／固定入口 B 与同标签发布均通过，实际下载源码包及 SHA256／GitHub 资产摘要已核验。Oracle／真实 VPS、Telegram、网盘、ACME 和手机验收由用户发布后执行。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
-| [已发布 v1.3.4 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.4) | 同标签源码包与实际 SHA256；说明正文、污染原名、图片与媒体组命名增强 |
+| [已发布 v1.4.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0) | 同标签双架构验证、源码包与实际 SHA256；保留命名、家庭共享及外部只读功能 |
 | [已发布 v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) | 同一次 Actions 构建的实际资产与 SHA256；不是实机验收结论 |
 | [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
@@ -21,7 +21,7 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，当前正式版本为 1.3.4；在线 helper 已按先验证辅助 A、后固定入口 B 的流程更新，不用 moving main 替代。业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
+本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，当前正式版本为 1.4.0；在线 helper 已按先验证辅助 A、后固定入口 B 的流程更新，不用 moving main 替代。业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
 
 ## 文档与软件版本分别维护
 

@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前正式版本 **v1.3.4**，以 Linux 脚本维护；源码包与校验清单见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.4)。图片／视频命名增强需实际升级 Bot 才生效，更新文档不会替换已有实例。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 v1.3.3 正式升级及用户转存确认见[历史验收记录](docs/development/V133-ACCEPTANCE.md)，不外推 v1.3.4 或其他部署与恢复场景。
+当前正式版本 **v1.4.0**，以 Linux 脚本维护，支持原生 AMD64 / ARM64；源码包与校验清单见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0)。更新文档不会替换已有实例，需显式升级。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 v1.3.3 正式升级及用户转存确认见[历史验收记录](docs/development/V133-ACCEPTANCE.md)，不外推 v1.4.0 或其他部署与恢复场景。
 
 ## 开始使用
 
@@ -48,7 +48,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 要求 Debian / Ubuntu、64 位原生用户态、root、Python 3.10+、curl 和可交互终端；主机需能访问 GitHub、Telegram、镜像仓库及目的端。CloudDrive2 还需要 `/dev/fuse`。
 
-待发布 v1.4.0 源码统一支持 AMD64 / ARM64（`linux/amd64` / `linux/arm64`），不使用 QEMU；当前正式 v1.3.4 及在线 helper 仍保留原 AMD64 限制，不能仅更新文档就用于 ARM64 安装。发布门槛、镜像核验与 Oracle Cloud 步骤见[双架构说明](docs/ARCHITECTURES.md)。
+v1.4.0 统一支持 AMD64 / ARM64（`linux/amd64` / `linux/arm64`），不使用 QEMU；在线 helper 与正式源码包已同步。原生双架构 CI 和实际发布资产校验通过，Oracle／真实 VPS、云盘与手机仍待用户实机验收。支持范围、镜像核验与 Oracle Cloud 步骤见[双架构说明](docs/ARCHITECTURES.md)。
 
 ### 公网 VPS
 
