@@ -58,7 +58,11 @@ class NativeGatewayTests(unittest.TestCase):
                                     image, "1001:1001", "/opt/openlist/data")
                         options += ["--user", "1001:1001", "--cap-drop", "ALL", "--security-opt", "no-new-privileges",
                                     "--env", "OPENLIST_ADMIN_PASSWORD=isolated-native-ci-only",
-                                    "--volume", volumes[0] + ":/opt/openlist/data"]
+                                    # Empty named volumes otherwise copy the
+                                    # image's root-owned directory metadata a
+                                    # second time, undoing the prepared owner.
+                                    # Production uses an already-owned bind.
+                                    "--mount", "type=volume,source=" + volumes[0] + ",target=/opt/openlist/data,volume-nocopy"]
                     self.docker("run", "--detach", *options, image)
                     try:
                         binding = self.docker("port", name, str(port) + "/tcp")
