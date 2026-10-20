@@ -1,5 +1,7 @@
 # 开发与贡献
 
+v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI 已通过，含原生 AMD64 / ARM64 Bot、网关、FUSE、扩展依赖及外部 DAV；[实际运行记录](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)。三个入口 B 使用本次递归清单并固定 A，业务仍只取正式稳定 Release。同标签发布另行验证，Oracle／真实 VPS、用户网盘及手机验收仍由用户在发布后执行。
+
 这里介绍 TG2Cloud 主项目的开发入口。本文档网站本身的维护方法见 [文档来源与维护](/reference/sources/)。
 
 ## 获取主项目源码

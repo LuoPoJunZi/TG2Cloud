@@ -1,5 +1,7 @@
 # Linux Python + Bash 重构（v1.3.0）
 
+v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，已通过[原生 AMD64／ARM64、Docker 与 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424416187)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424420784)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424424724)与[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424429361) CI。隔离空卷使用 volume-nocopy 保留预设属主，生产 OpenList UID／Compose 不变；不跳过失败或降低权限。入口 B 更新实际清单并固定 A，同标签 Release 仍需另行通过；Oracle／真实 VPS、网盘和 ACME 由用户发布后验收。
+
 后续待发布双架构改动沿用本文结构，不重做架构或数据迁移；当前源码与正式 v1.3.4 的支持差异、原生 CI 和发布门槛见[AMD64 / ARM64 说明](../ARCHITECTURES.md)。下文 v1.3.0／v1.3.1 支持范围为历史事实。
 
 本文描述 v1.3.0 的 Linux 模块化布局。Windows 部署器停留在 v1.2.1；历史版本、桌面恢复 ZIP、本地归档和用户数据保留。运行支持仍为 Debian/Ubuntu x86_64、rootful Docker；宿主 Python 3.10+，Bot 镜像 Python 3.12。ARM64 和其他 NAS 系统不因源码重排自动获得支持。

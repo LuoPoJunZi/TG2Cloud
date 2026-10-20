@@ -1,6 +1,6 @@
 # Linux AMD64 / ARM64（v1.4.0）
 
-2026-10-20：v1.4.0 发布准备中，本地源码已加入统一原生检查；**正式下载仍为 v1.3.4**。当前线上稳定包和 helper 不包含本次改动。不能把下面的发布后命令当成当前 ARM64 可用性承诺，也不能下载 main 业务代码绕过稳定 Release 校验。
+2026-10-20：v1.4.0 发布准备中，辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414` 已通过原生双架构与其余四项 CI，三个入口 B 固定 A；**正式业务下载目前仍为 v1.3.4**，同标签发布仍在推进。不得下载 main 业务源码绕过稳定 Release；发布后的 Oracle／真实 VPS 验收由用户执行。
 
 ## 支持范围
 
@@ -100,14 +100,14 @@ Release 等待两个原生 job 成功，但只生成和上传一次与 CPU 无�
 | Shell | 四个现有入口、三个候选入口、两版 hooks 的 ShellCheck／Bash 语法和 21 项部署回归通过 |
 | 载荷／发布基础 | 两 Edition 各 84 个源码模块与当前清单逐字节一致、共享指纹一致；版本、Release Notes 格式、候选 bootstrap 与 Bandit 通过 |
 | 网站 | Node.js 22 构建、19 项测试、33 HTML 页面／3652 内部引用检查通过 |
-| 原生 CI | YAML 结构与离线矩阵回归通过，远端工作流未执行 |
+| 原生 CI | 辅助 A 的 AMD64／ARM64 Bot 构建、原生扩展／rclone、两网关 HTTP／FUSE 和外部 DAV／Range 均通过；四组 CLI、仓库、网站及文档也通过 |
 
-没有本地 Docker daemon／Linux rclone，27 项跳过中包括新增网关 Docker smoke 和原有平台集成项；没有删除失败测试或增加无依据的 skip。尚未执行实际 Linux 镜像构建／Compose 运行、ARM64 原生依赖运行、Oracle Ubuntu 24.04／26.04 与 Debian ARM64、真实 Telegram／云存储、HTTPS ACME、外部手机及升级回退。不能将索引／wheel 元数据或模拟用例解释成这些项目通过。
+本地 Windows 没有 Docker daemon／Linux rclone，27 项跳过如实保留；对应的原生集成在 GitHub 两个原生 runner 上另行通过。首轮新测试的空命名卷 copy-up 重置属主问题已修正，只调整隔离卷的 volume-nocopy，不修改生产权限或跳过测试。Oracle Ubuntu 24.04／26.04 与 Debian ARM64、真实 Telegram／云存储、挂载传播读写、HTTPS ACME、外部手机及升级回退仍未实机验收。
 
 发布前必须：
 
 1. 提交本次源码 A，让原生双架构 CI 实际通过；按用户本次授权先发布 v1.4.0，再由用户执行 Oracle Ubuntu 24.04/26.04 与 Debian ARM64 的真实安装／升级／转存验收，结果另行记录。
-2. 保持当前有效的 helper pin，先公开并验证 A，再产生入口 B：运行 `prepare_bootstrap.py --directory <新的候选目录>`，以实际公开 A 的 SHA 更新三个 helper 入口与版本，不允许伪造或自指 SHA。当前本地不更改在线 pin。
+2. 已公开并验证 A，再产生固定入口 B，使用实际公开 A 的 SHA 与匹配清单，不允许伪造或自指 SHA；B 和同标签发布也必须通过检查。
 3. 外部 WebDAV 从正式稳定源码资产加载本包；必须随新 Release 一并包含新部署模块、runtime/bootstrap 清单、hooks 和共享代理代码。
 4. 按授权选择下一个版本、同步版本元数据／网站，严格执行 `source_release.py` 的 pin 和校验清单检查后发布；不覆盖 v1.3.4 Tag／Release。
 

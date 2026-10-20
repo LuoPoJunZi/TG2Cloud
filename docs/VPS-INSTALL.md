@@ -1,5 +1,7 @@
 # VPS 安装与升级脚本
 
+v1.4.0 发布准备：三个主入口已固定辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI 已通过，包含原生 AMD64 / ARM64 的 Bot、网关和 Docker 检查；[实际记录](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)。业务代码仍只取正式稳定 Release，正式发布完成前不会用 main 业务源码代替；Oracle／真实 VPS 验收由用户发布后执行。
+
 TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v1.2.1。`install.sh` 是公网 VPS 入口，复用现有 Docker 安装、配置保留、备份、回退、HTTPS 与 WebDAV 验收流程，不另建一套 Bot 或 Compose 实现。
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本](LAN-INSTALL.md)，具体 NAS 环境仍需验收。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
