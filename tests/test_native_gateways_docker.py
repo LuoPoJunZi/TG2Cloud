@@ -60,7 +60,16 @@ class NativeGatewayTests(unittest.TestCase):
                                     "--env", "OPENLIST_ADMIN_PASSWORD=isolated-native-ci-only",
                                     "--volume", volumes[0] + ":/opt/openlist/data"]
                     self.docker("run", "--detach", *options, image)
-                    binding = self.docker("port", name, str(port) + "/tcp")
+                    try:
+                        binding = self.docker("port", name, str(port) + "/tcp")
+                    except AssertionError:
+                        # Report only this disposable fixture's bounded output,
+                        # never inspect its full environment or real instances.
+                        state = self.docker("inspect", "--format", "{{json .State}}", name)
+                        logs = self.docker("logs", "--tail", "40", name)
+                        log = SafeLog()
+                        log.register({"OPENLIST_ADMIN_PASSWORD": "isolated-native-ci-only"})
+                        self.fail(log.clean("Gateway fixture stopped before port publication: " + state + "\n" + logs))
                     self.assertTrue(binding.startswith("127.0.0.1:"), binding)
                     opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
                     deadline, ready = time.monotonic() + 120, False
