@@ -1,12 +1,12 @@
 # TG2Cloud 独立卸载脚本
 
-v1.4.1 发布准备：三个主入口 B 固定已通过五项 CI 的辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb`，本轮修复 HTTPS NAT 预检及开发审计；卸载逻辑和依赖保护不变。正式业务下载仍为 v1.4.0，发布状态另行更新。
+v1.4.1 已正式发布：三个主入口 B 固定辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb`，A／B 各五项 CI、同标签双架构发布与实际资产校验通过。本轮修复 HTTPS NAT 预检及开发审计，卸载逻辑和依赖保护不变；真实卸载仍须独立验收。
 
 v1.4.0 维护入口固定到已通过五项 CI 的辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414`，使用统一原生平台检查；卸载范围、资源归属、外部 WebDAV 依赖与保留数据规则不变。Oracle／真实 VPS 卸载仍须独立验收，不把 CI 作为生产清理授权。
 
 `uninstall.sh` 是标准目录下 CloudDrive2 / OpenList 受管 Docker 部署的兼容卸载入口，包括公网 VPS 的 HTTPS 和内网管理入口。新版安装／管理菜单复用同一卸载核心，不复制另一套删除逻辑，也不改动 Bot 业务流程或恢复桌面部署器。
 
-> 完整清理增强自 v1.2.1 纳入，v1.3.2 增加管理代码收尾；当前入口固定到 v1.4.0 不可变向导源码 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，辅助 A、入口 B 与正式双架构发布检查已通过，支持下面的选项及外部 WebDAV 依赖保护。正式 v1.4.0 源码包和 SHA256 清单已发布核验；更新卸载助手不等于更新 Bot。原 v1.2.0 Tag 保持原行为，历史 EXE 停留在 v1.2.1。用户已反馈原保留数据卸载在其 VPS 验收通过；**本版完整清理仍需新的实机验收**。历史 CloudDrive2 升级确认不等于本版卸载通过，不据此扩大到两 Edition、NAS 或新删除行为。
+> 完整清理增强自 v1.2.1 纳入，v1.3.2 增加管理代码收尾；当前入口固定到 v1.4.1 不可变向导源码 `3d222b90599f777d7646ff14ccebe466b25ad7eb`，辅助 A、入口 B 与正式双架构发布检查已通过，支持下面的选项及外部 WebDAV 依赖保护。正式 v1.4.1 源码包和 SHA256 清单已发布核验；更新卸载助手不等于更新 Bot。原 v1.2.0 Tag 保持原行为，历史 EXE 停留在 v1.2.1。用户已反馈原保留数据卸载在其 VPS 验收通过；**本版完整清理仍需新的实机验收**。历史 CloudDrive2 升级确认不等于本版卸载通过，不据此扩大到两 Edition、NAS 或新删除行为。
 
 历史 v1.3.3 向导固定提交为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`；不改写旧 Tag，不用旧助手覆盖较新共享代理状态。
 
@@ -38,7 +38,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 本地源码运行
 
-在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.4.0 统一支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
+在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.4.1 继续支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
 
 先只读查看范围：
 

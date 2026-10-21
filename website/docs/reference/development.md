@@ -1,6 +1,6 @@
 # 开发与贡献
 
-v1.4.1 辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 已通过[原生 AMD64／ARM64、隔离容器和网关](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)、[四组 Python CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)、仓库、文档和网站共五项 CI。三个入口 B 固定这份辅助源码，正式版本仍为 v1.4.0，B 和新标签发布完成后再更新下载。NAT 修复与开发工具安全更新不改变 Bot 依赖、镜像、数据库或部署身份。
+v1.4.1 辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与固定入口 B `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，正式源码资产已下载核验。A 的[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)及[四组 Python CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)记录可独立查看。NAT 修复与开发工具安全更新不改变 Bot 依赖、镜像、数据库或部署身份；真实 VPS／ACME／转存仍待用户验收。
 
 v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI 已通过，含原生 AMD64 / ARM64 Bot、网关、FUSE、扩展依赖及外部 DAV；[实际运行记录](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)。三个入口 B 使用本次递归清单并固定 A，B 的五项 CI 及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)均通过，真实发布资产已下载校验。业务仍只取正式稳定 Release；Oracle／真实 VPS、用户网盘及手机验收仍由用户在发布后执行。
 
@@ -11,11 +11,11 @@ v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.4.1
 git rev-parse HEAD
 ```
 
-本文档对应待发布 v1.4.1，见[下载页](/download/)。main 用于当前开发并须记录提交号；复现已发布版本时使用对应不可变标签，不能把后续修改当成 Release 行为。
+本文档对应正式 v1.4.1，见[下载页](/download/)。上面的不可变标签用于复现；main 用于当前开发并须记录提交号，不能把后续修改当成 Release 行为。
 
 ## 关键目录与入口
 

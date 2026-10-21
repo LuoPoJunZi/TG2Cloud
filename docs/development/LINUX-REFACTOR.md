@@ -1,6 +1,6 @@
 # Linux Python + Bash 重构（v1.3.0）
 
-v1.4.1 发布准备：辅助 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 的[原生双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)、仓库、文档和网站共五项 CI 已通过，入口 B 固定该公开提交。首轮候选被开发依赖安全审计阻止，已用统一锁工具仅更新 uv／certifi 后重验成功，未关闭审计。正式下载仍为 v1.4.0，等待 B 与 v1.4.1 标签发布，不改写历史产物。
+v1.4.1 已正式发布：辅助 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与入口 B／Tag `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，实际两项源码资产已下载校验。A 的[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)与[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)可独立核对。首轮候选被开发依赖安全审计阻止，已用统一锁工具仅更新 uv／certifi 后重验成功，未关闭审计。不改写历史产物，真实 NAT／ACME／转存仍由用户验收。
 
 v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，已通过[原生 AMD64／ARM64、Docker 与 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424416187)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424420784)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424424724)与[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424429361) CI。隔离空卷使用 volume-nocopy 保留预设属主，生产 OpenList UID／Compose 不变；不跳过失败或降低权限。入口 B `8bd4cf1fd7180f31579f5fe702d2c2d07c3b13f8` 更新实际清单并固定 A，五项 CI 和[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)均通过；Release 源码和 SHA256／GitHub 资产摘要已下载核验。Oracle／真实 VPS、网盘和 ACME 由用户发布后验收。
 

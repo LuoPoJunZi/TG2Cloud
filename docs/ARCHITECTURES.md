@@ -1,4 +1,6 @@
-# Linux AMD64 / ARM64（v1.4.0）
+# Linux AMD64 / ARM64（v1.4.1）
+
+2026-10-21：[v1.4.1 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)，修复下述公网 NAT 的 HTTPS 预检；支持范围、镜像和 Bot 依赖不变。辅助 A `3d222b90599f777d7646ff14ccebe466b25ad7eb`、入口 B／Tag `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，不能替代真实 Oracle 入站、ACME 或转存验收。
 
 2026-10-20：[v1.4.0 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0)。辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414` 与固定入口 B `8bd4cf1fd7180f31579f5fe702d2c2d07c3b13f8` 各五项 CI、同标签双架构发布均通过，实际源码包与公开资产摘要已核验。业务只取正式稳定 Release，不下载 main 业务源码代替；Oracle／真实 VPS 验收由用户发布后执行。
 
@@ -47,7 +49,7 @@ CloudDrive2 保留 `/dev/fuse`、privileged、host PID 与挂载传播权限；O
 
 ## Oracle Ampere A1 准备与验收
 
-2026-10-21 实机反馈：原生 ARM64 环境检测已通过，但在只有私有网卡地址的公网 NAT 主机上，v1.4.0 的 HTTPS 预检会误报 DNS／端口问题。该反馈不代表安装或转存已验收。对应本地修复尚未发布，见[VPS 指南](VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。
+2026-10-21 实机反馈：原生 ARM64 环境检测已通过，但在只有私有网卡地址的公网 NAT 主机上，v1.4.0 的 HTTPS 预检会误报 DNS／端口问题。该反馈不代表安装或转存已验收。修复已进入 v1.4.1 正式包与匹配 helper，新增严格条件下的控制台公网 IPv4 人工确认；仍须通过 ACME、TLS 与用户实机验收，见[VPS 指南](VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。
 
 新源码在严格候选条件下允许用户独立输入并确认云控制台的公网 IPv4；不自动查询出口 IP，不改网卡、DNS、防火墙或代理所有权。确认仅存于内存，绑定本次域名、DNS 和原有网卡地址，增加受管 Docker 网桥不使它失效，地址移除／DNS 或域名改变则停止复用。错误 AAAA、多 A、其他公网 IPv4 网卡和不安全端口不能走此分支；无交互确认仍按原规则拒绝。新 helper 与正式源码发布、NAT 入站 ACME 和两网关实机仍须后续验证。
 
@@ -95,7 +97,15 @@ PYTHONPATH=src python3 -B -m unittest discover -s tests -p test_architecture.py 
 
 Release 等待两个原生 job 成功，但只生成和上传一次与 CPU 无关的源码包。历史 immutable Tag 按当时能力仅重跑 AMD64，不改写历史 ARM 支持事实。
 
-### 本轮实际验证（2026-10-20）
+### v1.4.1 实际验证（2026-10-21）
+
+- 本地完整894项：867成功、27环境条件跳过、0失败；Python3.10宿主／NAT专项21项全部成功，无Bot依赖的CLI帮助通过。仓库48项、发布包11项、网站19项与33HTML／3655内部引用、ShellCheck、Ruff、compileall和Bandit通过。
+- 首轮辅助 CI 检出两项开发依赖漏洞；仅更新 uv0.13.4、certifi2026.10.19，统一生成哈希锁，Bot锁无差异。两个锁文件的 pip-audit 无已知漏洞，不忽略或关闭审计。
+- 最终辅助 A 的[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)与[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)、入口 B 的[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524969669)与[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524969765)全部成功，A／B各自仓库、文档和网站也成功。同标签发布的两个原生验证与release job全部成功；含隔离LAN、外部DAV／Range、两Edition候选及网关HTTP／FUSE，不使用QEMU或真实用户目录。
+- 实际下载 `TG2Cloud-v1.4.1-source.tar.gz` 的 SHA256：`2f0f75f11c7e1ad4debc4bf3221732e26c4f2d213863cd0a875a9672db509249`；清单摘要 `d2928cd3a1f604d8ea06f5441f3a4e1087808e5211d22627888f9c78248c7945`。`source_release.py verify`、同次清单与GitHub公开digest一致；只有这两项正式资产，没有EXE。校验和不是数字签名。
+- 没有连接或修改VPS、没有创建真实Session或写入网盘。NAT人工确认只是操作员核对，不自动证明公网可达；Oracle Ubuntu／Debian ARM64安装、ACME、真实挂载与转存、手机和故障回退仍待用户执行。
+
+### v1.4.0 历史验证（2026-10-20）
 
 本机为 Windows，下面不属于原生 Linux／ARM64 验收：
 

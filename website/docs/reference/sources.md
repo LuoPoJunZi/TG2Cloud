@@ -1,13 +1,13 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 21 日**，对应 TG2Cloud **v1.4.1**（待发布）。本轮修复公网 NAT 的 HTTPS 预检，本地完整回归894项、Python3.10专项及网站19项已通过；新辅助 A／固定入口 B、原生双架构与同标签发布仍按实际结果验证。正式下载暂保留 v1.4.0；Oracle／真实 VPS、Telegram、网盘、ACME 和手机验收由用户发布后执行。
+本次内容核对日期为 **2026 年 10 月 21 日**，对应 TG2Cloud **v1.4.1**，已正式发布。本轮修复公网 NAT 的 HTTPS 预检，本地完整回归894项、Python3.10专项及网站19项已通过；辅助 A／固定入口 B 各五项 CI、原生双架构与[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)成功，实际源码包及校验清单已核验。Oracle／真实 VPS、Telegram、网盘、ACME 和手机验收由用户发布后执行。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
-| [已发布 v1.4.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0) | 同标签双架构验证、源码包与实际 SHA256；保留命名、家庭共享及外部只读功能 |
+| [已发布 v1.4.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1) | NAT 预检修复、同标签双架构验证、源码包与实际 SHA256；保留命名、家庭共享及外部只读功能 |
 | [已发布 v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) | 同一次 Actions 构建的实际资产与 SHA256；不是实机验收结论 |
 | [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
@@ -21,7 +21,7 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，当前正式版本为 1.4.0；在线 helper 已按先验证辅助 A、后固定入口 B 的流程更新，不用 moving main 替代。业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
+本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，当前正式版本为 1.4.1；在线 helper 已按先验证辅助 A、后固定入口 B 的流程更新，不用 moving main 替代。业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
 
 ## 文档与软件版本分别维护
 

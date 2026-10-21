@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **v1.4.0**, maintained through Linux scripts with native AMD64 / ARM64 support. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0). Explicitly upgrade running instances; updating documentation does not upgrade the Bot. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [historical v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify v1.4.0 or other deployment or recovery scenarios.
+Current stable version: **v1.4.1**, maintained through Linux scripts with native AMD64 / ARM64 support. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1). Explicitly upgrade running instances; updating documentation does not upgrade the Bot. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [historical v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify the current version or other deployment or recovery scenarios.
 
 ## Getting started
 
@@ -48,7 +48,7 @@ The public/LAN entries offer setup for a missing Edition or its maintenance menu
 
 Requires Debian / Ubuntu with native 64-bit userspace, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
 
-v1.4.0 supports native AMD64 / ARM64 (`linux/amd64` / `linux/arm64`), without QEMU. The online helpers and stable source package are synchronized; native CI and published-asset verification passed. Oracle / real VPS, cloud storage and phone acceptance remain pending user testing. See [architecture evidence, support boundaries and Oracle Cloud checks](docs/ARCHITECTURES.md).
+Native AMD64 / ARM64 (`linux/amd64` / `linux/arm64`) are supported without QEMU. v1.4.1 fixes HTTPS preflight on public IPv4 NAT hosts with a narrowly scoped, explicit cloud-console address confirmation; ACME and HTTPS checks remain mandatory. Online helpers, stable source assets and both native CI jobs have been verified. Oracle / real VPS, cloud storage and phone acceptance remain pending user testing. See the [installation guide](docs/VPS-INSTALL.md) and [architecture evidence and Oracle Cloud checks](docs/ARCHITECTURES.md).
 
 ### Public VPS
 

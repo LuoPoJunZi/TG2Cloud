@@ -1,6 +1,6 @@
 # VPS 安装与升级脚本
 
-v1.4.1 发布准备：辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 已通过[原生双架构与隔离容器](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)、[四组 Python CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)、仓库、文档和网站共五项 CI。三个入口 B 固定这份辅助源码，包含下述 NAT 预检修复；正式业务资产仍为 v1.4.0，须待 B 和新标签发布完成。开发审计的 uv／certifi 已限定修复，Bot 运行依赖与镜像不变。
+v1.4.1 已正式发布：辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与固定入口 B `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，实际源码资产已下载核验。三个入口包含下述 NAT 预检修复，业务仍只取正式稳定 Release。开发审计的 uv／certifi 已限定修复，Bot 运行依赖与镜像不变。
 
 v1.4.0 已正式发布：三个主入口固定辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414`，A／入口 B 各五项 CI、[同标签原生 AMD64／ARM64 发布检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)全部通过，实际源码资产已核验。业务代码只取正式稳定 Release，不用 main 业务源码代替；Oracle／真实 VPS 验收由用户发布后执行。
 
@@ -8,7 +8,7 @@ TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本](LAN-INSTALL.md)，具体 NAS 环境仍需验收。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前正式版本为 v1.4.0，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录不代表新版实机验收；首次安装、正式版自动升级与回退仍需独立验证，OpenList 脚本实机验收暂缓。详见[验收记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
+> 当前正式版本为 v1.4.1，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录不代表新版实机验收；首次安装、正式版自动升级与回退仍需独立验证，OpenList 脚本实机验收暂缓。详见[验收记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
 
 2026-10-19 补充：专用测试机已完成 CloudDrive2 正式 v1.3.2 → v1.3.3 保留配置升级，用户确认实际转存验收完成。该结论限此 Edition 和此次路径，不扩展到 v1.3.4、首次安装、OpenList 或故障回退。
 
@@ -16,9 +16,9 @@ TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v
 
 已发布 v1.4.0 的 HTTPS 检查要求域名地址匹配网卡地址，Oracle 等公网映射到私有网卡的主机可能误报 DNS 失败，即使 A 记录正确、80／443 空闲。不要将公网 A 改成私有网卡地址，也不要为此关闭防火墙或停止其他项目。
 
-本地新源码增加交互确认：仅在单一公网 A、所有 AAAA 均匹配本机、没有其他公网 IPv4 网卡且端口归属安全时，要求手动输入**云控制台分配给本机的公网 IPv4**，与 A 记录比对后再确认映射。不会从 DNS 自动填写或通过第三方查询出口 IP。留空、拒绝确认、地址不一致均停止。该确认仅保留在当前进程，重新操作须再次核对；它不是自动证明入站映射，后续 ACME 和 HTTPS 自检仍须通过。
+v1.4.1 增加交互确认：仅在单一公网 A、所有 AAAA 均匹配本机、没有其他公网 IPv4 网卡且端口归属安全时，要求手动输入**云控制台分配给本机的公网 IPv4**，与 A 记录比对后再确认映射。不会从 DNS 自动填写或通过第三方查询出口 IP。留空、拒绝确认、地址不一致均停止。该确认仅保留在当前进程，重新操作须再次核对；它不是自动证明入站映射，后续 ACME 和 HTTPS 自检仍须通过。
 
-此修复尚未发布：当前在线命令及 v1.4.0 资产仍有上述限制，须完成新 helper A／入口 B 及正式发布才能在线使用。独立外部 WebDAV 和 `tg2cloud` 的 HTTPS 修复也需更新到包含修复的代码；既有离线命令不会自动更新。NAT 不影响 CPU 架构检测，真实 Oracle 安装与转存仍待验收。
+此修复已进入 v1.4.1 正式资产与匹配在线 helper；重新运行本页公开命令可获得新版向导。独立外部 WebDAV 和 `tg2cloud` 的 HTTPS 修复也需显式更新到本版代码，既有离线命令不会自动更新。NAT 不影响 CPU 架构检测，真实 Oracle 安装与转存仍待验收。章节原标题保留以兼容既有链接，不表示当前版本仍未发布。
 
 ## 支持范围
 
@@ -37,7 +37,7 @@ v1.3.1 的[外部 WebDAV](external-webdav.md) 是独立可选入口，主安装�
 | 手工修改过程序、Compose 或 Dockerfile | 停止，请先人工核对；不提供强制覆盖参数 |
 | 新稳定版更换云网关镜像 digest | 停止自动升级；不隐式迁移 OpenList/CloudDrive2 数据库，先备份并在隔离环境验证网关迁移；不使用旧 EXE 绕过检查 |
 
-正式 v1.4.0 面向 Debian/Ubuntu 原生 AMD64／ARM64，两架构共用检查和入口，仍要求 root、64 位用户态、Python 3.10+、Bash 和可交互终端。匹配 helper 与稳定包均已发布核验；CI 通过不等于 Oracle 或任意 NAS 实机通过。镜像证据、Oracle Cloud 与验证结果见[双架构说明](ARCHITECTURES.md)。系统需有可用 CA 根证书和时区数据库，CloudDrive2 仍需 `/dev/fuse`，内存和磁盘检查不变。
+正式 v1.4.1 面向 Debian/Ubuntu 原生 AMD64／ARM64，两架构共用检查和入口，仍要求 root、64 位用户态、Python 3.10+、Bash 和可交互终端。匹配 helper 与稳定包均已发布核验；CI 通过不等于 Oracle 或任意 NAS 实机通过。镜像证据、Oracle Cloud 与验证结果见[双架构说明](ARCHITECTURES.md)。系统需有可用 CA 根证书和时区数据库，CloudDrive2 仍需 `/dev/fuse`，内存和磁盘检查不变。
 
 缺少 Python 时请先自行确认系统环境，并安装 `python3`、`ca-certificates`、`tzdata`。脚本不会在信息收集与确认前自动安装软件。APT/Docker 的安装权限只在首次基础安装的最终确认后交给现有安装器；升级要求已有 Docker daemon 和 Compose 可用，不自动升级 Docker 引擎。
 
@@ -132,7 +132,7 @@ v1.1.4 源码同时把新镜像的程序目录改为 `/opt/tg2cloud`，容器用
 
 单行命令从 `main` 获取轻量 Bash 入口；必要的公开 Python 向导模块固定到不可变源码 commit，不逐文件追随移动的 `main`。v1.3.0 向导包含磁盘推荐；准确的辅助源码身份由三个入口中的 `installer_commit` 给出。新向导先经过 CI，再更新三个入口的 pin；源码发布检查会拒绝 pin 与新版本辅助文件不一致的情况。业务 payload 仍只取最新正式稳定 Release。
 
-v1.4.0 的三个入口固定向导 commit 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，模块版本为 `1.4.0`；辅助 A 与固定入口 B 各五项公开 CI、同标签发布检查均通过。正式 payload 来自 v1.4.0 标签提交 `8bd4cf1fd7180f31579f5fe702d2c2d07c3b13f8`，源码包与实际 SHA256 已下载核对。正式 payload 的 Tag commit 与向导 commit 分别核对，不要求两者相同；发布不等于本版 VPS 已升级验收。
+v1.4.1 的三个入口固定向导 commit 为 `3d222b90599f777d7646ff14ccebe466b25ad7eb`，模块版本为 `1.4.1`；辅助 A 与固定入口 B 各五项公开 CI、同标签发布检查均通过。正式 payload 来自 v1.4.1 标签提交 `dde550bc7fa6047ddcc945ef82131962611fec05`，源码包与实际 SHA256 已下载核对。正式 payload 的 Tag commit 与向导 commit 分别核对，不要求两者相同；发布不等于本版 VPS 已升级验收。
 
 历史 v1.3.4 向导 commit 为 `72be98e6b15075f71c58dd6ee110e47db2f42ce0`，Tag 为 `ef35d133a9e25572ff5f8363819d5c8e8984e74c`；历史资源不覆盖。
 

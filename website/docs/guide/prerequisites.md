@@ -17,13 +17,13 @@
 
 ## 原生 AMD64 / ARM64
 
-:::warning v1.4.0 公网 NAT 已知限制
-Oracle 等主机的网卡可能只有私有 IPv4，公网 A 正确时仍会触发旧版 HTTPS 预检错误。新源码增加手动输入云控制台公网 IPv4、确认映射及执行前复核，仍要求端口归属安全、AAAA 正确和 ACME／TLS 自检通过。修复尚未进入正式资产与线上 helper；当前命令不会因本地修改就自动生效。不要把公网 A 改成私有 IP，详见[仓库 VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。
+:::warning 公网 NAT 的 HTTPS 前置检查
+Oracle 等主机的网卡可能只有私有 IPv4，公网 A 正确时仍会触发 v1.4.0 的旧版预检错误。正式 v1.4.1 和匹配线上 helper 已增加手动输入云控制台公网 IPv4、确认映射及执行前复核，仍要求端口归属安全、AAAA 正确和 ACME／TLS 自检通过。重新运行公开入口；旧离线工具需显式更新。不要把公网 A 改成私有 IP，详见[仓库 VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。
 :::
 
 新源码将 x86_64／amd64 统一为 `linux/amd64`，aarch64／arm64 统一为 `linux/arm64`，核对 64 位 Python、dpkg 用户态、本机 rootful Docker 及实际镜像；不安装 QEMU、不接受远端 daemon 或强制平台覆盖。两 Edition 和公网／内网／外部 WebDAV 共用规则，不增加 ARM 专用入口。
 
-v1.4.0 稳定包与匹配线上 helper 已发布核验，两个原生 runner 的 Bot、网关 HTTP／FUSE、扩展依赖、LAN 和外部 DAV 隔离检查均通过。Oracle、真实网关挂载／转存、手机和升级回退仍待用户实机验收，不能将 CI 写成这些场景已通过。完整证据及发布结果见[仓库双架构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/ARCHITECTURES.md)。
+v1.4.1 稳定包与匹配线上 helper 已发布核验，两个原生 runner 的 Bot、网关 HTTP／FUSE、扩展依赖、LAN 和外部 DAV 隔离检查均通过。Oracle、真实网关挂载／转存、手机和升级回退仍待用户实机验收，不能将 CI 写成这些场景已通过。完整证据及发布结果见[仓库双架构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/ARCHITECTURES.md)。
 
 Oracle Ampere A1 的 Ubuntu 24.04／26.04、Debian ARM64 需确认 `uname -m` 为 aarch64／arm64、`getconf LONG_BIT` 为 64、`dpkg --print-architecture` 为 arm64。检查 Docker／Compose 与 `/dev/fuse`；CloudDrive2 仍需 FUSE 和原权限，OpenList 不要求 FUSE。脚本不会调整 Oracle 安全组或防火墙，真实挂载、HTTPS、转存和回退仍需独立验收。
 
