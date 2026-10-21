@@ -2,12 +2,12 @@
 
 ## TG2Cloud v1.4.1
 
-版本日期：2026-10-21。[v1.4.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1) 已正式发布，辅助 A、固定入口 B 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功。实际源码包、SHA256 清单和 GitHub 资产摘要已核验；真实 Oracle NAT、ACME 和转存仍由用户发布后验收。
+版本日期：2026-10-21。[v1.4.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1) 已正式发布，辅助 A、固定入口 B 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功。实际源码包、SHA256 清单和 GitHub 资产摘要已核验。发布后用户提供 Ubuntu26.04.1／原生ARM64／公网NAT 的 CloudDrive2 首装、本机HTTPS和WebDAV验收结果，详见[独立记录](docs/development/V141-ACCEPTANCE.md)；不扩展到OpenList、升级回退或所有真实转存场景。
 
 - 修复仅能看到私有网卡地址的公网 NAT 主机被误判为 DNS 错误的问题。单一公网 A、AAAA 均匹配本机且端口归属安全时，可在交互向导输入云控制台分配给本机的公网 IPv4，并显式确认映射；确认只在本次操作中使用。安装、管理 HTTPS 修复和独立外部 WebDAV 共用此逻辑。
 - 执行前重新核对 DNS、原有网卡地址和端口归属；地址变化停止，不在写入锁内重新索取确认。错误 AAAA、多 A、未知／其他项目端口、未确认地址仍阻止配置。补充 DNS 和 80／443 分项提示，拒绝用本地执行地址 127.0.0.1 作为公网 DNS 身份；ACME、TLS 自检和失败回退继续执行。
 - 发布检查修复：开发工具 uv 更新为 0.13.4、审计传输使用的 certifi 固定为 2026.10.19，由统一工具重新生成哈希锁；保留安全审计，不升级 Bot 运行依赖或网关镜像。
-- 修复不改写已发布 v1.4.0 资产；发布前先验证辅助提交 A，再更新入口 B。数据库、用户配置、镜像和 Bot 运行依赖不变；真实 NAT 公网安装待用户验收。
+- 修复不改写已发布 v1.4.0 资产；发布前先验证辅助提交 A，再更新入口 B。数据库、用户配置、镜像和 Bot 运行依赖不变。上述实机结果是发布后补充的用户反馈，不改写本版Tag／Release或宣称新增程序修复。
 
 ## TG2Cloud v1.4.0
 

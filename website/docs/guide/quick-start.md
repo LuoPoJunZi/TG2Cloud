@@ -20,7 +20,7 @@
 4. 核对计划后确认执行。公网向导配置 HTTPS；可信内网向导使用手填私有 IPv4 和固定管理端口。
 5. 在自己的网关中挂载云存储，配置专用 WebDAV 用户，返回终端确认执行验收，再向 Bot 发送小文件检查实际结果。
 
-CloudDrive2 本次旧候选到正式 v1.3.0 的人工迁移及用户使用验收已完成；这不是新装流程或标准自动升级的验收。OpenList 脚本实机验收暂缓，首次安装、故障回退和 NAS 等需独立验证，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。完整参数和中断处理见 [VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)及[内网指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md)。
+历史 CloudDrive2 旧候选到正式 v1.3.0 的人工迁移及用户使用验收与新装分开，见[历史记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。2026-10-21，用户已完成v1.4.1在Ubuntu26.04.1／ARM64公网NAT的CloudDrive2首装、本机HTTPS与WebDAV验收，见[本次记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)；OpenList 脚本实机验收暂缓，故障回退和NAS等仍单独验证。完整参数和中断处理见 [VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)及[内网指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md)。
 
 ## v1.2.1 历史图形部署路线
 

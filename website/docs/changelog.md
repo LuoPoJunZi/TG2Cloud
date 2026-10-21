@@ -4,7 +4,7 @@
 
 发布审计发现的开发依赖漏洞通过更新 uv 0.13.4、certifi 2026.10.19 并统一重生成哈希锁修复；Bot 运行依赖和网关镜像不变，保留安全审计。
 
-版本日期：2026-10-21，[v1.4.1 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)。单一公网 A、已核对本机 AAAA 且端口归属安全的 NAT 场景增加云控制台公网 IPv4 人工确认，确认仅本次有效，执行前重新比对。错误记录、端口占用和拒绝确认仍会停止；ACME、TLS 和失败回退继续执行。新增 DNS／80／443 分项错误提示和回环地址保护。辅助 A／固定入口 B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)及实际资产校验通过，真实 NAT 安装尚待用户验收。完整改动见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，环境要求见[部署前准备](/guide/prerequisites/)。
+版本日期：2026-10-21，[v1.4.1 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)。单一公网 A、已核对本机 AAAA 且端口归属安全的 NAT 场景增加云控制台公网 IPv4 人工确认，确认仅本次有效，执行前重新比对。错误记录、端口占用和拒绝确认仍会停止；ACME、TLS 和失败回退继续执行。新增 DNS／80／443 分项错误提示和回环地址保护。辅助 A／固定入口 B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)及实际资产校验通过。发布后用户确认Ubuntu26.04.1／ARM64／公网NAT的CloudDrive2首装、本机HTTPS与WebDAV通过，见[验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)；OpenList、外网手机、升级回退与长期续期不外推。此为文档证据补充，不改已发布资产。完整改动见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，环境要求见[部署前准备](/guide/prerequisites/)。
 
 ## TG2Cloud v1.4.0
 

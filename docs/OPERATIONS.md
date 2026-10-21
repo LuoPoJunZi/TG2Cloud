@@ -2,6 +2,8 @@
 
 本文面向正式 v1.4.1 的 Linux 脚本与离线 `tg2cloud` 菜单，保留现有维护和原生平台核验；公网 NAT 的 HTTPS 修复见[VPS 指南](VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)，旧离线工具需显式更新。2026-10-19 已完成 CloudDrive2 正式 v1.3.2 → v1.3.3 保留配置升级，用户确认实际转存完成；不扩展到当前版本、OpenList、NAS、家庭共享或故障回退。更早的人工候选迁移另见[历史记录](development/V130-ACCEPTANCE.md)。
 
+2026-10-21 的[v1.4.1 ARM64 公网NAT首装记录](development/V141-ACCEPTANCE.md)是另一项用户反馈：基础部署、Bot健康、本机HTTPS与WebDAV通过，长期续期仍无执行记录，不据此推断维护菜单、已有实例升级或恢复操作均已通过。APT错误按[VPS专题](VPS-INSTALL.md#apt-软件源错误)处理，不删除已有数据。
+
 本页以当前终端工具为准，旧图形界面操作移至[历史教程](README-小白使用说明.md)。只下载入口或运行状态查询不会自动更新 Bot、管理工具、续期容器或附加功能。
 
 任务取消恢复、远端冲突、扫描与验证记录见[任务恢复指南](RECOVERY.md)，完整配置字段见[配置参考](CONFIGURATION.md)，独立灾备和恢复预检见[备份指南](BACKUP-RESTORE.md)。升级回退点不能代替包含 Session、网关授权和共享入口的完整备份。

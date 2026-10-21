@@ -23,7 +23,7 @@ Oracle 等主机的网卡可能只有私有 IPv4，公网 A 正确时仍会触�
 
 新源码将 x86_64／amd64 统一为 `linux/amd64`，aarch64／arm64 统一为 `linux/arm64`，核对 64 位 Python、dpkg 用户态、本机 rootful Docker 及实际镜像；不安装 QEMU、不接受远端 daemon 或强制平台覆盖。两 Edition 和公网／内网／外部 WebDAV 共用规则，不增加 ARM 专用入口。
 
-v1.4.1 稳定包与匹配线上 helper 已发布核验，两个原生 runner 的 Bot、网关 HTTP／FUSE、扩展依赖、LAN 和外部 DAV 隔离检查均通过。Oracle、真实网关挂载／转存、手机和升级回退仍待用户实机验收，不能将 CI 写成这些场景已通过。完整证据及发布结果见[仓库双架构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/ARCHITECTURES.md)。
+v1.4.1 稳定包与匹配线上 helper 已发布核验，两个原生 runner 的 Bot、网关 HTTP／FUSE、扩展依赖、LAN 和外部 DAV 隔离检查均通过。2026-10-21，用户另行提供 Ubuntu26.04.1／原生ARM64／公网NAT 的 CloudDrive2 首装、Bot健康、本机HTTPS与WebDAV验收日志；不将它或CI扩大为OpenList、其他系统、手机外网、升级回退及长期续期已通过。见[本次实机记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)与[双架构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/ARCHITECTURES.md)。
 
 Oracle Ampere A1 的 Ubuntu 24.04／26.04、Debian ARM64 需确认 `uname -m` 为 aarch64／arm64、`getconf LONG_BIT` 为 64、`dpkg --print-architecture` 为 arm64。检查 Docker／Compose 与 `/dev/fuse`；CloudDrive2 仍需 FUSE 和原权限，OpenList 不要求 FUSE。脚本不会调整 Oracle 安全组或防火墙，真实挂载、HTTPS、转存和回退仍需独立验收。
 

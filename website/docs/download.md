@@ -6,6 +6,8 @@
 
 本版 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1) 已由 Actions 从不可变 Tag 完成原生双架构验证、打包并发布。源码包实际 SHA256、校验清单、公开资产摘要与源码归档均已核对；直接安装和升级使用下方 VPS／内网单行入口。独立附加入口见[外部 WebDAV](/deploy/external-webdav/)，不会由主安装默认启用。发布不等于本版 Oracle／真实 VPS、Telegram 或网关已验收。
 
+发布后用户已确认 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 环境完成首次安装、本机HTTPS与WebDAV验收，见[脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。这是独立于发布检查的用户实机反馈，不扩展到OpenList、已有实例升级／回退、手机外网或长期续期。
+
 | 文件 | 用途 |
 | --- | --- |
 | [TG2Cloud-v1.4.1-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.1/TG2Cloud-v1.4.1-source.tar.gz) | 同标签源码，包含两 Edition 的运行资源 |
@@ -92,7 +94,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 没有公网域名：独立内网入口
 
-可信内网 Debian / Ubuntu x86_64 主机可使用独立脚本，按向导选择 Edition 并人工输入本机私有 IPv4：
+符合支持条件的可信内网 Debian / Ubuntu 原生 AMD64／ARM64 主机可使用独立脚本，按向导选择 Edition 并人工输入本机私有 IPv4；本次公网 NAT 记录不替代 NAS／LAN 验收：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)

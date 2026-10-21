@@ -4,7 +4,7 @@
 
 ## v1.4.0 原生双架构
 
-当前维护版 v1.4.1 已发布，补充公网 NAT 的 HTTPS 人工确认和执行前复查；不改传输流程或内网边界。辅助 A／B、原生双架构与实际源码资产验证通过，真实 Oracle／ACME／转存仍由用户验收，详见[VPS 指南](../VPS-INSTALL.md)与[双架构记录](../ARCHITECTURES.md)。
+当前维护版 v1.4.1 已发布，补充公网 NAT 的 HTTPS 人工确认和执行前复查；不改传输流程或内网边界。辅助 A／B、原生双架构与实际源码资产验证通过；发布后用户确认 CloudDrive2 在Ubuntu26.04.1 ARM64公网NAT完成首装、本机HTTPS与WebDAV验收，见[本次记录](V141-ACCEPTANCE.md)。OpenList、独立外网、升级回退及长期续期仍单独验证，完整条件见[VPS 指南](../VPS-INSTALL.md)与[双架构记录](../ARCHITECTURES.md)。
 
 正式稳定源码与在线 helper 统一支持 Debian／Ubuntu 原生 AMD64／ARM64，不使用 QEMU。A／B 各五项 CI、同标签双架构发布与真实下载资产校验通过；Oracle／真实 VPS、云盘、手机及故障回退由用户发布后验收。配置、数据库、Session、实例身份与现有传输策略不变，详见[双架构说明](../ARCHITECTURES.md)。以下版本段落保留各自历史范围。
 

@@ -33,6 +33,8 @@ GitHub Actions 从同一不可变 v1.4.1 Tag 完成原生 AMD64／ARM64 验证�
 
 本地完整回归894项：867成功、27环境条件跳过、0失败；Python3.10的21项宿主／NAT专项及不加载Bot依赖的CLI帮助通过。全范围Ruff、语法检查、Bandit、网站构建及19项网站测试通过。正式发布还须通过对应提交与同标签的原生双架构检查。
 
-真实 Oracle NAT 的入站映射、ACME、网关挂载、Telegram 转存、手机和故障回退仍待用户发布后实机验收。大小复验不等于内容哈希或云盘官方最终完成。历史范围见[v1.3.3 用户转存确认](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)与[v1.3.0 历史迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)，不外推为本版结果。
+发布后补充（2026-10-21）：用户提供 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 的首装、Bot健康、本机HTTPS与WebDAV验收结果，见[本次脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。APT源问题由用户备份并修正后重试成功；OpenList、已有实例升级／故障回退、手机外网、真实Telegram任务细项和长期续期仍不在本次通过范围。此为main文档补充，不覆盖已发布Tag、Release正文或源码资产。
+
+大小复验不等于内容哈希或云盘官方最终完成。历史范围见[v1.3.3 用户转存确认](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)与[v1.3.0 历史迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)，不外推为本版结果。
 
 TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留 MIT 许可证、版权与必要致谢；用户在自己的存储网关管理云账号授权。

@@ -48,7 +48,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 要求 Debian / Ubuntu、64 位原生用户态、root、Python 3.10+、curl 和可交互终端；主机需能访问 GitHub、Telegram、镜像仓库及目的端。CloudDrive2 还需要 `/dev/fuse`。
 
-支持 AMD64 / ARM64（`linux/amd64` / `linux/arm64`），不使用 QEMU；v1.4.1 修复公网 NAT 的 HTTPS 预检，按条件手动确认云控制台公网 IPv4，仍须通过 ACME 和 HTTPS 自检。在线 helper、稳定源码包、原生双架构 CI 与实际资产校验均已同步验证；Oracle／真实 VPS、云盘与手机仍待用户实机验收。见[安装指南](docs/VPS-INSTALL.md)与[双架构说明](docs/ARCHITECTURES.md)。
+支持 AMD64 / ARM64（`linux/amd64` / `linux/arm64`），不使用 QEMU；v1.4.1 修复公网 NAT 的 HTTPS 预检，仍须确认公网映射并通过证书与 HTTPS 检查。用户已完成 CloudDrive2 在 Ubuntu 26.04.1 ARM64 公网 NAT 环境的首次部署、本机 HTTPS 与 WebDAV 验收，见[实机记录](docs/development/V141-ACCEPTANCE.md)；OpenList、升级回退、手机外网访问及长期续期不外推。完整步骤见[安装指南](docs/VPS-INSTALL.md)与[双架构说明](docs/ARCHITECTURES.md)。
 
 ### 公网 VPS
 

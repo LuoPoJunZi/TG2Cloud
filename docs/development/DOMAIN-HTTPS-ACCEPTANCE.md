@@ -4,6 +4,10 @@
 
 v1.0.3 发布状态：共享域名 HTTPS 功能已完成验收，适用于 CloudDrive2 与 OpenList；以下清单继续作为后续版本回归基线。
 
+## v1.4.1 Linux ARM64 公网 NAT 用户反馈
+
+2026-10-21，用户自行在 Ubuntu26.04.1／原生ARM64／公网NAT 环境首次安装 CloudDrive2，独立确认公网映射后完成证书流程和VPS本机HTTPS自检，随后WebDAV认证／读写／大小／MOVE／测试清理全部通过。完整证据边界与系统APT问题见[v1.4.1独立记录](V141-ACCEPTANCE.md)。这不是维护代理登录实机验证，不补勾下文历史清单，也不扩展为OpenList、外网手机、长期续期或升级回退已通过。
+
 ## v1.1.0 强制 HTTPS 回归范围
 
 v1.1.0 把 HTTPS 管理入口升级为受管 CloudDrive2/OpenList 的部署完成条件，并已在真实 VPS 验证以下范围：

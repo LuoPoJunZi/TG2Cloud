@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 21 日**，对应 TG2Cloud **v1.4.1**，已正式发布。本轮修复公网 NAT 的 HTTPS 预检，本地完整回归894项、Python3.10专项及网站19项已通过；辅助 A／固定入口 B 各五项 CI、原生双架构与[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)成功，实际源码包及校验清单已核验。Oracle／真实 VPS、Telegram、网盘、ACME 和手机验收由用户发布后执行。
+本次内容核对日期为 **2026 年 10 月 21 日**，对应 TG2Cloud **v1.4.1**，已正式发布。辅助 A／固定入口 B、原生双架构与[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)成功，实际源码资产已核验。发布后用户提供 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 的首次安装、本机HTTPS和WebDAV验收结果；这与自动CI是不同证据，不能外推OpenList、真实Telegram任务细项、手机外网、升级回退或长期续期。
 
 ## 主要来源
 
@@ -13,6 +13,7 @@
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
 | [VPS 一键脚本](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md) | 单行入口、正式稳定 payload、配置保留与未验收范围 |
 | [v1.3.0 升级验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md) | CloudDrive2 人工迁移的实际检查、用户确认及未执行项；不扩大为 OpenList 或全部自动升级验证 |
+| [v1.4.1 ARM64 首装验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md) | 用户提供的Ubuntu26.04.1公网NAT／CloudDrive2首装、本机HTTPS与WebDAV结果；APT错误、未覆盖项及脱敏边界 |
 | [内网安装](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md) | 独立内网入口、固定端口、用户提供验收与未验收范围 |
 | [独立卸载](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) | 主分支完整清理与保留模式、归属/外部引用保护及部分失败；原 Tag 行为另行区分 |
 | [CHANGELOG](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) | TG2Cloud 更新与上游历史边界 |

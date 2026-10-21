@@ -2,6 +2,8 @@
 
 TG2Cloud 要求受管 CloudDrive2 或 OpenList 使用公网 HTTPS 域名访问管理界面。它不会改变 Bot 与 WebDAV 的 Docker 内网传输路径。
 
+当前Linux入口的v1.4.1已支持严格条件下的公网NAT人工确认。2026-10-21，用户在Ubuntu26.04.1／ARM64上完成CloudDrive2首次安装、证书流程、本机HTTPS和WebDAV验收，见[独立记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。本机通过不等于手机或另一外网通过，首次“尚无续期记录”也不是续签成功；其余检查仍按下文边界执行。下文早期部署器操作保留历史范围，Linux用户从安装向导或本地tg2cloud的管理入口操作。
+
 v1.1.0 已在真实 VPS 完成两个 Edition 的强制 HTTPS 与 WebDAV 全流程验收。
 
 v1.1.1 的实机检查覆盖双管理网关 HTTPS 共存、外部访问/跳转/公开 WebDAV 阻断，以及共享事务锁互斥与断锁释放。

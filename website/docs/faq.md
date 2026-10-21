@@ -34,6 +34,14 @@
 
 先在服务商控制台核对新指纹，确认身份后使用部署器“更新并重新连接”。不要删除所有服务器记录。[SSH 排查](/troubleshooting/ssh/)。
 
+### ARM64 公网 NAT 首次安装是否有实机记录？
+
+有。用户提供的v1.4.1日志覆盖Ubuntu26.04.1／原生ARM64／公网NAT的CloudDrive2首装、Bot健康、本机HTTPS及WebDAV认证／读写／大小／改名／测试清理，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。不是OpenList、任意NAS、升级回退、外网手机或长期续期通过的承诺。
+
+### APT 报没有 Release 文件怎么办？
+
+先在自己的终端执行apt-get update，核对活跃源URI、发行代号和签名配置。本次实际错误是源URI缺少主机名，且APT显示的斜杠形式与源文件不同；用户备份并只修正错误URI后安装成功。不要整份覆盖源列表、禁用安全更新／签名检查或删除TG2Cloud数据。步骤见[仓库APT专题](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md#apt-软件源错误)，不要公开包含私有源凭据或建号密码的日志。
+
 ### 找不到 OpenList 首次管理员密码？
 
 已有实例仍应使用当前管理员凭据；不要把新的本地表单值当成服务端已重置的密码。v1.1.5 的 `--edition openlist --show-credentials` 可在私有交互终端逐项确认后展示保存的初始化密码，但它可能已被更改；没有保存值时不会重新生成，也不会重置账号。命令见 [已有凭据查看](/download/)，部署步骤见 [OpenList 教程](/deploy/openlist/)。

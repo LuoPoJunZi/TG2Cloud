@@ -48,7 +48,7 @@ The public/LAN entries offer setup for a missing Edition or its maintenance menu
 
 Requires Debian / Ubuntu with native 64-bit userspace, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
 
-Native AMD64 / ARM64 (`linux/amd64` / `linux/arm64`) are supported without QEMU. v1.4.1 fixes HTTPS preflight on public IPv4 NAT hosts with a narrowly scoped, explicit cloud-console address confirmation; ACME and HTTPS checks remain mandatory. Online helpers, stable source assets and both native CI jobs have been verified. Oracle / real VPS, cloud storage and phone acceptance remain pending user testing. See the [installation guide](docs/VPS-INSTALL.md) and [architecture evidence and Oracle Cloud checks](docs/ARCHITECTURES.md).
+Native AMD64 / ARM64 (`linux/amd64` / `linux/arm64`) are supported without QEMU. v1.4.1 fixes HTTPS preflight on public IPv4 NAT hosts; explicit mapping confirmation, certificate and HTTPS checks remain mandatory. The user completed a CloudDrive2 first install on Ubuntu 26.04.1 ARM64 behind public NAT, including on-host HTTPS and WebDAV verification. See the [acceptance record](docs/development/V141-ACCEPTANCE.md); it does not certify OpenList, upgrade rollback, external phone access or long-term renewal. See the [installation guide](docs/VPS-INSTALL.md) and [architecture evidence](docs/ARCHITECTURES.md).
 
 ### Public VPS
 

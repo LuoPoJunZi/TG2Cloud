@@ -12,13 +12,17 @@
 
 `curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh` 只把脚本文本输出到终端，不安装。要进入向导，请使用 [VPS 指南](VPS-INSTALL.md#vps-单行安装命令)中的完整 `bash <(curl …)` 命令。下载失败、只显示版本或退出码 0，也不能代替最终验收。
 
+### APT 报没有 Release 文件怎么办
+
+先在自己的终端运行 `apt-get update` 核对系统原始错误。v1.4.1 用户此次实际遇到的是 Ubuntu 安全源 URI 缺少主机名，不是 ARM64／NAT 不支持；源文件和 APT 日志的斜杠格式还可能不同。应备份并只修正确认错误的活跃条目，不关闭安全检查或整份覆盖源列表，详见[APT 排查](VPS-INSTALL.md#apt-软件源错误)与[本次验收记录](development/V141-ACCEPTANCE.md)。不要上传含凭据的源配置或安装汇总。
+
 ### --check 输出 OK，是否升级成功？
 
 不是。它检查当前实例、源码基线、容量和现有入口并展示计划；不停止服务、不替换程序。确认后实际运行安装／升级，再核对 Bot 版本、健康和转存。`--verify` 则会写测试文件，不能与只读预检混淆。
 
 ### 能在任意 NAS、ARM 或 Docker Desktop 安装吗？
 
-正式 v1.4.1 继续支持 Debian/Ubuntu 原生 AMD64 / ARM64，匹配的稳定源码和 helper 已发布，两个原生 runner 的 CI 已通过。要求 root、64 位用户态和本机 rootful Docker，内网另要求 Docker 28+；不会默认使用 QEMU，不支持 Docker Desktop。DSM／QTS 等不保证可直接运行，可使用符合条件的 Linux 虚拟机并填写虚拟机自身 IP。Oracle、网关真实挂载与转存仍需用户实机验收，见[双架构说明](ARCHITECTURES.md)。
+正式 v1.4.1 继续支持 Debian/Ubuntu 原生 AMD64 / ARM64，匹配的稳定源码和 helper 已发布，两个原生 runner 的 CI 已通过。要求 root、64 位用户态和本机 rootful Docker，内网另要求 Docker 28+；不会默认使用 QEMU，不支持 Docker Desktop。DSM／QTS 等不保证可直接运行，可使用符合条件的 Linux 虚拟机并填写虚拟机自身 IP。用户已完成一台 Ubuntu26.04.1 ARM64 公网NAT 的 CloudDrive2 首装／本机HTTPS／WebDAV验收，不扩展为任意系统或全部转存通过，见[双架构说明](ARCHITECTURES.md)。
 
 ### 更新仓库、运行管理菜单、重启容器，会自动更新 Bot 吗？
 
