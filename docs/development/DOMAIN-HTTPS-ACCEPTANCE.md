@@ -4,6 +4,10 @@
 
 v1.0.3 发布状态：共享域名 HTTPS 功能已完成验收，适用于 CloudDrive2 与 OpenList；以下清单继续作为后续版本回归基线。
 
+## v1.4.2 managed 升级后的 HTTPS 检查
+
+2026-10-21，专用 Debian AMD64 测试机经授权核验原提交、备份后，人工升级 CloudDrive2 v1.3.4 → v1.4.2。本机既有 HTTPS 自检及外部电脑的 TLS、管理页 200、HTTP 308 正确跳转、管理域名 `/dav` 与 `/dav/` 403 通过。继续使用 managed／schema 2，路由、认证资源和代理容器未变；没有新签／续签证书、切换 external_docker 或验证手机播放。完整范围见[v1.4.2 记录](V142-ACCEPTANCE.md)，不补勾下文历史清单或宣称新代理模式通过。
+
 ## v1.4.1 Linux ARM64 公网 NAT 用户反馈
 
 2026-10-21，用户自行在 Ubuntu26.04.1／原生ARM64／公网NAT 环境首次安装 CloudDrive2，独立确认公网映射后完成证书流程和VPS本机HTTPS自检，随后WebDAV认证／读写／大小／MOVE／测试清理全部通过。完整证据边界与系统APT问题见[v1.4.1独立记录](V141-ACCEPTANCE.md)。这不是维护代理登录实机验证，不补勾下文历史清单，也不扩展为OpenList、外网手机、长期续期或升级回退已通过。

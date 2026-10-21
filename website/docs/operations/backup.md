@@ -4,6 +4,8 @@
 
 v1.3.4 继续保留下面的备份边界。当前 Linux 使用 `tg2cloud` → 7 备份管理，代理检查／修复／续期 dry-run 在菜单 6；不提供覆盖生产数据的 Restore。CloudDrive2 正式 v1.3.2 → v1.3.3 升级和用户转存已确认，但不等于本版或灾难恢复验收，范围见[记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)。
 
+v1.4.2 的授权人工升级另核验了配置、业务 DB／Session 一致性备份、共享代理归档与隔离解包，升级后数据比对通过。网关在线副本不等于全状态一致快照，未执行生产恢复或回退；完整范围见[本次验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)。
+
 ## v1.2.1：离线业务快照预检
 
 离线工具从 v1.2.1 提供；当前源码使用 `tg2cloud.persistence.bundle`，已安装镜像保留 `app.backup_bundle` 兼容。只接受人工准备的静止副本，覆盖 `.env`、Compose、业务 DB、Session、rclone 和所选网关配置。下载、程序、日志、云端文件、HTTPS、LAN 与附加状态另行保护，业务回退点不能假设含 Session。

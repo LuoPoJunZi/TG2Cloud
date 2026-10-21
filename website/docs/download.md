@@ -1,6 +1,6 @@
 # 下载与 SHA-256 校验
 
-当前正式版本为 **TG2Cloud v1.4.2**：新增显式复用已有 Docker Nginx。辅助 A／入口 B、同标签原生双架构和实际源码包／SHA256／GitHub 资产摘要均已核验，真实 VPS、ACME、长期续期与迁移仍须独立验收。项目以 Linux 一键脚本维护两个 Edition，Windows 部署器停留在 v1.2.1。改动见[更新日志](/changelog/)，更新文档不会自动升级 Bot。
+当前正式版本为 **TG2Cloud v1.4.2**：新增显式复用已有 Docker Nginx。辅助 A／入口 B、同标签原生双架构和实际源码包／SHA256／GitHub 资产摘要均已核验，external_docker 的真实 VPS 接入、ACME、长期续期与代理迁移仍须独立验收。项目以 Linux 一键脚本维护两个 Edition，Windows 部署器停留在 v1.2.1。改动见[更新日志](/changelog/)，更新文档不会自动升级 Bot。
 
 截至 2026-10-21，GitHub 保留 v1.4.2、v1.4.1、v1.2.1 三个 Release／Tag。其他版本虽已移除发布页和标签，[全版本记录](/changelog/)仍保留每一版的功能和修复，不能把下载列表当作完整开发历史。
 
@@ -8,7 +8,9 @@
 
 本版 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2) 已由 Actions 从不可变 Tag 完成原生双架构验证、打包并发布。源码包实际 SHA256、校验清单、公开资产摘要与源码归档均已核对；直接安装和升级使用下方 VPS／内网单行入口。独立附加入口见[外部 WebDAV](/deploy/external-webdav/)，不会由主安装默认启用。发布不等于本版 Oracle／真实 VPS、Telegram 或网关已验收。
 
-发布后用户已确认 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 环境完成首次安装、本机HTTPS与WebDAV验收，见[脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。这是独立于发布检查的用户实机反馈，不扩展到OpenList、已有实例升级／回退、手机外网或长期续期。
+历史 v1.4.1 发布后，用户已确认 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 环境完成首次安装、本机HTTPS与WebDAV验收，见[脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。这是独立于发布检查的用户实机反馈，不扩展到OpenList、已有实例升级／回退、手机外网或长期续期。
+
+v1.4.2 发布后另完成 Debian AMD64 的 CloudDrive2 v1.3.4 → v1.4.2 人工升级：健康、数据保留、只读 WebDAV 和外部 HTTPS 通过，继续使用 managed。旧 Release 缺失的自动升级限制、备份范围及实际转存等未执行项见[独立记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)，不能把人工路径写成在线自动升级已通过。
 
 | 文件 | 用途 |
 | --- | --- |
@@ -34,7 +36,7 @@ sha256sum -c SHA256SUMS.txt
 [查看 v1.2.1 发布页](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) · [查看最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 :::info 固定版本与最新版本
-本页源码包固定到 v1.4.1，历史 Windows 下载固定到 v1.2.1；分别使用对应 Release 的 SHA256SUMS，不混用校验值。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
+本页源码包固定到 v1.4.2，历史 Windows 下载固定到 v1.2.1；分别使用对应 Release 的 SHA256SUMS，不混用校验值。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
 :::
 
 v1.2.1 的两个正式 EXE 由 GitHub Actions 的 Windows Runner 从同一标签构建并自检，Release 复用该次构建产物。校验值来自这次 Actions 实际生成的文件，不要求与本机旧构建一致。

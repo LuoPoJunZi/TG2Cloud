@@ -35,6 +35,8 @@ v1.4.2 adds [reuse of an existing Docker Nginx](docs/DOCKER-NGINX.md) with expli
 
 Current stable version: **v1.4.2**, maintained through Linux scripts with native AMD64 / ARM64 support. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2). Explicitly upgrade running instances; updating documentation does not upgrade the Bot. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [historical v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify the current version or other deployment or recovery scenarios.
 
+On 2026-10-21, an authorized manual CloudDrive2 v1.3.4 → v1.4.2 upgrade on a dedicated Debian AMD64 test host passed health, data-preservation, read-only WebDAV and external HTTPS checks. See the [acceptance record](docs/development/V142-ACCEPTANCE.md) for the deleted-old-Release automatic-upgrade limitation and untested file transfers and new proxy mode.
+
 ## Getting started
 
 1. Prepare your Telegram Bot, API information and server using the [information checklist](docs/填写信息清单.md). Never put real credentials in public documents.
@@ -96,7 +98,7 @@ Since v1.3.3, [family sharing](docs/FAMILY-SHARING.md) provides post-install Bot
 | Configuration and backups | [Configuration fields and runtime paths](docs/CONFIGURATION.md) · [Backup scope and restore preflight](docs/BACKUP-RESTORE.md) |
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) |
-| Upgrade acceptance | [v1.3.3 official upgrade and transfer confirmation](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 historical migration](docs/development/V130-ACCEPTANCE.md) |
+| Upgrade acceptance | [v1.4.2 manual upgrade and verification limits](docs/development/V142-ACCEPTANCE.md) · [v1.3.3 official upgrade and transfer confirmation](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 historical migration](docs/development/V130-ACCEPTANCE.md) |
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |
 | Versions and releases | [Complete version history](CHANGELOG.md) · [Current release notes](RELEASE_NOTES.md) |

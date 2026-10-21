@@ -54,6 +54,7 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 - [v1.3.0 CloudDrive2 升级验收](development/V130-ACCEPTANCE.md)：本次人工迁移、配置与历史数据保留、用户确认及尚未验证范围。
 - [v1.3.3 CloudDrive2 升级与转存验收](development/V133-ACCEPTANCE.md)：正式 v1.3.2 → v1.3.3 升级、配置／Session 保留及用户实际转存确认，其他场景不外推。
 - [v1.4.1 CloudDrive2 ARM64 首次安装验收](development/V141-ACCEPTANCE.md)：Ubuntu 26.04.1 公网 NAT、原生构建、Bot 健康、本机 HTTPS 与 WebDAV 操作；APT 问题及未验证范围单列。
+- [v1.4.2 CloudDrive2 人工升级验收](development/V142-ACCEPTANCE.md)：Debian AMD64、核验原 v1.3.4 提交后保留配置升级；备份、数据保留、只读 WebDAV、外部 HTTPS，以及旧 Release 缺失的自动升级限制。
 - [第三方组件说明](第三方组件说明.md)
 - [安全政策](../.github/SECURITY.md)
 - [许可证](../LICENSE)
@@ -69,3 +70,5 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 `docs/` 是仓库阅读入口，不以网站源码或网站文章代替必要说明；README 导航指向本目录。`website/` 是独立的网站内容，两边可以包含相同主题，不为消除跨入口重复而删减任一侧。仓库内部同一主题尽量集中在对应指南，并用相互链接连接安装、使用、恢复与维护；命令、安全边界和版本事实仍应一致。
 
 历史图形教程、历史验收记录与当前操作指南承担不同职责，不能用旧截图代替 Linux 界面，也不能将过去的测试结论扩展到当前全部功能。2026-10-19 用户确认 CloudDrive2 v1.3.3 升级后实际转存完成；2026-10-21 提供 v1.4.1 CloudDrive2 ARM64 公网 NAT 首装验收结果。两次分别记录，不代表 OpenList、家庭共享、升级回退或灾难恢复均已通过。
+
+同日另完成 CloudDrive2 v1.3.4 → v1.4.2 的人工升级及只读检查，见上述独立记录；未执行本版真实文件转存或 `external_docker` 实机接入，不与其他版本结果混写。

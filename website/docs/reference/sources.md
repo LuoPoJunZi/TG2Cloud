@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 21 日**，对应 TG2Cloud **v1.4.2**，已正式发布。辅助 A／入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)和实际源码资产、SHA256、GitHub 摘要核验通过。Docker Nginx 复用的限制见[仓库专题](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/DOCKER-NGINX.md)；真实 VPS、ACME、长期续期与迁移仍待独立验收，不能借用历史 ARM64／公网 NAT 首装结论。
+本次内容核对日期为 **2026 年 10 月 21 日**，对应 TG2Cloud **v1.4.2**，已正式发布。辅助 A／入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)和实际源码资产、SHA256、GitHub 摘要核验通过。Docker Nginx 复用的限制见[仓库专题](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/DOCKER-NGINX.md)；external_docker 的真实 VPS 接入、ACME、长期续期与代理迁移仍待独立验收，不能借用历史 ARM64／公网 NAT 首装或本次 managed 人工升级结论。
 
 ## 主要来源
 
@@ -15,6 +15,7 @@
 | [VPS 一键脚本](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md) | 单行入口、正式稳定 payload、配置保留与未验收范围 |
 | [v1.3.0 升级验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md) | CloudDrive2 人工迁移的实际检查、用户确认及未执行项；不扩大为 OpenList 或全部自动升级验证 |
 | [v1.4.1 ARM64 首装验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md) | 用户提供的Ubuntu26.04.1公网NAT／CloudDrive2首装、本机HTTPS与WebDAV结果；APT错误、未覆盖项及脱敏边界 |
+| [v1.4.2 人工升级验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md) | 原 v1.3.4 提交核验、备份、正式核心升级、数据保留、只读 WebDAV 与外部 HTTPS；旧 Release 缺失限制和未执行范围 |
 | [内网安装](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md) | 独立内网入口、固定端口、用户提供验收与未验收范围 |
 | [独立卸载](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) | 主分支完整清理与保留模式、归属/外部引用保护及部分失败；原 Tag 行为另行区分 |
 | [CHANGELOG](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md) | TG2Cloud 更新与上游历史边界 |

@@ -4,6 +4,8 @@
 
 2026-10-21 的[v1.4.1 ARM64 公网NAT首装记录](development/V141-ACCEPTANCE.md)是另一项用户反馈：基础部署、Bot健康、本机HTTPS与WebDAV通过，长期续期仍无执行记录，不据此推断维护菜单、已有实例升级或恢复操作均已通过。APT错误按[VPS专题](VPS-INSTALL.md#apt-软件源错误)处理，不删除已有数据。
 
+同日的[v1.4.2 人工升级记录](development/V142-ACCEPTANCE.md)覆盖 CloudDrive2 v1.3.4 → v1.4.2、配置／任务／Session 保留、Bot 健康、只读 WebDAV 与外部 HTTPS；共享 managed 代理、网关和 OpenList 容器保持不变。旧版 Release 已删除的自动升级路径仍会停止，实际转存、故障回退与新代理模式不能据此记为通过。
+
 本页以当前终端工具为准，旧图形界面操作移至[历史教程](README-小白使用说明.md)。只下载入口或运行状态查询不会自动更新 Bot、管理工具、续期容器或附加功能。
 
 任务取消恢复、远端冲突、扫描与验证记录见[任务恢复指南](RECOVERY.md)，完整配置字段见[配置参考](CONFIGURATION.md)，独立灾备和恢复预检见[备份指南](BACKUP-RESTORE.md)。升级回退点不能代替包含 Session、网关授权和共享入口的完整备份。

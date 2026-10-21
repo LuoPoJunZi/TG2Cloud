@@ -31,4 +31,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 本地完整回归949项：921执行通过、28因环境条件跳过、0失败；随后对最后的参数／认证保护调整复跑 Python 3.10 新代理52项、外部 WebDAV55项和HTTP1项，通过。Ruff、Bandit、源码清单、双 Edition 载荷组装、Shell 语法及文档构建／19项测试通过。本地没有 Docker，隔离 Docker 验证交由本次双架构 CI，不把跳过写成已通过。
 
-未连接真实 VPS，未操作用户网盘。真实 ACME 签发、长期续期、现有网站业务、迁移／回退、卸载及手机外网仍需独立实机验收。历史 CloudDrive2 验收范围见[v1.3.0 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)和[v1.4.1 ARM64 NAT 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)，不外推为本次新模式通过。
+发布前开发阶段未连接真实 VPS、未操作用户网盘。真实 ACME 签发、长期续期、现有网站业务、代理迁移／回退、卸载及手机外网仍需独立实机验收。历史 CloudDrive2 验收范围见[v1.3.0 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)和[v1.4.1 ARM64 NAT 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)，不外推为本次新模式通过。
+
+### 发布后验收补充（2026-10-21）
+
+专用 Debian AMD64 测试机已按授权核验原提交、备份，并完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级；数据保留、Bot 健康、只读 WebDAV 和外部电脑 HTTPS 检查通过，保留 managed／schema 2。旧 Release／Tag 缺失的自动升级限制仍在，未执行真实转存或新增代理模式实机验收，详见[完整记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)。本段仅补充仓库文档，不改写已发布的 Tag、资产或远端 Release 正文。

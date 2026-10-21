@@ -34,11 +34,13 @@
 
 版本日期：2026-10-21。[v1.4.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2) 已正式发布。辅助 A `840472f919409531e99da55c62070ea262ebed6d` 与入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI、[同标签原生 AMD64／ARM64 发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部成功；实际源码包、SHA256 清单与 GitHub 资产摘要已核验。不把 CI 通过当作真实 VPS、ACME、长期续期或迁移验收。
 
+发布后验收补充（2026-10-21）：专用 Debian AMD64 测试机完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，任务／Session／配置保留、健康、只读 WebDAV 和外部 HTTPS 通过。旧版 Release／Tag 已删除，自动向导先停止；核验原不可变提交、备份后调用正式升级核心完成，未修改正式资产或新增绕过参数。实际转存、新代理模式、OpenList、回退与长期续期仍未执行，详见[独立记录](docs/development/V142-ACCEPTANCE.md)。
+
 - 新增显式授权的 `external_docker` 入口及只读检测／配置导出；保留原 `managed` 模式，不改变已有实例默认模式。
 - 增加持久化挂载与 bridge 网络核验、单层站点渲染、逐文件 CAS／恢复日志、Webroot 签发与证书加载状态。
 - 扩展 schema 3、外部 WebDAV 认证同步、入口维护、受限迁移及卸载保护；证书默认保留，不停止外部代理。
 - 宿主续期任务调用离线代码，不给 Certbot Docker Socket；未知归属、配置漂移及不支持环境拒绝自动写入。
-- 新增离线故障注入和隔离 Docker Nginx 回归，接入原生 AMD64／ARM64 CI 与发布门禁；真实 VPS、ACME、长期续期、现有网站业务及人工迁移仍需独立验收，不借用旧版结论。详见[使用与兼容说明](docs/DOCKER-NGINX.md)。
+- 新增离线故障注入和隔离 Docker Nginx 回归，接入原生 AMD64／ARM64 CI 与发布门禁；external_docker 的真实 VPS 接入、ACME、长期续期、现有网站业务及代理迁移仍需独立验收，不借用 managed 升级或旧版结论。详见[使用与兼容说明](docs/DOCKER-NGINX.md)。
 - 仅自动适配标准实例目录、普通 Nginx 和可核验的持久化配置／网络；面板、身份不明、配置漂移及缺少 cron 的新证书自动化安全停止。旧写入端不支持 schema 3，应更新离线维护工具，不能用旧助手修改新状态。
 - 不改变 Bot、数据库、Session、命名、上传策略、依赖或固定镜像；已有 managed／内网部署保持原默认行为，不自动迁移现有入口。
 

@@ -1,6 +1,8 @@
 # VPS 安装与升级脚本
 
-v1.4.2 已正式发布：辅助 A `840472f919409531e99da55c62070ea262ebed6d`、入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际源码包、SHA256 和 GitHub 摘要已核验。三个在线入口固定 A 并带齐递归清单；新增[复用已有 Docker Nginx](DOCKER-NGINX.md)，需显式授权，不改变默认 managed 模式。未对真实 VPS、ACME、长期续期或迁移做本版实机验收。
+v1.4.2 已正式发布：辅助 A `840472f919409531e99da55c62070ea262ebed6d`、入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际源码包、SHA256 和 GitHub 摘要已核验。三个在线入口固定 A 并带齐递归清单；新增[复用已有 Docker Nginx](DOCKER-NGINX.md)，需显式授权，不改变默认 managed 模式。
+
+2026-10-21，专用 Debian13／AMD64 测试机完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，健康、历史数据、只读 WebDAV 和外部 HTTPS 检查通过。原 Release／Tag 已删除，在线自动升级先安全停止；用户授权核验原提交、备份后调用正式升级核心，详见[独立记录](development/V142-ACCEPTANCE.md)。该路径不是自动升级缺失基线问题已修复；真实转存、OpenList、新增 external_docker 接入、ACME、长期续期和迁移仍需分别验收。
 
 历史 v1.4.1 已正式发布：辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与固定入口 B `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，实际源码资产已下载核验。三个入口包含下述 NAT 预检修复，业务仍只取正式稳定 Release。开发审计的 uv／certifi 已限定修复，Bot 运行依赖与镜像不变。
 
@@ -111,6 +113,12 @@ bash ./install.sh --edition clouddrive2
 OpenList 使用 `--edition openlist`，其脚本实机验收仍暂缓。不指定 Edition 时出现选择向导。已有两套完整实例可使用 `--edition both`；不支持一次向导在全新 VPS 批量安装两套。
 
 `--check` 只读运行实例及 HTTPS 状态，不收集秘密、安装软件或修改运行配置。它仍会访问公开 GitHub API 并在私有临时目录下载源码，因此需要网络和一定的临时磁盘空间。检查通过不代表 WebDAV、HTTPS 公网访问或 Telegram 实际转存已验收。
+
+### 旧版本 Release／Tag 已删除
+
+当前向导需要核验已安装版本的正式源码基线。若该版本的 GitHub Release 或 Tag 已删除，旧版本查询可能返回 404 并在升级前停止；即使版本号、容器和现有服务正常，也不能据此跳过基线检查。先保留原实例，不卸载、不改版本标记、不从未知来源覆盖代码。
+
+应先保存配置、数据库一致性快照、Session、必要网关配置和共享代理备份，再由维护者单独审阅可追溯的原提交与目标正式资产。本次 v1.3.4 → v1.4.2 按明确授权完成了这条人工路径，见[验收记录](development/V142-ACCEPTANCE.md)；它不是新增的自动接管功能，不提供通用强制升级参数。升级后同版本在线 `--check` 通过，也不代表升级前缺失的 Release 已恢复可用。
 
 ### 终端输入错误
 

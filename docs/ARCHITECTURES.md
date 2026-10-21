@@ -2,6 +2,8 @@
 
 2026-10-21：[v1.4.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2) 已发布。辅助 A `840472f919409531e99da55c62070ea262ebed6d`、入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部成功，实际源码包与 SHA256／GitHub 摘要已核验。新增复用 Docker Nginx 的隔离用例在两种架构执行通过；支持平台、固定镜像和 Bot 依赖不变，不等同 Oracle／用户 VPS、真实 ACME、迁移或长期续期通过。下列 v1.4.1／v1.4.0 内容保留各自历史范围。
 
+发布后另完成专用 Debian13／原生 AMD64 的 CloudDrive2 v1.3.4 → v1.4.2 人工升级，数据保留、Bot 健康、只读 WebDAV 和外部 HTTPS 通过，见[v1.4.2 独立记录](development/V142-ACCEPTANCE.md)。原 Release／Tag 已删除的自动升级路径仍会停止；本次不是 ARM64 升级、新代理模式或实际文件转存验收。
+
 2026-10-21：[v1.4.1 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)，修复下述公网 NAT 的 HTTPS 预检；支持范围、镜像和 Bot 依赖不变。辅助 A `3d222b90599f777d7646ff14ccebe466b25ad7eb`、入口 B／Tag `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，不能替代真实 Oracle 入站、ACME 或转存验收。
 
 发布后补充：用户已确认 CloudDrive2 在 Ubuntu 26.04.1／原生 ARM64／公网 NAT 环境完成首次安装、Bot 健康、本机 HTTPS 与 WebDAV 验收。该结果来自用户提供的实机日志，不是 CI 推断；完整边界及 APT 排查见[v1.4.1 验收记录](development/V141-ACCEPTANCE.md)。以下 v1.4.0 统计保留当时状态，不能替代本次独立记录。

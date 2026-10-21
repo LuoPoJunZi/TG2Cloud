@@ -33,6 +33,8 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 当前正式版本 **v1.4.2**，以 Linux 脚本维护，支持原生 AMD64 / ARM64；源码包与校验清单见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)。更新文档不会替换已有实例，需显式升级。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 v1.3.3 正式升级及用户转存确认见[历史验收记录](docs/development/V133-ACCEPTANCE.md)，不外推当前版本或其他部署与恢复场景。
 
+2026-10-21，专用 Debian AMD64 测试机已完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，健康、数据保留、只读 WebDAV 和外部 HTTPS 检查通过；旧 Release 已删除的自动升级限制、实际转存及新代理模式未验收范围见[本次记录](docs/development/V142-ACCEPTANCE.md)。
+
 ## 开始使用
 
 1. 按[填写信息清单](docs/填写信息清单.md)准备 Telegram Bot、API 信息和服务器环境；不要把真实凭据填写到公共文档。
@@ -96,7 +98,7 @@ v1.4.2 新增[复用已有 Docker Nginx](docs/DOCKER-NGINX.md)：显式授权接
 | 配置与备份 | [配置字段及运行目录](docs/CONFIGURATION.md) · [备份范围与恢复预检](docs/BACKUP-RESTORE.md) |
 | 家庭与手机读取 | [Bot 家人授权](docs/FAMILY-SHARING.md) · [外部 WebDAV 只读入口](docs/external-webdav.md) |
 | 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) |
-| 升级验收 | [v1.3.3 正式升级与转存确认](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 历史迁移](docs/development/V130-ACCEPTANCE.md) |
+| 升级验收 | [v1.4.2 人工升级与检查边界](docs/development/V142-ACCEPTANCE.md) · [v1.3.3 正式升级与转存确认](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 历史迁移](docs/development/V130-ACCEPTANCE.md) |
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |
 | 版本与发布 | [所有版本分别做了什么](CHANGELOG.md) · [当前发布说明](RELEASE_NOTES.md) |

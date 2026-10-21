@@ -12,6 +12,14 @@ v1.3.2 的默认公网／内网入口先选 Edition：已有实例打开管理�
 
 v1.3.0 向导的磁盘推荐仅用于新安装，升级不静默改预算。CloudDrive2 本次旧候选已迁移到正式版，用户确认升级后使用验收通过；OpenList 脚本实机验收暂缓，不能把本次结果扩展成两 Edition 的全部流程均已实测。
 
+## v1.4.2 人工升级验收与旧 Release 缺失
+
+2026-10-21，专用 Debian13／原生 AMD64 测试机完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级。原版 Release 和 Tag 已删除，在线向导查询基线返回 404 并先停止；经用户授权，核验原不可变提交与受管文件、备份后，调用正式 v1.4.2 原有升级核心完成切换，没有关闭指纹保护或添加强制覆盖。
+
+`.env`、任务记录、Session 授权和暂存清单保留，Bot healthy、非 root，网关／OpenList／共享代理容器身份和启动时间未变。本机 HTTPS、只读 WebDAV 207，以及另一台电脑的 TLS、HTTP 跳转与管理域名 `/dav` 阻断通过。升级后的公开 `--check` 识别已是 v1.4.2、不重建；不代表旧 Release 缺失的自动升级路径已经修复。
+
+此机继续使用 managed／schema 2；未执行实际 Telegram 转存、WebDAV 写入、external_docker 接入、ACME、回退或 OpenList 升级。完整备份范围、结果与限制见[独立验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)。遇到旧 Release 缺失时保留现有服务，先备份并单独审阅可信基线，不改版本标记、不卸载重装或照搬人工处理脚本。
+
 ## v1.3.0 本次升级验收
 
 2026-10-17，在专用测试 VPS 完成 CloudDrive2 旧测试候选到正式 v1.3.0 的迁移。原实例与官方旧版源码不一致，在线预检先安全停止；经授权人工核对、备份后，调用正式版原生安装流程完成切换。没有给脚本加入强制覆盖，也没有伪造旧版本。

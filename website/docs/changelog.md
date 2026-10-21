@@ -28,16 +28,18 @@
 | [v1.0.1](#tg2cloud-v1-0-1) | 修复 CloudDrive2 首装将 Bot 容器误判成额外网关的问题。 |
 | [v1.0.0](#tg2cloud-v1-0-0) | 建立双 Edition 和独立实例身份，提供两个 PySide6 部署器，保留稳定转存核心与旧数据兼容。 |
 
-v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再提供 Release 下载；新安装使用最新稳定版，不用旧 EXE 覆盖新实例。上游 TG115 的版本单独记录，不计入上述 20 个 TG2Cloud 版本。
+v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再提供 Release 下载；新安装使用最新稳定版，不用旧 EXE 覆盖新实例。上游 TG115 的版本单独记录，不计入上述 21 个 TG2Cloud 版本。
 
 ## TG2Cloud v1.4.2
 
 2026-10-21，[v1.4.2 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)。辅助 A、固定入口 B 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部成功，实际源码资产、SHA256 和 GitHub 摘要核验通过。完整范围见[仓库变更](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，不将 CI 扩大为 VPS、ACME 或迁移实机验收。
 
+发布后同日另完成 CloudDrive2 v1.3.4 → v1.4.2 的授权人工升级：原 Release／Tag 已删除，先核验原提交并备份，再调用正式升级核心。数据保留、Bot 健康、只读 WebDAV、外部电脑 HTTPS 与升级后在线复检通过，继续使用 managed。自动缺失基线处理尚未改进，真实转存和新代理模式未验收，详见[本次记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)。这只是发布后文档补充，不改写正式资产。
+
 - 新增显式授权的 external_docker 模式，不关闭外部 Nginx，不增加第二层代理，不修改外部 Compose；默认 managed 模式与 Bot 流程不变。
 - 核验端口真实归属、持久化配置和稳定网络别名；使用逐文件事务、私密备份、nginx -t、reload 和实际 TLS／后端检查。
 - Webroot 签发及宿主离线续期，复用证书仍由原工具负责；共享 schema 3 保留独立外部 WebDAV，卸载不停止外部代理且默认保留证书与恢复材料。
-- 标准目录、普通 Nginx 和已运行的 cron 等支持条件见[域名 HTTPS](/deploy/domain-https/)。真实 VPS、ACME、长期续期、迁移和现有网站业务仍待实机验收；不改变 Bot 依赖、镜像或数据库。
+- 标准目录、普通 Nginx 和已运行的 cron 等支持条件见[域名 HTTPS](/deploy/domain-https/)。external_docker 的真实 VPS 接入、ACME、长期续期、代理迁移和现有网站业务仍待实机验收；不改变 Bot 依赖、镜像或数据库。
 
 ## TG2Cloud v1.4.1
 

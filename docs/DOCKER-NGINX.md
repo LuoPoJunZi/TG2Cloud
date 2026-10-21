@@ -1,6 +1,8 @@
 # 复用已有 Docker Nginx（v1.4.2）
 
-本页对应已发布的 v1.4.2：辅助 A／固定入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际下载的源码包、SHA256 和 GitHub 摘要已核验。正式在线入口已固定经过验证的辅助代码，不使用 moving-main 业务源码；真实 VPS／ACME／迁移仍须独立验收。
+本页对应已发布的 v1.4.2：辅助 A／固定入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际下载的源码包、SHA256 和 GitHub 摘要已核验。正式在线入口已固定经过验证的辅助代码，不使用 moving-main 业务源码；external_docker 的真实 VPS 接入、ACME、长期续期和迁移仍须独立验收。
+
+2026-10-21 的[CloudDrive2 v1.4.2 人工升级检查](development/V142-ACCEPTANCE.md)保留原 managed／schema 2，确认数据、只读 WebDAV 与管理 HTTPS 正常；没有切换或验证本页的 external_docker 新模式，两项结论分开记录。
 
 ## 两种入口模式
 
