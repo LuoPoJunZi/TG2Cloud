@@ -1,5 +1,7 @@
 # VPS 安装与升级脚本
 
+v1.4.1 发布准备：辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 已通过[原生双架构与隔离容器](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)、[四组 Python CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)、仓库、文档和网站共五项 CI。三个入口 B 固定这份辅助源码，包含下述 NAT 预检修复；正式业务资产仍为 v1.4.0，须待 B 和新标签发布完成。开发审计的 uv／certifi 已限定修复，Bot 运行依赖与镜像不变。
+
 v1.4.0 已正式发布：三个主入口固定辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414`，A／入口 B 各五项 CI、[同标签原生 AMD64／ARM64 发布检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)全部通过，实际源码资产已核验。业务代码只取正式稳定 Release，不用 main 业务源码代替；Oracle／真实 VPS 验收由用户发布后执行。
 
 TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v1.2.1。`install.sh` 是公网 VPS 入口，复用现有 Docker 安装、配置保留、备份、回退、HTTPS 与 WebDAV 验收流程，不另建一套 Bot 或 Compose 实现。
