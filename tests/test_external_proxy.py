@@ -368,9 +368,29 @@ class LifecycleTests(unittest.TestCase):
         record = {"schema": 1, "edition": product.key, "instance_dir": str(Path(product.install_dir)), "entry": value}
         pending = self.root / "state/external-pending-clouddrive2.json"
         atomic(pending, json.dumps(record).encode())
-        self.assertEqual(retained_network(product, Path(product.install_dir), {}, self.root), "edge_net")
-        with self.assertRaises(ValueError):
-            retained_network(product, Path("/opt/not-the-instance"), {}, self.root)
+        # Exercise plan identity with an ordinary Runner-owned fixture; root-only
+        # production file checks are covered independently below, never disabled.
+        with patch("tg2cloud.deployment.configuration.regular_private", side_effect=lambda path: path.read_bytes()) as read:
+            self.assertEqual(retained_network(product, Path(product.install_dir), {}, self.root), "edge_net")
+            with self.assertRaisesRegex(ValueError, "归属"):
+                retained_network(product, Path("/opt/not-the-instance"), {}, self.root)
+            self.assertEqual([call.args[0] for call in read.call_args_list], [pending, pending])
+
+    def test_pending_plan_reader_rejects_nonroot_and_readable_files_before_read(self):
+        from tg2cloud.deployment.configuration import regular_private
+        for uid, mode in ((1000, 0o100600), (0, 0o100640), (0, 0o100604)):
+            with self.subTest(uid=uid, mode=mode):
+                path = Mock(spec=Path)
+                path.name = "external-pending-clouddrive2.json"
+                path.is_symlink.return_value = False
+                path.resolve.return_value = path
+                path.is_file.return_value = True
+                path.stat.return_value = SimpleNamespace(st_size=100, st_uid=uid, st_mode=mode)
+                # Replace only this module's OS facade, not global os.name or
+                # pathlib's platform selection, so the same contract runs on NT.
+                with patch("tg2cloud.deployment.configuration.os", SimpleNamespace(name="posix")), self.assertRaisesRegex(ValueError, "root"):
+                    regular_private(path)
+                path.read_bytes.assert_not_called()
 
 
 class DetectionAndAuthorizationTests(unittest.TestCase):
