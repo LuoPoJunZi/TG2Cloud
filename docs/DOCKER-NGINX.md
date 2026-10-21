@@ -131,12 +131,12 @@ python3 -B .github/scripts/check_repository.py
 python3 -B .github/scripts/prepare_bootstrap.py
 ```
 
-已添加仅操作独立网络、临时容器与测试证书的真实 Nginx 用例，显式开启方式如下；**本机无 Docker，尚未执行**，不能写成通过，也不代替 ACME、真实网关及迁移验收。该用例已接入现有双架构 Linux CI，远端结果尚未产生。
+已添加仅操作独立网络、临时容器与测试证书的真实 Nginx 用例，显式开启方式如下；本机无 Docker，但辅助 A 已在[原生 AMD64／ARM64 CI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591006899)执行通过，覆盖单层代理、原站保留、nginx -t 失败及 reload，不代替真实 ACME、用户网关或迁移验收。
 
 ```bash
 TG2CLOUD_TEST_EXTERNAL_NGINX_DOCKER=1 python3 -B -m unittest discover -s tests -p test_external_nginx_docker.py -v
 ```
 
-代码清单已纳入 bootstrap/runtime manifest；在线入口仍保留真实可核验的旧 helper pin。发布前必须先公开辅助代码提交 A，完成双架构 CI、隔离 Docker 用例，再在入口提交 B 固定 A 并带齐新 helper 文件清单，最后按现有严格流程构建正式源码 Release。不能填写伪 SHA 或回退 moving main。
+代码清单已纳入 bootstrap/runtime manifest；已公开且通过五项 CI 的辅助 A 为 `840472f919409531e99da55c62070ea262ebed6d`。入口候选固定该 A 并带齐新文件清单；仍须验证入口 B、通过同标签双架构门禁并发布正式源码资产，之后才切换 main 的在线入口。不能填写伪 SHA 或回退 moving main。
 
 尚需专用测试环境覆盖：host/bridge 与 named volume、两 Edition 和 WebDAV 共存、实际证书签发/续期/加载、容器重建及网关 IP 变化、原网站与 WebSocket、迁移维护窗口、完整升级回退及安全卸载。离线测试和配置渲染不能代替这些验收。

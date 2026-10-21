@@ -58,7 +58,7 @@ root = Path(sys.argv[1])
 api = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 # Update this pin only after the helper revision passes its CI and review.
 # It is independent of the target Release, which need not contain the CLI.
-installer_commit = "3d222b90599f777d7646ff14ccebe466b25ad7eb"
+installer_commit = "840472f919409531e99da55c62070ea262ebed6d"
 installer_version = "1.4.2"
 
 def validate_url(url):
@@ -120,6 +120,7 @@ try:
         'src/tg2cloud/cli/commands.py',
         'src/tg2cloud/cli/management.py',
         'src/tg2cloud/cli/presentation.py',
+        'src/tg2cloud/cli/proxy.py',
         'src/tg2cloud/cli/terminal.py',
         'src/tg2cloud/cli/vps.py',
         'src/tg2cloud/config.py',
@@ -137,6 +138,10 @@ try:
         'src/tg2cloud/deployment/profiles.py',
         'src/tg2cloud/deployment/proxy/__init__.py',
         'src/tg2cloud/deployment/proxy/certificates.py',
+        'src/tg2cloud/deployment/proxy/docker_nginx.py',
+        'src/tg2cloud/deployment/proxy/external_config.py',
+        'src/tg2cloud/deployment/proxy/external_entry.py',
+        'src/tg2cloud/deployment/proxy/external_transaction.py',
         'src/tg2cloud/deployment/proxy/lan.py',
         'src/tg2cloud/deployment/proxy/maintenance.py',
         'src/tg2cloud/deployment/proxy/manager.py',

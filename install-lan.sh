@@ -22,7 +22,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this reviewed immutable pin only after the LAN module passes CI/review.
-installer_commit="3d222b90599f777d7646ff14ccebe466b25ad7eb"
+installer_commit="840472f919409531e99da55c62070ea262ebed6d"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '内网向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2
@@ -83,6 +83,7 @@ files = (
     'src/tg2cloud/cli/commands.py',
     'src/tg2cloud/cli/management.py',
     'src/tg2cloud/cli/presentation.py',
+    'src/tg2cloud/cli/proxy.py',
     'src/tg2cloud/cli/terminal.py',
     'src/tg2cloud/cli/vps.py',
     'src/tg2cloud/config.py',
@@ -100,6 +101,10 @@ files = (
     'src/tg2cloud/deployment/profiles.py',
     'src/tg2cloud/deployment/proxy/__init__.py',
     'src/tg2cloud/deployment/proxy/certificates.py',
+    'src/tg2cloud/deployment/proxy/docker_nginx.py',
+    'src/tg2cloud/deployment/proxy/external_config.py',
+    'src/tg2cloud/deployment/proxy/external_entry.py',
+    'src/tg2cloud/deployment/proxy/external_transaction.py',
     'src/tg2cloud/deployment/proxy/lan.py',
     'src/tg2cloud/deployment/proxy/maintenance.py',
     'src/tg2cloud/deployment/proxy/manager.py',

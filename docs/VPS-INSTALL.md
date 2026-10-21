@@ -1,5 +1,7 @@
 # VPS 安装与升级脚本
 
+v1.4.2 发布准备：辅助 A `840472f919409531e99da55c62070ea262ebed6d` 已通过五项 CI，含原生 AMD64／ARM64 的隔离 Nginx、Bot、网关和 FUSE 检查。三个入口候选已固定 A 并带齐递归清单；入口 B 与同标签发布仍需验证，当前正式下载仍为 v1.4.1。复用外部 Nginx 的条件及显式授权见[专题](DOCKER-NGINX.md)，不改变原 managed 默认模式。
+
 v1.4.1 已正式发布：辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与固定入口 B `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，实际源码资产已下载核验。三个入口包含下述 NAT 预检修复，业务仍只取正式稳定 Release。开发审计的 uv／certifi 已限定修复，Bot 运行依赖与镜像不变。
 
 2026-10-21 用户实机反馈：CloudDrive2 v1.4.1 在 Ubuntu26.04.1／原生ARM64／公网NAT 完成首次安装、Bot健康、本机HTTPS与WebDAV验收。APT源问题由用户先备份修正后重试成功；完整范围与未覆盖项目见[验收记录](development/V141-ACCEPTANCE.md)。该结论不是 OpenList 或已有实例升级／回退通过。

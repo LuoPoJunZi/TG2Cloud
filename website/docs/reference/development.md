@@ -2,6 +2,8 @@
 
 当前文档源码为 v1.4.2（待发布）；新增外部 Docker Nginx 模块与隔离回归，正式下载仍为 v1.4.1。以下保留历史发布证据，不外推为本次 CI 或真实 VPS 验收。
 
+本版辅助 A `840472f919409531e99da55c62070ea262ebed6d` 已通过五项 CI：[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591006899)、[Python 3.10／3.13 四组检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591011059)、仓库与两套文档检查。三个入口候选固定该 A，入口 B 和同标签发布仍待验证，不把检查通过等同实机验收。
+
 v1.4.1 辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与固定入口 B `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，正式源码资产已下载核验。A 的[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)及[四组 Python CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)记录可独立查看。NAT 修复与开发工具安全更新不改变 Bot 依赖、镜像、数据库或部署身份；真实 VPS／ACME／转存仍待用户验收。
 
 发布后补充的[v1.4.1用户实机记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)覆盖CloudDrive2／Ubuntu26.04.1／ARM64公网NAT的首装、本机HTTPS和WebDAV；自动检查、用户反馈与未执行场景分开记录，不补写OpenList、升级回退或外网手机通过。此次只更新文档，不改程序版本、helper pin、Tag或Release资产。
