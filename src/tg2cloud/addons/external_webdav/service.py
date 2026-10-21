@@ -12,6 +12,7 @@ from contextlib import contextmanager
 from pathlib import Path
 
 from tg2cloud.addons.external_webdav import config, discovery, verification
+from tg2cloud.cli.terminal import confirm_nat_public_ipv4
 from tg2cloud.deployment import uninstall
 from tg2cloud.deployment.host import edition_lock
 from tg2cloud.deployment.proxy import maintenance
@@ -33,7 +34,12 @@ class Service:
         self.record_path = self.directory / "config.json"
         self.auth = Path(PROXY_ROOT) / "external-auth" / (product.key + ".htpasswd")
         self.launcher = Path("/usr/local/bin/tg2cloud-webdav")
-        self.manager = DomainProxyManager(session, product, {"vps_host": "127.0.0.1"}, log)
+        self._inside_lock = False
+        self.manager = DomainProxyManager(
+            session, product, {"vps_host": "127.0.0.1"}, log,
+            confirm_public_ipv4=(lambda domain, environment: confirm_nat_public_ipv4(ui, domain, environment, log))
+            if ui is not None else None,
+        )
 
     def preflight(self, directory: str | None, domain: str = "", *, require_running: bool = True):
         instance = discovery.selected(self.product, directory, self.session, self.log, require_running=require_running)
@@ -97,6 +103,8 @@ class Service:
             if not environment.ports_safe:
                 raise ValueError("80/443 存在其他占用或归属不明；不接管任何服务。")
         if domain:
+            if not self._inside_lock:
+                environment = self.manager.confirm_nat(domain, environment)
             self.manager._validate_environment(environment)
             for key, item in state["domains"].items():
                 if item["domain"] == domain:
@@ -111,7 +119,12 @@ class Service:
         # Same order as the core uninstaller: Edition first, shared proxy second.
         with (edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")),
               self.session.hold_lock(proxy_lock_command())):
-            yield
+            previous = self._inside_lock
+            self._inside_lock = True
+            try:
+                yield
+            finally:
+                self._inside_lock = previous
 
     def record(self):
         item = config.read_record(self.record_path)

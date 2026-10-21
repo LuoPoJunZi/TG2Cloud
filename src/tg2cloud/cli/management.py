@@ -73,7 +73,10 @@ class Management:
         return saved
 
     def proxy(self):
-        manager = DomainProxyManager(self.session, self.product, {"vps_host": "127.0.0.1"}, self.log)
+        manager = DomainProxyManager(
+            self.session, self.product, {"vps_host": "127.0.0.1"}, self.log,
+            confirm_public_ipv4=lambda domain, environment: terminal.confirm_nat_public_ipv4(self.ui, domain, environment, self.log),
+        )
         manager.prepare()
         return manager
 

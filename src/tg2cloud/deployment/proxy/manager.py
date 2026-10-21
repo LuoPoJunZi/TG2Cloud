@@ -32,14 +32,17 @@ from .state import (
     dns_matches_environment,
     empty_state,
     has_routes,
+    nat_public_ipv4_candidate,
     normalize_state,
     parse_environment,
     parse_markers,
+    public_endpoint_error,
     routes_from_state,
     state_with_route,
     state_without_route,
     validate_domain,
     validate_email,
+    validate_public_ipv4,
 )
 
 __all__ = ['EDITION_BACKEND_PORTS', 'PROXY_ROOT', 'STATE_VERSION', 'SUPPORTED_EDITIONS', '_CERTIFICATE_CHECK_SCRIPT', '_EMAIL_RE', '_FQDN_RE', '_MARKER_RE', 'DomainProxyManager', 'DomainRoute', 'ProxyEnvironment', 'ProxyReport', '_marker_addresses', 'dns_diagnostic', 'dns_matches_environment', 'dry_run_cleanup_script', 'empty_state', 'normalize_state', 'parse_certificate_enddate', 'parse_environment', 'parse_markers', 'renewal_dry_run_command', 'renewal_summary', 'renewal_warnings', 'routes_from_state', 'state_with_route', 'state_without_route', 'validate_domain', 'validate_email']
@@ -54,6 +57,7 @@ import threading
 import uuid
 from collections.abc import Callable
 from contextlib import AbstractContextManager, contextmanager
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -644,12 +648,16 @@ class DomainProxyManager:
         product: ProductProfile,
         values: dict[str, str],
         log: Callable[[str], None],
+        *,
+        confirm_public_ipv4: Callable[[str, ProxyEnvironment], str] | None = None,
     ) -> None:
         self.session = session
         self.product = product
         self.values = values
         self.log = log
         self.use_sudo = False
+        self.confirm_public_ipv4 = confirm_public_ipv4
+        self._nat_confirmation: tuple[str, str, tuple[str, ...], tuple[str, ...], frozenset[str]] | None = None
 
     def prepare(self) -> None:
         code, output = self.session.run("id -u", timeout=10)
@@ -690,45 +698,39 @@ fi
         raise_missing_host_tools(output)
         if code != 0:
             raise RuntimeError("无法完成域名、Docker 与端口环境检测。")
-        return parse_environment(output)
+        environment = parse_environment(output)
+        if self._nat_confirmation is not None:
+            saved_domain, address, dns_a, dns_aaaa, local = self._nat_confirmation
+            if (domain == saved_domain and environment.dns_a == dns_a and environment.dns_aaaa == dns_aaaa
+                    and local <= set(environment.local_addresses)
+                    and nat_public_ipv4_candidate(environment) == address):
+                return replace(environment, confirmed_public_ipv4=address)
+            self._nat_confirmation = None
+        return environment
+
+    def confirm_nat(self, domain: str, environment: ProxyEnvironment) -> ProxyEnvironment:
+        """Confirm only during interactive preflight, before the write lock."""
+        if (dns_matches_environment(environment, self.values["vps_host"]) or not environment.ports_safe
+                or self.confirm_public_ipv4 is None or not nat_public_ipv4_candidate(environment)):
+            return environment
+        supplied = self.confirm_public_ipv4(domain, environment)
+        if not supplied:
+            return environment
+        address = validate_public_ipv4(supplied)
+        if address != nat_public_ipv4_candidate(environment):
+            raise ValueError("云控制台公网 IPv4 与域名 A 记录不一致；未放行 HTTPS。")
+        self._nat_confirmation = (domain, address, environment.dns_a, environment.dns_aaaa,
+                                  frozenset(environment.local_addresses))
+        return replace(environment, confirmed_public_ipv4=address)
 
     def _validate_environment(self, environment: ProxyEnvironment) -> None:
         if environment.core != "OK":
             raise RuntimeError(f"请先完成 {self.product.display_name} 基础部署并确认管理页在 VPS 回环端口可访问。")
         if environment.docker != "OK":
             raise RuntimeError("VPS 上的 Docker Compose 不可用，请先完成基础环境部署。")
-        if not environment.ports_safe:
-            unknown = [
-                port
-                for port, value in (("80", environment.port_80), ("443", environment.port_443))
-                if value == "UNKNOWN"
-            ]
-            if unknown:
-                raise RuntimeError(
-                    "无法确认端口 "
-                    + "/".join(unknown)
-                    + " 的监听归属。为避免接管未知服务，已停止配置。"
-                )
-            ports = []
-            if environment.port_80 == "FOREIGN":
-                ports.append("80")
-            if environment.port_443 == "FOREIGN":
-                ports.append("443")
-            raise RuntimeError(
-                "端口 " + "/".join(ports) + " 已被非 TG2Cloud 服务占用。部署器不会停止、修改或覆盖该服务。"
-            )
-        if not dns_matches_environment(environment, self.values["vps_host"]):
-            detail = dns_diagnostic(environment, self.values["vps_host"])
-            if not environment.dns_a and not environment.dns_aaaa:
-                raise RuntimeError(
-                    "VPS 当前没有解析到该域名的 A/AAAA 记录。请等待 DNS 生效后重新检测；"
-                    "Cloudflare 首次签发时应设为“仅 DNS”。\n" + detail
-                )
-            raise RuntimeError(
-                "域名当前解析出的地址没有全部直接指向这台 VPS。请确认 A 记录使用当前 VPS IP，"
-                "删除错误的 AAAA，并在首次签发证书时将 Cloudflare 设为“仅 DNS”。\n"
-                + detail
-            )
+        error = public_endpoint_error(environment, self.values["vps_host"])
+        if error:
+            raise RuntimeError(error + "\n" + dns_diagnostic(environment, self.values["vps_host"]))
 
     def _upload_files(self, files: dict[str, str]) -> str:
         token = uuid.uuid4().hex
@@ -953,7 +955,7 @@ fi
         )
 
     def detect(self, domain: str) -> ProxyReport:
-        environment = self.probe(domain)
+        environment = self.confirm_nat(domain, self.probe(domain))
         statuses = (
             (f"{self.product.display_name} 基础服务", "通过" if environment.core == "OK" else "失败"),
             ("Docker Compose", "通过" if environment.docker == "OK" else "失败"),

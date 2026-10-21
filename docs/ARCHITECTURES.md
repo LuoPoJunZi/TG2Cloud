@@ -47,6 +47,12 @@ CloudDrive2 保留 `/dev/fuse`、privileged、host PID 与挂载传播权限；O
 
 ## Oracle Ampere A1 准备与验收
 
+2026-10-21 实机反馈：原生 ARM64 环境检测已通过，但在只有私有网卡地址的公网 NAT 主机上，v1.4.0 的 HTTPS 预检会误报 DNS／端口问题。该反馈不代表安装或转存已验收。对应本地修复尚未发布，见[VPS 指南](VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。
+
+新源码在严格候选条件下允许用户独立输入并确认云控制台的公网 IPv4；不自动查询出口 IP，不改网卡、DNS、防火墙或代理所有权。确认仅存于内存，绑定本次域名、DNS 和原有网卡地址，增加受管 Docker 网桥不使它失效，地址移除／DNS 或域名改变则停止复用。错误 AAAA、多 A、其他公网 IPv4 网卡和不安全端口不能走此分支；无交互确认仍按原规则拒绝。新 helper 与正式源码发布、NAT 入站 ACME 和两网关实机仍须后续验证。
+
+Oracle 的 [VNIC 元数据](https://docs.oracle.com/en-us/iaas/Content/Network/Tasks/managingVNICs.htm)提供私有网卡信息，不能凭此假定已经取得并核实公网 IPv4 映射。此实现不请求云账号权限、不安装 OCI CLI、不读取云凭据。
+
 Ubuntu 24.04 / 26.04 ARM64、Debian ARM64 是本次目标；**本轮未登录或部署 Oracle／真实 VPS**。先在服务商控制台确认自己的系统、磁盘与安全组，登录后只读检查：
 
 ```bash

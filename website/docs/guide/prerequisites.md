@@ -17,6 +17,10 @@
 
 ## 原生 AMD64 / ARM64
 
+:::warning v1.4.0 公网 NAT 已知限制
+Oracle 等主机的网卡可能只有私有 IPv4，公网 A 正确时仍会触发旧版 HTTPS 预检错误。新源码增加手动输入云控制台公网 IPv4、确认映射及执行前复核，仍要求端口归属安全、AAAA 正确和 ACME／TLS 自检通过。修复尚未进入正式资产与线上 helper；当前命令不会因本地修改就自动生效。不要把公网 A 改成私有 IP，详见[仓库 VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。
+:::
+
 新源码将 x86_64／amd64 统一为 `linux/amd64`，aarch64／arm64 统一为 `linux/arm64`，核对 64 位 Python、dpkg 用户态、本机 rootful Docker 及实际镜像；不安装 QEMU、不接受远端 daemon 或强制平台覆盖。两 Edition 和公网／内网／外部 WebDAV 共用规则，不增加 ARM 专用入口。
 
 v1.4.0 稳定包与匹配线上 helper 已发布核验，两个原生 runner 的 Bot、网关 HTTP／FUSE、扩展依赖、LAN 和外部 DAV 隔离检查均通过。Oracle、真实网关挂载／转存、手机和升级回退仍待用户实机验收，不能将 CI 写成这些场景已通过。完整证据及发布结果见[仓库双架构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/ARCHITECTURES.md)。

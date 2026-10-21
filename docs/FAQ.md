@@ -4,6 +4,10 @@
 
 ## 安装和升级
 
+### Oracle 的 A 记录正确，为什么 HTTPS 预检仍失败？
+
+如果网卡仅显示私有 IPv4、域名解析到云控制台的公网 IPv4、80／443 没有监听者，可能是 v1.4.0 未兼容公网 NAT 的地址比对。不要把域名改成私有 IP。新源码已增加人工核对云控制台公网 IPv4、分项错误提示与执行前复查，尚待正式发布及匹配 helper 更新；当前一键入口不会因为本地修复就自动获得它。条件、确认范围和发布边界见[VPS 指南](VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。确认地址后仍需通过 ACME，防火墙／安全组及实际入站连通性须独立核验。
+
 ### curl 命令可以单独安装吗？
 
 `curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh` 只把脚本文本输出到终端，不安装。要进入向导，请使用 [VPS 指南](VPS-INSTALL.md#vps-单行安装命令)中的完整 `bash <(curl …)` 命令。下载失败、只显示版本或退出码 0，也不能代替最终验收。

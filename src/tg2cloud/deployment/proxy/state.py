@@ -39,6 +39,8 @@ class ProxyEnvironment:
     dns_a: tuple[str, ...] = ()
     dns_aaaa: tuple[str, ...] = ()
     local_addresses: tuple[str, ...] = ()
+    # Ephemeral operator confirmation; never read from remote markers or state.
+    confirmed_public_ipv4: str = ""
 
     @property
     def ports_safe(self) -> bool:
@@ -229,30 +231,91 @@ def parse_environment(output: str) -> ProxyEnvironment:
         local_addresses=_marker_addresses(markers, "PROXY_LOCAL_IPS"),
     )
 
-def dns_matches_environment(environment: ProxyEnvironment, ssh_host: str) -> bool:
+def _expected_addresses(environment: ProxyEnvironment, ssh_host: str) -> set[str]:
     expected = set(environment.local_addresses)
     try:
-        expected.add(str(ipaddress.ip_address(ssh_host.strip().strip("[]"))))
+        address = ipaddress.ip_address(ssh_host.strip().strip("[]"))
     except ValueError:
         # A hostname used for SSH can be round-robin or proxied.  Only addresses
         # actually assigned to this VPS are authoritative for the DNS gate.
         pass
+    else:
+        # The Linux CLI executes locally. Its 127.0.0.1 transport is not a
+        # public DNS identity and must never make a loopback A record pass.
+        if not (address.is_loopback or address.is_unspecified or address.is_link_local or address.is_multicast):
+            expected.add(str(address))
+    return expected
+
+
+def dns_matches_environment(environment: ProxyEnvironment, ssh_host: str) -> bool:
+    expected = _expected_addresses(environment, ssh_host)
+    if (environment.confirmed_public_ipv4
+            and environment.confirmed_public_ipv4 == nat_public_ipv4_candidate(environment)):
+        expected.add(environment.confirmed_public_ipv4)
     targets = set(environment.dns_a) | set(environment.dns_aaaa)
+    if any((address := ipaddress.ip_address(value)).is_loopback or address.is_unspecified
+           or address.is_link_local or address.is_multicast for value in targets):
+        return False
     return bool(targets) and targets <= expected
+
+def validate_public_ipv4(value: str) -> str:
+    """Accept a single public IPv4 literal, not a URL, private IP or hostname."""
+    try:
+        address = ipaddress.IPv4Address(value)
+    except (ValueError, TypeError) as exc:
+        raise ValueError("请填写云控制台分配给本机的公网 IPv4。") from exc
+    if not address.is_global or address.is_multicast or address.is_reserved:
+        raise ValueError("必须填写公网 IPv4，不能使用内网、回环或保留地址。")
+    return str(address)
+
+
+def nat_public_ipv4_candidate(environment: ProxyEnvironment) -> str:
+    """A narrow manual-confirmation opportunity, never automatic NAT proof."""
+    if len(environment.dns_a) != 1 or not set(environment.dns_aaaa) <= set(environment.local_addresses):
+        return ""
+    local = [ipaddress.ip_address(value) for value in environment.local_addresses]
+    private_v4 = tuple(ipaddress.ip_network(cidr) for cidr in ("10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16"))
+    if (any(address.version == 4 and address.is_global for address in local)
+            or not any(address.version == 4 and any(address in subnet for subnet in private_v4) for address in local)):
+        return ""
+    try:
+        return validate_public_ipv4(environment.dns_a[0])
+    except ValueError:
+        return ""
+
+
+def public_endpoint_error(environment: ProxyEnvironment, ssh_host: str) -> str:
+    """Shared first-install and existing-proxy gate, without requiring a gateway."""
+    unknown = [port for port, value in (("80", environment.port_80), ("443", environment.port_443))
+               if value not in {"FREE", "OWN", "FOREIGN"}]
+    if unknown:
+        return "无法确认端口 " + "/".join(unknown) + " 的监听归属。为避免接管未知服务，已停止配置。"
+    foreign = [port for port, value in (("80", environment.port_80), ("443", environment.port_443)) if value == "FOREIGN"]
+    if foreign:
+        return "端口 " + "/".join(foreign) + " 已被非 TG2Cloud 服务占用。不会停止、修改或覆盖该服务。"
+    if not dns_matches_environment(environment, ssh_host):
+        if not environment.dns_a and not environment.dns_aaaa:
+            return "VPS 当前没有解析到该域名的 A/AAAA 记录。请等待 DNS 生效；Cloudflare 首次签发时使用“仅 DNS”。"
+        if nat_public_ipv4_candidate(environment):
+            return "DNS A 未匹配本机网卡；可能使用公网 NAT。请在交互向导中核对并确认云控制台的公网 IPv4。"
+        return "域名 A/AAAA 未全部匹配本机地址。请核对 A、删除错误的 AAAA，首次签发时将 Cloudflare 设为“仅 DNS”。"
+    return ""
+
 
 def dns_diagnostic(environment: ProxyEnvironment, ssh_host: str) -> str:
     """Return non-sensitive DNS details suitable for the dialog and errors."""
-    expected = set(environment.local_addresses)
-    try:
-        expected.add(str(ipaddress.ip_address(ssh_host.strip().strip("[]"))))
-    except ValueError:
-        pass
+    expected = _expected_addresses(environment, ssh_host)
 
     def display(values: tuple[str, ...] | set[str]) -> str:
         return ", ".join(sorted(values)) if values else "无"
 
+    ports = {"FREE": "空闲", "OWN": "TG2Cloud 代理持有", "FOREIGN": "其他服务占用"}
+    confirmation = ("；NAT 公网 IPv4：" + environment.confirmed_public_ipv4 + "（本次人工确认，入站仍待验证）"
+                    if environment.confirmed_public_ipv4 else "")
     return (
         f"DNS A：{display(environment.dns_a)}；"
         f"AAAA：{display(environment.dns_aaaa)}；"
-        f"当前 VPS：{display(expected)}"
+        f"当前 VPS：{display(expected)}{confirmation}\n"
+        f"80 端口：{ports.get(environment.port_80, '无法确认')}；"
+        f"443 端口：{ports.get(environment.port_443, '无法确认')}"
     )

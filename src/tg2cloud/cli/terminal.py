@@ -10,6 +10,11 @@ from zoneinfo import ZoneInfoNotFoundError
 from tg2cloud.deployment import configuration, install, releases
 from tg2cloud.deployment.host import SafeLog
 from tg2cloud.deployment.profiles import ProductProfile
+from tg2cloud.deployment.proxy.state import (
+    ProxyEnvironment,
+    dns_diagnostic,
+    validate_public_ipv4,
+)
 
 
 class Terminal:
@@ -71,6 +76,22 @@ class Terminal:
         if self.confirm("是否仅在当前终端显示" + label + "？请确保没有旁观/录屏"):
             self.output.write(label + ": " + value + "\n")
             self.output.flush()
+
+
+def confirm_nat_public_ipv4(ui: Terminal, domain: str, environment: ProxyEnvironment, log: SafeLog) -> str:
+    """Ask the operator for an independent console value; never prefill DNS."""
+    log("域名 " + domain + " 未匹配本机网卡，可能使用公网 NAT。")
+    log(dns_diagnostic(environment, "127.0.0.1"))
+    address = ui.ask("云控制台分配给本机的公网 IPv4（留空取消）",
+                     validate=lambda value: validate_public_ipv4(value) if value else "")
+    if not address:
+        return ""
+    if address not in environment.dns_a:
+        raise ValueError("云控制台公网 IPv4 与域名 A 记录不一致，请核对 DNS；未放行 HTTPS。")
+    if not ui.confirm("确认该公网 IPv4 直接映射到本机，且已配置 80/443 入站规则？"):
+        return ""
+    log("本次已人工确认 NAT 公网 IPv4；公网入站仍须通过证书签发及后续外部验收。")
+    return address
 
 
 def show_credentials(ui: Terminal, product: ProductProfile, config: dict[str, str], log: SafeLog) -> None:

@@ -9,15 +9,15 @@ v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.4.0
+git checkout main
 git rev-parse HEAD
 ```
 
-本文档对应已发布 v1.4.0，见[下载页](/download/)。main 用于当前开发并须记录提交号；复现已发布版本时使用对应不可变标签，不能把后续修改当成 Release 行为。
+本文档对应待发布 v1.4.1，见[下载页](/download/)。main 用于当前开发并须记录提交号；复现已发布版本时使用对应不可变标签，不能把后续修改当成 Release 行为。
 
 ## 关键目录与入口
 
-下表为 v1.4.0 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
+下表为 v1.4.1 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
 v1.3.1 沿用该结构，独立附加功能在 `src/tg2cloud/addons/external_webdav/`，专用入口为 `install-webdav.sh`。源码包已正式发布；下载、构建或发布成功都不等于实机安装通过。
 

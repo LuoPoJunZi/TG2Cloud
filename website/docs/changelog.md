@@ -1,5 +1,9 @@
 # 更新日志
 
+## TG2Cloud v1.4.1
+
+版本日期：2026-10-21，待发布。新源码为单一公网 A、已核对本机 AAAA 且端口归属安全的 NAT 场景增加云控制台公网 IPv4 人工确认，确认仅本次有效，执行前重新比对。错误记录、端口占用和拒绝确认仍会停止；ACME、TLS 和失败回退继续执行。已增加 DNS／80／443 分项错误提示和回环地址保护。当前正式下载仍为 v1.4.0，此修复须通过新的辅助 A／固定入口 B 和正式发布后才能在线使用，真实 NAT 安装尚待验收。完整改动见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，环境要求见[部署前准备](/guide/prerequisites/)。
+
 ## TG2Cloud v1.4.0
 
 完整改动见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。

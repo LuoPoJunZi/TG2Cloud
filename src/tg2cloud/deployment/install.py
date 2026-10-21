@@ -18,9 +18,13 @@ from tg2cloud.deployment import (
 from tg2cloud.deployment.host import LocalSession, SafeLog, edition_lock
 from tg2cloud.deployment.proxy.manager import (
     DomainProxyManager,
-    dns_matches_environment,
     validate_domain,
     validate_email,
+)
+from tg2cloud.deployment.proxy.state import (
+    dns_diagnostic,
+    nat_public_ipv4_candidate,
+    public_endpoint_error,
 )
 
 
@@ -54,7 +58,11 @@ def make_plan(
     if action in {"upgrade", "install"}:
         # The stable repair helper can adopt foreign CD2 containers; refuse them.
         instances.check_foreign_gateway(instance.product, session)
-    manager = DomainProxyManager(session, instance.product, {"vps_host": "127.0.0.1"}, log)
+    manager = DomainProxyManager(
+        session, instance.product, {"vps_host": "127.0.0.1"}, log,
+        confirm_public_ipv4=(lambda domain, environment: terminal.confirm_nat_public_ipv4(ui, domain, environment, log))
+        if ui is not None else None,
+    )
     manager.prepare()
     state = manager.read_state()
     report = manager.status(state)
@@ -80,8 +88,12 @@ def make_plan(
                     raise ValueError(detection.message)
             else:
                 environment = manager.probe(plan.domain)
-                if not environment.ports_safe or not dns_matches_environment(environment, "127.0.0.1"):
-                    raise ValueError("首次安装 HTTPS 前置检查未通过：检查 DNS 直指 VPS，以及 80/443 端口是否可安全使用")
+                if nat_public_ipv4_candidate(environment):
+                    environment = manager.confirm_nat(plan.domain, environment)
+                error = public_endpoint_error(environment, "127.0.0.1")
+                if error:
+                    raise ValueError("首次安装 HTTPS 前置检查未通过：" + error + "\n"
+                                     + dns_diagnostic(environment, "127.0.0.1"))
     if action == "install" and ui is not None:
         log("\n── 磁盘与资源 ──")
         storage = preflight.choose_storage(instance, session, log, ui)

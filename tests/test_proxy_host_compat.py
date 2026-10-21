@@ -13,14 +13,20 @@ import subprocess
 import tempfile
 import threading
 import unittest
+from contextlib import nullcontext
+from dataclasses import replace
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
+from tg2cloud.cli import terminal
+from tg2cloud.deployment import install, instances, preflight, releases
+from tg2cloud.deployment.host import SafeLog
 from tg2cloud.deployment.profiles import PRODUCTS
 from tg2cloud.deployment.proxy import certificates
 from tg2cloud.deployment.proxy import maintenance as backups
 from tg2cloud.deployment.proxy import manager as proxy
+from tg2cloud.deployment.proxy import state as proxy_state
 
 
 class HostCompatibilityTests(unittest.TestCase):
@@ -123,6 +129,215 @@ getent() {{ printf 'UNEXPECTED_DNS_CALL\\n'; }}
             packages = text.split("install -y --no-install-recommends \\\n", 1)[1].splitlines()[0].split()
             self.assertIn("iproute2", packages)
             self.assertIn("python3", packages)
+
+
+class NatProxyTests(unittest.TestCase):
+    # Public resolver literals are synthetic NAT fixtures; no requests are sent.
+    PUBLIC = "1.1.1.1"
+    DOMAIN = "files.example.test"
+    ENVIRONMENT = proxy.ProxyEnvironment("OK", "OK", "FREE", "FREE", (PUBLIC,), (), ("10.0.0.80", "172.17.0.1"))
+
+    @staticmethod
+    def output(environment):
+        return "\n".join("TG2CLOUD_PROXY_" + key + "=" + value for key, value in (
+            ("CORE", environment.core), ("DOCKER", environment.docker),
+            ("PORT_80", environment.port_80), ("PORT_443", environment.port_443),
+            ("DNS_A", ",".join(environment.dns_a)), ("DNS_AAAA", ",".join(environment.dns_aaaa)),
+            ("LOCAL_IPS", ",".join(environment.local_addresses)),
+        ))
+
+    def manager(self, edition="clouddrive2", *, confirmed=PUBLIC):
+        session = Mock()
+        session.run.return_value = (0, self.output(self.ENVIRONMENT))
+        session.hold_lock.side_effect = lambda *_args, **_kwargs: nullcontext()
+        prompt = Mock(return_value=confirmed)
+        manager = proxy.DomainProxyManager(session, PRODUCTS[edition], {"vps_host": "127.0.0.1"}, Mock(),
+                                           confirm_public_ipv4=prompt)
+        return manager, prompt
+
+    def test_private_vnic_requires_explicit_confirmation_for_each_edition(self):
+        for edition in PRODUCTS:
+            with self.subTest(edition=edition):
+                manager, prompt = self.manager(edition)
+                self.assertFalse(proxy.dns_matches_environment(manager.probe(self.DOMAIN), "127.0.0.1"))
+                self.assertEqual(manager.detect(self.DOMAIN).state, "detected")
+                prompt.assert_called_once()
+                confirmed = manager.probe(self.DOMAIN)
+                manager._validate_environment(confirmed)
+                self.assertEqual(confirmed.confirmed_public_ipv4, self.PUBLIC)
+                self.assertIn("人工确认", proxy.dns_diagnostic(confirmed, "127.0.0.1"))
+
+    def test_no_prompt_or_declined_confirmation_fails_closed(self):
+        manager, prompt = self.manager(confirmed="")
+        self.assertEqual(manager.detect(self.DOMAIN).state, "detected_error")
+        with self.assertRaisesRegex(RuntimeError, "公网 NAT"):
+            manager._validate_environment(manager.probe(self.DOMAIN))
+        manager.confirm_public_ipv4 = None
+        self.assertEqual(manager.detect(self.DOMAIN).state, "detected_error")
+        self.assertEqual(prompt.call_count, 1)
+
+    def test_wrong_console_address_does_not_authorize_any_dns(self):
+        manager, _ = self.manager(confirmed="8.8.8.8")
+        with self.assertRaisesRegex(ValueError, "不一致"):
+            manager.detect(self.DOMAIN)
+        self.assertEqual(manager.probe(self.DOMAIN).confirmed_public_ipv4, "")
+
+    def test_malformed_private_reserved_ipv6_or_command_input_is_rejected(self):
+        for value in ("10.0.0.80", "127.0.0.1", "203.0.113.10", "224.0.0.1", "0.0.0.0", "255.255.255.255",
+                      "169.254.169.254", "100.64.0.1", "::1", "2606:4700:4700::1111", "example.com",
+                      "https://1.1.1.1", "1.1.1.1; id", "1.1.1.1\n", " 1.1.1.1", "01.1.1.1"):
+            with self.subTest(value=value), self.assertRaises(ValueError):
+                proxy_state.validate_public_ipv4(value)
+
+    def test_wrong_aaaa_multiple_a_public_vnic_or_missing_dns_never_offers_nat(self):
+        changes = ({"dns_aaaa": ("2001:db8::99",)}, {"dns_a": (self.PUBLIC, "8.8.8.8")},
+                   {"local_addresses": ("8.8.8.8", "10.0.0.80")}, {"local_addresses": ()},
+                   {"dns_a": ()}, {"dns_a": ("127.0.0.1",)})
+        for change in changes:
+            with self.subTest(change=change):
+                manager, prompt = self.manager()
+                environment = replace(self.ENVIRONMENT, **change)
+                manager.session.run.return_value = (0, self.output(environment))
+                self.assertEqual(manager.detect(self.DOMAIN).state, "detected_error")
+                prompt.assert_not_called()
+
+    def test_foreign_unknown_or_unrecognized_port_cannot_be_overridden(self):
+        for port, status in (("port_80", "FOREIGN"), ("port_443", "UNKNOWN"), ("port_443", "INVALID")):
+            with self.subTest(port=port, status=status):
+                manager, prompt = self.manager()
+                environment = replace(self.ENVIRONMENT, **{port: status})
+                manager.session.run.return_value = (0, self.output(environment))
+                self.assertEqual(manager.detect(self.DOMAIN).state, "detected_error")
+                with self.assertRaisesRegex(RuntimeError, "端口"):
+                    manager._validate_environment(manager.probe(self.DOMAIN))
+                prompt.assert_not_called()
+
+    def test_direct_address_and_real_local_ipv6_keep_existing_behavior(self):
+        manager, prompt = self.manager()
+        direct = replace(self.ENVIRONMENT, local_addresses=(self.PUBLIC,))
+        manager.session.run.return_value = (0, self.output(direct))
+        self.assertEqual(manager.detect(self.DOMAIN).state, "detected")
+        prompt.assert_not_called()
+        dual = replace(self.ENVIRONMENT, dns_aaaa=("2001:db8::10",),
+                       local_addresses=(*self.ENVIRONMENT.local_addresses, "2001:db8::10"))
+        manager.session.run.return_value = (0, self.output(dual))
+        self.assertEqual(manager.detect(self.DOMAIN).state, "detected")
+        prompt.assert_called_once()
+
+    def test_confirmation_is_not_accepted_from_probe_output_or_new_manager(self):
+        manager, _ = self.manager()
+        manager.session.run.return_value = (0, self.output(self.ENVIRONMENT) + "\nTG2CLOUD_PROXY_CONFIRMED_PUBLIC_IPV4=" + self.PUBLIC)
+        self.assertEqual(manager.probe(self.DOMAIN).confirmed_public_ipv4, "")
+        manager.detect(self.DOMAIN)
+        other = proxy.DomainProxyManager(manager.session, PRODUCTS["openlist"], {"vps_host": "127.0.0.1"}, Mock())
+        self.assertEqual(other.probe(self.DOMAIN).confirmed_public_ipv4, "")
+
+    def test_reprobe_invalidates_confirmation_after_dns_domain_or_vnic_change(self):
+        for domain, change in ((self.DOMAIN, {"dns_a": ("8.8.8.8",)}),
+                               (self.DOMAIN, {"dns_aaaa": ("2001:db8::99",)}),
+                               ("other.example.test", {}),
+                               (self.DOMAIN, {"local_addresses": ("10.0.0.81", "172.17.0.1")})):
+            with self.subTest(domain=domain, change=change):
+                manager, prompt = self.manager()
+                manager.detect(self.DOMAIN)
+                manager.session.run.return_value = (0, self.output(replace(self.ENVIRONMENT, **change)))
+                changed = manager.probe(domain)
+                self.assertEqual(changed.confirmed_public_ipv4, "")
+                with self.assertRaises(RuntimeError):
+                    manager._validate_environment(changed)
+                self.assertEqual(prompt.call_count, 1)
+
+    def test_new_managed_bridge_does_not_lose_same_vnic_confirmation(self):
+        manager, prompt = self.manager()
+        manager.detect(self.DOMAIN)
+        extended = replace(self.ENVIRONMENT, local_addresses=(*self.ENVIRONMENT.local_addresses, "172.18.0.1"))
+        manager.session.run.return_value = (0, self.output(extended))
+        manager._validate_environment(manager.probe(self.DOMAIN))
+        self.assertEqual(prompt.call_count, 1)
+
+    def test_terminal_requires_independent_input_and_default_no_confirmation(self):
+        for answer, accepted in (("", True), (self.PUBLIC, False), (self.PUBLIC, True)):
+            with self.subTest(answer=answer, accepted=accepted):
+                ui = Mock()
+                ui.ask.return_value = answer
+                ui.confirm.return_value = accepted
+                result = terminal.confirm_nat_public_ipv4(ui, self.DOMAIN, self.ENVIRONMENT, Mock())
+                self.assertEqual(result, self.PUBLIC if answer and accepted else "")
+                self.assertNotIn("default", ui.ask.call_args.kwargs)
+                if not answer:
+                    ui.confirm.assert_not_called()
+        ui.ask.return_value = "8.8.8.8"
+        with self.assertRaisesRegex(ValueError, "不一致"):
+            terminal.confirm_nat_public_ipv4(ui, self.DOMAIN, self.ENVIRONMENT, Mock())
+
+    def test_configure_rechecks_and_never_prompts_inside_write_lock(self):
+        manager, prompt = self.manager()
+        manager.detect(self.DOMAIN)
+        manager.read_state = Mock(return_value=proxy.empty_state())
+        manager._activate = Mock()
+        manager._ensure_state_file = Mock()
+        manager._commit_state = Mock()
+        manager._obtain_certificate = Mock()
+        manager.session.run.return_value = (0, self.output(replace(self.ENVIRONMENT, dns_a=("8.8.8.8",))))
+        with self.assertRaisesRegex(RuntimeError, "DNS"):
+            manager.configure(self.DOMAIN, "")
+        manager._ensure_state_file.assert_not_called()
+        manager._activate.assert_not_called()
+        manager._obtain_certificate.assert_not_called()
+        manager._commit_state.assert_not_called()
+        self.assertEqual(prompt.call_count, 1)
+
+    def test_nat_confirmation_still_requires_acme_and_rolls_back_its_failure(self):
+        manager, prompt = self.manager()
+        manager.detect(self.DOMAIN)
+        manager.read_state = Mock(return_value=proxy.empty_state())
+        manager._ensure_state_file = Mock()
+        manager._activate = Mock()
+        manager._obtain_certificate = Mock(side_effect=RuntimeError("synthetic ACME failure"))
+        manager._install_config = Mock()
+        manager._compose = Mock(return_value=(0, ""))
+        manager._commit_state = Mock()
+        with self.assertRaisesRegex(RuntimeError, "ACME"):
+            manager.configure(self.DOMAIN, "")
+        manager._obtain_certificate.assert_called_once_with(self.DOMAIN, "")
+        manager._install_config.assert_called_once()
+        manager._compose.assert_called_once_with("stop nginx certbot", timeout=60)
+        manager._commit_state.assert_not_called()
+        self.assertEqual(prompt.call_count, 1)
+
+    def test_fresh_install_plans_nat_without_installing_before_confirmation(self):
+        root = Path(__file__).resolve().parents[1]
+        for edition in PRODUCTS:
+            with self.subTest(edition=edition):
+                product = PRODUCTS[edition]
+                fresh = instances.Instance(product, Path(product.install_dir), False)
+                session = Mock()
+                session.run.return_value = (0, self.output(self.ENVIRONMENT))
+                ui = Mock()
+                ui.ask.side_effect = [self.DOMAIN, "", self.PUBLIC]
+                ui.confirm.return_value = True
+                created = []
+
+                def factory(*args, _created=created, **kwargs):
+                    manager = proxy.DomainProxyManager(*args, **kwargs)
+                    manager.prepare = Mock()
+                    manager.read_state = Mock(return_value=proxy.empty_state())
+                    manager.status = Mock(return_value=proxy.ProxyReport("", "not_configured", "none", ()))
+                    _created.append(manager)
+                    return manager
+
+                with (patch.object(install, "DomainProxyManager", side_effect=factory),
+                      patch.object(instances, "docker_inventory", return_value=set()),
+                      patch.object(preflight, "choose_storage", return_value=("8", "8")),
+                      patch.object(preflight, "resource_check"),
+                      patch.object(terminal, "collect_config", return_value={}),
+                      patch.object(install, "apply_base") as apply):
+                    plan = install.make_plan(fresh, releases.Release("v" + product.app_version, "a" * 40), root, None,
+                                             session, SafeLog(Mock()), ui)
+                self.assertTrue(plan.configure_https)
+                self.assertEqual(plan.domain, self.DOMAIN)
+                self.assertEqual(created[0].probe(self.DOMAIN).confirmed_public_ipv4, self.PUBLIC)
+                apply.assert_not_called()
 
 
 if __name__ == "__main__":
