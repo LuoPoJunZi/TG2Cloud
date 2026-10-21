@@ -97,7 +97,7 @@ v1.3.3 起，[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人�
 | 升级验收 | [v1.3.3 正式升级与转存确认](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 历史迁移](docs/development/V130-ACCEPTANCE.md) |
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |
-| 版本与发布 | [CHANGELOG](CHANGELOG.md) · [发布说明](RELEASE_NOTES.md) |
+| 版本与发布 | [所有版本分别做了什么](CHANGELOG.md) · [当前发布说明](RELEASE_NOTES.md) |
 | 历史 Windows 版 | [v1.2.1 图形部署教程](docs/README-小白使用说明.md) · [脚本优先与桌面版冻结](docs/development/SCRIPT-FIRST.md) |
 | 品牌与第三方组件 | [品牌使用规范](docs/development/BRAND-GUIDE.md) · [第三方组件说明](docs/第三方组件说明.md) |
 

@@ -262,6 +262,26 @@ class UserDocumentationTests(unittest.TestCase):
         "docs/MIGRATION_FROM_TG115.md", "docs/第三方组件说明.md", "docs/development/V133-ACCEPTANCE.md",
     )
 
+    def test_all_version_records_remain_indexed_even_without_release_downloads(self):
+        history = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        versions = re.findall(r"^## TG2Cloud v(\d+\.\d+\.\d+)\s*$", history, re.MULTILINE)
+        # Published history is not pruned when Release pages or tags are removed.
+        baseline = {f"1.{minor}.{patch}" for minor, count in ((0, 5), (1, 6), (2, 2), (3, 5), (4, 2))
+                    for patch in range(count)}
+        self.assertLessEqual(baseline, set(versions))
+        self.assertEqual(len(versions), len(set(versions)))
+        for name, separator in (("CHANGELOG.md", ""), ("website/docs/changelog.md", "-")):
+            text = (ROOT / name).read_text(encoding="utf-8")
+            with self.subTest(document=name):
+                self.assertEqual(re.findall(r"^## TG2Cloud v(\d+\.\d+\.\d+)\s*$", text, re.MULTILINE), versions)
+                rows = re.findall(r"^\| \[v(\d+\.\d+\.\d+)\]\(#([^)]*)\) \| (.+) \|$", text, re.MULTILINE)
+                self.assertEqual([version for version, _, _ in rows], versions)
+                for version, anchor, summary in rows:
+                    self.assertEqual(anchor, "tg2cloud-v" + version.replace(".", separator))
+                    self.assertTrue(summary.strip())
+                self.assertIn(f"共 {len(versions)} 个版本", text)
+        self.assertIn("## 上游 TG115 历史记录", history)
+
     def test_readmes_and_index_offer_standalone_bot_and_storage_guides(self):
         for name in ("BOT-USAGE.md", "STORAGE.md"):
             self.assertIn(f"]({name})", (ROOT / "docs/README.md").read_text(encoding="utf-8"))

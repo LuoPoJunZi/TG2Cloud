@@ -1,5 +1,34 @@
 # 更新记录
 
+本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.4.1 共 20 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
+
+截至 **2026-10-21**，GitHub 仅保留 [v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 两个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
+
+| 版本 | 这一版主要做了什么 |
+| --- | --- |
+| [v1.4.1](#tg2cloud-v141) | 修复公网 IPv4 NAT 主机的 HTTPS 预检，增加人工确认、执行前复核及 DNS／端口分项提示；补充 CloudDrive2 ARM64 首装验收。 |
+| [v1.4.0](#tg2cloud-v140) | 原生支持 Linux AMD64／ARM64；统一架构、Docker 与镜像检查，接入双架构 CI 和发布验证。 |
+| [v1.3.4](#tg2cloud-v134) | 增强长说明、图片及媒体组命名，处理网址污染原名、斜杠说明与错误后缀；补全使用与恢复文档。 |
+| [v1.3.3](#tg2cloud-v133) | 新增 Bot 家庭共享和外部 WebDAV 多只读账号；增强多语言命名，精简 VPS 资源页。 |
+| [v1.3.2](#tg2cloud-v132) | 主安装与附加功能改用中文编号向导；新增离线 `tg2cloud` 管理菜单及最后实例卸载后的命令清理。 |
+| [v1.3.1](#tg2cloud-v131) | 新增独立外部 WebDAV，只读账号通过独立 HTTPS 域名访问既有上传目录；扩展共享代理、续期与依赖保护。 |
+| [v1.3.0](#tg2cloud-v130) | 转为 Linux Python + Bash 维护，源码归入 `src/tg2cloud/`；冻结 Windows 版，统一构建资源与递归指纹，完善磁盘推荐。 |
+| [v1.2.1](#tg2cloud-v121) | 修复取消后重转存、远端冲突及遗留扫描；完善验证、备份和空间保护，新增说明命名与每周失败统计；最后一个 Windows 版。 |
+| [v1.2.0](#tg2cloud-v120) | 新增独立内网／NAS 安装和卸载脚本，显示实际内网地址与端口；当时卸载默认保留数据，后续 v1.2.1 调整。 |
+| [v1.1.5](#tg2cloud-v115) | 修复 HTTPS 中断回退与提交一致性、宿主 Python 3.10 兼容；完善失败续做后的凭据展示和依赖提示。 |
+| [v1.1.4](#tg2cloud-v114) | 修复终端不可 seek 和候选镜像源码权限；统一 Bot 内部 TG2Cloud 名称，同时保留历史数据库与 Session 路径。 |
+| [v1.1.3](#tg2cloud-v113) | 首次提供公网 VPS 单行安装／保留配置升级向导，使用稳定 Release；合入 Telethon、PyInstaller 的限定升级。 |
+| [v1.1.2](#tg2cloud-v112) | 增强实际版本与故障阶段提示；新增 HTTPS 备份核验、隔离解包、续期演练及 OpenList 冷却诊断。 |
+| [v1.1.1](#tg2cloud-v111) | 为共享 HTTPS 增加事务锁、原子状态和路由回退；改善 OpenList 大目录查询、401／429 探测及发布门禁。 |
+| [v1.1.0](#tg2cloud-v110) | 受管部署强制完成 HTTPS 后才能验收；移除日常 SSH 管理隧道按钮，后端继续仅回环监听。 |
+| [v1.0.4](#tg2cloud-v104) | 重做 Bot 紧凑状态首页，按实际 Edition 显示网关；拆出 VPS 资源页，按钮刷新复用原消息。 |
+| [v1.0.3](#tg2cloud-v103) | 新增可选共享 Nginx／Certbot 域名 HTTPS，支持续期、事务回退、端口归属检查及管理域名公开 `/dav` 阻断。 |
+| [v1.0.2](#tg2cloud-v102) | 修复 OpenList 部分挂载 MOVE 假成功：预留无冲突正式路径后直接写入；保留 CloudDrive2 临时上传与改名策略。 |
+| [v1.0.1](#tg2cloud-v101) | 修复 CloudDrive2 首装网络修复时将 Bot 容器误判成第二个网关的问题，保留真实冲突保护。 |
+| [v1.0.0](#tg2cloud-v100) | 建立 CloudDrive2／OpenList 双 Edition、独立实例身份与两个 PySide6 部署器；保留队列、流式传输与旧数据兼容。 |
+
+新安装使用最新稳定版；v1.2.1 是最后一个 Windows 部署器版本，v1.0.2 仅保留历史变更记录，不再提供 Release 下载。不建议用旧 EXE 覆盖新实例。版本记录不是旧版操作教程；当前命令与升级、备份边界见[文档目录](docs/README.md)。上游 TG115 另列文末，不计入上述 20 个版本。
+
 ## TG2Cloud v1.4.1
 
 版本日期：2026-10-21。[v1.4.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1) 已正式发布，辅助 A、固定入口 B 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功。实际源码包、SHA256 清单和 GitHub 资产摘要已核验。发布后用户提供 Ubuntu26.04.1／原生ARM64／公网NAT 的 CloudDrive2 首装、本机HTTPS和WebDAV验收结果，详见[独立记录](docs/development/V141-ACCEPTANCE.md)；不扩展到OpenList、升级回退或所有真实转存场景。
@@ -11,7 +40,7 @@
 
 ## TG2Cloud v1.4.0
 
-版本日期：2026-10-20。[v1.4.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0) 已正式发布；辅助 A、入口 B 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)全部通过。实际下载源码包、SHA256 清单及 GitHub 资产摘要核验通过。Oracle 与真实 VPS 验收由用户在发布后执行，不把 CI 写成实机通过。
+版本日期：2026-10-20。v1.4.0 当时已正式发布（现已移除 Release／Tag）；辅助 A、入口 B 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)全部通过。实际下载源码包、SHA256 清单及 GitHub 资产摘要核验通过。Oracle 与真实 VPS 验收由用户在发布后执行，不把 CI 写成实机通过。
 
 - 公网、内网、维护、卸载与独立外部 WebDAV 复用原生平台检查；识别四种常见名称，核对 64 位用户态、dpkg、本机 rootful daemon 和镜像平台，拒绝异平台／远端／构建器覆盖，不配置 QEMU。
 - 两版 hooks 在停止旧 Bot 前检查原生基础和网关镜像，候选显式按宿主构建，启动后检查实际 Image ID，保留原有健康、WebDAV、备份和回退流程。不变更镜像版本、Python 依赖、数据库、配置和数据目录。
@@ -20,7 +49,7 @@
 
 ## TG2Cloud v1.3.4
 
-版本日期：2026-10-19。[v1.3.4 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.4) 已正式发布；辅助 A 与入口 B 各五项 CI、[同标签发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39204327020)全部成功。实际下载的源码包与 SHA256 清单、GitHub 资产摘要和源码归档校验均通过。保留 Linux Python＋Bash 架构、安装入口、网关和传输策略；没有部署或操作真实 VPS。
+版本日期：2026-10-19。v1.3.4 当时已正式发布（现已移除 Release／Tag）；辅助 A 与入口 B 各五项 CI、[同标签发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39204327020)全部成功。实际下载的源码包与 SHA256 清单、GitHub 资产摘要和源码归档校验均通过。保留 Linux Python＋Bash 架构、安装入口、网关和传输策略；没有部署或操作真实 VPS。
 
 - 媒体 caption 以 `/` 开头时不再误当文字命令跳过接收；纯文字命令行为保留。
 - 区分正常作品名与广告／密码／大小字段，识别表情修饰的明确标题；过滤标题标签后的推广，安全组合同条说明中相邻的作品名与集数。
@@ -34,7 +63,7 @@
 
 ## TG2Cloud v1.3.3
 
-版本日期：2026-10-18。[v1.3.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3) 已发布家庭共享、多语言命名与资源页精简。辅助提交与入口提交的五项 CI、同标签 Release 检查全部通过；实际下载的源码包、SHA256 清单、归档布局与 GitHub 资产摘要已核对。未连接真实 VPS、Telegram 或用户网盘，发布不等于实机验收。
+版本日期：2026-10-18。v1.3.3 当时已发布家庭共享、多语言命名与资源页精简（现已移除 Release／Tag）。辅助提交与入口提交的五项 CI、同标签 Release 检查全部通过；实际下载的源码包、SHA256 清单、归档布局与 GitHub 资产摘要已核对。未连接真实 VPS、Telegram 或用户网盘，发布不等于实机验收。
 
 - 精简 Bot“VPS 资源”页，移除目录／文件系统容量清单；保留 CPU、内存、磁盘、暂存额度及必要保护提示，后台多文件系统监测和磁盘安全线不变。
 - 增量增强视频命名：补识别混合随机 ID，按同条／本媒体组可见文字的标题、集数、引用与可读信息评分；支持 Unicode 多语言，过滤域名变体、推广账号、话题及画质元数据。保留有意义的原名、媒体组指定命名优先级、真实附件扩展名、无说明兜底及既有去重／远端冲突处理；可选识别异常回退原安全名称，不阻断接收。无新依赖、环境变量或数据库迁移，不抓评论／频道，不做 OCR。
@@ -45,7 +74,7 @@
 
 ## TG2Cloud v1.3.2
 
-版本日期：2026-10-18。[v1.3.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.2) 已发布 Linux 源码包与实际 SHA256；辅助提交 A 和入口 B 的五个 CI、同标签 Release 工作流全部通过。下载的正式资产已核对归档布局、校验清单与公开摘要；未覆盖历史版本，未执行真实 VPS 部署或卸载。
+版本日期：2026-10-18。v1.3.2 当时已发布 Linux 源码包与实际 SHA256（现已移除 Release／Tag）；辅助提交 A 和入口 B 的五个 CI、同标签 Release 工作流全部通过。下载的正式资产已核对归档布局、校验清单与公开摘要；未覆盖历史版本，未执行真实 VPS 部署或卸载。
 
 - 主 Linux 默认向导改为中文分段、编号选择及简洁版本提示；WebDAV 用户名回车默认 `tg2cloud`，密码回车生成 8 位，保存子目录可留空。新装默认 `Asia/Shanghai` 不再询问；升级保留原 `.env`、时区、凭据及预算。
 - 新增确认安装的离线 `tg2cloud` 管理菜单，复用现有安装／升级、实例校验、容器、WebDAV、HTTPS、备份与卸载保护。启停默认仅 Bot，网关显式选择；内网不隐式转 HTTPS，外部 WebDAV 仍独立。凭据只在私有终端显示，安装运行代码不包含用户数据，不覆盖未知同名命令；在线入口固定到已通过 CI 的辅助提交，旧主机需显式更新。
@@ -58,7 +87,7 @@
 
 ## TG2Cloud v1.3.1
 
-版本日期：2026-10-18。[v1.3.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.1) 已发布源码包与实际 SHA256。独立外部 WebDAV 附加功能；主安装流程和 Bot 菜单保持原行为。
+版本日期：2026-10-18。v1.3.1 当时已发布源码包与实际 SHA256（现已移除 Release／Tag）。独立外部 WebDAV 附加功能；主安装流程和 Bot 菜单保持原行为。
 
 - 独立 Linux 入口 `install-webdav.sh` 和离线维护命令，不加入主安装、Bot 菜单或运行依赖。
 - 两版原生独立只读账号通过人工后台设置/确认后做认证和目录检查；单账号强哈希门禁、只读方法、Range 和失败关闭，不复用 Bot/管理员凭据。
@@ -228,7 +257,7 @@ GitHub Release 标签和程序内部版本均为 `v1.0.3`。两个 Windows EXE �
 
 ## TG2Cloud v1.0.2
 
-GitHub Release 标签和程序内部版本均为 `v1.0.2`。两个 Windows EXE 由 GitHub Actions 从同一个不可变标签统一测试、构建和自检，并按本次实际产物生成 SHA256。
+历史发布记录：当时 GitHub Release 标签和程序内部版本均为 `v1.0.2`；该版 Release／Tag 现已移除。两个 Windows EXE 当时由 GitHub Actions 从同一个不可变标签统一测试、构建和自检，并按本次实际产物生成 SHA256。
 
 - 修复部分 OpenList／115 Open 挂载对 WebDAV `MOVE` 返回 201、但目标文件没有实际生成的后端兼容问题；OpenList 改为预留无冲突路径后直接写入最终文件名。
 - 保留远端大小复验、失败现场保护、重启恢复和安全清理；旧版遗留临时文件不会被隐式改名或覆盖。

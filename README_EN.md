@@ -97,7 +97,7 @@ Since v1.3.3, [family sharing](docs/FAMILY-SHARING.md) provides post-install Bot
 | Upgrade acceptance | [v1.3.3 official upgrade and transfer confirmation](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 historical migration](docs/development/V130-ACCEPTANCE.md) |
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |
-| Versions and releases | [Changelog](CHANGELOG.md) · [Release notes](RELEASE_NOTES.md) |
+| Versions and releases | [Complete version history](CHANGELOG.md) · [Current release notes](RELEASE_NOTES.md) |
 | Historical Windows edition | [v1.2.1 GUI deployment guide](docs/README-小白使用说明.md) · [Script-first maintenance and desktop freeze](docs/development/SCRIPT-FIRST.md) |
 | Branding and components | [Brand guide](docs/development/BRAND-GUIDE.md) · [Third-party components](docs/第三方组件说明.md) |
 
