@@ -1,5 +1,7 @@
 # 开发与贡献
 
+当前文档源码为 v1.4.2（待发布）；新增外部 Docker Nginx 模块与隔离回归，正式下载仍为 v1.4.1。以下保留历史发布证据，不外推为本次 CI 或真实 VPS 验收。
+
 v1.4.1 辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与固定入口 B `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，正式源码资产已下载核验。A 的[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)及[四组 Python CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)记录可独立查看。NAT 修复与开发工具安全更新不改变 Bot 依赖、镜像、数据库或部署身份；真实 VPS／ACME／转存仍待用户验收。
 
 发布后补充的[v1.4.1用户实机记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)覆盖CloudDrive2／Ubuntu26.04.1／ARM64公网NAT的首装、本机HTTPS和WebDAV；自动检查、用户反馈与未执行场景分开记录，不补写OpenList、升级回退或外网手机通过。此次只更新文档，不改程序版本、helper pin、Tag或Release资产。
@@ -13,11 +15,11 @@ v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.4.1
+git checkout main
 git rev-parse HEAD
 ```
 
-本文档对应正式 v1.4.1，见[下载页](/download/)。上面的不可变标签用于复现；main 用于当前开发并须记录提交号，不能把后续修改当成 Release 行为。
+本文档对应待发布 v1.4.2，正式下载见[下载页](/download/)。main 用于当前开发并须记录提交号，不能把后续修改当成 Release 行为；历史正式版应检出其不可变标签。
 
 ## 关键目录与入口
 

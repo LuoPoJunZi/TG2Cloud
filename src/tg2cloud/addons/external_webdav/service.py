@@ -55,14 +55,18 @@ class Service:
                 uninstall.proxy_identity(name, containers[name], state=state)
         root = Path(PROXY_ROOT)
         managed = {"tg2cloud-proxy-nginx", "tg2cloud-proxy-certbot"} & containers.keys()
-        if (managed and not (root / "docker-compose.yml").is_file()) or (
-                (state["domains"] or state.get("external_webdav")) and len(managed) != 2):
+        external = self.manager.external_entry(state)
+        if external:
+            external.preflight(domain)
+        if external is None and ((managed and not (root / "docker-compose.yml").is_file()) or (
+                (state["domains"] or state.get("external_webdav")) and len(managed) != 2)):
             raise ValueError("共享代理只部分存在；不自动修复或接管。")
         config.canonical(root)
         for path in (root / "docker-compose.yml", root / "external-auth"):
             config.canonical(path)
         auth_dir = root / "external-auth"
-        if state.get("version") == 2 and not auth_dir.is_dir():
+        requires_auth = state.get("version") == 2 or (state.get("version") == 3 and state.get("external_webdav"))
+        if requires_auth and not auth_dir.is_dir():
             raise ValueError("schema 2 代理缺少受管认证目录。")
         for owner in state.get("external_webdav", {}):
             if not (auth_dir / (owner + ".htpasswd")).is_file():
@@ -82,7 +86,9 @@ class Service:
                                                      if m["phase"] in {"enabled", "pending"})}
                     if entries.keys() - allowed or (record["phase"] == "disabled" and entries):
                         raise ValueError("认证文件包含未登记或已撤销的账号；拒绝发布。")
-        if (root / "docker-compose.yml").exists():
+        if external is not None:
+            pass  # The adapter validates its own site list, mounts and identity.
+        elif (root / "docker-compose.yml").exists():
             expected = render_compose(certificate_domains(state), external_auth=state.get("version") == 2)
             if (root / "docker-compose.yml").read_text().replace("\r\n", "\n") != expected:
                 raise ValueError("共享 Compose 与受管清单不一致；不自动接管或覆盖。")
@@ -141,7 +147,10 @@ class Service:
     def backup(self, state: dict) -> None:
         if self.record_path.exists():
             config.atomic(self.directory / "backups" / (str(time.time_ns()) + ".json"), self.record_path.read_bytes())
-        if (Path(PROXY_ROOT) / "docker-compose.yml").exists():
+        external = self.manager.external_entry(state)
+        if external:
+            external.backup(state)
+        elif (Path(PROXY_ROOT) / "docker-compose.yml").exists():
             maintenance.create_backup(Path(PROXY_ROOT), maintenance.BACKUP_ROOT)
 
     def route(self, item: dict, enabled: bool) -> dict:
@@ -152,7 +161,12 @@ class Service:
     def auth_write(self, content: bytes) -> None:
         # Only after confirmation. Query the actual pinned image's worker group,
         # rather than assume host nginx owns the same numeric group.
-        code, output = self.session.run("docker run --rm --read-only --entrypoint id " + shlex.quote(NGINX_IMAGE) + " -g nginx", timeout=120)
+        external = self.manager.external_entry()
+        if external:
+            external.context()
+            code, output = 0, str(external.entry["mount"]["worker_gid"])
+        else:
+            code, output = self.session.run("docker run --rm --read-only --entrypoint id " + shlex.quote(NGINX_IMAGE) + " -g nginx", timeout=120)
         if code or not output.strip().isdigit() or not 0 < int(output.strip()) < 65536:
             raise ValueError("不能确认受管 Nginx worker 组，拒绝扩大认证文件权限。")
         gid = int(output.strip())
@@ -161,12 +175,17 @@ class Service:
         os.chown(self.auth.parent, 0, gid)
         self.auth.parent.chmod(0o750)
         config.atomic(self.auth, content, mode=0o640, gid=gid)
+        if external:
+            external.sync_auth(self.product.key)
 
     def revoke(self) -> None:
         if self.auth.exists():
             # Directory bind mounts observe atomic replacement; no stale file
             # inode mount can retain the previous password after revocation.
             config.atomic(self.auth, b"disabled:!\n", mode=0o640, gid=self.auth.stat().st_gid)
+            external = self.manager.external_entry()
+            if external:
+                external.revoke_auth(self.product.key)
 
     def display(self, item: dict, *, secret: str | None = None) -> None:
         self.log("──────── 手机连接配置 ────────")
@@ -293,7 +312,7 @@ class Service:
                 if self.record() != item:
                     raise ValueError("人工确认期间附加功能记录已变化。")
                 self.auth_write((user + ":" + config.password_hash(secret) + "\n").encode())
-                state.update(version=2)
+                state.update(version=3 if state.get("version") == 3 else 2)
                 state.setdefault("external_webdav", {})[self.product.key] = self.route(item, True)
                 try:
                     def verify():
@@ -326,6 +345,10 @@ class Service:
             raise
 
     def verify_mounted_hash(self) -> None:
+        external = self.manager.external_entry()
+        if external:
+            external.verify_auth(self.product.key)
+            return
         code, output = self.session.run("docker exec tg2cloud-proxy-nginx sha256sum /etc/nginx/external-auth/" + self.product.key + ".htpasswd", timeout=15)
         if code or not output.split() or output.split()[0] != hashlib.sha256(self.auth.read_bytes()).hexdigest():
             raise ValueError("容器没有读取到当前认证文件，拒绝宣称密码轮换成功。")
@@ -343,7 +366,9 @@ class Service:
         instance, state = self.preflight(item["instance_dir"], require_running=action not in {"disable", "uninstall"})
         if action in {"disable", "uninstall"}:
             self.log("只操作本功能的认证／路由；不删除云端文件、Bot 数据或人工创建的后端账号。")
-            if not self.ui.confirm("确认" + ("卸载" if action == "uninstall" else "停用") + "外部入口？现有读取连接重载后最多约 10 秒退出"):
+            connection_hint = ("已开始的读取可能持续至连接关闭，不停止外部 Nginx" if state.get("version") == 3
+                               else "现有读取连接重载后最多约 10 秒退出")
+            if not self.ui.confirm("确认" + ("卸载" if action == "uninstall" else "停用") + "外部入口？" + connection_hint):
                 return
             with self.locked():
                 self.assert_record(item)
@@ -416,7 +441,7 @@ class Service:
                 for member in item.get("members", []):
                     member["phase"] = "disabled"
                 self.auth_write((item["username"] + ":" + config.password_hash(secret) + "\n").encode())
-                state.update(version=2)
+                state.update(version=3 if state.get("version") == 3 else 2)
                 state.setdefault("external_webdav", {})[self.product.key] = self.route(item, True)
                 self.manager.apply_shared_state_locked(state, domain=item["domain"],
                     verify=lambda: verification.check_public(route, secret, sample_file=sample_file))

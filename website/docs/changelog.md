@@ -1,11 +1,12 @@
 # 更新日志
 
-这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.1 共 20 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.2 共 21 个版本（含本轮待发布版本），逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 截至 **2026-10-21**，GitHub 仅保留 [v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 两个 Release／Tag。v1.0.2 及其他版本虽已移除发布页和标签，历史说明仍保留；下面的发布与测试结论按当时记录理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.4.2](#tg2cloud-v1-4-2) | 显式复用已有 Docker Nginx，单层代理、事务恢复、Webroot 证书与续期、附加路由及卸载保护。 |
 | [v1.4.1](#tg2cloud-v1-4-1) | 修复公网 IPv4 NAT 的 HTTPS 预检；增加映射人工确认与执行前复核，补充 CloudDrive2 ARM64 首装验收。 |
 | [v1.4.0](#tg2cloud-v1-4-0) | 原生支持 AMD64／ARM64；统一平台与镜像检查，接入双架构 CI 和发布验证。 |
 | [v1.3.4](#tg2cloud-v1-3-4) | 增强长说明、图片和媒体组命名，处理网址污染名、斜杠说明与后缀；补全使用文档。 |
@@ -28,6 +29,15 @@
 | [v1.0.0](#tg2cloud-v1-0-0) | 建立双 Edition 和独立实例身份，提供两个 PySide6 部署器，保留稳定转存核心与旧数据兼容。 |
 
 v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再提供 Release 下载；新安装使用最新稳定版，不用旧 EXE 覆盖新实例。上游 TG115 的版本单独记录，不计入上述 20 个 TG2Cloud 版本。
+
+## TG2Cloud v1.4.2
+
+待发布版本。以[仓库源码与完整变更](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)为准，正式下载仍为 v1.4.1；辅助 A、固定入口 B 与同标签双架构门禁通过后才能发布，不把本地版本号写成已经发布。
+
+- 新增显式授权的 external_docker 模式，不关闭外部 Nginx，不增加第二层代理，不修改外部 Compose；默认 managed 模式与 Bot 流程不变。
+- 核验端口真实归属、持久化配置和稳定网络别名；使用逐文件事务、私密备份、nginx -t、reload 和实际 TLS／后端检查。
+- Webroot 签发及宿主离线续期，复用证书仍由原工具负责；共享 schema 3 保留独立外部 WebDAV，卸载不停止外部代理且默认保留证书与恢复材料。
+- 标准目录、普通 Nginx 和已运行的 cron 等支持条件见[域名 HTTPS](/deploy/domain-https/)。真实 VPS、ACME、长期续期、迁移和现有网站业务仍待实机验收；不改变 Bot 依赖、镜像或数据库。
 
 ## TG2Cloud v1.4.1
 

@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 21 日**，对应 TG2Cloud **v1.4.1**，已正式发布。辅助 A／固定入口 B、原生双架构与[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)成功，实际源码资产已核验。发布后用户提供 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 的首次安装、本机HTTPS和WebDAV验收结果；这与自动CI是不同证据，不能外推OpenList、真实Telegram任务细项、手机外网、升级回退或长期续期。
+本次内容核对日期为 **2026 年 10 月 21 日**，对应 TG2Cloud **v1.4.2**（待发布），当前正式下载仍为 v1.4.1。本轮复用已有 Docker Nginx 的实现与限制见[仓库专题](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/DOCKER-NGINX.md)；辅助 A／入口 B、原生双架构与同标签发布结果须独立核验。历史 CloudDrive2 ARM64／公网 NAT 首装不证明本次外部代理、真实 ACME、迁移或长期续期通过。
 
 ## 主要来源
 
@@ -22,11 +22,11 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，当前正式版本为 1.4.1；在线 helper 已按先验证辅助 A、后固定入口 B 的流程更新，不用 moving main 替代。业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
+本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，源码为 1.4.2，正式版本仍为 1.4.1；新 helper 须按先验证辅助 A、后固定入口 B 的流程更新，不用 moving main 替代。业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.1；依赖和历史版本不机械替换。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.2；依赖和历史版本不机械替换。
 
 导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 

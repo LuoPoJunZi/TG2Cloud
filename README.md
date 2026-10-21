@@ -84,6 +84,8 @@ v1.3.3 起，[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人�
 
 可选附加功能：[外部 WebDAV](docs/external-webdav.md)。独立安装，通过新 HTTPS 域名只读访问已有上传目录；不复用 Bot/管理员账号，不加入主安装流程。v1.3.1 起提供专用在线安装与离线维护入口。
 
+待发布开发：新增[复用已有 Docker Nginx](docs/DOCKER-NGINX.md)，不停止原代理、不增加第二层 Nginx。当前在线 v1.4.1 尚不包含此能力；支持条件、源码试用与发布门槛见专题。
+
 按主题查阅仓库内文档；全部文档见[仓库文档目录](docs/README.md)，网页版见[文档网站](https://tg2cloud.pages.dev/)。
 
 | 主题 | 仓库文档 |

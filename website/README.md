@@ -2,7 +2,7 @@
 
 TG2Cloud 中文网页文档。包含品牌首页、31 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
-**文档源码与正式版本：TG2Cloud v1.4.1；资料核对日期：2026-10-21。** 本轮修复公网 NAT 的 HTTPS 预检，新增云控制台公网 IPv4 人工确认、执行前复查、DNS／端口分项提示和回环地址保护。辅助 A／固定入口 B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)及实际资产校验通过；开发工具 uv／certifi 安全更新，Bot 依赖和镜像不变。发布后用户确认 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 完成首装、本机HTTPS与WebDAV验收，见[脱敏记录](../docs/development/V141-ACCEPTANCE.md)。不扩大为OpenList、手机外网、升级回退或长期续期通过；Windows EXE 仍停留 v1.2.1。
+**文档源码：TG2Cloud v1.4.2（待发布）；当前正式版本 v1.4.1；资料核对日期：2026-10-21。** 本轮新增显式复用已有 Docker Nginx、Webroot 证书与宿主续期、逐文件事务恢复，以及外部 WebDAV 和卸载保护；保留默认 managed 模式，不改变 Bot、数据库、依赖或固定镜像。真实 VPS、ACME、长期续期及迁移仍待独立验收，CI 结果不能替代实机。历史 CloudDrive2 ARM64／公网 NAT 首装反馈见[脱敏记录](../docs/development/V141-ACCEPTANCE.md)，不外推到本次新模式；Windows EXE 仍停留 v1.2.1。
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 

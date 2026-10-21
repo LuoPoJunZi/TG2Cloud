@@ -19,7 +19,21 @@ def assert_unmodified(instance: instances.Instance, old_source: Path) -> None:
         if not local.is_file() or local.resolve() != local:
             raise ValueError("现有程序缺失或经过链接：" + relative)
         # Windows EXE payloads may carry CRLF. This is not a custom code edit.
-        if local.read_bytes().replace(b"\r\n", b"\n") != source.read_bytes().replace(b"\r\n", b"\n"):
+        expected_bytes = source.read_bytes().replace(b"\r\n", b"\n")
+        if relative == "docker-compose.yml":
+            from tg2cloud.deployment.proxy.external_config import compose_network
+            from tg2cloud.deployment.proxy.external_entry import retained_network
+            from tg2cloud.deployment.proxy.maintenance import PROXY_ROOT
+            from tg2cloud.deployment.proxy.state import normalize_state
+            record = PROXY_ROOT / "state/domains.json"
+            state = {}
+            if record.is_file():
+                from tg2cloud.deployment.configuration import regular_private
+                state = normalize_state(regular_private(record))
+            network = retained_network(instance.product, instance.directory, state, PROXY_ROOT)
+            if network:
+                expected_bytes = compose_network(expected_bytes.decode(), instance.product.key, network).encode()
+        if local.read_bytes().replace(b"\r\n", b"\n") != expected_bytes:
             raise ValueError("现有程序与已发布版本不一致，需人工核对：" + relative)
     expected_apps = {name for name in expected if name.startswith("app/")}
     actual_apps = {path.relative_to(instance.directory).as_posix() for path in (instance.directory / "app").rglob("*.py")}

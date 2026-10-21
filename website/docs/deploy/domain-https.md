@@ -10,6 +10,18 @@ v1.1.1 的实机检查覆盖双管理网关 HTTPS 共存、外部访问/跳转/�
 
 v1.1.2 在专用 Debian 13 VPS 验证代理私密备份/核验/隔离解包、OpenList 路由移除后恢复及续期 dry-run；两版各 11 项 HTTPS 自检通过，CloudDrive2 既有域名、配置与容器保持不变。新 Bot/真实网盘转存、401/429 实际恢复、长期续期、完整恢复和独立网络后端端口隔离仍待验收，不把网关检查写成全部转存业务通过。
 
+## 待发布：复用已有 Docker Nginx
+
+当前本地开发新增 `external_docker` 模式：现有 Docker Nginx 直接连接网关，不创建第二层 Nginx、不停止或重建原代理，只写专属站点并安全 reload。**在线稳定 v1.4.1 尚不包含这项能力**，本节不能当成当前一键安装承诺。
+
+只读检测会核对真实 Nginx 进程、80/443 发布／监听、Compose 身份、持久化目录与 include、host／bridge 网络，以及证书责任。多个候选要求选择，修改前另行授权；面板生成配置、默认 bridge、未知归属或挂载不足时停止并导出人工接入计划。支持本机 rootful Docker、AMD64／ARM64，实机结果需另行验证。
+
+bridge 使用原项目已声明的网络，只调整 TG2Cloud 网关自己的 Compose，并用动态 Docker DNS 解析；不开放 19798／5244 公网端口。有效外部证书保持原续期责任；新证书使用持久化 Webroot 和 Certbot，不抢占 80／443。新证书自动维护要求宿主已有活动 cron/crond，比较实际证书变更后 reload，并验证真正加载的证书；失败保留待加载记录。
+
+共享状态使用 schema 3，旧写入端拒绝操作；已有独立模式不自动迁移。迁移需导出全部路由、准备证书／网络并安排维护窗口。外部 WebDAV 仍独立安装；卸载只移除 TG2Cloud 站点，不停止原 Nginx、不删除其他网站或证书。逐文件回滚不覆盖其他项目并发修改。
+
+本地源码可先执行 `python3 -B /path/to/TG2Cloud/scripts/run_source.py proxy --help`。完整命令、受限迁移、私密备份、事务恢复、未验证范围和 helper 发布前置条件见[仓库专题](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/DOCKER-NGINX.md)；文档链接在本次代码公开前可能尚不可访问。下文的已发布流程及历史记录主要描述原 managed 模式，不混用其容器续期策略与新外部模式的宿主调度。
+
 ## 适用边界
 
 - 域名入口只代理管理界面；

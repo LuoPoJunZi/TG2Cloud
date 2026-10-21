@@ -10,6 +10,7 @@ from tg2cloud.deployment.profiles import ProductProfile
 
 STATE_VERSION = 1
 EXTERNAL_STATE_VERSION = 2
+DOCKER_ENTRY_STATE_VERSION = 3
 
 SUPPORTED_EDITIONS = ("clouddrive2", "openlist")
 
@@ -99,16 +100,22 @@ def normalize_state(raw: str | bytes | None) -> dict[str, Any]:
     except (TypeError, json.JSONDecodeError) as exc:
         raise ValueError("共享代理状态文件不是有效 JSON；请先检查 VPS 上的状态。") from exc
     if (not isinstance(value, dict) or type(value.get("version")) is not int
-            or value.get("version") not in {STATE_VERSION, EXTERNAL_STATE_VERSION}):
+            or value.get("version") not in {STATE_VERSION, EXTERNAL_STATE_VERSION, DOCKER_ENTRY_STATE_VERSION}):
         raise ValueError("共享代理状态版本无法识别；不会自动覆盖。")
     domains = value.get("domains")
     if not isinstance(domains, dict) or set(domains) - set(SUPPORTED_EDITIONS):
         raise ValueError("共享代理状态包含未知 Edition；不会自动覆盖。")
     normalized = empty_state()
-    if value["version"] == EXTERNAL_STATE_VERSION:
-        if set(value) != {"version", "domains", "external_webdav"}:
+    if value["version"] in {EXTERNAL_STATE_VERSION, DOCKER_ENTRY_STATE_VERSION}:
+        expected = {"version", "domains", "external_webdav"}
+        if value["version"] == DOCKER_ENTRY_STATE_VERSION:
+            expected.add("entry")
+        if set(value) != expected:
             raise ValueError("共享代理状态含未知资源；拒绝覆盖。")
-        normalized.update(version=EXTERNAL_STATE_VERSION, external_webdav={})
+        normalized.update(version=value["version"], external_webdav={})
+        if value["version"] == DOCKER_ENTRY_STATE_VERSION:
+            from .external_config import validate_entry
+            normalized["entry"] = validate_entry(value["entry"])
     elif set(value) - {"version", "domains"}:
         raise ValueError("旧状态含未声明资源；拒绝丢弃或降级。")
     seen: set[str] = set()
@@ -131,7 +138,7 @@ def normalize_state(raw: str | bytes | None) -> dict[str, Any]:
             "domain": domain,
             "backend_port": port,
         }
-    if value["version"] == EXTERNAL_STATE_VERSION:
+    if value["version"] in {EXTERNAL_STATE_VERSION, DOCKER_ENTRY_STATE_VERSION}:
         entries = value.get("external_webdav")
         if not isinstance(entries, dict) or set(entries) - set(SUPPORTED_EDITIONS):
             raise ValueError("外部 WebDAV 路由清单无法识别。")

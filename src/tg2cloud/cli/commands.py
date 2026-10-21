@@ -12,7 +12,7 @@ def interrupted(_signal, _frame):
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="TG2Cloud Linux 安装与维护入口")
-    parser.add_argument("command", choices=("install", "lan", "uninstall", "webdav", "manage"), nargs="?", default="manage")
+    parser.add_argument("command", choices=("install", "lan", "uninstall", "webdav", "manage", "proxy"), nargs="?", default="manage")
     # Leave every existing Edition-specific option to its original parser.
     arguments = list(sys.argv[1:] if argv is None else argv)
     args = parser.parse_args(arguments[:1])
@@ -23,7 +23,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.command in {"install", "lan"} and not remaining:
         from .management import main as management
         return management([], mode_hint="public" if args.command == "install" else "lan")
-    if args.command == "install":
+    if args.command == "proxy":
+        from .proxy import main as operation
+    elif args.command == "install":
         from .vps import main as operation
     elif args.command == "lan":
         from tg2cloud.deployment.proxy.lan import main as operation

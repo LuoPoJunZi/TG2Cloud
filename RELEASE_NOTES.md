@@ -1,40 +1,34 @@
-## TG2Cloud v1.4.1 · 公网 NAT HTTPS 预检修复
+## TG2Cloud v1.4.2 · 复用已有 Docker Nginx
 
-修复 Oracle 等公网 IPv4 映射到私有网卡的主机在 HTTPS 前置检查时被误判为 DNS 错误的问题。继续支持 Linux 原生 AMD64／ARM64、CloudDrive2 和 OpenList，使用现有 Python＋Bash 架构。
+新增显式授权的 external_docker 入口：不关闭原有 Docker Nginx，不启动第二层代理，将 TG2Cloud 管理站点接入可核验的现有持久化配置。原 managed 模式继续默认使用，已有实例不会自动迁移。
 
-## 本次修复
+## 本次更新
 
-- 单一公网 A、所有已解析 AAAA 均匹配本机、没有其他公网 IPv4 网卡且端口归属安全时，新增云控制台公网 IPv4 人工确认。地址须独立输入并匹配域名 A，确认默认否；不会从 DNS 自动填值或查询第三方出口 IP。
-- 确认只用于当前操作，绑定域名、DNS 和原有网卡地址；写入前重新检测。地址变化时停止，新增 Docker 网桥可继续；写入锁内不会重新索取 NAT 确认。
-- 首次安装、tg2cloud 的 HTTPS 显式修复和独立外部 WebDAV 共用此能力。错误 AAAA、多 A、未确认或不一致地址、其他服务占用及未知端口仍停止；ACME、TLS 自检和失败回退继续执行。
-- 分别显示 DNS、80 和 443 的检查结果。拒绝用本地执行地址 127.0.0.1 作为公网域名身份。
-- 新增14项 NAT 回归，覆盖两 Edition、取消确认、错误地址、DNS／网卡变化、端口归属和证书失败回退。同步安装、FAQ、双架构说明与网站。
-- 发布审计发现的两项开发依赖漏洞通过更新 uv 与 certifi 修复，统一重新生成哈希锁；不忽略漏洞或关闭安全检查，Bot 运行依赖不变。
+- 新增只读检测、配置导出、显式配置、维护、漂移复核、事务恢复与受限迁移命令。核对真实端口占用、容器／Compose 身份、挂载与网络，不把 EXPOSE 当成公网发布。
+- host 模式使用受控回环后端；bridge 模式连接经过核验的持久化 Compose 网络，使用稳定别名与 Docker DNS，Bot 保持原网络，不公开网关后端端口。
+- 对 TG2Cloud 专属文件执行逐文件比较后写入、私密备份与故障恢复；先 nginx -t，再 reload，实际检查 HTTPS、跳转、证书及管理域名 /dav 阻断。不修改外部 Compose，不停止或重建外部代理。
+- 支持核验后复用已有证书，或以 Webroot 方式签发并建立调用离线代码的宿主续期任务。新证书自动化要求系统 cron/crond 已运行；Certbot 不挂载 Docker Socket，不使用 standalone 抢占端口。
+- 共享状态升级至 schema 3，兼容独立外部 WebDAV 的认证资源、禁用与卸载保护；不会将管理域名的 /dav 放开。
+- 卸载只移除所选实例拥有的站点；不删除外部 Nginx、Compose 或网络。最后路由移除后撤销本功能续期任务，默认保留外部证书、私密恢复状态及离线维护命令。
 
-## 安装与验收
+## 使用与兼容边界
 
-继续使用原安装命令：
+安装命令保持不变：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-出现 NAT 提示时，请填写云控制台分配给本机的公网 IPv4，并确认已配置对应映射和80／443入站规则；不要把公网 A 改成私有 IP。此确认不证明入站可达，最终仍须通过证书签发、HTTPS 自检及外部网络验收。完整说明见[公网安装指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。
+复用外部代理不是自动接管。先按[Docker Nginx 说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/DOCKER-NGINX.md)执行只读检测和计划导出，核实后显式授权。首次自动接入只支持标准实例目录、普通 Nginx、可验证的持久化挂载和原生本机 rootful Docker；不接管 Nginx Proxy Manager、SWAG、面板生成配置或 OpenResty。自定义目录提供人工方案，不假报自动成功。
 
-已有实例建议先追加 --edition clouddrive2 --check（OpenList 使用 openlist），只读检查不执行升级。需要安装／升级时重新运行入口并确认；内网仍使用 install-lan.sh，外部只读访问仍独立使用 install-webdav.sh。现有离线管理工具需显式更新，重启旧容器不会更新向导。
+现有证书的外部续期工具仍由原工具负责，程序不会假定其已可自动续期。managed → external_docker 迁移需要人工安排维护窗口并先完成端口切换，不承诺零中断或自动回滚外部项目。未知资源、配置漂移与未恢复事务均安全停止。
 
-## 兼容与发布资源
+无需数据库迁移或调整 Bot 环境变量；保留配置、任务、Telegram Session、网关数据和上传策略。Bot 依赖、固定镜像与内网入口不变。schema 3 只能由本版及兼容的新工具写入；请更新离线管理工具，旧助手不应操作新状态。历史 Windows EXE 保持 v1.2.1，不生成新版 EXE。
 
-无需数据库迁移或新增用户配置；镜像与 Bot 运行依赖版本不变，仅更新两项开发工具依赖。保留配置、数据库、Telegram Session、网关数据及现有备份。公网管理后端仍仅回环监听，NAT 确认不改变端口暴露、只读账号或代理归属规则。Windows 部署器保留历史 v1.2.1，本版不构建 EXE。
+## 发布与验证
 
-GitHub Actions 从同一不可变 v1.4.1 Tag 完成原生 AMD64／ARM64 验证后，打包并发布一次 TG2Cloud-v1.4.1-source.tar.gz 与 SHA256SUMS.txt。在线 helper 先验证辅助 A，再固定入口 B；业务只取正式稳定 Release，不用 moving main 替代。下载后使用同版本清单执行 sha256sum -c SHA256SUMS.txt；校验和不是数字签名。
+发布工作流从同一不可变 v1.4.2 Tag 进行原生 AMD64／ARM64 验证，新增隔离 Nginx 单层代理、原站保留与 reload 回归，所有门禁通过后才发布 TG2Cloud-v1.4.2-source.tar.gz 和 SHA256SUMS.txt。helper 先验证辅助提交 A，再在 B 固定真实提交；业务只使用正式稳定 Release，不在失败时退回 moving main。校验和用于完整性检查，不是数字签名。
 
-## 验证边界
+本地完整回归949项：921执行通过、28因环境条件跳过、0失败；随后对最后的参数／认证保护调整复跑 Python 3.10 新代理52项、外部 WebDAV55项和HTTP1项，通过。Ruff、Bandit、源码清单、双 Edition 载荷组装、Shell 语法及文档构建／19项测试通过。本地没有 Docker，隔离 Docker 验证交由本次双架构 CI，不把跳过写成已通过。
 
-本地完整回归894项：867成功、27环境条件跳过、0失败；Python3.10的21项宿主／NAT专项及不加载Bot依赖的CLI帮助通过。全范围Ruff、语法检查、Bandit、网站构建及19项网站测试通过。正式发布还须通过对应提交与同标签的原生双架构检查。
-
-发布后补充（2026-10-21）：用户提供 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 的首装、Bot健康、本机HTTPS与WebDAV验收结果，见[本次脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。APT源问题由用户备份并修正后重试成功；OpenList、已有实例升级／故障回退、手机外网、真实Telegram任务细项和长期续期仍不在本次通过范围。此为main文档补充，不覆盖已发布Tag、Release正文或源码资产。
-
-大小复验不等于内容哈希或云盘官方最终完成。历史范围见[v1.3.3 用户转存确认](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)与[v1.3.0 历史迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)，不外推为本版结果。
-
-TG2Cloud 从 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留 MIT 许可证、版权与必要致谢；用户在自己的存储网关管理云账号授权。
+未连接真实 VPS，未操作用户网盘。真实 ACME 签发、长期续期、现有网站业务、迁移／回退、卸载及手机外网仍需独立实机验收。历史 CloudDrive2 验收范围见[v1.3.0 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)和[v1.4.1 ARM64 NAT 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)，不外推为本次新模式通过。

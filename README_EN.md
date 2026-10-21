@@ -31,6 +31,8 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
+Unreleased development: [reuse an existing Docker Nginx](docs/DOCKER-NGINX.md) without stopping it or adding a second proxy. This is not yet available through the stable v1.4.1 online entry; see the guide for prerequisites, local commands and release gates.
+
 Current stable version: **v1.4.1**, maintained through Linux scripts with native AMD64 / ARM64 support. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1). Explicitly upgrade running instances; updating documentation does not upgrade the Bot. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [historical v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify the current version or other deployment or recovery scenarios.
 
 ## Getting started

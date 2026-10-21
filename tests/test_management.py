@@ -365,11 +365,20 @@ class ManagementTests(unittest.TestCase):
         self.ui.ask.return_value = "5"
         self.ui.confirm.return_value = True
         proxy = Mock()
+        proxy.external_entry.return_value = None
         proxy.manage_backups.return_value = {"plan": {"remove": [{"name": "proxy-fixture.tar.gz"}], "plan_id": "a" * 64}}
         with patch.object(self.manager, "recheck", return_value=self.instance), patch.object(self.manager, "proxy", return_value=proxy):
             self.manager.backups(self.instance)
         self.assertEqual(proxy.manage_backups.call_args_list[-1].kwargs, {"keep": 5, "plan": "a" * 64})
         self.assertEqual(proxy.manage_backups.call_args_list[-1].args, ("prune",))
+
+    def test_external_proxy_does_not_use_managed_directory_prune(self):
+        self.ui.ask.return_value = "5"
+        proxy = Mock()
+        proxy.external_entry.return_value = object()
+        with patch.object(self.manager, "recheck", return_value=self.instance), patch.object(self.manager, "proxy", return_value=proxy):
+            self.manager.backups(self.instance)
+        proxy.manage_backups.assert_not_called()
 
     def test_uninstall_custom_dir_refused_standard_uses_existing_confirmations(self):
         custom = instances.Instance(self.product, Path("/opt/custom-fixture"), True)

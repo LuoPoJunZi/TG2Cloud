@@ -96,6 +96,11 @@ jobs:
           TG2CLOUD_TEST_EXTERNAL_WEBDAV_DOCKER: "1"
         run: python -B -m unittest discover -s tests -p test_docker.py -v
 
+      - name: Isolated existing Nginx single-hop, reload and original-site preservation
+        env:
+          TG2CLOUD_TEST_EXTERNAL_NGINX_DOCKER: "1"
+        run: python -B -m unittest discover -s tests -p test_external_nginx_docker.py -v
+
       - name: Run both Edition candidate images as non-root
         timeout-minutes: 20
         env:

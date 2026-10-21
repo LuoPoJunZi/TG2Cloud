@@ -42,6 +42,7 @@ class Plan:
 def make_plan(
     instance: instances.Instance, release: releases.Release, source: Path, old_source: Path | None,
     session: LocalSession, log: SafeLog, ui: terminal.Terminal | None, *, configure_https: bool = False,
+    proxy_options: dict | None = None,
 ) -> Plan:
     action = upgrade.action_for(instance, release)
     if action in {"install", "upgrade"}:
@@ -59,7 +60,7 @@ def make_plan(
         # The stable repair helper can adopt foreign CD2 containers; refuse them.
         instances.check_foreign_gateway(instance.product, session)
     manager = DomainProxyManager(
-        session, instance.product, {"vps_host": "127.0.0.1"}, log,
+        session, instance.product, {"vps_host": "127.0.0.1", "install_dir": str(instance.directory)}, log,
         confirm_public_ipv4=(lambda domain, environment: terminal.confirm_nat_public_ipv4(ui, domain, environment, log))
         if ui is not None else None,
     )
@@ -80,6 +81,8 @@ def make_plan(
             plan.domain = report.domain or ui.ask("管理页域名（A/AAAA 直指本机；Cloudflare 仅 DNS）", validate=validate_domain)
             old_route = state["domains"].get(instance.product.key, {})
             plan.email = old_route.get("email", "") or ui.ask("Let's Encrypt 邮箱（可留空）", validate=validate_email)
+            from tg2cloud.cli.proxy import select_entry
+            select_entry(manager, ui, plan.domain, proxy_options)
             if any(item["domain"] == plan.domain for key, item in state["domains"].items() if key != instance.product.key):
                 raise ValueError("该域名已由另一个 Edition 使用")
             if instance.present:
@@ -118,6 +121,8 @@ def apply_base(plan: Plan, release: releases.Release, source: Path, session: Loc
         root = Path(private)
         payload_dir = root / "payload"
         payload.build_payload(source, instance.product, payload_dir)
+        from tg2cloud.deployment.proxy.external_entry import apply_payload_network
+        apply_payload_network(plan.manager, payload_dir / "docker-compose.yml")
         candidate = root / "config.env"
         content = ("TG2CLOUD_REDEPLOY_APPLY_CONFIG=false\n" if instance.present else
                    "".join(key + "=" + value + "\n" for key, value in plan.config.items()))

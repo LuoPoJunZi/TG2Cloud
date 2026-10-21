@@ -658,6 +658,12 @@ class DomainProxyManager:
         self.use_sudo = False
         self.confirm_public_ipv4 = confirm_public_ipv4
         self._nat_confirmation: tuple[str, str, tuple[str, ...], tuple[str, ...], frozenset[str]] | None = None
+        self.external_plan: dict | None = None
+        self._entry_state: dict | None = None
+
+    def external_entry(self, state=None):
+        from .external_entry import selected_entry
+        return selected_entry(self, state)
 
     def prepare(self) -> None:
         code, output = self.session.run("id -u", timeout=10)
@@ -691,7 +697,9 @@ fi
             )
         if code != 0:
             raise RuntimeError("无法读取共享代理状态；不会覆盖现有配置。")
-        return normalize_state(output)
+        state = normalize_state(output)
+        self._entry_state = state
+        return state
 
     def probe(self, domain: str) -> ProxyEnvironment:
         code, output = self._run(environment_probe_command(self.product, domain), timeout=30)
@@ -699,6 +707,11 @@ fi
         if code != 0:
             raise RuntimeError("无法完成域名、Docker 与端口环境检测。")
         environment = parse_environment(output)
+        # A plain port probe remains a pure probe. Entry callers read state
+        # explicitly; write paths always re-read it under the shared lock.
+        adapter = self.external_entry(self._entry_state or {"version": 1, "domains": {}})
+        if adapter:
+            environment = adapter.environment(domain, environment)
         if self._nat_confirmation is not None:
             saved_domain, address, dns_a, dns_aaaa, local = self._nat_confirmation
             if (domain == saved_domain and environment.dns_a == dns_a and environment.dns_aaaa == dns_aaaa
@@ -903,6 +916,9 @@ fi
 
     def status(self, state: dict[str, Any] | None = None) -> ProxyReport:
         current = state or self.read_state()
+        adapter = self.external_entry(current)
+        if adapter:
+            return adapter.status(current)
         item = current["domains"].get(self.product.key)
         if not item:
             return ProxyReport("", "not_configured", "当前 Edition 尚未配置域名访问。", ())
@@ -980,6 +996,9 @@ fi
     def _configure_locked(self, domain: str, email: str) -> ProxyReport:
         self.log("TG2CLOUD_STAGE=HTTPS_ENV")
         previous = self.read_state()
+        adapter = self.external_entry(previous)
+        if adapter:
+            return adapter.configure(domain, email, already_locked=True)
         target = state_with_route(previous, self.product, domain)
         environment = self.probe(domain)
         self._validate_environment(environment)
@@ -1070,6 +1089,10 @@ fi
         External callers revoke authentication before changing credentials. A
         failed activation never restores an enabled external route.
         """
+        adapter = self.external_entry()
+        if adapter:
+            adapter.transaction(target, domain=domain, email=email, verify=verify, verify_remaining=verify_remaining)
+            return
         target = normalize_state(json.dumps(target))
         previous = self.read_state()
         fallback = normalize_state(json.dumps(previous))
@@ -1188,6 +1211,16 @@ fi
                 raise RuntimeError("备份管理输出无法识别。") from exc
 
     def maintenance(self, action: str, *, archive: str = "") -> str:
+        adapter = self.external_entry()
+        if adapter:
+            if action == "renew_dry_run":
+                return adapter.maintain(dry_run=True)
+            with self.session.hold_lock(proxy_lock_command(), sudo=self.use_sudo):
+                if action == "backup":
+                    return "外部入口私密元数据／专属站点备份：" + str(adapter.backup(self.read_state())) + "；证书仍保留在原挂载中，不复制其他项目私钥。"
+                if action in {"check", "drill"}:
+                    return adapter.check_backup(archive=archive, drill=action == "drill")
+                raise ValueError("未知的外部入口维护操作。")
         """Explicit local-only maintenance; never restore over running services."""
         if action not in {"backup", "check", "drill", "renew_dry_run"}:
             raise ValueError("未知的共享代理维护操作。")
@@ -1230,6 +1263,9 @@ fi
 
     def _remove_locked(self) -> ProxyReport:
         previous = self.read_state()
+        adapter = self.external_entry(previous)
+        if adapter:
+            return adapter.remove_locked()
         target = state_without_route(previous, self.product.key)
         if target == previous:
             return ProxyReport("", "not_configured", "当前 Edition 没有可移除的域名路由。", ())

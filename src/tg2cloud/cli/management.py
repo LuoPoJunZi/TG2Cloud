@@ -177,6 +177,8 @@ class Management:
             route = state["domains"].get(self.product.key, {})
             domain = route.get("domain") or self.ui.ask("管理页域名（A/AAAA 直指本机；Cloudflare 仅 DNS）", validate=validate_domain)
             email = route.get("email", "") or self.ui.ask("Let's Encrypt 邮箱（可留空）", validate=validate_email)
+            from .proxy import select_entry
+            select_entry(manager, self.ui, domain)
             detection = manager.detect(domain)
             if detection.state != "detected":
                 raise ValueError(detection.message)
@@ -213,6 +215,9 @@ class Management:
         with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
             self.recheck(instance)
             manager = self.proxy()
+            if manager.external_entry() and action in {"3", "5"}:
+                self.log("外部模式备份位于 /opt/tg2cloud-proxy/external-backups，仅含元数据与专属站点；不运行独立代理的整目录清理。可选创建或隔离核验，旧备份需人工保管。")
+                return
             if action == "3":
                 for item in manager.manage_backups("list")["items"]:
                     self.log(f"{item['name']}（{item['size_bytes']} 字节，完整性 {item['integrity']}）")

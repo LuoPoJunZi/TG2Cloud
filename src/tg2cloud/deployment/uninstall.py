@@ -265,6 +265,9 @@ def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: 
     purge_data = purge_data or purge_backups
     containers, networks = docker_snapshot(session)
     state = read_state()
+    journal = Path(PROXY_ROOT) / "state/external-transaction.json"
+    if journal.exists() or journal.is_symlink():
+        raise UninstallError("外部入口事务尚未恢复；先用 tg2cloud proxy recover 核对，不删除配置或恢复材料。")
     if any(key in state.get("external_webdav", {}) or (Path("/opt/tg2cloud-webdav") / key / "config.json").exists() for key in editions):
         raise UninstallError("所选网关仍被外部 WebDAV 依赖；请先运行 tg2cloud-webdav uninstall，不静默中断外部入口。")
     selected = {}
@@ -312,7 +315,9 @@ def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: 
                 raise UninstallError("项目网络有外部容器连接；停止，不强制断开")
             selected_networks[product.docker_network] = network
     remaining = set(state["domains"]) - set(editions)
-    remove_proxy = not remaining and not state.get("external_webdav")
+    # External ingress and retained certificate metadata are never purge targets.
+    # Last-route removal still deletes our sites and renewal schedule via adapter.
+    remove_proxy = not remaining and not state.get("external_webdav") and state.get("version") != 3
     for name, item in containers.items():
         labels = item.get("labels") or {}
         if name in {PROXY_NGINX_CONTAINER, PROXY_CERTBOT_CONTAINER} or labels.get(COMPOSE + "project") == PROXY_PROJECT:
@@ -442,7 +447,7 @@ def execute(plan: Plan, session: LocalSession, log: SafeLog) -> None:
             raise UninstallError("确认期间实例/网络/HTTPS 状态发生变化；停止，请重新预检")
         # Reuse the existing transactional route removal. Abort before touching
         # Bot/gateway containers if a remaining route cannot pass its checks.
-        if len(plan.state["domains"]) > 1 and not set(plan.state["domains"]) - set(plan.editions):
+        if plan.state.get("version") != 3 and len(plan.state["domains"]) > 1 and not set(plan.state["domains"]) - set(plan.editions):
             # No surviving route needs a transient activation between removals.
             manager = DomainProxyManager(session, PRODUCTS[plan.editions[0]], {"ssh_user": "root"}, log)
             manager.prepare()
@@ -558,7 +563,7 @@ def manager_in_use(session: LocalSession) -> bool:
     if any(path.exists() or path.is_symlink() for path in roots):
         return True
     state = read_state()
-    if state["domains"] or state.get("external_webdav"):
+    if state["domains"] or state.get("external_webdav") or state.get("version") == 3:
         return True
     for item in containers.values():
         if mount_overlaps(item, runtime.ROOT) or mount_overlaps(item, runtime.COMMAND):

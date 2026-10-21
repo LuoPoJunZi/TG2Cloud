@@ -245,6 +245,12 @@ jobs:
           TG2CLOUD_TEST_EXTERNAL_WEBDAV_DOCKER: "1"
         run: python -B -m unittest discover -s tests -p test_docker.py -v
 
+      - name: Isolated existing Nginx single-hop, reload and original-site preservation
+        if: hashFiles('tests/test_external_nginx_docker.py') != ''
+        env:
+          TG2CLOUD_TEST_EXTERNAL_NGINX_DOCKER: "1"
+        run: python -B -m unittest discover -s tests -p test_external_nginx_docker.py -v
+
       - name: Package immutable source once and verify bootstrap pins and SHA256
         if: matrix.arch == 'amd64'
         run: python .github/scripts/source_release.py build --tag "${RELEASE_TAG}" --directory build/source-release

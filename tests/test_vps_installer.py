@@ -866,7 +866,9 @@ class InstanceTests(unittest.TestCase):
             return 0, "TG2CLOUD_RESULT=SUCCESS\nTG2CLOUD_BOT_HEALTH=healthy\n"
 
         session.run.side_effect = install
-        plan = tgdep_install.Plan(self.instance, "upgrade", Mock(), self.instance.config)
+        manager = Mock(external_plan=None)
+        manager.read_state.return_value = {"version": 1, "domains": {}}
+        plan = tgdep_install.Plan(self.instance, "upgrade", manager, self.instance.config)
         with patch.object(tgdep_configuration, "regular_private", side_effect=lambda path: path.read_bytes()):
             tgdep_install.apply_base(plan, RELEASE, ROOT, session, self.log)
         self.assertEqual(seen, ["TG2CLOUD_REDEPLOY_APPLY_CONFIG=false\n"])
@@ -877,8 +879,10 @@ class InstanceTests(unittest.TestCase):
         tgdep_upgrade.record_release(self.directory, tgdep_releases.Release("v1.1.2", "b" * 40))
         session = Mock()
         session.run.return_value = (1, "TG2CLOUD_RESULT=FAILED\n")
+        manager = Mock(external_plan=None)
+        manager.read_state.return_value = {"version": 1, "domains": {}}
         with self.assertRaises(RuntimeError):
-            tgdep_install.apply_base(tgdep_install.Plan(self.instance, "upgrade", Mock()), RELEASE, ROOT, session, self.log)
+            tgdep_install.apply_base(tgdep_install.Plan(self.instance, "upgrade", manager), RELEASE, ROOT, session, self.log)
         self.assertEqual(json.loads((self.directory / "tg2cloud-release.json").read_text())["tag"], "v1.1.2")
 
     def test_verified_marker_requires_exit_success_and_explicit_confirmation(self):

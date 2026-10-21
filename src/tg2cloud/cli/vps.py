@@ -29,6 +29,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--edition", choices=["clouddrive2", "openlist", "both"], help="both 仅用于两套已有完整实例")
     result.add_argument("--install-dir", help="仅支持单 Edition 的 /opt 下目录；不搬迁现有实例")
     result.add_argument("--check", action="store_true", help="只读实例/版本/HTTPS检查；不收集秘密，不执行安装")
+    result.add_argument("--proxy-mode", choices=("managed", "external_docker"), help="显式选择 HTTPS 入口；不隐式迁移已有模式")
+    result.add_argument("--nginx-container", help="明确授权复用的外部 Docker Nginx 容器")
+    result.add_argument("--authorize-proxy", action="store_true", help="授权修改目标容器专属站点；仍需最终计划确认")
     result.add_argument("--configure-https", action="store_true", help="显式续做/修复 HTTPS；已有域名不切换")
     result.add_argument("--verify", action="store_true", help="另行确认 WebDAV 写入验收；默认不会在升级中运行")
     result.add_argument("--show-credentials", action="store_true", help="仅经确认在私有终端显示已有凭据；不安装、升级或改密")
@@ -104,7 +107,12 @@ def main(argv: list[str] | None = None, *, friendly: bool | None = None) -> int:
                 if not args.check and ui is None:
                     ui = terminal.Terminal()
                     ui.friendly = friendly
-                plan = install.make_plan(instance, release, source, old_source, session, log, ui, configure_https=args.configure_https)
+                extra = {}
+                if args.proxy_mode or args.nginx_container or args.authorize_proxy:
+                    extra["proxy_options"] = {"proxy_mode": args.proxy_mode, "nginx_container": args.nginx_container,
+                                              "authorize_proxy": args.authorize_proxy}
+                plan = install.make_plan(instance, release, source, old_source, session, log, ui,
+                                         configure_https=args.configure_https, **extra)
                 terminal.preview(plan, release, log)
                 plans.append((plan, old_source))
             if args.check:
