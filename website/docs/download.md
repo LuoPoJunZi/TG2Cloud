@@ -1,19 +1,19 @@
 # 下载与 SHA-256 校验
 
-当前文档源码为 **TG2Cloud v1.4.2**（待发布）：新增显式复用已有 Docker Nginx。正式下载仍为 v1.4.1，以下链接保留已发布资产；新版本通过全部发布门禁后再更新。项目以 Linux 一键脚本维护两个 Edition，Windows 部署器停留在 v1.2.1。改动见[更新日志](/changelog/)，文档更新不会自动升级 Bot。
+当前正式版本为 **TG2Cloud v1.4.2**：新增显式复用已有 Docker Nginx。辅助 A／入口 B、同标签原生双架构和实际源码包／SHA256／GitHub 资产摘要均已核验，真实 VPS、ACME、长期续期与迁移仍须独立验收。项目以 Linux 一键脚本维护两个 Edition，Windows 部署器停留在 v1.2.1。改动见[更新日志](/changelog/)，更新文档不会自动升级 Bot。
 
-截至 2026-10-21，GitHub 仅保留 v1.4.1、v1.2.1 两个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，[全版本记录](/changelog/)仍保留每一版的功能和修复，不能把下载列表当作完整开发历史。
+截至 2026-10-21，GitHub 保留 v1.4.2、v1.4.1、v1.2.1 三个 Release／Tag。其他版本虽已移除发布页和标签，[全版本记录](/changelog/)仍保留每一版的功能和修复，不能把下载列表当作完整开发历史。
 
-## v1.4.1 源码包与脚本
+## v1.4.2 源码包与脚本
 
-本版 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1) 已由 Actions 从不可变 Tag 完成原生双架构验证、打包并发布。源码包实际 SHA256、校验清单、公开资产摘要与源码归档均已核对；直接安装和升级使用下方 VPS／内网单行入口。独立附加入口见[外部 WebDAV](/deploy/external-webdav/)，不会由主安装默认启用。发布不等于本版 Oracle／真实 VPS、Telegram 或网关已验收。
+本版 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2) 已由 Actions 从不可变 Tag 完成原生双架构验证、打包并发布。源码包实际 SHA256、校验清单、公开资产摘要与源码归档均已核对；直接安装和升级使用下方 VPS／内网单行入口。独立附加入口见[外部 WebDAV](/deploy/external-webdav/)，不会由主安装默认启用。发布不等于本版 Oracle／真实 VPS、Telegram 或网关已验收。
 
 发布后用户已确认 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 环境完成首次安装、本机HTTPS与WebDAV验收，见[脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。这是独立于发布检查的用户实机反馈，不扩展到OpenList、已有实例升级／回退、手机外网或长期续期。
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.4.1-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.1/TG2Cloud-v1.4.1-source.tar.gz) | 同标签源码，包含两 Edition 的运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.1/SHA256SUMS.txt) | 本次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.4.2-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.2/TG2Cloud-v1.4.2-source.tar.gz) | 同标签源码，包含两 Edition 的运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.2/SHA256SUMS.txt) | 本次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 

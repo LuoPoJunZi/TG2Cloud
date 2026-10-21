@@ -1,8 +1,8 @@
 # 开发与贡献
 
-当前文档源码为 v1.4.2（待发布）；新增外部 Docker Nginx 模块与隔离回归，正式下载仍为 v1.4.1。以下保留历史发布证据，不外推为本次 CI 或真实 VPS 验收。
+当前文档对应正式 v1.4.2；新增外部 Docker Nginx 模块与隔离回归，源码资产已发布并实际核验。历史发布证据保留，不外推为本次真实 VPS 验收。
 
-本版辅助 A `840472f919409531e99da55c62070ea262ebed6d` 已通过五项 CI：[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591006899)、[Python 3.10／3.13 四组检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591011059)、仓库与两套文档检查。三个入口候选固定该 A，入口 B 和同标签发布仍待验证，不把检查通过等同实机验收。
+本版辅助 A `840472f919409531e99da55c62070ea262ebed6d` 已通过五项 CI：[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591006899)、[Python 3.10／3.13 四组检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591011059)、仓库与两套文档检查。三个入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 固定 A，B 的五项 CI 与[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)亦全部通过，实际下载资产已核验；不把自动检查等同实机验收。
 
 v1.4.1 辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与固定入口 B `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，正式源码资产已下载核验。A 的[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)及[四组 Python CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)记录可独立查看。NAT 修复与开发工具安全更新不改变 Bot 依赖、镜像、数据库或部署身份；真实 VPS／ACME／转存仍待用户验收。
 
@@ -17,15 +17,15 @@ v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.4.2
 git rev-parse HEAD
 ```
 
-本文档对应待发布 v1.4.2，正式下载见[下载页](/download/)。main 用于当前开发并须记录提交号，不能把后续修改当成 Release 行为；历史正式版应检出其不可变标签。
+本文档对应正式 v1.4.2，下载见[下载页](/download/)。上面的不可变标签用于复现；main 用于当前开发并须记录提交号，不能把后续修改当成 Release 行为。
 
 ## 关键目录与入口
 
-下表为 v1.4.1 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
+下表为 v1.4.2 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
 v1.3.1 沿用该结构，独立附加功能在 `src/tg2cloud/addons/external_webdav/`，专用入口为 `install-webdav.sh`。源码包已正式发布；下载、构建或发布成功都不等于实机安装通过。
 

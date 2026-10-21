@@ -1,6 +1,6 @@
 # 运行状态、故障排查与 HTTPS 维护
 
-本文面向正式 v1.4.1 的 Linux 脚本与离线 `tg2cloud` 菜单，保留现有维护和原生平台核验；公网 NAT 的 HTTPS 修复见[VPS 指南](VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)，旧离线工具需显式更新。2026-10-19 已完成 CloudDrive2 正式 v1.3.2 → v1.3.3 保留配置升级，用户确认实际转存完成；不扩展到当前版本、OpenList、NAS、家庭共享或故障回退。更早的人工候选迁移另见[历史记录](development/V130-ACCEPTANCE.md)。
+本文面向正式 v1.4.2 的 Linux 脚本与离线 `tg2cloud` 菜单，保留现有维护和原生平台核验；公网 NAT 的 HTTPS 修复见[VPS 指南](VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)，旧离线工具需显式更新。2026-10-19 已完成 CloudDrive2 正式 v1.3.2 → v1.3.3 保留配置升级，用户确认实际转存完成；不扩展到当前版本、OpenList、NAS、家庭共享或故障回退。更早的人工候选迁移另见[历史记录](development/V130-ACCEPTANCE.md)。
 
 2026-10-21 的[v1.4.1 ARM64 公网NAT首装记录](development/V141-ACCEPTANCE.md)是另一项用户反馈：基础部署、Bot健康、本机HTTPS与WebDAV通过，长期续期仍无执行记录，不据此推断维护菜单、已有实例升级或恢复操作均已通过。APT错误按[VPS专题](VPS-INSTALL.md#apt-软件源错误)处理，不删除已有数据。
 
@@ -10,7 +10,7 @@
 
 ## 实例管理命令
 
-待发布开发版的 `external_docker` 使用外部 Nginx、宿主离线续期任务及文件级备份，不使用本页 managed 模式的容器循环或整目录清理。检测、授权、恢复和保守漂移复核命令见[Docker Nginx 专题](DOCKER-NGINX.md)。当前稳定 v1.4.1 不包含该模式，不用旧工具维护 schema 3。
+v1.4.2 的 `external_docker` 使用外部 Nginx、宿主离线续期任务及文件级备份，不使用本页 managed 模式的容器循环或整目录清理。检测、授权、恢复和保守漂移复核命令见[Docker Nginx 专题](DOCKER-NGINX.md)。默认模式不自动切换，旧 v1.4.1 工具不支持 schema 3，应先更新离线维护工具。
 
 ### 本地管理菜单
 

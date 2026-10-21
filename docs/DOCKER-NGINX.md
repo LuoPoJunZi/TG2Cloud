@@ -1,6 +1,6 @@
 # 复用已有 Docker Nginx（v1.4.2）
 
-本页对应待发布 v1.4.2 的新增实现，**不代表 v1.4.1 在线脚本已经提供此功能**。发布须先验证辅助 A，再固定入口 B，通过同标签双架构门禁后提供正式资产。不要把本地源码命令替换为未经校验的 moving-main 在线执行。
+本页对应已发布的 v1.4.2：辅助 A／固定入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际下载的源码包、SHA256 和 GitHub 摘要已核验。正式在线入口已固定经过验证的辅助代码，不使用 moving-main 业务源码；真实 VPS／ACME／迁移仍须独立验收。
 
 ## 两种入口模式
 
@@ -137,6 +137,6 @@ python3 -B .github/scripts/prepare_bootstrap.py
 TG2CLOUD_TEST_EXTERNAL_NGINX_DOCKER=1 python3 -B -m unittest discover -s tests -p test_external_nginx_docker.py -v
 ```
 
-代码清单已纳入 bootstrap/runtime manifest；已公开且通过五项 CI 的辅助 A 为 `840472f919409531e99da55c62070ea262ebed6d`。入口候选固定该 A 并带齐新文件清单；仍须验证入口 B、通过同标签双架构门禁并发布正式源码资产，之后才切换 main 的在线入口。不能填写伪 SHA 或回退 moving main。
+代码清单已纳入 bootstrap/runtime manifest；已公开且通过五项 CI 的辅助 A 为 `840472f919409531e99da55c62070ea262ebed6d`。入口 B／Tag 为 `42e2c372823a085c36a7a7597ce775441598aaf9`，逐文件清单与 A 一致；B 的五项 CI 和同标签双架构发布均通过，源码资产已实际下载核验。后续维护继续执行先 A 后 B 的流程，不能填写伪 SHA 或回退 moving main。
 
 尚需专用测试环境覆盖：host/bridge 与 named volume、两 Edition 和 WebDAV 共存、实际证书签发/续期/加载、容器重建及网关 IP 变化、原网站与 WebSocket、迁移维护窗口、完整升级回退及安全卸载。离线测试和配置渲染不能代替这些验收。

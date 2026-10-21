@@ -1,8 +1,8 @@
 # 更新记录
 
-本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.4.2 共 21 个版本**分别新增、修复和调整的内容（含本轮待发布版本），不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
+本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.4.2 共 21 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
 
-截至 **2026-10-21**，GitHub 仅保留 [v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 两个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
+截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
@@ -32,7 +32,7 @@
 
 ## TG2Cloud v1.4.2
 
-待发布维护版本：先公开并验证辅助代码 A，再固定入口 B，经同标签原生 AMD64／ARM64 发布检查后发布源码资产。本段不代表 Release 已经存在。
+版本日期：2026-10-21。[v1.4.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2) 已正式发布。辅助 A `840472f919409531e99da55c62070ea262ebed6d` 与入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI、[同标签原生 AMD64／ARM64 发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部成功；实际源码包、SHA256 清单与 GitHub 资产摘要已核验。不把 CI 通过当作真实 VPS、ACME、长期续期或迁移验收。
 
 - 新增显式授权的 `external_docker` 入口及只读检测／配置导出；保留原 `managed` 模式，不改变已有实例默认模式。
 - 增加持久化挂载与 bridge 网络核验、单层站点渲染、逐文件 CAS／恢复日志、Webroot 签发与证书加载状态。

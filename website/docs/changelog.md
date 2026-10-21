@@ -1,8 +1,8 @@
 # 更新日志
 
-这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.2 共 21 个版本（含本轮待发布版本），逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.2 共 21 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
-截至 **2026-10-21**，GitHub 仅保留 [v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 两个 Release／Tag。v1.0.2 及其他版本虽已移除发布页和标签，历史说明仍保留；下面的发布与测试结论按当时记录理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
+截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 三个 Release／Tag。v1.0.2 及其他版本虽已移除发布页和标签，历史说明仍保留；下面的发布与测试结论按当时记录理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
@@ -32,7 +32,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.2
 
-待发布版本。以[仓库源码与完整变更](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)为准，正式下载仍为 v1.4.1；辅助 A、固定入口 B 与同标签双架构门禁通过后才能发布，不把本地版本号写成已经发布。
+2026-10-21，[v1.4.2 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)。辅助 A、固定入口 B 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部成功，实际源码资产、SHA256 和 GitHub 摘要核验通过。完整范围见[仓库变更](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，不将 CI 扩大为 VPS、ACME 或迁移实机验收。
 
 - 新增显式授权的 external_docker 模式，不关闭外部 Nginx，不增加第二层代理，不修改外部 Compose；默认 managed 模式与 Bot 流程不变。
 - 核验端口真实归属、持久化配置和稳定网络别名；使用逐文件事务、私密备份、nginx -t、reload 和实际 TLS／后端检查。

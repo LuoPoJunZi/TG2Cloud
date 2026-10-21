@@ -1,8 +1,8 @@
 # VPS 安装与升级脚本
 
-v1.4.2 发布准备：辅助 A `840472f919409531e99da55c62070ea262ebed6d` 已通过五项 CI，含原生 AMD64／ARM64 的隔离 Nginx、Bot、网关和 FUSE 检查。三个入口候选已固定 A 并带齐递归清单；入口 B 与同标签发布仍需验证，当前正式下载仍为 v1.4.1。复用外部 Nginx 的条件及显式授权见[专题](DOCKER-NGINX.md)，不改变原 managed 默认模式。
+v1.4.2 已正式发布：辅助 A `840472f919409531e99da55c62070ea262ebed6d`、入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际源码包、SHA256 和 GitHub 摘要已核验。三个在线入口固定 A 并带齐递归清单；新增[复用已有 Docker Nginx](DOCKER-NGINX.md)，需显式授权，不改变默认 managed 模式。未对真实 VPS、ACME、长期续期或迁移做本版实机验收。
 
-v1.4.1 已正式发布：辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与固定入口 B `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，实际源码资产已下载核验。三个入口包含下述 NAT 预检修复，业务仍只取正式稳定 Release。开发审计的 uv／certifi 已限定修复，Bot 运行依赖与镜像不变。
+历史 v1.4.1 已正式发布：辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb` 与固定入口 B `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，实际源码资产已下载核验。三个入口包含下述 NAT 预检修复，业务仍只取正式稳定 Release。开发审计的 uv／certifi 已限定修复，Bot 运行依赖与镜像不变。
 
 2026-10-21 用户实机反馈：CloudDrive2 v1.4.1 在 Ubuntu26.04.1／原生ARM64／公网NAT 完成首次安装、Bot健康、本机HTTPS与WebDAV验收。APT源问题由用户先备份修正后重试成功；完整范围与未覆盖项目见[验收记录](development/V141-ACCEPTANCE.md)。该结论不是 OpenList 或已有实例升级／回退通过。
 
@@ -12,7 +12,7 @@ TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本](LAN-INSTALL.md)，具体 NAS 环境仍需验收。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前正式版本为 v1.4.1，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录与本页新增的 v1.4.1 ARM64 首装记录分别理解；正式版自动升级与回退仍需对应版本独立验证，OpenList 脚本实机验收暂缓。详见[历史迁移记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
+> 当前正式版本为 v1.4.2，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录与本页新增的 v1.4.1 ARM64 首装记录分别理解；正式版自动升级与回退仍需对应版本独立验证，OpenList 脚本实机验收暂缓。详见[历史迁移记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
 
 2026-10-19 补充：专用测试机已完成 CloudDrive2 正式 v1.3.2 → v1.3.3 保留配置升级，用户确认实际转存验收完成。该结论限此 Edition 和此次路径，不扩展到 v1.3.4、首次安装、OpenList 或故障回退。
 
@@ -287,7 +287,7 @@ Linux CI 和正式 Release 不再构建 EXE，分别执行对应回归与同 Tag
 
 ## 参数、升级后检查与下一步
 
-待发布开发版提供[复用已有 Docker Nginx](DOCKER-NGINX.md)，由只读检测、明确授权和持久化条件决定是否接入，不停止原 Nginx、不增加第二层代理。新参数 `--proxy-mode`、`--nginx-container`、`--authorize-proxy` 的实际用法及发布门槛见专题；**当前稳定 v1.4.1 在线入口不包含此能力**。原有 managed 实例不会自动切换。
+v1.4.2 提供[复用已有 Docker Nginx](DOCKER-NGINX.md)，由只读检测、明确授权和持久化条件决定是否接入，不停止原 Nginx、不增加第二层代理。新参数 `--proxy-mode`、`--nginx-container`、`--authorize-proxy` 的实际用法及支持边界见专题。原有 managed 实例不会自动切换。
 
 | 参数／入口 | 用途 | 会不会修改实例 |
 | --- | --- | --- |

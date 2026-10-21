@@ -1,20 +1,20 @@
 # TG2Cloud 独立卸载脚本
 
-v1.4.2 发布准备：入口候选固定已通过五项 CI 的辅助 A `840472f919409531e99da55c62070ea262ebed6d`，新增 external_docker 依赖与事务保护，不删除外部代理／Compose／网络；外部证书和恢复材料默认保留。入口 B 与同标签发布尚待完成，不使用历史卸载验收代替新模式验收。
+v1.4.2 已发布：三个入口固定已通过五项 CI 的辅助 A `840472f919409531e99da55c62070ea262ebed6d`，入口 B 和[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)亦通过，实际资产已核验。新增 external_docker 依赖与事务保护，不删除外部代理／Compose／网络；外部证书、恢复材料及离线工具默认保留。真实卸载仍须独立验收。
 
-v1.4.1 已正式发布：三个主入口 B 固定辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb`，A／B 各五项 CI、同标签双架构发布与实际资产校验通过。本轮修复 HTTPS NAT 预检及开发审计，卸载逻辑和依赖保护不变；真实卸载仍须独立验收。
+历史 v1.4.1 已正式发布：三个主入口 B 固定辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb`，A／B 各五项 CI、同标签双架构发布与实际资产校验通过。本轮修复 HTTPS NAT 预检及开发审计，卸载逻辑和依赖保护不变；真实卸载仍须独立验收。
 
 v1.4.0 维护入口固定到已通过五项 CI 的辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414`，使用统一原生平台检查；卸载范围、资源归属、外部 WebDAV 依赖与保留数据规则不变。Oracle／真实 VPS 卸载仍须独立验收，不把 CI 作为生产清理授权。
 
 `uninstall.sh` 是标准目录下 CloudDrive2 / OpenList 受管 Docker 部署的兼容卸载入口，包括公网 VPS 的 HTTPS 和内网管理入口。新版安装／管理菜单复用同一卸载核心，不复制另一套删除逻辑，也不改动 Bot 业务流程或恢复桌面部署器。
 
-> 完整清理增强自 v1.2.1 纳入，v1.3.2 增加管理代码收尾；当前入口固定到 v1.4.1 不可变向导源码 `3d222b90599f777d7646ff14ccebe466b25ad7eb`，辅助 A、入口 B 与正式双架构发布检查已通过，支持下面的选项及外部 WebDAV 依赖保护。正式 v1.4.1 源码包和 SHA256 清单已发布核验；更新卸载助手不等于更新 Bot。原 v1.2.0 Tag 保持原行为，历史 EXE 停留在 v1.2.1。用户已反馈原保留数据卸载在其 VPS 验收通过；**本版完整清理仍需新的实机验收**。历史 CloudDrive2 升级确认不等于本版卸载通过，不据此扩大到两 Edition、NAS 或新删除行为。
+> 完整清理增强自 v1.2.1 纳入，v1.3.2 增加管理代码收尾；当前入口固定 v1.4.2 辅助源码 `840472f919409531e99da55c62070ea262ebed6d`，A／B 五项 CI、正式双架构发布和资产校验通过。更新卸载助手不等于更新 Bot；原 v1.2.0 Tag 与历史 EXE 行为不变。用户原保留数据卸载反馈不能替代本版完整清理或 external_docker 的实机验收，也不扩大到两 Edition、NAS 或新删除行为。
 
 历史 v1.3.3 向导固定提交为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`；不改写旧 Tag，不用旧助手覆盖较新共享代理状态。
 
 ## v1.3.2 统一菜单与最后实例清理
 
-待发布的[外部 Docker Nginx 模式](DOCKER-NGINX.md)有额外保护：未恢复的事务阻止卸载；只删除所选 Edition 专属站点，绝不停止或删除外部 Nginx／Compose／网络。最后路由移除后撤销本功能续期任务，但默认保留外部证书、私密恢复状态及离线维护命令；不会套用下文 managed 的整目录清理。旧 v1.4.1 工具不支持 schema 3。
+v1.4.2 的[外部 Docker Nginx 模式](DOCKER-NGINX.md)有额外保护：未恢复的事务阻止卸载；只删除所选 Edition 专属站点，绝不停止或删除外部 Nginx／Compose／网络。最后路由移除后撤销本功能续期任务，但默认保留外部证书、私密恢复状态及离线维护命令；不会套用下文 managed 的整目录清理。旧 v1.4.1 工具不支持 schema 3。
 
 v1.3.2 的公网／内网安装入口不带参数时，已安装的所选 Edition 会进入管理菜单，也可用本机 `tg2cloud` 打开；选择 **9. 卸载当前实例** 即复用本页同一卸载核心、依赖保护和删除确认，不会自动选择 `all`。不删除另一 Edition 的容器、数据库、Session 或数据，仍使用中的代理路由保留；共享 Nginx 更新路由可能短暂重载。
 
@@ -42,7 +42,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 本地源码运行
 
-在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.4.1 继续支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
+在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.4.2 继续支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
 
 先只读查看范围：
 

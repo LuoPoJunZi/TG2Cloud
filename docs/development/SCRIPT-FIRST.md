@@ -2,9 +2,13 @@
 
 从 v1.3.0 起以 Linux 一键脚本为主入口，CloudDrive2 和 OpenList 两个 Edition 继续维护。最后一个 Windows 部署器版本为 v1.2.1，历史 Tag、Release、EXE 和原校验文件保留。
 
+## v1.4.2 Docker Nginx 复用
+
+v1.4.2 已正式发布源码与 SHA256，辅助 A／入口 B 各五项 CI、同标签原生双架构与实际资产校验通过。新增显式复用外部 Docker Nginx，不改变默认 managed、内网、Bot 或依赖；受限迁移、证书责任、事务恢复及未执行实机项见[专题](../DOCKER-NGINX.md)。Windows 版继续冻结，不恢复桌面构建。
+
 ## v1.4.0 原生双架构
 
-当前维护版 v1.4.1 已发布，补充公网 NAT 的 HTTPS 人工确认和执行前复查；不改传输流程或内网边界。辅助 A／B、原生双架构与实际源码资产验证通过；发布后用户确认 CloudDrive2 在Ubuntu26.04.1 ARM64公网NAT完成首装、本机HTTPS与WebDAV验收，见[本次记录](V141-ACCEPTANCE.md)。OpenList、独立外网、升级回退及长期续期仍单独验证，完整条件见[VPS 指南](../VPS-INSTALL.md)与[双架构记录](../ARCHITECTURES.md)。
+历史维护版 v1.4.1 已发布，补充公网 NAT 的 HTTPS 人工确认和执行前复查；不改传输流程或内网边界。辅助 A／B、原生双架构与实际源码资产验证通过；发布后用户确认 CloudDrive2 在Ubuntu26.04.1 ARM64公网NAT完成首装、本机HTTPS与WebDAV验收，见[本次记录](V141-ACCEPTANCE.md)。OpenList、独立外网、升级回退及长期续期仍单独验证，完整条件见[VPS 指南](../VPS-INSTALL.md)与[双架构记录](../ARCHITECTURES.md)。
 
 正式稳定源码与在线 helper 统一支持 Debian／Ubuntu 原生 AMD64／ARM64，不使用 QEMU。A／B 各五项 CI、同标签双架构发布与真实下载资产校验通过；Oracle／真实 VPS、云盘、手机及故障回退由用户发布后验收。配置、数据库、Session、实例身份与现有传输策略不变，详见[双架构说明](../ARCHITECTURES.md)。以下版本段落保留各自历史范围。
 

@@ -6,7 +6,7 @@
 
 ## 独立入口
 
-待发布开发版已适配[外部 Docker Nginx](DOCKER-NGINX.md)：自动识别 schema 3，经同一入口适配器管理独立只读站点、认证及证书，不创建第二套代理；撤销同步到真实持久化认证目录。已开始的读取可能持续至连接关闭，不通过停止外部 Nginx 强制中断。旧 schema 2 与当前稳定 v1.4.1 的原有管理代理流程保持原样；新增模式实机结果不能沿用上述旧回归结论。
+v1.4.2 已适配[外部 Docker Nginx](DOCKER-NGINX.md)：自动识别 schema 3，经同一入口适配器管理独立只读站点、认证及证书，不创建第二套代理；撤销同步到真实持久化认证目录。已开始的读取可能持续至连接关闭，不通过停止外部 Nginx 强制中断。旧 schema 2 的 managed 流程保持原样；新增模式不能沿用旧实机结论，需独立验收。
 
 v1.3.3 增加 `tg2cloud-webdav` 的“用户管理”（序号 10／`users`）：多个独立原生只读账号共同访问已确认的目录，不创建个人目录，不自动绑定 Bot 家人。单账号操作与整入口启停的区别、schema 兼容及验收步骤见[家庭共享](FAMILY-SHARING.md)。v1.3.2 及更旧版本尚无该菜单，需单独升级离线附加工具。
 
@@ -55,7 +55,7 @@ CloudDrive2 改用 `--edition clouddrive2`。status/print-config 仅显示登记
 
 ## 前置条件与只读预检
 
-附加功能宿主检查接受 Debian/Ubuntu、Linux root、Python 3.10+、原生 64 位 AMD64 或 ARM64、本机默认 rootful Docker daemon。事先准备 Bash、OpenSSL、curl、ss/ip、getent、flock、timeout 和 Docker Compose。正式 v1.4.1 与主安装共用平台检查及公网 NAT 的人工确认预检，不改变独立账号或代理边界；既有离线工具需显式 upgrade。两架构的隔离 Nginx／认证／Range 检查已通过，原生网关账号、Oracle 和手机仍需端到端实机验收，见[双架构说明](ARCHITECTURES.md)。
+附加功能宿主检查接受 Debian/Ubuntu、Linux root、Python 3.10+、原生 64 位 AMD64 或 ARM64、本机默认 rootful Docker daemon。事先准备 Bash、OpenSSL、curl、ss/ip、getent、flock、timeout 和 Docker Compose。正式 v1.4.2 与主安装共用平台检查及公网 NAT 的人工确认预检，不改变独立账号或代理边界；既有离线工具需显式 upgrade。两架构的隔离 Nginx／认证／Range 检查已通过，原生网关账号、Oracle 和手机仍需端到端实机验收，见[双架构说明](ARCHITECTURES.md)。
 
 不自动安装依赖、重装/重启 Docker、调用主安装器、停其他代理或开放防火墙。Bot 配置、rclone、数据库、上传目录和原账号不变；不重启 Bot 或网关。安装/检查/启用要求网关运行，关闭/卸载允许网关已停，但仍核验身份。
 

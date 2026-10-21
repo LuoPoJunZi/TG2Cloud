@@ -20,7 +20,7 @@
 
 根目录只保留标准配置、README／英文版、许可证、版本记录及轻量 Shell 入口；附加入口不复制主安装逻辑。目录整理不迁移运行数据或提升版本；兼容及未公开 helper 的发布步骤见[Linux 重构说明](LINUX-REFACTOR.md)。
 
-待发布的外部 Docker Nginx 复用集中在 `deployment/proxy/docker_nginx.py`（只读检测）、`external_config.py`（严格模型与渲染）、`external_transaction.py`（逐文件 CAS／恢复日志）、`external_entry.py`（证书、续期与生命周期），CLI 在 `cli/proxy.py`。现有 manager 只做模式分派，Bot 不依赖新 CLI。源码清单同步 bootstrap/runtime manifest；新增 helper 必须先公开辅助提交 A，再更新入口 B 的 pin，候选入口仅写入忽略的 build 目录。
+v1.4.2 的外部 Docker Nginx 复用集中在 `deployment/proxy/docker_nginx.py`（只读检测）、`external_config.py`（严格模型与渲染）、`external_transaction.py`（逐文件 CAS／恢复日志）、`external_entry.py`（证书、续期与生命周期），CLI 在 `cli/proxy.py`。现有 manager 只做模式分派，Bot 不依赖新 CLI。源码清单同步 bootstrap/runtime manifest；新增 helper 必须先公开辅助提交 A，再更新入口 B 的 pin，候选入口仅写入忽略的 build 目录。
 
 ## 桌面源码只在本地保留
 
