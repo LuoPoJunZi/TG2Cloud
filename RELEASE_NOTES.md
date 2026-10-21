@@ -9,6 +9,7 @@
 - 首次安装、tg2cloud 的 HTTPS 显式修复和独立外部 WebDAV 共用此能力。错误 AAAA、多 A、未确认或不一致地址、其他服务占用及未知端口仍停止；ACME、TLS 自检和失败回退继续执行。
 - 分别显示 DNS、80 和 443 的检查结果。拒绝用本地执行地址 127.0.0.1 作为公网域名身份。
 - 新增14项 NAT 回归，覆盖两 Edition、取消确认、错误地址、DNS／网卡变化、端口归属和证书失败回退。同步安装、FAQ、双架构说明与网站。
+- 发布审计发现的两项开发依赖漏洞通过更新 uv 与 certifi 修复，统一重新生成哈希锁；不忽略漏洞或关闭安全检查，Bot 运行依赖不变。
 
 ## 安装与验收
 
@@ -24,7 +25,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 兼容与发布资源
 
-无需数据库迁移或新增用户配置；镜像与依赖版本不变，保留配置、数据库、Telegram Session、网关数据及现有备份。公网管理后端仍仅回环监听，NAT 确认不改变端口暴露、只读账号或代理归属规则。Windows 部署器保留历史 v1.2.1，本版不构建 EXE。
+无需数据库迁移或新增用户配置；镜像与 Bot 运行依赖版本不变，仅更新两项开发工具依赖。保留配置、数据库、Telegram Session、网关数据及现有备份。公网管理后端仍仅回环监听，NAT 确认不改变端口暴露、只读账号或代理归属规则。Windows 部署器保留历史 v1.2.1，本版不构建 EXE。
 
 GitHub Actions 从同一不可变 v1.4.1 Tag 完成原生 AMD64／ARM64 验证后，打包并发布一次 TG2Cloud-v1.4.1-source.tar.gz 与 SHA256SUMS.txt。在线 helper 先验证辅助 A，再固定入口 B；业务只取正式稳定 Release，不用 moving main 替代。下载后使用同版本清单执行 sha256sum -c SHA256SUMS.txt；校验和不是数字签名。
 
