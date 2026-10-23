@@ -1,25 +1,25 @@
 # 选择合适的 Edition
 
-两个 Edition 共用任务核心，分别管理自己的存储网关。后续在 Linux 脚本中明确选择 Edition；下表中的 EXE 为 v1.2.1 历史入口。
+两个 Edition 共用任务核心，分别管理自己的存储网关。在同一套 Linux 入口中按编号选择，不需要两套桌面程序。
 
 ## 两个版本的区别
 
 | 对比项 | CloudDrive2 Edition | OpenList Edition |
 | --- | --- | --- |
-| 部署器文件 | `TG2Cloud-CloudDrive2-Deployer.exe` | `TG2Cloud-OpenList-Deployer.exe` |
+| Linux 向导选择 | `1. CloudDrive2` | `2. OpenList` |
 | 存储网关 | CloudDrive2 | OpenList |
 | 默认安装目录 | `/opt/tg2cloud-clouddrive2` | `/opt/tg2cloud-openlist` |
 | 后端回环端口 | `127.0.0.1:19798` | `127.0.0.1:5244` |
-| 正式管理入口 | 独立 HTTPS 域名 | 独立 HTTPS 域名 |
+| 公网管理入口 | 独立 HTTPS 域名 | 独立 HTTPS 域名 |
 | 受管部署需要 FUSE | 是 | 产品配置不要求 |
 | 最终写入方式 | 临时文件 → 改名 → 复验 | 预留最终文件名 → 直接写入 → 复验 |
-| 手动业务安全备份界面 | 无 | 有，操作会短暂停止服务 |
+| 实例快照与隔离预检 | 菜单 13，两版均支持 | 菜单 13，两版均支持 |
 | 共享 HTTPS 代理维护 | 有，不包含业务数据 | 有，不包含业务数据 |
-| 外部已有网关 | 可取消受管安装并填写可达地址 | 按 OpenList Edition 的受管部署流程操作 |
+| 可信内网管理 | 独立 LAN 入口和私有 IPv4 | 独立 LAN 入口和私有 IPv4 |
 
 ## 已经在用 CloudDrive2
 
-选择 CloudDrive2 Edition，可以沿用你熟悉的网关管理方式。先检查 VPS 是否支持 `/dev/fuse`。同机受管安装时使用部署器默认 Docker 内网地址，不要改成电脑的 `127.0.0.1`。
+选择 CloudDrive2 Edition，可以沿用你熟悉的网关管理方式。先检查 VPS 是否支持 `/dev/fuse`。标准安装使用受管 Docker 内网地址，不要改成 Bot 容器里的 `127.0.0.1`。已有外部或自定义网关不属于任意 URL 自动接管范围，先核对实例身份及冲突。
 
 进入 [CloudDrive2 部署教程](/deploy/clouddrive2/)。
 

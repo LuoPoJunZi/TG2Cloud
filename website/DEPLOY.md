@@ -31,7 +31,7 @@
 
 这里使用自定义构建器，所以即使框架预设为 None，仍然需要 `npm run build`，不要照搬纯 HTML 空构建或 VitePress 的 `.vitepress/dist`。
 
-保存并部署。以 Cloudflare 实际分配的 `pages.dev` 地址为准；本次没有注册、预留或保证 `tg2cloud.pages.dev` 可用。
+保存并部署。本项目正式文档地址为 `https://tg2cloud.pages.dev/`；自行部署副本时，以你自己的 Pages / 自有域名为准，不复用原站的 canonical 配置。
 
 Cloudflare 对构建命令、根目录和输出目录的定义：
 https://developers.cloudflare.com/pages/configuration/build-configuration/
@@ -50,7 +50,7 @@ https://developers.cloudflare.com/pages/configuration/build-configuration/
 SITE_URL=https://你的实际域名
 ```
 
-必须是你的真实地址，只保留协议和域名，不带子路径。重新部署后会增加正确的 canonical 与 sitemap.xml。未设置时不影响访问和搜索，预构建包默认不带推测域名。
+必须是你的真实地址，只保留协议和域名，不带子路径。重新部署后会使用该地址生成 canonical 与 sitemap.xml；环境变量覆盖 `site.config.json` 中的正式站地址。未知地址时将两者留空，不生成猜测域名。
 
 ### 5. 后续维护
 

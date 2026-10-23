@@ -1,25 +1,82 @@
-# 下载与 SHA-256 校验
+# 安装、下载与校验
 
+当前正式版本为 **TG2Cloud v1.4.4**。Linux 用户优先使用下面的安装入口；历史 Windows EXE 停留在 v1.2.1，不用于升级当前实例。
 
+## 公网 VPS 安装与升级
 
-当前正式版本为 **TG2Cloud v1.4.4**：安装日志分级、升级结果与验收摘要、管理菜单精简。辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 源码包 SHA256：`521bfbc403a5cf13e0b9102c43909fc15aacfda8cf87033b1bd4772e4f86b152`。无新增数据库迁移，仍须升级前备份，schema 2 回退不能只降级镜像，见[备份说明](/operations/backup/)。本版已收到下述用户双架构升级验收，不等于全部业务通过；历史 [v1.4.3 用户日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)不外推本版。
+在自己的 Debian / Ubuntu 原生 AMD64 / ARM64 主机上，以 root 运行；需要 Python 3.10+、curl、CA 证书和可交互终端：
 
-截至 2026-10-21，GitHub 保留 v1.4.2、v1.4.1、v1.2.1 三个 Release／Tag。其他版本虽已移除发布页和标签，[全版本记录](/changelog/)仍保留每一版的功能和修复，不能把下载列表当作完整开发历史。
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
+```
 
-2026-10-23，用户提供两份日志并确认 CloudDrive2 在 Ubuntu 26.04.1 原生 ARM64 与 Debian 13 原生 AMD64 的 v1.4.3 → v1.4.4 升级验收通过。配置保留、数据库备份、Bot 健康、本机 HTTPS 与最近业务就绪观察通过；WebDAV 写入明确未执行，真实转存、外网和回退等仍须独立验收。详见[双架构记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)，不是维护者连接 VPS 的复测，不外推 OpenList 或首次安装／内网场景。
+向导选择 Edition：未安装时收集信息并展示计划；已有可核验实例进入管理菜单，选择“安装与升级”。确认前不执行安装，升级默认保留已有配置和数据。完整过程见[从零部署](/guide/quick-start/)与[升级说明](/operations/update/)。
 
-## v1.4.4 源码包与脚本
+只做 CloudDrive2 预检：
 
-本版 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4) 已由 Actions 从不可变 Tag 完成原生双架构验证、打包并发布。源码包 SHA256、清单和公开资产摘要已核对；安装和升级仍使用下方单行入口。独立附加入口见[外部 WebDAV](/deploy/external-webdav/)，不由主安装默认启用。发布不等于真实 VPS、Telegram 或网盘验收。
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
+```
 
-历史 v1.4.1 发布后，用户已确认 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 环境完成首次安装、本机HTTPS与WebDAV验收，见[脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。这是独立于发布检查的用户实机反馈，不扩展到OpenList、已有实例升级／回退、手机外网或长期续期。
+OpenList 先检查，再按需要进入安装 / 升级向导：
 
-v1.4.2 发布后另完成 Debian AMD64 的 CloudDrive2 v1.3.4 → v1.4.2 人工升级：健康、数据保留、只读 WebDAV 和外部 HTTPS 通过，继续使用 managed。旧 Release 缺失的自动升级限制、备份范围及实际转存等未执行项见[独立记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)，不能把人工路径写成在线自动升级已通过。
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --check
+```
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist
+```
+
+`--check` 是只读预检，不代表安装、升级或 WebDAV 验收完成。旧 TG115、未知代码、部分安装和身份不符时停止，不添加强制覆盖参数。
+
+## 可信内网 / NAS 安装
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
+```
+
+按向导输入主机实际拥有的私有 IPv4，不需要域名或 ACME。HTTP 不加密，不允许把内网管理入口转发到公网；要求本机 rootful Docker 28+，不保证兼容任意 NAS 系统。实际管理地址由向导显示，详见[内网指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md)。
+
+## 可选的外部 WebDAV
+
+主安装不询问或默认启用此功能。需要手机或播放器只读访问共享目录时，另行运行：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-webdav.sh)
+```
+
+它使用独立域名和独立只读账号，不复用 Bot 或网关管理员凭据。配置与维护见[外部 WebDAV](/deploy/external-webdav/)。
+
+## 日常管理、凭据与卸载
+
+安装后运行 `tg2cloud`。查看状态、日志、WebDAV 凭据和卸载均在[本地管理菜单](/operations/maintenance/)；外部附加功能使用自己的 `tg2cloud-webdav`。
+
+仅查看已有凭据，也可在自己的私有交互终端运行：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --show-credentials
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --show-credentials
+```
+
+每项确认后才显示，不安装、升级、改密或重建；已保存的 OpenList 初始化密码可能已在后台修改。不要截图、录屏或公开分享。
+
+卸载不是升级步骤。需要独立救援入口时，先用只读预检：
+
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
+```
+
+实际默认完整卸载会在确认后清理所选实例数据与可识别备份；需要保留时使用 `--keep-data`。不删除云端文件或卸载系统 Docker / Nginx；完整清理不等于把 VPS 恢复到安装前。范围与依赖保护见[卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
+
+历史 v1.2.0 Tag 记录的是早期默认保留数据行为，不可套用为当前完整清理的默认值。
+
+## 源码包与 SHA-256
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.4.4-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.4/TG2Cloud-v1.4.4-source.tar.gz) | 同标签源码，包含两 Edition 的运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.4/SHA256SUMS.txt) | 本次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.4.4-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.4/TG2Cloud-v1.4.4-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.4/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -27,128 +84,61 @@ v1.4.2 发布后另完成 Debian AMD64 的 CloudDrive2 v1.3.4 → v1.4.2 人工�
 sha256sum -c SHA256SUMS.txt
 ```
 
-此清单不用于历史 EXE。在线向导通过 HTTPS 下载固定 commit 源码，目前不读取 Release 资产清单。
+本版源码包 SHA256 为 `521bfbc403a5cf13e0b9102c43909fc15aacfda8cf87033b1bd4772e4f86b152`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
 
-## 下载 v1.2.1 历史 Windows 部署器
+[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
-| 版本 | 发布文件 | 教程 |
-| --- | --- | --- |
-| CloudDrive2 Edition | [下载 CloudDrive2 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.2.1/TG2Cloud-CloudDrive2-Deployer.exe) | [CloudDrive2 部署](/deploy/clouddrive2/) |
-| OpenList Edition | [下载 OpenList 部署器](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.2.1/TG2Cloud-OpenList-Deployer.exe) | [OpenList 部署](/deploy/openlist/) |
-| 校验清单 | [下载 SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.2.1/SHA256SUMS.txt) | 与下载的 EXE 逐项核对 |
+### 在线入口与源码资产的区别
 
-[查看 v1.2.1 发布页](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) · [查看最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+三个主安装 / 内网 / 卸载轻量入口固定向导 commit；业务部署资源解析正式稳定 Release 的不可变 commit。它们与手动下载源码资产、执行 SHA-256 清单检查不是同一条路径。
 
-:::info 固定版本与最新版本
-本页源码包固定到 v1.4.4，历史 Windows 下载固定到 v1.2.1；分别使用对应 Release 的 SHA256SUMS，不混用校验值。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
-:::
+外部 WebDAV 的独立引导会验证正式源码资产及同版校验清单。任一路径下载失败都不回退未校验的 main / RC 业务代码；不会因为更新网站就自动更新已运行实例。
 
-v1.2.1 的两个正式 EXE 由 GitHub Actions 的 Windows Runner 从同一标签构建并自检，Release 复用该次构建产物。校验值来自这次 Actions 实际生成的文件，不要求与本机旧构建一致。
+## 历史 Windows 部署器
 
-后续源码版 Release 不再提供新版 EXE，其 SHA256 清单对应源码包。已有实例请按 [升级与修改配置](/operations/update/) 操作，不要用旧 EXE 覆盖较新实例，也不要卸载重装。
+| Edition | v1.2.1 发布文件 |
+| --- | --- |
+| CloudDrive2 | [TG2Cloud-CloudDrive2-Deployer.exe](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.2.1/TG2Cloud-CloudDrive2-Deployer.exe) |
+| OpenList | [TG2Cloud-OpenList-Deployer.exe](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.2.1/TG2Cloud-OpenList-Deployer.exe) |
+| 校验清单 | [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.2.1/SHA256SUMS.txt) |
 
-## 在 Windows 中计算校验值
+[历史发布页](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) · [历史 Windows 教程](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/README-%E5%B0%8F%E7%99%BD%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md)
 
-打开文件所在目录，在 PowerShell 中执行与你下载的 Edition 对应的一条命令：
+历史 EXE 由同标签 Actions 构建。下载后在 PowerShell 中计算实际文件的 SHA-256，并与 v1.2.1 清单逐字核对：
 
 ```powershell
-Get-FileHash ".\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
-Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
+Get-FileHash ".\\TG2Cloud-CloudDrive2-Deployer.exe" -Algorithm SHA256
+Get-FileHash ".\\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 ```
 
-打开同一 Release 下载的 `SHA256SUMS.txt`，找到相同文件名，比较完整 SHA-256。只下载一版时，另一条命令可跳过。
+仅下载一版时只计算该文件。旧 EXE 没有商业代码签名，不能因“未知发布者”就关闭安全软件；来源或校验不能确认时不运行。
 
-校验不一致时停止运行，删除损坏的下载文件并从项目正式 Release 重新获取。文件大小相同不能替代 SHA-256 比较。
+### 恢复历史部署器构建
 
-## Windows 提示未知发布者
-
-已发布的 Windows EXE 尚未提供商业代码签名，SmartScreen 可能显示“未知发布者”。这与文件是否来自正确发布源是不同的问题。
-
-核对仓库、Release 标签、文件名和 SHA-256；无法确认来源时不要运行。**不建议关闭 Defender、Windows Security 或全局安全检查。**
-
-## 没有 Windows：VPS 单行入口
-
-后续主要使用脚本维护。在自己的 Debian/Ubuntu 原生 AMD64／ARM64 VPS 上，以 root 运行以下命令；需要 Python 3.10+、curl、CA 证书及可交互终端。
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
-```
-
-向导先选择 Edition、检查现有实例并收集必要信息，显示脱敏计划，确认后才执行。全新 VPS 走安装；完整且可核验的受管实例走保留配置升级。旧 TG115、部分安装或自定义实例不会被静默覆盖。Docker 环境和 HTTPS 复用现有部署资源，云存储授权仍由你在 CloudDrive2 / OpenList 中完成。
-
-只做 CloudDrive2 只读检查可使用：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
-```
-
-OpenList 先只读检查，不安装／升级：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --check
-```
-
-检查通过后，运行 OpenList 安装／升级向导；写入前仍需预检与最终确认：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist
-```
-
-轻量入口来自主分支；Python 向导模块固定到审查并通过 CI 的源码 commit，实际部署 payload 只取正式稳定 Release 的不可变 commit，不取 main、RC 或草稿。出现下载错误应停止，不要把命令退出当作安装成功。
-
-:::warning 验收范围
-2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到正式 v1.3.0，用户确认升级后使用验收完成。历史任务与 Session 授权保留，健康、指纹、HTTPS、只读 WebDAV 及在线入口复检通过；原先只读预检的结论已补充为本次迁移记录。首次安装、无需人工接管的正式版自动升级、故障回退和 NAS 仍需独立验证；OpenList 脚本实机验收暂缓。详见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)与 [VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)。不要同时运行 EXE 和命令行向导。
-:::
-
-## 没有公网域名：独立内网入口
-
-符合支持条件的可信内网 Debian / Ubuntu 原生 AMD64／ARM64 主机可使用独立脚本，按向导选择 Edition 并人工输入本机私有 IPv4；本次公网 NAT 记录不替代 NAS／LAN 验收：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
-```
-
-内网 HTTP 不加密，禁止公网端口转发；要求 Python 3.10+ 和 Docker 28+，不保证兼容所有 NAS 或 ARM。不会申请域名证书、占用 80/443 或转换已有 HTTPS 实例，也不修改两个 EXE 的强制 HTTPS 规则。入口检查通过后，验收前会再次显示实际 `http://IP:19798`（CloudDrive2）或 `http://IP:5244`（OpenList）。
-
-用户提供的 CloudDrive2 内网 Debian 日志显示首次部署和 WebDAV 验收通过；OpenList 内网、其他 NAS、升级/回退及 Telegram 转存仍待验收。详见 [内网安装指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md)。
-
-## 独立卸载：先预检
-
-v1.3.2 默认公网／内网入口整合管理菜单：选择已有 Edition 后可按名称选择“卸载当前实例”（旧 v1.4.3 为 9，v1.4.4 为 14），无需另记独立命令；确认安装管理命令后，本机也可运行 `tg2cloud`。最后一套完整卸载后，无依赖且归属可验证时清理快捷命令及其代码。下方 `uninstall.sh` URL 保留作兼容／救援及只读预检，不删除旧入口；旧主机需显式更新，不会自动更换管理代码。见[管理菜单](/operations/maintenance/)。
-
-卸载不是升级步骤。v1.2.0 Tag 中的原入口默认保留实例数据、证书和历史备份；主分支追加的完整清理增强会在双重确认后删除所选配置、数据库、下载和可识别历史备份。需要保留数据时必须明确使用 `--keep-data`。用户已反馈原保留数据卸载在其 VPS 通过，但完整清理增强仍待新的实机验收，不据此推定 NAS 或两个 Edition 均通过。两个 EXE 与正式 Release 不变，详情见 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
-
-在线入口固定到审查并通过 CI 的源码 commit。可先用以下只读命令查看范围；`--check` 不会停止容器或删除数据：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
-```
-
-确认前请结束传输、将需要保留的备份复制到清理目录之外并核对资源归属；未知安装、外部引用、使用中的网络或 FUSE 挂载不会强制清理。系统 Docker/Nginx、其他项目与云端文件不操作；镜像缓存、锁元数据、系统软件包和 DNS 变化不自动回滚，完整清理不等于把 VPS 恢复到安装前。本页只提供只读预检，不提供无人值守删除命令。
-
-## 只查看已有凭据
-
-v1.2.0 提供独立凭据查看模式，按已安装的 Edition 选择一条命令，在自己的私有交互终端运行：
-
-```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --show-credentials
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --show-credentials
-```
-
-逐项确认后才显示已保存的凭据，每项默认不显示。此模式不安装、升级、改密或重建服务；不能与 `--check`、`--configure-https`、`--verify` 组合。保存的 OpenList 初始化管理员密码可能已在管理页更改，不能保证是当前登录密码。输出不要截图、录屏或公开分享。
-
-## 从源码构建部署器
-
-这部分用于从正式 v1.2.1 标签构建主项目，不是下载已发布 EXE，也不是构建本文档站。正式 Release 资产仍以 Actions 本次产物为准，本机构建的 SHA256 不要求相同。
+仅供维护历史版本，在独立目录操作，不覆盖当前工作树：
 
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
 git checkout v1.2.1
 git rev-parse HEAD
-.\build.ps1 -Edition All
+.\\build.ps1 -Edition All
 ```
 
-仅构建一版时，把 `All` 改为 `CloudDrive2` 或 `OpenList`。产物位于主项目 `dist/`。当前正式发布不包含 Classic/Tkinter 部署器。
+main 不维护桌面源码或 Windows 构建。开发与 Linux 检查见[贡献说明](/reference/development/)。
 
-完整开发说明见 [开发与贡献](/reference/development/)。
+## 发布记录与实机证据
+
+下载列表不等于完整开发历史。GitHub 保留哪些历史 Release / Tag 可能变化，逐版功能见[全版本记录](/changelog/)，不要维护一份容易过时的“仅保留几版”清单。
+
+| 记录 | 说明 |
+| --- | --- |
+| [v1.4.4 双架构升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md) | 用户确认 CloudDrive2 两次升级通过；写入、真实转存、外网与回退未覆盖项单列 |
+| [v1.4.3 用户日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md) | 基础升级与 WARNING 核验，不扩展为所有业务已通过 |
+| [v1.4.2 人工升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md) | 旧发布基线缺失时的授权人工路径 |
+| [v1.4.1 ARM64 首装](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md) | 用户提供的公网 NAT 首装及本机 HTTPS / WebDAV 记录 |
+| [v1.3.0 历史迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md) | 人工核对、备份与迁移边界 |
+
+发布及校验成功不等于真实 VPS、Telegram 或云存储验收。维护者自动检查与用户实机反馈的完整来源见[文档来源](/reference/sources/)。
+
+现有记录中 OpenList 脚本实机验收暂缓；完整清理增强仍待新的实机验收。历史环境通过不外推当前版本、其他架构或所有故障路径。

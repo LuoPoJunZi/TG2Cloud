@@ -55,17 +55,20 @@
 
   const mobileNav = $('#mobile-nav-dialog');
   const searchDialog = $('#search-dialog');
-  let returnFocus;
+  const dialogTriggers = new WeakMap();
   function openDialog(dialog, trigger) {
     if (dialog.open) return;
-    returnFocus = trigger || document.activeElement;
+    dialogTriggers.set(dialog, trigger || document.activeElement);
     dialog.showModal(); document.body.classList.add('no-scroll');
   }
   function closeDialog(dialog) { if (dialog.open) dialog.close(); }
   [mobileNav,searchDialog].forEach(dialog => {
     dialog.addEventListener('close', () => {
-      document.body.classList.remove('no-scroll');
-      if (returnFocus instanceof HTMLElement && returnFocus.isConnected) returnFocus.focus();
+      const anotherDialogOpen = mobileNav.open || searchDialog.open;
+      document.body.classList.toggle('no-scroll', anotherDialogOpen);
+      const trigger = dialogTriggers.get(dialog);
+      if (!anotherDialogOpen && trigger instanceof HTMLElement && trigger.isConnected
+          && trigger.getClientRects().length) trigger.focus();
     });
     dialog.addEventListener('click', event => {
       const box = dialog.getBoundingClientRect();
@@ -75,6 +78,9 @@
   $$('.mobile-nav-toggle').forEach(button => button.addEventListener('click', () => openDialog(mobileNav,button)));
   $('[data-close-nav]').addEventListener('click', () => closeDialog(mobileNav));
   $$('#mobile-nav-dialog a').forEach(a => a.addEventListener('click', () => closeDialog(mobileNav)));
+  $$('.mobile-toc a').forEach(a => a.addEventListener('click', () => {
+    a.closest('details').open = false;
+  }));
 
   // Search is completely local. JSON is loaded only when the dialog is first used.
   const input = $('#search-input'), results = $('#search-results'), status = $('.search-status');

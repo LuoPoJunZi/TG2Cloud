@@ -6,7 +6,7 @@
   "verifiedAt": "2026-10-23",
   "repo": "https://github.com/LuoPoJunZi/TG2Cloud",
   "upstreamRepo": "https://github.com/whyhhh20/TG115",
-  "siteUrl": "",
+  "siteUrl": "https://tg2cloud.pages.dev",
   "description": "TG2Cloud 中文文档：通过私人 Telegram Bot，将文件自动转存到 CloudDrive2 或 OpenList 中挂载的云存储。",
   "navigation": [
     {

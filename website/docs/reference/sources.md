@@ -61,9 +61,9 @@ npm run preview
 
 ## Cloudflare Pages 配置
 
-本网站采用独立仓库时，根目录保持仓库根，构建命令 `npm run build`，输出目录 `dist`，Node 版本 `22`。
+当前网站源码位于 TG2Cloud 仓库的 `website/`，Pages 根目录应设为 `website`；构建命令 `npm run build`，输出目录 `dist`，Node 版本 `22`。部署成独立文档仓库时才将根目录留空。
 
-每个文章都生成独立 HTML，不需要 SPA 全站回退。首次部署前尚未确定正式域名时，不写虚构 canonical 地址。确定后设置环境变量 `SITE_URL`，重新构建生成 canonical、站点地图与 robots 的站点地图入口。
+每个文章都生成独立 HTML，不需要 SPA 全站回退。正式地址已确认是 `https://tg2cloud.pages.dev/`，配置据此生成 canonical、站点地图及 robots 入口。自行部署副本时必须改成自己的 `SITE_URL`；未知域名不猜测。
 
 ## 图片与隐私
 

@@ -17,7 +17,7 @@ sudo ssh-keygen -lf /etc/ssh/ssh_host_ed25519_key.pub -E sha256
 sudo ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub -E sha256
 ```
 
-核对实际使用的密钥类型。确认新指纹正确后，再在部署器选择“更新并重新连接”。原因不明或指纹不同，取消操作。
+核对实际使用的密钥类型。确认新指纹正确后，按所用 SSH 客户端的说明只更新该主机与端口的记录，再重新连接；Linux 脚本没有“更新并重新连接”按钮。原因不明或指纹不同，取消操作。
 
 不要清空所有 `known_hosts` 或关闭 Host Key 检查。
 
@@ -27,20 +27,19 @@ sudo ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub -E sha256
 
 主机密钥更新成功不意味着登录凭据也正确。
 
-## 兼容隧道使用的本机 19798 或 5244 端口占用
+## 检查服务器的端口占用
 
-在 Windows PowerShell 中只读查看：
+在服务器终端只读查看：
 
-```powershell
-Get-NetTCPConnection -State Listen -LocalPort 19798,5244 -ErrorAction SilentlyContinue |
-    Select-Object LocalAddress,LocalPort,OwningProcess
+```bash
+ss -H -ltnp '( sport = :80 or sport = :443 or sport = :19798 or sport = :5244 )'
 ```
 
-根据进程 ID 确认占用者。不要直接结束未知系统进程。v1.1.0 普通工作台不再提供隧道管理页按钮；这一检查只适用于兼容或应急诊断。
+核对端口、地址和真实进程归属。不要直接结束未知服务；已有 Docker Nginx 是否能复用，要经过[明确的身份与配置检查](/deploy/domain-https/)。
 
 ## 兼容隧道无响应
 
-底层隧道仅作为兼容/应急能力保留。普通管理页打不开时应先使用 [域名 HTTPS 检查](/deploy/domain-https/)，不要把 HTTPS 故障误判成 SSH 转发故障。
+旧桌面隧道只属于历史兼容诊断，当前 Linux 安装不创建它。普通管理页打不开时应先使用 [域名 HTTPS 检查](/deploy/domain-https/)，不要把 HTTPS 故障误判成 SSH 转发故障。
 
 CloudDrive2 需要允许转发到 VPS 的 `127.0.0.1:19798`；OpenList 对应 `127.0.0.1:5244`。检查 `AllowTcpForwarding` 与 `PermitOpen` 的实际限制，不要直接扩大为不必要的公网监听。
 

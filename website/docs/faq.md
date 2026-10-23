@@ -24,23 +24,16 @@
 
 ### 升级出现 WARNING 需要处理吗？
 
-2026-10-23 的 [v1.4.4 双架构用户日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)中，Ubuntu ARM64 与 Debian AMD64 的 CloudDrive2 升级均经用户确认通过。Debian 推荐 50GB 的容量提示显示为 `[提醒]` 并在摘要中汇总，未阻断实际通过的基础步骤；Ubuntu 未出现该提醒。依赖安装层均为 `CACHED`，不能据此认为旧版构建警告被过滤或所有 WARNING 都无害。两份摘要仍将 WebDAV 写入、真实转存与外网验收单列为未执行／待验收。
+不能只凭 WARNING 判断失败，也不能把所有警告屏蔽。当前工具区分 `[信息]`、`[提醒]`、`[待核对]` 与 `[错误]`，成功仍看真实退出码、完整标记与逐项摘要；旧工具须显式升级后使用。
 
-v1.4.4 源码增加 `[信息]`、`[提醒]`、`[待核对]`、`[错误]` 分类和逐项摘要，但旧工具须显式升级后使用。常见构建提醒只解释，未知警告不自动判无害，错误仍按原退出码处理；见[升级反馈](/operations/update/#v1-4-4-安装与升级反馈)。本地摘要和测试不能代替实机验收。
-
-不能只凭 WARNING 判断升级失败，也不能屏蔽所有警告。2026-10-23 用户提供的 v1.4.2 → v1.4.3 CloudDrive2 日志中，以下提示没有阻断升级：
-
-| 提示 | 本次解释 |
+| 常见提示 | 如何理解 |
 | --- | --- |
-| pip 的 root 提醒 | 发生在 Docker 镜像构建安装依赖时，不是在宿主 Python 装 Bot 依赖。镜像和 Compose 配置正式运行使用非 root 的 `10001:10001`，不需为此改权限或重装 |
-| `skipping ca-certificates.crt` | CA 合集不是单证书，rehash 会跳过单证书索引；这条提示不等于域名证书错误，仍须检查包安装与实际 TLS 结果 |
-| `uid 10001 is greater than SYS_UID_MAX 999` | 固定容器 UID 超出系统账号默认编号范围，创建仍成功；不是把 Bot 改为 root |
-| 总容量低于推荐 50GB | 是容量建议而非硬性门槛；须通过真实容量校验，后续仍需注意暂存、Docker、备份及网关缓存 |
+| 镜像构建时 pip root 提醒 | 不等于 Bot 正式以 root 运行，仍核对运行用户和后续结果 |
+| `skipping ca-certificates.crt` | CA 合集的 rehash 提醒，不单凭这一行判断 TLS |
+| 固定 UID 超出系统账号建议范围 | 不代表创建失败，也不要求改成 root 或放宽权限 |
+| 容量低于推荐 50GB | 不是唯一硬门槛，但必须通过实际容量和保留线校验 |
 
-本次日志最终有 `TG2CLOUD_VERSION=1.4.3`、`TG2CLOUD_CODE=OK`、`TG2CLOUD_BOT_HEALTH=healthy`、`TG2CLOUD_RESULT=SUCCESS`，并通过本机 HTTPS。完整证据与仍需验收的实际转存／外网／回退见[脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)，更新流程见[升级说明](/operations/update/)。
-
-出现安装失败、权限拒绝、磁盘不足、TLS 失败、容器不健康或 FAILED 时按具体错误排查；不要关闭证书校验、放宽为 `chmod 777` 或通过隐藏 WARNING 当作修复。原理另见 [pip 说明](https://pip.pypa.io/en/stable/cli/pip_install/#cmdoption-root-user-action)和 [OpenSSL 说明](https://docs.openssl.org/3.0/man1/openssl-rehash/)。
-
+安装失败、权限拒绝、磁盘不足、TLS 错误或不健康容器需单独处理。详见[升级反馈](/operations/update/#v1-4-4-安装与升级反馈)。[v1.4.3 日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)与[v1.4.4 双架构记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)各有独立范围，不表示任意 WARNING 无害或全部业务已验收。
 
 ### Windows 提示未知发布者怎么办？
 
@@ -52,7 +45,7 @@ v1.4.4 源码增加 `[信息]`、`[提醒]`、`[待核对]`、`[错误]` 分类�
 
 ### VPS 重装后 Host key 不匹配？
 
-先在服务商控制台核对新指纹，确认身份后使用部署器“更新并重新连接”。不要删除所有服务器记录。[SSH 排查](/troubleshooting/ssh/)。
+先在服务商控制台核对新指纹，确认身份后按所用 SSH 客户端说明，只更新当前主机与端口的记录；Linux 脚本没有该桌面按钮。不要删除所有服务器记录。[SSH 排查](/troubleshooting/ssh/)。
 
 ### ARM64 公网 NAT 首次安装是否有实机记录？
 
@@ -74,11 +67,11 @@ v1.4.4 源码增加 `[信息]`、`[提醒]`、`[待核对]`、`[错误]` 分类�
 
 ### HTTPS 管理页打不开？
 
-在部署器的“HTTPS 管理入口”中点击“检查状态”，核对 DNS、证书、80/443、Nginx、HTTP 跳转和后端回环监听。首次签发时 Cloudflare 使用“仅 DNS”；CloudDrive2 19798 与 OpenList 5244 不应直接暴露公网。
+运行 `tg2cloud`，选对应 Edition，再选 **7. HTTPS 与管理** 检查，核对 DNS、证书、80/443、Nginx、HTTP 跳转和后端回环监听。首次签发时 Cloudflare 使用“仅 DNS”；CloudDrive2 19798 与 OpenList 5244 不应直接暴露公网。
 
 ### HTTPS 能用，为什么显示黄色续期警告？
 
-最近续期失败、已有记录超过 26 小时未更新、临近到期或时钟异常都可能触发提醒；当前严格 HTTPS 自检通过时，入口仍可用。检查续期记录、VPS 时间和 Certbot，不必因此重装 Bot。完全没有记录的旧实例只显示“尚无记录”，需用新版部署器重新配置同一域名更新记录能力。[HTTPS 维护说明](/deploy/domain-https/)。
+最近续期失败、已有记录超过 26 小时未更新、临近到期或时钟异常都可能触发提醒；当前严格 HTTPS 自检通过时，入口仍可用。检查续期记录、VPS 时间和 Certbot，不必因此重装 Bot。完全没有记录的旧实例只显示“尚无记录”，需按匹配版本的 Linux 维护流程显式更新记录组件，不能只更新网站。[HTTPS 维护说明](/deploy/domain-https/)。
 
 ### 填了 Let's Encrypt 邮箱就会收到到期提醒吗？
 
@@ -88,11 +81,11 @@ v1.4.4 源码增加 `[信息]`、`[提醒]`、`[待核对]`、`[错误]` 分类�
 
 401 优先检查运行配置中的 WebDAV 用户名、密码；429 属于限流，避免连续重试加重压力。两者不能用同一种方案处理。[WebDAV 排查](/troubleshooting/webdav/)。
 
-当前 v1.2.1 源码中的 OpenList Bot `/doctor` 会显示实际探测时间与剩余冷却；刷新诊断不会绕过退避，也不会把消息刷新时间冒充新探测结果。
+当前 OpenList Bot `/doctor` 会显示实际探测时间与剩余冷却；刷新诊断不会绕过退避，也不会把消息刷新时间冒充新探测结果。
 
 ### 修改部署器密码后还是 401？
 
-表单变更不等于 VPS 配置变更。重复部署默认保留原 `.env`，单纯 restart 也不应用新配置。按 [修改配置](/operations/update/) 明确应用后再验收。
+修改本地记录不等于 VPS 配置变更。重复部署默认保留原 `.env`，单纯 restart 也不应用新配置。按 [修改配置](/operations/update/) 明确应用后再验收。
 
 ### “修复 CloudDrive2 网络”能解决上传失败吗？
 
@@ -140,11 +133,11 @@ v1.2.1 支持重新转发已取消文件或 `/restart 编号`，确认后重新�
 
 ### TG115 能一键升级 TG2Cloud 吗？
 
-v1.2.1 不提供原地自动迁移或正式自动 Restore。独立卸载不是迁移或升级步骤，也不会清理旧 TG115。主分支追加的完整清理默认双重确认后删除所选 TG2Cloud 数据与可识别备份；需要保留时明确使用 `--keep-data`。完整清理增强仍待新的实机验收，不能把原保留数据版本的用户验收当作新行为已经通过。详见 [独立卸载说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) 和 [迁移说明](/operations/migration/)。
+当前 Linux 脚本不提供原地自动迁移或覆盖生产数据的一键 Restore。独立卸载不是迁移或升级步骤，也不会清理旧 TG115。主分支追加的完整清理默认双重确认后删除所选 TG2Cloud 数据与可识别备份；需要保留时明确使用 `--keep-data`。完整清理增强仍待新的实机验收，不能把原保留数据版本的用户验收当作新行为已经通过。详见 [独立卸载说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) 和 [迁移说明](/operations/migration/)。
 
 ### CloudDrive2 现在能备份了吗？
 
-两版都有“HTTPS 管理入口 → 维护工具”的共享代理备份，但不包含 Bot 业务数据或网关状态。CloudDrive2 仍没有手动业务安全备份 UI；OpenList 日常管理的业务备份与代理备份也须分别保存。[备份范围](/operations/backup/)。
+可以。两版在 `tg2cloud` → **13. 数据备份管理** 都提供实例快照和隔离预检；共享代理另行备份，快照会短暂停止所选服务。两者不包含云端文件，也不提供覆盖生产数据的一键恢复。[备份范围](/operations/backup/)。
 
 ### CloudDrive2 和 OpenList 可以共用一个 Bot Token 吗？
 

@@ -1,98 +1,117 @@
 # 从零开始部署
 
-按下面的顺序完成第一次安装。先部署基础环境，再挂载云存储，最后做真实写入验收；不要把其中一个阶段的成功当成整个流程已经完成。
+在自己的 Linux 主机运行安装脚本，再到存储网关挂载云盘、创建 WebDAV 用户，最后验证一个真实小文件。不需要 Windows 或 EXE。
 
-:::tip 先选对教程分支
-使用 CloudDrive2 的用户跟随 [CloudDrive2 专页](/deploy/clouddrive2/)；使用 OpenList 的用户跟随 [OpenList 专页](/deploy/openlist/)。下面先给出两版共用的完整路线。
+:::tip 先选安装场景
+公网 VPS 使用 HTTPS 域名；可信内网 / NAS 使用独立内网入口。两种方式都需要主机能够访问 GitHub、Telegram、镜像仓库和目的端，具体条件见[部署前准备](/guide/prerequisites/)。
 :::
 
-从 v1.3.0 起优先使用 [VPS 单行入口](/download/)，内网使用独立 LAN 入口。向导收集信息、确认计划，再复用 Docker 部署资源；脚本实机验收范围与 EXE 不同。下文保留 v1.2.1 历史图形部署教程。
+## 第一步：登录自己的 Linux 主机
 
-## v1.3.0 脚本部署路线
+通过自己的 SSH 终端登录 Debian / Ubuntu 原生 AMD64 或 ARM64 主机，并以 root 运行安装入口。首次连接或主机指纹变化时，先按[SSH 指南](/deploy/ssh/)核对服务器身份。
 
-:::tip v1.3.2 安装与管理
-默认向导使用中文编号与分段提示：WebDAV 用户名回车默认 tg2cloud、密码回车生成 8 位，保存子目录可留空，账号根目录在自己的后台设置。新装不再询问时区，默认 Asia/Shanghai；升级保留原有配置。计划确认后安装离线 `tg2cloud` 菜单，首次建号凭据只向当前私有终端汇总显示，请勿录屏。已部署主机需重新运行相应入口并确认升级，不会自动改变。菜单边界见[本地管理](/operations/maintenance/)。
-:::
+准备 Telegram API ID、API Hash、Bot Token，以及一个管理员数字 ID。CloudDrive2 还需要主机提供 `/dev/fuse`；OpenList 不要求 FUSE。
 
-1. 通过 SSH 登录自己的 Debian／Ubuntu 原生 64 位 AMD64／ARM64 主机，准备 Telegram 配置；公网 VPS 还需正确解析的管理域名。正式 v1.4.1 与匹配 helper 已发布，NAT 主机按条件核对云控制台公网 IPv4，Oracle 与 NAS 的实际限制及待验收项目见[部署前准备](/guide/prerequisites/)。
-2. 从[下载页](/download/)选择公网或内网入口，运行单行命令并选择 CloudDrive2／OpenList。
-3. 首次安装选择流式优先、均衡或手动磁盘预算，填写 Telegram 和专用 WebDAV 信息；已有完整实例升级复用原配置。
-4. 核对计划后确认执行。公网向导配置 HTTPS；可信内网向导使用手填私有 IPv4 和固定管理端口。
-5. 在自己的网关中挂载云存储，配置专用 WebDAV 用户，返回终端确认执行验收，再向 Bot 发送小文件检查实际结果。
+## 第二步：选择安装入口
 
-历史 CloudDrive2 旧候选到正式 v1.3.0 的人工迁移及用户使用验收与新装分开，见[历史记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。2026-10-21，用户已完成v1.4.1在Ubuntu26.04.1／ARM64公网NAT的CloudDrive2首装、本机HTTPS与WebDAV验收，见[本次记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)；OpenList 脚本实机验收暂缓，故障回退和NAS等仍单独验证。完整参数和中断处理见 [VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)及[内网指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md)。
+公网 VPS：
 
-## v1.2.1 历史图形部署路线
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
+```
 
-## 第一步：下载并检查文件
+可信内网 / NAS：
 
-进入 [下载与校验](/download/)，选择对应 Edition 的 EXE，同时下载同一 Release 中的 `SHA256SUMS.txt`。在 Windows PowerShell 计算 EXE 的 SHA-256，与清单中的相应条目逐字符比较。
+```bash
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-lan.sh)
+```
 
-不要把别的版本的校验值用于当前文件，也不要为了运行程序关闭安全软件。
+选择 `1. CloudDrive2` 或 `2. OpenList`。未安装时，确认进入安装向导；已有实例则打开[本地管理菜单](/operations/maintenance/)，不要将升级当成重新安装。
 
-## 第二步：连接自己的 VPS
+入口的 Python 向导固定到受审阅提交，Bot 部署资源来自正式稳定 Release；下载失败时停止，不改用未发布的 main 业务代码。
 
-打开部署器，填写服务器地址、SSH 端口、用户名和登录方式。点击 **“测试 SSH”**；第一次连接时，通过服务商控制台核对显示的主机指纹，再确认连接。
+## 第三步：配置管理入口
 
-SSH 成功后读取资源。连接失败先处理 [SSH 问题](/troubleshooting/ssh/)，不要反复点击部署。
-
-## 第三步：配置 Telegram
-
-填写 Bot Token、API ID、API Hash 和本人数字 ID。四项用途不同，不能互相替代。
-
-确保没有旧 Bot 实例使用同一个 Token 运行。TG2Cloud 只处理允许用户的一对一私聊。
-
-## 第四步：设置网关与任务预算
-
-CloudDrive2 同机受管安装保持默认内网 WebDAV 地址，预先选定专用用户名和密码。OpenList 根据“配置 WebDAV”页记录本次生成的用户凭据。
-
-点击 **“检测 VPS 并推荐”**，按需求主动选择均衡值或流式优先值。确认安装目录、本地任务预算和磁盘最少保留，再继续。
-
-:::warning 默认值不是对所有 VPS 的建议值
-20GB 本地任务预算、8GB 磁盘保留只是源码默认。小磁盘机器请以实际探测为准；不要为了通过检查把安全线改为接近零。
-:::
-
-## 第五步：部署基础环境
-
-点击 **“一键部署基础环境”**，观察日志。构建或拉取镜像期间，不要重复点击部署、网络修复或验收。基础容器健康后，部署器会自动打开 HTTPS 管理入口配置；HTTPS 全部自检通过前，主界面保持“待配置 HTTPS”。
-
-此阶段检查 Bot、网关和网络健康。尤其 OpenList 首次安装时，尚未挂载云盘或创建 WebDAV 用户，并不自动意味着基础部署失败。
-
-## 第六步：配置 HTTPS 并挂载自己的存储
-
-| 使用的版本 | HTTPS 通过后点击 | 后端回环端口 |
+| 场景 | 需要填写 | 访问方式 |
 | --- | --- | --- |
-| CloudDrive2 | 打开 CloudDrive2 域名 | `127.0.0.1:19798`（不公开） |
-| OpenList | 打开 OpenList 域名 | `127.0.0.1:5244`（不公开） |
+| 公网 VPS | 指向本机的独立管理域名，可选 Let's Encrypt 邮箱 | `https://你的管理域名` |
+| 可信内网 | 本机实际拥有的私有 IPv4 | 向导显示的 `http://内网IP:端口` |
 
-为当前 Edition 配置独立域名，等待证书、HTTPS、HTTP 跳转、公开 `/dav` 阻断和回环监听全部通过，再通过域名管理页完成登录、存储授权、目标目录和 WebDAV 用户设置。管理域名只代理界面，不能作为 Bot 的 WebDAV 地址。
+公网需核对 DNS A/AAAA、80/443 入站规则和端口归属。公网 NAT 主机按提示核实云控制台分配的公网 IPv4，不能将 A 记录改成私有地址。首次签发 Cloudflare 使用“仅 DNS”。
 
-CloudDrive2 创建与部署器完全一致的 WebDAV 用户，取消只读并确认读写、改名、删除权限。OpenList 创建专用普通用户，确认列表、读取、写入和删除权限。
+80/443 已被其他代理占用时，不停止未知服务。受支持的已有 Docker Nginx 仅在显式授权后接入；不满足条件时按[HTTPS 指南](/deploy/domain-https/)检查人工接入方案。
 
-## 第七步：WebDAV 真实验收
+内网入口不申请证书；HTTP 不加密，禁止把管理端口转发到公网。
 
-回到部署器，点击 **“WebDAV 验收”**。只有出现下面的标记才说明整体验收通过：
+## 第四步：填写 Telegram 与存储方案
+
+按向导选择流式优先、均衡或手动预算，并填写：
+
+| 字段 | 填写方式 |
+| --- | --- |
+| Telegram API ID / API Hash | 配套的应用凭据 |
+| Bot Token | 自己的 BotFather Token |
+| 管理员数字 ID | 安装时只填一个 ID；家人安装后另行授权 |
+| WebDAV 用户名 | 新装回车默认 `tg2cloud`，也可自行输入 |
+| WebDAV 密码 | 隐藏输入；留空自动生成 |
+| Bot 保存子目录 | 相对路径，可留空；账号根目录在网关后台设置 |
+
+时区新装默认 `Asia/Shanghai`，升级保留现有值。20GB 任务预算、8GB 磁盘保留只是源码默认，实际推荐按实时资源计算；预算不是磁盘分区，也不约束网关全部缓存。详见[资源预算](/deploy/resources/)。
+
+## 第五步：核对计划并执行
+
+确认 Edition、安装目录、资源预算、管理入口和是否为保留配置升级，再同意执行。未确认前不安装；执行后可能安装基础系统依赖、构建镜像并启动所选实例。
+
+查看真实阶段、错误及最终摘要。常见 `WARNING` 不等于失败，但也不能忽略错误；解释见[安装反馈](/operations/update/#v1-4-4-安装与升级反馈)。
+
+基础健康与管理入口通过后，后续可运行离线管理命令：
+
+```bash
+tg2cloud
+```
+
+查看状态或日志不会自动下载新版。安装中断后先核对原实例和失败阶段，不要删除数据库、Session 或整个安装目录。
+
+## 第六步：挂载云存储并创建 WebDAV 用户
+
+打开向导给出的管理地址，由本人登录网关、添加云存储并选择目标目录：
+
+- [CloudDrive2 配置](/deploy/clouddrive2/)：创建专用 WebDAV 用户，允许实际读取、写入、改名和删除。
+- [OpenList 配置](/deploy/openlist/)：使用初始化管理员凭据登录，再创建独立普通 WebDAV 用户，允许列表、读取、写入和删除。
+
+用户名、密码必须与安装时保存的值一致。Bot 的专用用户不是网关管理员或云盘登录账号。
+
+管理地址只用于浏览器，不能替换 Bot 的 Docker 内部 WebDAV 地址。最终保存位置为“用户根目录 + Bot 相对子目录”；不要重复填写同一段路径。
+
+## 第七步：执行 WebDAV 真实验收
+
+运行 `tg2cloud`，选择对应 Edition，再选 **11. WebDAV 验收**。确认后会创建并清理随机小测试文件，不是只读检查。
 
 ```text
 TG2CLOUD_DESTINATION=OK
 ```
 
-CloudDrive2 验收包含临时写入、改名及复验；OpenList 当前采用最终路径直接写入，不依赖 MOVE。失败时看第一处失败阶段，不要只看最后一行错误。
+CloudDrive2 会验证临时上传、改名和复验；OpenList 直接写入预留最终路径并复验，不依赖 MOVE。只见到“认证通过”或容器 healthy，不能替代最终通过标记。详见[验收步骤](/deploy/verification/)。
 
 ## 第八步：发送第一个测试文件
 
-与自己的 Bot 私聊，先发一个有权保存的 5～20MB 小文件。记下任务编号，用 `/queue`、`/task 编号` 和 `/status` 观察处理。
+与 Bot 一对一私聊，先发送一个自己有权保存的 5～20MB 文件。通过 `/queue`、`/task 编号` 和 `/status` 观察处理。
 
-Bot 完成后，在所用云存储的官方客户端确认文件位置、大小与可打开性。随后再测试普通落盘文件、流式文件及测试任务取消。
+Bot 完成后，在云存储官方客户端检查位置、大小及可打开性。WebDAV 大小复验不等于内容哈希一致，也不证明云盘官方最终完成。
 
 ## 首次部署完成清单
 
-1. SSH 主机身份已核对，资源检查已通过。
-2. Bot 仅允许本人数字 ID 使用。
-3. 当前 Edition 的 HTTPS 管理入口通过全部自检，19798/5244 没有暴露公网。
-4. 网关已经挂载存储，专用 WebDAV 用户具备实际写入权限。
-5. 出现 `TG2CLOUD_DESTINATION=OK`。
-6. 小文件完整传输，目的端文件位置和内容符合预期。
-7. 明白“Bot 完成”与云盘官方最终状态的区别。
+1. 服务器身份及安装资源检查通过。
+2. Bot 只接受管理员及后续显式授权的家人私聊。
+3. 管理入口可用；公网模式下后端端口不直接暴露。
+4. 网关已挂载存储，专用 WebDAV 用户和目标目录正确。
+5. WebDAV 验收出现完整成功标记。
+6. 真实小文件可在云存储中正常打开。
 
-日常用法见 [Bot 命令速查](/usage/commands/)，故障按 [FAQ](/faq/) 分类处理。
+本机 HTTPS 通过后，仍须从另一网络验证公网访问；内网部署从局域网其他设备验证。日常操作见[Bot 命令](/usage/commands/)，已有实例见[升级说明](/operations/update/)。
+
+## 历史 Windows 教程
+
+Windows 部署器停更于 v1.2.1，不用于当前 Linux 流程。历史说明保存在[仓库存档](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/README-%E5%B0%8F%E7%99%BD%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md)，不要用旧 EXE 覆盖已升级实例。
+
+各版本自动检查、用户验收和未验证范围分别列在[文档来源](/reference/sources/)，不把某一版的结果视为所有环境都已通过。

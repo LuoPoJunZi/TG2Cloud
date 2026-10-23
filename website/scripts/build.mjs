@@ -8,6 +8,7 @@ import {renderPage} from '../src/templates.mjs';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'..');
 const dist=join(root,'dist');
 const config=JSON.parse(await readFile(join(root,'site.config.json'),'utf8'));
+const legacyAnchors=JSON.parse(await readFile(join(root,'src/legacy-anchors.json'),'utf8'));
 const configuredUrl=(process.env.SITE_URL || config.siteUrl || '').trim();
 if(configuredUrl){
   const parsed=new URL(configuredUrl);
@@ -21,6 +22,9 @@ if(!/^\d+\.\d+\.\d+$/.test(config.publishedVersion))throw new Error('Invalid pub
 if(!['released','unreleased'].includes(config.releaseStatus))throw new Error('Invalid release status');
 
 const pages=config.navigation.flatMap(group=>group.items.map(item=>({...item,group:group.title})));
+config.versionHistory=renderMarkdown(await readFile(join(root,'docs/changelog.md'),'utf8')).headings
+  .filter(heading=>heading.level===2 && /^TG2Cloud v\d+\.\d+\.\d+$/.test(heading.title))
+  .map(heading=>({version:heading.title.slice('TG2Cloud v'.length),id:heading.id}));
 if(new Set(pages.map(p=>p.slug)).size!==pages.length)throw new Error('Duplicate page route');
 for(const page of pages)if(!/^[a-z0-9/-]+$/.test(page.slug)||page.slug.includes('..'))throw new Error('Invalid page slug');
 await rm(dist,{recursive:true,force:true});
@@ -36,9 +40,9 @@ const cleanText=text=>text
 for(let i=0;i<pages.length;i++){
   const page=pages[i];
   const markdown=await readFile(join(root,'docs',page.slug+'.md'),'utf8');
-  const {html,headings}=renderMarkdown(markdown);
+  const {html,headings}=renderMarkdown(markdown,{legacyAnchors:legacyAnchors[page.slug]});
   if(headings.filter(h=>h.level===1).length!==1)throw new Error(`${page.slug}: must have one h1`);
-  const lead=markdown.split('\n').find(line=>line.trim()&&!line.startsWith('#'));
+  const lead=markdown.split('\n').find(line=>line.trim()&&!/^(?:#|:::|```|\||[-*]\s|\d+\.\s)/.test(line));
   page.description=cleanText(lead || config.description).slice(0,180);
   const target=join(dist,page.slug,'index.html');
   await mkdir(dirname(target),{recursive:true});

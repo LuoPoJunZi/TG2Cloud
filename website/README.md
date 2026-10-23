@@ -64,9 +64,9 @@ npm run dev
 
 ### 站点地址与 SEO
 
-`site.config.json` 中 `siteUrl` 默认为空。未确定实际域名前，不生成带有猜测域名的 canonical 或 sitemap；网站依然可以运行。
+`site.config.json` 中 `siteUrl` 使用已经确认的正式地址 `https://tg2cloud.pages.dev`，用于 canonical、sitemap 和 robots。复制网站到其他域名时，应设置自己的 `SITE_URL`，不要沿用原站地址；未知域名时可将配置留空，不生成猜测地址。
 
-在 Pages 成功生成域名后，设置构建环境变量 `SITE_URL` 为真实源地址，例如 `https://你的实际文档域名`，然后重新部署。也可修改 `site.config.json` 的 `siteUrl`。环境变量优先。
+改用自有域名时，设置构建环境变量 `SITE_URL` 为真实源地址，例如 `https://你的实际文档域名`，然后重新部署。也可修改 `site.config.json` 的 `siteUrl`。环境变量优先。
 
 只支持部署在域名根路径，不支持 `/some-prefix/` 这样的子路径。将源码放在 Git 仓库 `website/` 子目录不影响这一点：Pages 仍将其 `dist` 发布到网站根路径。
 
@@ -142,6 +142,10 @@ npm test
 提示类型为 `info`、`tip`、`warning`、`danger`。请使用现有文档中的写法。暂不支持复杂嵌套列表、MDX、Vue 组件、数学公式渲染、原始 HTML 或任意插件；原始 HTML 会被转义。
 
 站内搜索索引在构建时生成，浏览器首次打开搜索时加载本网站的 JSON，不依赖第三方搜索服务。未配置统计、广告、遥测或登录系统。
+
+文章改名或拆分章节时，先检查旧锚点链接。必要的兼容映射维护在 `src/legacy-anchors.json`：键为旧锚点 ID，值为本页仍存在的章节标题。构建器生成经过校验的空锚点，不放开 Markdown 原始 HTML，也不把旧标题重复加入目录或搜索。新映射必须通过唯一 ID、目标存在和链接检查。
+
+文章底部的“查看本页源码”打开本网站对应 Markdown，“参考项目文档”打开功能依据，两者不混用。版本菜单从完整更新日志提取最近版本，历史版本入口不是旧版文档快照。
 
 ## 品牌与截图
 

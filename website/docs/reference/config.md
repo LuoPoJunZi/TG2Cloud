@@ -18,10 +18,10 @@
 
 | 项目 | 两个 Edition 共用 |
 | --- | --- |
-| 代理运行目录 | `/opt/tg2cloud-proxy` |
+| 受管代理运行目录 | `/opt/tg2cloud-proxy`；外部代理模式按登记责任维护 |
 | 代理私密备份目录 | `/opt/tg2cloud-proxy-backups` |
-| Nginx 容器 | `tg2cloud-proxy-nginx` |
-| Certbot 容器 | `tg2cloud-proxy-certbot` |
+| managed 模式 Nginx 容器 | `tg2cloud-proxy-nginx` |
+| managed 模式 Certbot 容器 | `tg2cloud-proxy-certbot` |
 | 公网入口 | TCP 80/443，两个 Edition 使用不同域名 |
 
 Edition 业务备份不包含此目录。代理归档含证书私钥与 ACME 账户，目录权限 700、文件权限 600；维护和历史清理使用 [HTTPS 工具](/deploy/domain-https/)，不是业务 `manage.sh prune-backups`。[备份边界](/operations/backup/)。
@@ -49,7 +49,7 @@ http://tg2cloud-openlist:5244/dav/
 | `LOCAL_TEMP_BUDGET_GB` | `20` | Bot 本地任务预算 |
 | `MIN_FREE_DISK_GB` | `8` | 磁盘最少保留 |
 
-完整运行配置应以部署器和当前源码为准。本页不提供可以直接覆盖生产实例的空白 `.env` 模板，避免误清已有凭据或默认项。
+完整运行配置以当前 Linux 向导、已保存实例和源码为准。本页不提供可以直接覆盖生产实例的空白 `.env` 模板，避免误清已有凭据或默认项。
 
 ## 常见状态标记
 
@@ -67,4 +67,4 @@ SQLite 文件名 `tg115.db` 和一些历史前缀仍可能保留。保留名字�
 
 ## 配置生效方式
 
-修改表单后必须明确重新部署并选择应用，或使用 `apply-config`。`restart` 与 `update` 不等于从 Windows 自动同步所有新输入值。
+升级默认保留原 `.env`，不会因重新输入或重启自动改密。显式变更使用经过检查的 `apply-config` 流程；`restart` 和 `manage.sh update` 不等于下载新版本或应用新配置，见[配置变更](/operations/update/#单独应用配置)。

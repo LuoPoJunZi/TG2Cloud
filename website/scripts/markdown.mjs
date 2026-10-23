@@ -35,7 +35,7 @@ function splitCells(line) {
   return line.trim().replace(/^\|/, '').replace(/\|$/, '').split('|').map(x => x.trim());
 }
 
-export function renderMarkdown(markdown) {
+export function renderMarkdown(markdown, {legacyAnchors={}}={}) {
   const lines = markdown.replace(/\r\n/g, '\n').split('\n');
   const html = [], headings = [], usedIds = new Map();
   let i = 0;
@@ -95,5 +95,16 @@ export function renderMarkdown(markdown) {
     while(i < lines.length && lines[i].trim() && !special(lines[i])) paragraph.push(lines[i++]);
     html.push(`<p>${inline(paragraph.join(' '))}</p>`);
   }
-  return {html: html.join('\n'), headings};
+  let rendered = html.join('\n');
+  const ids = new Set(headings.map(heading=>heading.id));
+  for (const [alias,title] of Object.entries(legacyAnchors)) {
+    if (slugify(alias)!==alias) throw new Error('Invalid legacy anchor: '+alias);
+    if (ids.has(alias)) continue;
+    const target = headings.find(heading=>heading.id===slugify(title));
+    if (!target) throw new Error('Missing legacy anchor target: '+title);
+    const marker = `<h${target.level} id="${escapeHtml(target.id)}"`;
+    rendered = rendered.replace(marker,`<span class="anchor-alias" id="${escapeHtml(alias)}" aria-hidden="true"></span>${marker}`);
+    ids.add(alias);
+  }
+  return {html: rendered, headings};
 }

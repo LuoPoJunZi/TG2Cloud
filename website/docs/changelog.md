@@ -4,7 +4,7 @@ v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊�
 
 这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.4 共 23 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
-截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 三个 Release／Tag。v1.0.2 及其他版本虽已移除发布页和标签，历史说明仍保留；下面的发布与测试结论按当时记录理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
+可下载版本以 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 实际列表为准，不固定“只保留几版”的数量。部分历史发布页和标签已移除，历史说明仍保留；下面的测试结论按当时版本理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
@@ -319,6 +319,6 @@ TG115 v1.6.2 等记录属于代码演进历史，并不是 TG2Cloud 自身的版
 
 ## 当前仍然存在的限制
 
-没有正式自动 Restore；独立卸载仅针对可核验的标准受管资源，实机卸载待验收；CloudDrive2 没有手动业务备份 UI，但两版都有共享 HTTPS 代理备份工具；没有旧 TG115 状态/队列的自动原地迁移；没有跨实例 Token 分布式锁；Windows EXE 未提供商业代码签名。
+没有覆盖生产数据的一键 Restore；实例快照与共享代理备份已分别提供，但校验和隔离解包不等于完整服务恢复。独立卸载只处理可核验标准受管资源，不把旧验收扩大到所有清理情形；没有旧 TG115 状态/队列的自动原地迁移，没有跨实例 Token 分布式锁；Windows EXE 已冻结，历史文件未提供商业代码签名。
 
 使用前查看 [备份边界](/operations/backup/) 与 [迁移说明](/operations/migration/)。
