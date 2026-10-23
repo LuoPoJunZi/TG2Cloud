@@ -1,6 +1,8 @@
 # TG2Cloud 文档目录
 
-当前正式版本为 **v1.4.3**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 迁移与回退见[可选功能说明](FEATURE-ENHANCEMENTS.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
+当前正式版本为 **v1.4.4**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 迁移与回退见[可选功能说明](FEATURE-ENHANCEMENTS.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
+
+2026-10-23，用户提供 Ubuntu ARM64 与 Debian AMD64 两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过；配置保留、备份、Bot 健康、本机 HTTPS 与最近业务就绪观察通过。WebDAV 写入、真实转存、外网及恢复等未覆盖范围见[双架构升级记录](development/V144-ACCEPTANCE.md)。
 
 v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名指南](NAMING.md)。旧“待发布”章节标题仅保留链接兼容，正文已明确实际版本；升级实例才会启用新代码，更新文档不更新 Bot。
 
@@ -58,6 +60,7 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 - [v1.4.1 CloudDrive2 ARM64 首次安装验收](development/V141-ACCEPTANCE.md)：Ubuntu 26.04.1 公网 NAT、原生构建、Bot 健康、本机 HTTPS 与 WebDAV 操作；APT 问题及未验证范围单列。
 - [v1.4.2 CloudDrive2 人工升级验收](development/V142-ACCEPTANCE.md)：Debian AMD64、核验原 v1.3.4 提交后保留配置升级；备份、数据保留、只读 WebDAV、外部 HTTPS，以及旧 Release 缺失的自动升级限制。
 - [v1.4.3 CloudDrive2 在线升级日志核验](development/V143-ACCEPTANCE.md)：用户日志确认 v1.4.2 → v1.4.3、Bot healthy 和本机 HTTPS；解释构建 WARNING，真实转存／公网访问及回退尚未确认。
+- [v1.4.4 CloudDrive2 双架构升级验收](development/V144-ACCEPTANCE.md)：用户确认 Ubuntu ARM64 与 Debian AMD64 的 v1.4.3 → v1.4.4 升级通过，记录新摘要、最近业务观察和容量提醒，明确 WebDAV 写入／真实转存／外网／回退等边界。
 - [第三方组件说明](第三方组件说明.md)
 - [安全政策](../.github/SECURITY.md)
 - [许可证](../LICENSE)

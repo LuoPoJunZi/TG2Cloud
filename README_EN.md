@@ -37,6 +37,8 @@ Current stable version: **v1.4.4**, maintained through Linux scripts with native
 
 User-provided logs dated 2026-10-23 confirm a CloudDrive2 v1.4.2 → v1.4.3 upgrade on Debian 13 AMD64: basic upgrade, Bot health, code/configuration and on-host HTTPS checks passed. See the [redacted log review](docs/development/V143-ACCEPTANCE.md) for build warnings and unverified file transfers, external access and rollback; the [v1.4.2 manual record](docs/development/V142-ACCEPTANCE.md) remains historical.
 
+On 2026-10-23, the user confirmed CloudDrive2 v1.4.3 → v1.4.4 upgrade acceptance on Ubuntu ARM64 and Debian AMD64. Logs confirm configuration preservation, database backups, Bot health, on-host HTTPS and recent readiness observations. WebDAV writes, actual transfers, external access and rollback remain separate checks; see the [dual-architecture upgrade record](docs/development/V144-ACCEPTANCE.md).
+
 ## Getting started
 
 1. Prepare your Telegram Bot, API information and server using the [information checklist](docs/填写信息清单.md). Never put real credentials in public documents.
@@ -84,7 +86,7 @@ This command only previews; it does not uninstall. Actual complete removal delet
 
 ## Documentation
 
-v1.4.4 adds classified installation logs, evidence-based upgrade/acceptance summaries and a shallower management menu. No new dependencies or database migrations. v1.4.3 introduced optional features and schema 2. Back up before the schema 2 migration; rollback requires matching old code and a verified old database snapshot. See [release notes](RELEASE_NOTES.md). The logs above concern v1.4.3 only; v1.4.4 live upgrades, transfers and rollback remain unverified.
+v1.4.4 adds classified installation logs, evidence-based upgrade/acceptance summaries and a shallower management menu. No new dependencies or database migrations. v1.4.3 introduced optional features and schema 2. Back up before the schema 2 migration; rollback requires matching old code and a verified old database snapshot. See [release notes](RELEASE_NOTES.md). The v1.4.4 user acceptance above covers the two CloudDrive2 upgrades only; actual transfers, external access and rollback remain unverified.
 
 See the [v1.4.3 maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) for trusted historical baselines, instance snapshots, readiness checks and naming previews. Explicitly upgrade the Bot and offline management tools.
 

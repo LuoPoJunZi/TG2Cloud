@@ -219,6 +219,32 @@ test('v1.4.3 log review keeps user evidence, warnings and unverified scopes sepa
   }
 });
 
+test('v1.4.4 dual-architecture acceptance keeps upgrade evidence separate from unrun business checks',async()=>{
+  const path='docs/development/V144-ACCEPTANCE.md';
+  const record=await readFile(new URL('../../'+path,import.meta.url),'utf8');
+  for(const value of ['2026-10-23','证据来源：用户提供的两份升级日志','两份升级测试验收已通过',
+    '没有独立登录','Ubuntu 26.04.1 LTS','Debian GNU/Linux 13','linux/arm64','linux/amd64',
+    'v1.4.3 → v1.4.4','TG2CLOUD_CONFIG=PRESERVED','TG2CLOUD_DATABASE_BACKUP=OK',
+    'TG2CLOUD_CODE=OK','TG2CLOUD_VERSION=1.4.4','TG2CLOUD_BOT_HEALTH=healthy',
+    'TG2CLOUD_RESULT=SUCCESS','最近业务就绪观察','原 .env 保留：通过','50GB','[提醒]','CACHED',
+    'WebDAV 写入与大小复验：未执行','实际 Telegram 转存：待人工验收','公网访问：待外部网络验收',
+    '独立 SQL 查询','OpenList','不修改 v1.4.4 Tag'])assert.ok(record.includes(value),value);
+  assert.doesNotMatch(record,/root@|\b(?:\d{1,3}\.){3}\d{1,3}\b|config-[A-Za-z0-9]{8,}\.tar\.gz/,
+    'do not publish raw host prompts, IP addresses or private backup names');
+  for(const name of ['README.md','README_EN.md','CHANGELOG.md','RELEASE_NOTES.md','docs/README.md',
+    'docs/VPS-INSTALL.md','docs/OPERATIONS.md','docs/FAQ.md','docs/ARCHITECTURES.md',
+    'docs/development/DOMAIN-HTTPS-ACCEPTANCE.md']){
+    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
+    assert.ok(content.includes('V144-ACCEPTANCE.md'),name);
+  }
+  for(const name of ['docs/operations/update.md','docs/faq.md','docs/download.md',
+    'docs/changelog.md','docs/reference/sources.md']){
+    assert.ok((await read(name)).includes(`${config.repo}/blob/main/${path}`),name);
+  }
+  assert.ok((await read('README.md')).includes('../'+path));
+  assert.ok((await read('THIRD_PARTY_NOTICES.md')).includes(`${config.repo}/blob/main/${path}`));
+});
+
 test('current helper identity in installation docs matches every public entry',async()=>{
   const guide=await readFile(new URL('../../docs/VPS-INSTALL.md',import.meta.url),'utf8');
   const removal=await readFile(new URL('../../docs/UNINSTALL.md',import.meta.url),'utf8');

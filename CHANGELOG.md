@@ -34,6 +34,8 @@
 
 ## TG2Cloud v1.4.4
 
+发布后用户验收补充（2026-10-23）：用户提供两份日志并确认 CloudDrive2 在 Ubuntu 26.04.1／ARM64 与 Debian 13／AMD64 的 v1.4.3 → v1.4.4 升级验收通过。配置保留、数据库备份、运行代码／版本、Bot healthy、本机 HTTPS 和最近业务就绪观察通过；新版信息分类、结果摘要及容量提醒已在日志中展示。WebDAV 写入未执行，真实转存、外网及故障回退等未单独确认，完整范围见[双架构记录](docs/development/V144-ACCEPTANCE.md)。仅补充发布后证据，不改写 Tag、资产或远端 Release 正文。
+
 版本日期：2026-10-23。[v1.4.4 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4) 已正式发布，定位为稳定性与用户体验维护版。辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 保留 v1.4.3 资产及历史证据，不将自动检查扩大为真实 VPS／Telegram／网盘、ACME 或故障回退验收。
 
 - 安装日志在展示层区分正常阶段信息、常见构建提醒、未知 WARNING 与明确错误；常见提醒结合执行阶段识别，原文保留且同类解释仅显示一次，不屏蔽警告、不替代退出码及成功标记。

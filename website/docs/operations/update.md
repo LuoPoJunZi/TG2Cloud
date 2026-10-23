@@ -35,6 +35,16 @@ v1.3.2 的默认公网／内网入口先选 Edition：已有实例打开管理�
 
 v1.3.0 向导的磁盘推荐仅用于新安装，升级不静默改预算。CloudDrive2 本次旧候选已迁移到正式版，用户确认升级后使用验收通过；OpenList 脚本实机验收暂缓，不能把本次结果扩展成两 Edition 的全部流程均已实测。
 
+## v1.4.4 双架构用户升级验收
+
+2026-10-23，用户提供两份日志并确认 CloudDrive2 的 v1.4.3 → v1.4.4 升级验收通过，分别是 Ubuntu 26.04.1 原生 ARM64 和 Debian 13 原生 AMD64。两次均由用户运行公开 install.sh、选择 CloudDrive2 → 1. 安装与升级，核对保留配置计划并确认；不是只读预检，也不是维护者重新登录实测。
+
+两份日志均输出配置保留、数据库备份、运行代码／版本、healthy 和 SUCCESS，升级后本机 HTTPS 通过；结果摘要逐项列出实际通过的检查，最近业务就绪观察中的心跳、Telegram、目录探测、调度和空间均通过。Debian 低于推荐 50GB 的容量提示被归为提醒，并在基础步骤通过后汇总；两次依赖层均命中缓存，不代表其他构建警告被隐藏。
+
+两份摘要仍明确显示“WebDAV 写入与大小复验：未执行”“实际 Telegram 转存：待人工验收”“公网访问：待外部网络验收”。用户确认的是本次升级，不自动补勾这些项目，不把目录可读或 healthy 当作端到端转存成功。OpenList、首次安装、NAS、附加工具、ACME／长期续期和故障回退等也未覆盖，完整范围见[双架构验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)。
+
+新版菜单在升级前就可能显示，而 Bot 版本仍是旧版；要以最终运行代码／版本、健康和结果为准，不只看向导标题。手机／外网和网盘最终文件检查按[存储验收](/deploy/verification/)及[第一次转存](/usage/first-transfer/)另行完成。
+
 ## v1.4.3 用户在线升级日志
 
 2026-10-23 用户提供的 CloudDrive2 升级日志确认：Debian 13／AMD64 通过公开入口完成 v1.4.2 → v1.4.3 基础升级，Bot healthy、代码／配置及本机 HTTPS 检查通过。实际转存、外网访问及回退尚未确认，详见[仓库记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)。旧版可信目录校验、保留配置、候选构建、数据库备份和最终成功标记均在日志中出现；不据此宣称历史任务逐项比对、schema 2 回退、WebDAV 写入或分类／通知／配额已验收。

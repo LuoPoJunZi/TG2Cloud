@@ -1,5 +1,7 @@
 # 运行状态、故障排查与 HTTPS 维护
 
+2026-10-23，用户提供两份日志并确认 CloudDrive2 在 Ubuntu ARM64 与 Debian AMD64 的 v1.4.3 → v1.4.4 升级验收通过。新菜单、`[信息]`、升级结果和转存验收摘要已实际展示，Debian 的容量 `[提醒]` 及汇总未阻断升级；最近业务就绪观察通过，但 WebDAV 写入未执行，真实转存、外网及回退等仍须单独验收。证据与范围见[双架构记录](development/V144-ACCEPTANCE.md)。
+
 2026-10-23 已收到[CloudDrive2 v1.4.2 → v1.4.3 在线升级日志](development/V143-ACCEPTANCE.md)：基础升级、Bot healthy、代码／配置及本机 HTTPS 检查通过，实际转存尚未确认。构建 WARNING 的判断集中见[FAQ](FAQ.md)，不要为隐藏提示修改运行权限或跳过检查。
 
 v1.4.3 工具增加菜单 13 脱敏诊断、14 分类／通知设置，用户管理中增加成员配额；需同时更新 Bot，使用与 schema 2 回退边界见[四项增强](FEATURE-ENHANCEMENTS.md)。

@@ -4,6 +4,8 @@ TG2Cloud v1.4.4 资料核对日期：2026-10-23。源码包已正式发布并核
 
 2026-10-23 另收到[用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)：仅证明 CloudDrive2 AMD64 的 v1.4.2 → v1.4.3 基础升级、Bot 健康与本机 HTTPS；实际转存、外网与回退未确认。以脱敏记录区分用户反馈与开发者／CI 测试，不发布私人部署信息或原始日志。
 
+2026-10-23 另收到两份 [v1.4.4 双架构升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)，用户确认 CloudDrive2 在 Ubuntu ARM64 与 Debian AMD64 的 v1.4.3 → v1.4.4 升级验收通过。只记录用户日志证据；WebDAV 写入、真实转存、外网、回退和其他 Edition 不由本次结论覆盖，不发布原始日志或私人部署信息。
+
 ## 主项目与上游
 
 本网站为 LuoPoJunZi/TG2Cloud 整理中文使用与维护文档，保留项目与上游作者致谢：

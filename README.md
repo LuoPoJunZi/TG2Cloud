@@ -35,6 +35,8 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 2026-10-23 用户日志确认 CloudDrive2 v1.4.2 → v1.4.3 基础升级、Bot 健康与本机 HTTPS 检查通过；构建 WARNING 未阻断本次升级。证据及尚未确认的转存／公网／回退范围见[升级记录](docs/development/V143-ACCEPTANCE.md)，历史人工路径见[v1.4.2 记录](docs/development/V142-ACCEPTANCE.md)。
 
+2026-10-23 用户已确认 CloudDrive2 在 Ubuntu ARM64 与 Debian AMD64 上的 v1.4.3 → v1.4.4 升级验收通过。日志中的配置保留、数据库备份、Bot 健康、本机 HTTPS 与最近业务就绪观察通过；WebDAV 写入、真实转存、外网和回退仍须单独验收，见[双架构升级记录](docs/development/V144-ACCEPTANCE.md)。
+
 ## 开始使用
 
 1. 按[填写信息清单](docs/填写信息清单.md)准备 Telegram Bot、API 信息和服务器环境；不要把真实凭据填写到公共文档。
@@ -82,7 +84,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 使用文档
 
-v1.4.4 补充安装日志分级、升级结果与验收摘要，精简本地菜单与设置层级；未增加依赖或数据库迁移。v1.4.3 包含维护、可选功能与测速修复。业务数据库事务迁移至 schema 2，升级前须备份；回退需匹配旧数据库与旧代码。详见[本次发布说明](RELEASE_NOTES.md)。上述日志仅对应 v1.4.3，不代表 v1.4.4 的真实升级、转存或故障回退通过。
+v1.4.4 补充安装日志分级、升级结果与验收摘要，精简本地菜单与设置层级；未增加依赖或数据库迁移。v1.4.3 包含维护、可选功能与测速修复。业务数据库事务迁移至 schema 2，升级前须备份；回退需匹配旧数据库与旧代码。详见[本次发布说明](RELEASE_NOTES.md)。v1.4.4 的用户升级结论限于上面的双架构记录，不代表真实转存或故障回退通过。
 
 v1.4.3 的升级兼容、实例快照、业务就绪与命名预览，见[维护增强说明](docs/development/MAINTENANCE-IMPROVEMENTS.md)；须显式升级 Bot 与离线管理工具后使用。
 

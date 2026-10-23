@@ -2,9 +2,11 @@
 
 
 
-当前正式版本为 **TG2Cloud v1.4.4**：安装日志分级、升级结果与验收摘要、管理菜单精简。辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 源码包 SHA256：`521bfbc403a5cf13e0b9102c43909fc15aacfda8cf87033b1bd4772e4f86b152`。无新增数据库迁移，仍须升级前备份，schema 2 回退不能只降级镜像，见[备份说明](/operations/backup/)。本版未执行真实 VPS 或业务验收；历史 [v1.4.3 用户日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)不外推本版。
+当前正式版本为 **TG2Cloud v1.4.4**：安装日志分级、升级结果与验收摘要、管理菜单精简。辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 源码包 SHA256：`521bfbc403a5cf13e0b9102c43909fc15aacfda8cf87033b1bd4772e4f86b152`。无新增数据库迁移，仍须升级前备份，schema 2 回退不能只降级镜像，见[备份说明](/operations/backup/)。本版已收到下述用户双架构升级验收，不等于全部业务通过；历史 [v1.4.3 用户日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)不外推本版。
 
 截至 2026-10-21，GitHub 保留 v1.4.2、v1.4.1、v1.2.1 三个 Release／Tag。其他版本虽已移除发布页和标签，[全版本记录](/changelog/)仍保留每一版的功能和修复，不能把下载列表当作完整开发历史。
+
+2026-10-23，用户提供两份日志并确认 CloudDrive2 在 Ubuntu 26.04.1 原生 ARM64 与 Debian 13 原生 AMD64 的 v1.4.3 → v1.4.4 升级验收通过。配置保留、数据库备份、Bot 健康、本机 HTTPS 与最近业务就绪观察通过；WebDAV 写入明确未执行，真实转存、外网和回退等仍须独立验收。详见[双架构记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)，不是维护者连接 VPS 的复测，不外推 OpenList 或首次安装／内网场景。
 
 ## v1.4.4 源码包与脚本
 

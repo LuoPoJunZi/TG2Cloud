@@ -1,8 +1,8 @@
 # TG2Cloud Docs
 
-2026-10-23 用户提供的 CloudDrive2 升级日志确认：Debian 13／AMD64 通过公开入口完成 v1.4.2 → v1.4.3 基础升级，Bot healthy、代码／配置及本机 HTTPS 检查通过。实际转存、外网访问及回退尚未确认，详见[用户日志记录](../docs/development/V143-ACCEPTANCE.md)。这不是维护者连接 VPS 的复测；不公开原始日志或私人部署信息。
+2026-10-23 用户提供两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过：Ubuntu 26.04.1／ARM64 与 Debian 13／AMD64，配置保留、数据库备份、Bot healthy、运行代码／版本、本机 HTTPS 和最近业务就绪观察均通过。WebDAV 写入未执行，真实转存、外网及回退等未单独确认，详见[双架构升级记录](../docs/development/V144-ACCEPTANCE.md)。这不是维护者重新登录实测；旧版 [v1.4.3 用户日志](../docs/development/V143-ACCEPTANCE.md)单独保留，不公开原始日志或私人部署信息。
 
-**源码与正式版本：TG2Cloud v1.4.4；资料核对日期：2026-10-23。** 辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 本次补充安装反馈与管理菜单精简，无新增依赖或数据库迁移。真实 VPS 与业务验收另行执行，旧记录不外推本版。
+**源码与正式版本：TG2Cloud v1.4.4；资料核对日期：2026-10-23。** 辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 本次补充安装反馈与管理菜单精简，无新增依赖或数据库迁移。用户双架构升级反馈独立记录，真实转存与恢复等未覆盖项目仍需另行验收，不借用旧版结论。
 
 TG2Cloud 中文网页文档。包含品牌首页、31 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 

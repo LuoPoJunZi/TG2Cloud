@@ -24,6 +24,8 @@
 
 ### 升级出现 WARNING 需要处理吗？
 
+2026-10-23 的 [v1.4.4 双架构用户日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)中，Ubuntu ARM64 与 Debian AMD64 的 CloudDrive2 升级均经用户确认通过。Debian 推荐 50GB 的容量提示显示为 `[提醒]` 并在摘要中汇总，未阻断实际通过的基础步骤；Ubuntu 未出现该提醒。依赖安装层均为 `CACHED`，不能据此认为旧版构建警告被过滤或所有 WARNING 都无害。两份摘要仍将 WebDAV 写入、真实转存与外网验收单列为未执行／待验收。
+
 v1.4.4 源码增加 `[信息]`、`[提醒]`、`[待核对]`、`[错误]` 分类和逐项摘要，但旧工具须显式升级后使用。常见构建提醒只解释，未知警告不自动判无害，错误仍按原退出码处理；见[升级反馈](/operations/update/#v1-4-4-安装与升级反馈)。本地摘要和测试不能代替实机验收。
 
 不能只凭 WARNING 判断升级失败，也不能屏蔽所有警告。2026-10-23 用户提供的 v1.4.2 → v1.4.3 CloudDrive2 日志中，以下提示没有阻断升级：

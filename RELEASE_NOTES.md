@@ -31,10 +31,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 发布使用先验证辅助提交 A、后固定入口 B 的流程；同一不可变 Tag 通过原生 AMD64／ARM64、隔离 Docker／WebDAV、静态与依赖检查后，发布 `TG2Cloud-v1.4.4-source.tar.gz` 和 `SHA256SUMS.txt`。不在失败时回退到未校验 main；SHA256 是完整性校验，不是数字签名。
 
-修复测试夹具后，v1.4.4 本地完整回归 1081 项：1050 项执行通过，31 项因环境条件跳过，0 失败；网站构建与 22 项测试、Ruff、Bandit、语法、最低 Python 3.10 的独立 CLI／20 项反馈回归及发布资料检查通过。远端仍须通过本次同标签门禁，不将跳过或模拟测试写成实机通过。本轮未连接真实 VPS 或用户网盘，v1.4.4 的真实升级、Telegram 转存、故障回退、ACME／长期续期及手机播放仍需独立验收；历史 [v1.3.0 人工迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)及 [v1.4.3 用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)不外推本版。
+修复测试夹具后，v1.4.4 本地完整回归 1081 项：1050 项执行通过，31 项因环境条件跳过，0 失败；网站构建与 22 项测试、Ruff、Bandit、语法、最低 Python 3.10 的独立 CLI／20 项反馈回归及发布资料检查通过。这些是发布时的检查统计，同标签远端门禁结果见下节，不将跳过或模拟测试写成实机通过。发布自动检查未连接真实 VPS 或用户网盘；发布后双架构用户升级反馈见下节，Telegram 转存、故障回退、ACME／长期续期及手机播放仍需独立验收；历史 [v1.3.0 人工迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)及 [v1.4.3 用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)不外推本版。
 
 详细操作见[运维与结果摘要](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md)、[升级与备份](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/BACKUP-RESTORE.md)及[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 ### 发布后核验（2026-10-23，仅补充仓库文档）
+
+用户随后提供两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过：Ubuntu 26.04.1 原生 ARM64、Debian 13 原生 AMD64，配置保留、数据库备份、Bot healthy、代码／版本、本机 HTTPS 与最近业务就绪观察均通过。WebDAV 写入未执行，真实 Telegram 转存、外网、故障回退和其他 Edition／安装场景未由本次日志确认，详见[双架构升级记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)。此为用户反馈，不是维护者重新登录实测。
 
 辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 源码包 SHA256：`521bfbc403a5cf13e0b9102c43909fc15aacfda8cf87033b1bd4772e4f86b152`。Release 仅含源码包与 SHA256SUMS.txt，不生成 EXE。本段不改写正式 Tag、资产或远端 Release 正文，也不代表真实 VPS／网盘验收。
