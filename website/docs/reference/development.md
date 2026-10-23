@@ -1,5 +1,7 @@
 # 开发与贡献
 
+v1.4.3 辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d` 的五项 CI 已通过：[原生双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899880815)、[Python 3.10／3.13 四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899900269)以及仓库和两套文档。三个公开入口 B 固定此真实提交并同步完整清单；B 与同标签正式发布仍须通过，尚不宣称 v1.4.3 已发布。只修复隔离网络夹具，生产网络未改。
+
 当前源码文档为 v1.4.3 待发布版本。请使用 main 审阅本次差异并记录提交号，待辅助 A、固定入口 B、双架构发布和资产核验完成后，才切换新正式 Tag。业务数据库 schema 2 升级前须备份；后文 v1.4.2 CI 证据保留为历史记录。
 
 以下保留 v1.4.2 及更早版本的历史发布证据，不外推为 v1.4.3 真实 VPS 验收。

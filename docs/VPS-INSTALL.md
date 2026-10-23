@@ -1,5 +1,7 @@
 # VPS 安装与升级脚本
 
+v1.4.3 发布准备：三个在线入口固定辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`，A 的五项 CI 已通过，包含[原生双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899880815)和[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899900269)。新清单带齐标准库 helper；仍须入口 B 与同标签发布门禁。v1.4.3 增强升级基线、备份、就绪与管理能力，涉及业务 DB schema 2，升级前须备份，不能只降级镜像回退。下面保留 v1.4.2 的历史发布与验收记录。
+
 v1.4.2 已正式发布：辅助 A `840472f919409531e99da55c62070ea262ebed6d`、入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际源码包、SHA256 和 GitHub 摘要已核验。三个在线入口固定 A 并带齐递归清单；新增[复用已有 Docker Nginx](DOCKER-NGINX.md)，需显式授权，不改变默认 managed 模式。
 
 2026-10-21，专用 Debian13／AMD64 测试机完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，健康、历史数据、只读 WebDAV 和外部 HTTPS 检查通过。原 Release／Tag 已删除，在线自动升级先安全停止；用户授权核验原提交、备份后调用正式升级核心，详见[独立记录](development/V142-ACCEPTANCE.md)。该路径不是自动升级缺失基线问题已修复；真实转存、OpenList、新增 external_docker 接入、ACME、长期续期和迁移仍需分别验收。

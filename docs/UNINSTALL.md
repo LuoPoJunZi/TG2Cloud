@@ -1,5 +1,7 @@
 # TG2Cloud 独立卸载脚本
 
+v1.4.3 发布准备：三个入口固定已通过五项 CI 的辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`；[原生双架构记录](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899880815)。不改变单 Edition 归属、数据保留选项、外部 WebDAV 依赖或外部代理保护。入口 B 与正式发布仍待验证，不将 CI 当作真实清理验收。下面的 v1.4.2 pin／发布结论是历史记录，不是本次新入口身份。
+
 v1.4.2 已发布：三个入口固定已通过五项 CI 的辅助 A `840472f919409531e99da55c62070ea262ebed6d`，入口 B 和[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)亦通过，实际资产已核验。新增 external_docker 依赖与事务保护，不删除外部代理／Compose／网络；外部证书、恢复材料及离线工具默认保留。真实卸载仍须独立验收。
 
 历史 v1.4.1 已正式发布：三个主入口 B 固定辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb`，A／B 各五项 CI、同标签双架构发布与实际资产校验通过。本轮修复 HTTPS NAT 预检及开发审计，卸载逻辑和依赖保护不变；真实卸载仍须独立验收。

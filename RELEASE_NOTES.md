@@ -26,6 +26,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 发布与验证边界
 
+辅助提交 A cace622ffbbcecd28db7b00a29c26901e8fa139d 的五项 CI 已通过，含[原生 AMD64／ARM64 完整检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899880815)、[四组最低版本 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899900269)、仓库和两套文档。隔离 Nginx 换 IP 测试补齐显式子网，保留全部断言，新增两项夹具回归；生产网络不变。正式发布仍须从下述同一 Tag 再次验证，不借用 A 绕过门禁。
+
 发布工作流必须从同一不可变 v1.4.3 Tag 完成原生 AMD64／ARM64 回归、隔离 Docker／WebDAV、代码与依赖审计后，才发布 TG2Cloud-v1.4.3-source.tar.gz 和 SHA256SUMS.txt。helper 先公开并验证提交 A，再由入口 B 固定 A；不在失败时退回 moving main。校验和是完整性检查，不是数字签名。
 
 版本整理后本地完整回归 1041 项：1010 项执行通过，31 项因缺少 Docker／rclone／原生 Linux 等条件跳过，0 失败；Ruff、Bandit、Python 3.10 关键 CLI、两 Edition 载荷及网站构建／19 项测试通过。修正了写死旧版本的就绪测试夹具，并补测版本不匹配仍须拒绝；生产校验保持不变。线上结果以本次 Actions 为准，不将环境跳过写成通过。

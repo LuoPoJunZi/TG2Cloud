@@ -22,7 +22,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this reviewed immutable pin only after the LAN module passes CI/review.
-installer_commit="840472f919409531e99da55c62070ea262ebed6d"
+installer_commit="cace622ffbbcecd28db7b00a29c26901e8fa139d"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '内网向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2
@@ -82,6 +82,7 @@ files = (
     'src/tg2cloud/cli/__main__.py',
     'src/tg2cloud/cli/commands.py',
     'src/tg2cloud/cli/management.py',
+    'src/tg2cloud/cli/naming.py',
     'src/tg2cloud/cli/presentation.py',
     'src/tg2cloud/cli/proxy.py',
     'src/tg2cloud/cli/terminal.py',
@@ -89,9 +90,13 @@ files = (
     'src/tg2cloud/config.py',
     'src/tg2cloud/deployment/__init__.py',
     'src/tg2cloud/deployment/architecture.py',
+    'src/tg2cloud/deployment/backup.py',
+    'src/tg2cloud/deployment/baselines.py',
     'src/tg2cloud/deployment/check.py',
     'src/tg2cloud/deployment/compatibility.py',
     'src/tg2cloud/deployment/configuration.py',
+    'src/tg2cloud/deployment/diagnostics.py',
+    'src/tg2cloud/deployment/feature_settings.py',
     'src/tg2cloud/deployment/fingerprints.py',
     'src/tg2cloud/deployment/host.py',
     'src/tg2cloud/deployment/install.py',
@@ -109,12 +114,18 @@ files = (
     'src/tg2cloud/deployment/proxy/maintenance.py',
     'src/tg2cloud/deployment/proxy/manager.py',
     'src/tg2cloud/deployment/proxy/state.py',
+    'src/tg2cloud/deployment/readiness.py',
     'src/tg2cloud/deployment/releases.py',
     'src/tg2cloud/deployment/resources.py',
     'src/tg2cloud/deployment/runtime.py',
     'src/tg2cloud/deployment/uninstall.py',
     'src/tg2cloud/deployment/upgrade.py',
     'src/tg2cloud/deployment/users.py',
+    'src/tg2cloud/domain/__init__.py',
+    'src/tg2cloud/domain/naming.py',
+    'src/tg2cloud/persistence/__init__.py',
+    'src/tg2cloud/persistence/backup.py',
+    'src/tg2cloud/persistence/bundle.py',
     'src/tg2cloud/version.py',
 )
 try:
