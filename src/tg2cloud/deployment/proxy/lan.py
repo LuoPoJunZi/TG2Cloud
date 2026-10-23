@@ -21,7 +21,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from tg2cloud.cli import terminal
-from tg2cloud.cli.presentation import InstallerLog, edition_menu
+from tg2cloud.cli.presentation import InstallerLog, OperationReport, edition_menu
 from tg2cloud.deployment import (
     architecture,
     configuration,
@@ -359,6 +359,7 @@ class Plan:
     config: dict[str, str] = field(default_factory=dict, repr=False)
     entry_running: bool = False
     entry_healthy: bool = False
+    feedback: OperationReport | None = field(default=None, repr=False)
 
 
 def make_plan(instance, release, source, baseline, session, log, ui=None, *, address="") -> Plan:
@@ -434,7 +435,9 @@ def preview(plan: Plan, release: releases.Release, log: SafeLog) -> None:
 def execute(plan: Plan, release, source, baseline, session, log, ui, *, verify=False) -> None:
     instance = plan.instance
     product = instance.product
-    with edition_lock(Path("/opt/tg2cloud-cli-locks") / (product.key + ".lock")):
+    with edition_lock(Path("/opt/tg2cloud-cli-locks") / (product.key + ".lock")), install.execution_feedback(
+        plan, release, session, log, mode="lan"
+    ) as feedback:
         current = instances.discover(product, instances.docker_inventory(session), session, log, install_dir=product.install_dir)
         if (current.present != instance.present or current.raw_config != instance.raw_config
                 or current.version != instance.version or current.gateway_image != instance.gateway_image):
@@ -458,7 +461,11 @@ def execute(plan: Plan, release, source, baseline, session, log, ui, *, verify=F
         # Persist the explicit intent before base installation. If base succeeds
         # but Nginx fails, rerunning resumes the LAN entry, not a fresh reinstall.
         save_state(product, plan.address)
+        feedback.stage = "基础安装与升级"
         install.apply_base(plan, release, source, session, log)
+        if plan.action in {"install", "upgrade"}:
+            feedback.checks["base"] = "ok"
+        feedback.stage = "管理入口检查"
         validate_environment(session)  # also validate a newly installed daemon
         current = instances.discover(product, instances.docker_inventory(session), session, log, install_dir=product.install_dir)
         check_backend(current, session, log)
@@ -480,16 +487,21 @@ def execute(plan: Plan, release, source, baseline, session, log, ui, *, verify=F
             raise RuntimeError("内网入口容器未运行；不冒充成功")
         architecture.check_container(session, container_name(product), require_running=True)
         wait_for_entry(product, plan.address)
+        feedback.checks["entry"] = "ok"
+        feedback.stage = "安装后检查"
         log("TG2CLOUD_LAN_BASE=OK；TG2CLOUD_LAN_ENTRY=OK；HTTPS=NOT_APPLICABLE")
         log(f"{product.display_name} 内网管理页：http://{plan.address}:{product.management_port}")
         log("请先用局域网电脑的浏览器打开上面的地址，配置云存储，并创建与保存凭据一致的专用 WebDAV 用户；完成后再确认写入验收。")
         if plan.action == "install" or not plan.entry_healthy:
+            feedback.stage = "后台账号设置"
             if plan.action == "install":
                 terminal.show_setup_credentials(ui, product, current.config, log)
             else:
                 terminal.show_credentials(ui, product, current.config, log)
         if verify or plan.action == "install":
-            install.verify_destination(plan, session, log, ui)
+            feedback.stage = "WebDAV 写入验收"
+            verified = install.verify_destination(plan, session, log, ui)
+            feedback.checks["webdav"] = "ok" if verified is True else "not_run"
 
 
 def parser() -> argparse.ArgumentParser:
@@ -506,7 +518,7 @@ def main(argv=None, *, friendly=None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
     args = parser().parse_args(arguments)
     friendly = not arguments if friendly is None else friendly
-    log, ui = InstallerLog(SafeLog()) if friendly else SafeLog(), None
+    log, ui = InstallerLog(SafeLog(), friendly=friendly), None
     try:
         if args.check and (args.verify or args.show_credentials):
             raise ValueError("--check 不能与写入验收或凭据显示组合")

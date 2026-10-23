@@ -1,11 +1,12 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 23 日**，对应已发布 **v1.4.3**。辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 本次维护、可选功能和测速／菜单以本版源码为准，仍须显式升级实例和离线工具；真实 VPS／网盘未验收，不外推历史反馈。
+本次内容核对日期为 **2026 年 10 月 23 日**，源码对应 **v1.4.4**，当前待发布，正式下载仍为 [v1.4.3](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3)。本版增加安装反馈与已确认的管理菜单精简，不改变 Bot 核心或新增数据库迁移；须完成辅助 A／入口 B 与同标签发布门禁，历史用户日志不外推本版。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
+| [v1.4.3 用户在线升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md) | 用户日志中的 CloudDrive2 AMD64 基础升级、healthy、本机 HTTPS 与 WARNING；转存、外网、数据库回退及可选功能尚未确认 |
 | [已发布 v1.4.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3) | 维护、可选分类／通知／配额、脱敏报告、测速及菜单；schema 2 迁移与原生双架构发布核验 |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
 | [已发布 v1.4.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2) | Docker Nginx 显式复用、事务恢复、Webroot 与宿主续期、schema 3 及卸载保护；同标签双架构验证和实际资产校验 |
@@ -26,11 +27,11 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 版本源为 `src/tg2cloud/version.py`，源码与正式版本为 1.4.2；新 helper 已按先验证辅助 A、后固定入口 B 的流程更新，不用 moving main 替代。业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解，不作为当前全链路通过的承诺。
+本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码 1.4.4 待发布，正式下载仍为 1.4.3。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.2；依赖和历史版本不机械替换。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.4；依赖和历史版本不机械替换。
 
 导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 

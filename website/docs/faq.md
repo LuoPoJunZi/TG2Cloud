@@ -22,6 +22,24 @@
 
 ## 安装与登录
 
+### 升级出现 WARNING 需要处理吗？
+
+v1.4.4 源码增加 `[信息]`、`[提醒]`、`[待核对]`、`[错误]` 分类和逐项摘要，但旧工具须显式升级后使用。常见构建提醒只解释，未知警告不自动判无害，错误仍按原退出码处理；见[升级反馈](/operations/update/#v1-4-4-安装与升级反馈)。本地摘要和测试不能代替实机验收。
+
+不能只凭 WARNING 判断升级失败，也不能屏蔽所有警告。2026-10-23 用户提供的 v1.4.2 → v1.4.3 CloudDrive2 日志中，以下提示没有阻断升级：
+
+| 提示 | 本次解释 |
+| --- | --- |
+| pip 的 root 提醒 | 发生在 Docker 镜像构建安装依赖时，不是在宿主 Python 装 Bot 依赖。镜像和 Compose 配置正式运行使用非 root 的 `10001:10001`，不需为此改权限或重装 |
+| `skipping ca-certificates.crt` | CA 合集不是单证书，rehash 会跳过单证书索引；这条提示不等于域名证书错误，仍须检查包安装与实际 TLS 结果 |
+| `uid 10001 is greater than SYS_UID_MAX 999` | 固定容器 UID 超出系统账号默认编号范围，创建仍成功；不是把 Bot 改为 root |
+| 总容量低于推荐 50GB | 是容量建议而非硬性门槛；须通过真实容量校验，后续仍需注意暂存、Docker、备份及网关缓存 |
+
+本次日志最终有 `TG2CLOUD_VERSION=1.4.3`、`TG2CLOUD_CODE=OK`、`TG2CLOUD_BOT_HEALTH=healthy`、`TG2CLOUD_RESULT=SUCCESS`，并通过本机 HTTPS。完整证据与仍需验收的实际转存／外网／回退见[脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)，更新流程见[升级说明](/operations/update/)。
+
+出现安装失败、权限拒绝、磁盘不足、TLS 失败、容器不健康或 FAILED 时按具体错误排查；不要关闭证书校验、放宽为 `chmod 777` 或通过隐藏 WARNING 当作修复。原理另见 [pip 说明](https://pip.pypa.io/en/stable/cli/pip_install/#cmdoption-root-user-action)和 [OpenSSL 说明](https://docs.openssl.org/3.0/man1/openssl-rehash/)。
+
+
 ### Windows 提示未知发布者怎么办？
 
 已发布 EXE 未提供商业代码签名。核对正式 Release、文件名和 SHA-256，不要直接关闭全局安全防护。[下载与校验](/download/)。

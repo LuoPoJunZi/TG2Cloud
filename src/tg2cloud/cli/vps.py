@@ -42,7 +42,7 @@ def main(argv: list[str] | None = None, *, friendly: bool | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
     args = parser().parse_args(arguments)
     friendly = not arguments if friendly is None else friendly
-    log = InstallerLog(SafeLog()) if friendly else SafeLog()
+    log = InstallerLog(SafeLog(), friendly=friendly)
     ui = None
     try:
         if args.show_credentials and (args.check or args.configure_https or args.verify):

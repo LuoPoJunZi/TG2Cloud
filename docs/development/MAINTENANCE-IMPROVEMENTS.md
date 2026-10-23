@@ -4,6 +4,8 @@
 
 本页对应已发布 [v1.4.3](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3)，2026-10-23 更新；不改写 v1.4.2 资产。辅助 A、固定入口 B 与同标签门禁均通过；下文保留各阶段本地检查的历史记录，最终发布结果见文末。自动检查不等于实机验收。
 
+v1.4.4 的管理菜单已重排：业务就绪为 10、故障诊断为 12、数据备份为 13，分类／通知为独立的 8／9。下文 v1.4.3 的旧序号仅对应已发布版本，功能范围未改变；完整新清单见[运维指南](../OPERATIONS.md#本地管理菜单)，须升级离线管理工具才会在 VPS 生效。
+
 ## 1. 旧版本可信基线
 
 `deployment/baselines.py` 随新 helper 携带受审阅的版本 → 原提交 → 两 Edition 载荷摘要目录。当前覆盖 **v1.3.4、v1.4.0、v1.4.1、v1.4.2**。摘要包含完整部署相对路径及各文件 SHA256，规范化历史 CRLF；不会执行旧 Python 来获取版本、清单或摘要。
@@ -75,7 +77,7 @@ TG2CLOUD_TEST_EXTERNAL_NGINX_DOCKER=1 PYTHONPATH=src python3 -B -m unittest disc
 
 ## 5. 命名预览与样例回归
 
-新工具独立命令 `tg2cloud naming-preview`，或管理菜单 **12. 命名预览（不转存）**。本地源码可从任意工作目录调用：
+独立命令为 `tg2cloud naming-preview`。已发布 v1.4.3 还提供管理菜单 **12. 命名预览（不转存）**；根据用户反馈，v1.4.4 源码已直接移除该菜单操作，不保留隐藏入口，底层工具与 Bot 自动命名不变。新菜单连续编号，12 改为故障诊断报告，不是原预览功能；须升级离线管理工具后才改变 VPS 上的菜单。保留的命令行工具可从任意工作目录调用：
 
 ```bash
 python3 -B /path/to/TG2Cloud/scripts/run_source.py naming-preview --help
@@ -113,3 +115,7 @@ python3 -B /path/to/TG2Cloud/scripts/run_source.py naming-preview --input /path/
 ## v1.4.3 发布核验（2026-10-23）
 
 辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 隔离网络夹具补齐显式子网并新增两项回归，生产网络与安全断言未改。未连接真实 VPS、Telegram 或用户网盘；实际转存、配额／通知、生产恢复和长期续期仍需单独验收。上面的本地结果是当时的冻结快照，不以其替代本次 CI，也不删除早期失败记录。
+
+### 发布后的用户升级反馈
+
+2026-10-23 收到[CloudDrive2 v1.4.2 → v1.4.3 升级日志](V143-ACCEPTANCE.md)，基础升级、Bot 健康与本机 HTTPS 检查通过。日志没有覆盖分类／通知／成员配额、真实转存、独立 schema 2 查询或故障回退，不扩大上面的验证范围；构建 WARNING 与容量提醒集中见[FAQ](../FAQ.md)。

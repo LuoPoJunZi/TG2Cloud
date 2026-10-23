@@ -15,7 +15,7 @@ CLI_TESTS = (
     "test_proxy_host_compat.py", "test_repository.py", "test_storage_wizard.py", "test_source_release.py", "test_layout_contracts.py",
     "test_feature.py", "test_http.py", "test_management.py", "test_family_management.py", "test_users.py", "test_external_proxy.py",
     "test_upgrade_baselines.py", "test_instance_backup.py", "test_readiness.py", "test_naming_preview.py",
-    "test_host_bundle.py",
+    "test_host_bundle.py", "test_feature_settings.py", "test_install_feedback.py",
     "test_notifications.py", "test_diagnostic_report.py", "test_classification.py", "test_member_quotas.py",
     "test_progress_metrics.py",
 )

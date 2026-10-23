@@ -9,7 +9,7 @@ from pathlib import Path
 from tg2cloud.cli.presentation import numbered_menu
 from tg2cloud.deployment.host import edition_lock
 
-MODES = {"off": "不分类", "type": "按类型", "year": "按年份", "month": "按年月", "type_month": "按类型/年月"}
+MODES = {"off": "不分类", "type": "按文件类型", "year": "按年份", "month": "按年月", "type_month": "按文件类型和年月"}
 
 
 def request(manager, instance, action, **values):
@@ -34,50 +34,76 @@ def number(value):
     return value
 
 
-def manage(manager, instance):
-    from tg2cloud.cli.management import choose
+def read_settings(manager, instance):
     if not instance.running:
         raise ValueError("请先启动支持新协议的 Bot")
+    current = request(manager, instance, "settings-read").get("settings")
+    if (not isinstance(current, dict) or not isinstance(current.get("classification"), str)
+            or current["classification"] not in MODES or type(current.get("notifications")) is not bool
+            or type(current.get("recovery_notifications")) is not bool
+            or not isinstance(current.get("revision"), str)
+            or not re.fullmatch(r"initial|[a-f0-9]{32}", current["revision"])
+            or any(type(current.get(key)) is not int or not 0 <= current[key] <= 2**60 for key in
+                   ("disk_threshold_bytes", "cooldown_seconds", "sustained_seconds", "blocked_seconds"))):
+        raise ValueError("配置协议无法确认")
+    return current
+
+
+def save_settings(manager, instance, current, updates):
+    if not manager.ui.confirm("确认保存？不重启 Bot；分类不整理历史文件，通知只发给管理员"):
+        return
+    with edition_lock(Path("/opt/tg2cloud-cli-locks") / (manager.product.key + ".lock")):
+        manager.recheck(instance)
+        request(manager, instance, "settings-write", revision=current["revision"], updates=updates)
+    manager.log("设置已保存。")
+
+
+def manage_classification(manager, instance):
+    from tg2cloud.cli.management import choose
+    ui, log = manager.ui, manager.log
+    modes = tuple(MODES)
+    while True:
+        current = read_settings(manager, instance)
+        log("\n── 文件分类设置 ──\n\n当前规则：" + MODES[current["classification"]]
+            + "\n分类目录位于现有 Bot 保存目录下；只影响新任务，不移动历史文件。\n\n"
+            + numbered_menu((*enumerate(MODES.values(), 1), (0, "返回"))))
+        action = choose(ui, "选择规则", ("0", "1", "2", "3", "4", "5"), "0")
+        if action == "0":
+            return
+        save_settings(manager, instance, current, {"classification": modes[int(action) - 1]})
+
+
+def manage_notifications(manager, instance):
+    from tg2cloud.cli.management import choose
     ui, log = manager.ui, manager.log
     while True:
-        current = request(manager, instance, "settings-read")["settings"]
-        mode = current.get("classification")
-        if (not isinstance(mode, str) or mode not in MODES or type(current.get("notifications")) is not bool
-                or type(current.get("recovery_notifications")) is not bool
-                or not isinstance(current.get("revision"), str)
-                or not re.fullmatch(r"initial|[a-f0-9]{32}", current["revision"])
-                or any(type(current.get(key)) is not int or not 0 <= current[key] <= 2**60 for key in
-                       ("disk_threshold_bytes", "cooldown_seconds", "sustained_seconds", "blocked_seconds"))):
-            raise ValueError("配置协议无法确认")
-        log("\n── 分类 / 异常通知 ──\n分类：" + MODES[mode] + "；主动通知：" + ("开启" if current["notifications"] else "关闭")
+        current = read_settings(manager, instance)
+        threshold = current["disk_threshold_bytes"]
+        log("\n── 异常通知设置 ──\n\n异常通知：" + ("开启" if current["notifications"] else "关闭")
+            + "\n恢复通知：" + ("开启" if current["recovery_notifications"] else "关闭") + "（异常通知开启后生效）"
+            + "\n磁盘提醒：" + (f"{threshold / 1024**3:g} GB（不低于原磁盘安全线）" if threshold else "跟随原磁盘安全线")
             + f"\n通知冷却：{current['cooldown_seconds']} 秒；持续故障：{current['sustained_seconds']} 秒；资源等待：{current['blocked_seconds']} 秒"
-            + f"\n磁盘提醒：{current['disk_threshold_bytes'] / 1024**3:g} GB（0 跟随安全线）；恢复通知：{'开启' if current['recovery_notifications'] else '关闭'}"
-            + "\n" + numbered_menu(((1, "分类规则"), (2, "开启/关闭通知"), (3, "磁盘提醒阈值"), (4, "开启/关闭恢复通知"), (0, "返回"))))
-        action = choose(ui, "选择操作", ("0", "1", "2", "3", "4"), "0")
+            + "\n\n" + numbered_menu((
+                (1, "关闭异常通知" if current["notifications"] else "开启异常通知"),
+                (2, "关闭恢复通知" if current["recovery_notifications"] else "开启恢复通知"),
+                (3, "修改磁盘提醒阈值"), (0, "返回"),
+            )))
+        action = choose(ui, "选择操作", ("0", "1", "2", "3"), "0")
         if action == "0":
             return
         if action == "1":
-            modes = tuple(MODES)
-            log(numbered_menu((index, MODES[mode]) for index, mode in enumerate(modes, 1)))
-            index = choose(ui, "分类规则（只影响新任务）", ("1", "2", "3", "4", "5"))
-            updates = {"classification": modes[int(index) - 1]}
-        elif action == "2":
             updates = {"notifications": not current["notifications"]}
-        elif action == "3":
+        elif action == "2":
+            updates = {"recovery_notifications": not current["recovery_notifications"]}
+        else:
             log("单位 GB；0 跟随现有磁盘安全线，不能降低原磁盘保护。")
             updates = {"disk_threshold_bytes": int(ui.ask("提醒阈值", default="0", validate=number)) * 1024**3}
-        else:
-            updates = {"recovery_notifications": not current["recovery_notifications"]}
-        if not ui.confirm("确认保存？不重启 Bot；分类不整理历史文件，通知只发给管理员"):
-            continue
-        with edition_lock(Path("/opt/tg2cloud-cli-locks") / (manager.product.key + ".lock")):
-            manager.recheck(instance)
-            request(manager, instance, "settings-write", revision=current["revision"], updates=updates)
-        log("设置已保存。")
+        save_settings(manager, instance, current, updates)
 
 
-def member_quota(manager, instance, record, member_id):
-    from tg2cloud.cli.management import choose
+def member_quota(manager, instance, record, member_id, *, action):
+    if action not in {"view", "set", "clear"}:
+        raise ValueError("请选择有效的配额操作")
     current = request(manager, instance, "quota-read", user_id=member_id)["usage"]
     keys = ("daily_bytes", "max_queued", "max_active")
     if any(type(current.get(key)) is not int or not 0 <= current[key] <= 2**60 for key in keys):
@@ -89,11 +115,9 @@ def member_quota(manager, instance, record, member_id):
         if type(amount) is not int or not 0 <= amount <= 2**60:
             raise ValueError("用量协议无效")
         manager.log(f"{label}：{amount / 1024**3:.2f} GB")
-    manager.log(numbered_menu(((1, "设置配额"), (2, "取消配额限制"), (0, "返回"))))
-    action = choose(manager.ui, "选择操作", ("0", "1", "2"), "0")
-    if action == "0":
+    if action == "view":
         return
-    if action == "2":
+    if action == "clear":
         values = dict.fromkeys(keys, 0)
     else:
         values = {"daily_bytes": int(manager.ui.ask("每日 GB（0 不限）", validate=number)) * 1024**3,

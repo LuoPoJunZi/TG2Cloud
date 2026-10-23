@@ -18,13 +18,15 @@ from tg2cloud.deployment.proxy.manager import (
     validate_email,
 )
 
-MENU = "\n── TG2Cloud 本地管理 ──\n" + numbered_menu((
-    (1, "安装 / 升级"), (2, "查看运行状态"), (3, "查看运行日志"),
-    (4, "启动 / 停止 / 重启"), (5, "WebDAV 验收"), (6, "HTTPS / 管理入口"),
-    (7, "备份管理"), (8, "查看 WebDAV 凭据"), (9, "卸载当前实例"),
-    (10, "Bot 用户管理"), (11, "业务就绪检查"), (12, "命名预览（不转存）"),
-    (13, "故障诊断报告"), (14, "分类 / 异常通知设置"), (0, "退出"),
-)) + "\n"
+MENU_ITEMS = (
+    (1, "安装与升级"), (2, "查看运行状态"), (3, "查看运行日志"),
+    (4, "服务启停管理"), (5, "Bot 用户管理"), (6, "WebDAV 凭据"),
+    (7, "HTTPS 与管理"), (8, "文件分类设置"), (9, "异常通知设置"),
+    (10, "业务就绪检查"), (11, "WebDAV 验收"), (12, "故障诊断报告"),
+    (13, "数据备份管理"), (14, "卸载当前实例"), (0, "退出"),
+)
+MENU = numbered_menu(MENU_ITEMS) + "\n"
+MENU_ACTIONS = tuple(str(number) for number, _ in MENU_ITEMS)
 
 
 def choose(ui, prompt: str, values: tuple[str, ...], default: str = "") -> str:
@@ -102,17 +104,17 @@ class Management:
             self.checked_run("docker logs --since 30m --tail 100 " + shlex.quote(name), timeout=30)
 
     def control(self, instance):
-        self.log(numbered_menu(((1, "Bot（默认，仅影响任务处理）"), (2, "存储网关（会中断存储访问）"), (0, "返回"))))
-        target = choose(self.ui, "操作对象", ("0", "1", "2"), "1")
-        if target == "0":
-            return
-        self.log(numbered_menu(((1, "启动"), (2, "停止"), (3, "重启"), (0, "返回"))))
-        action = choose(self.ui, "选择操作", ("0", "1", "2", "3"))
+        self.log("\n── 服务启停管理 ──\n存储网关停止或重启会中断存储访问。\n" + numbered_menu((
+            (1, "启动 Bot"), (2, "停止 Bot"), (3, "重启 Bot"),
+            (4, "启动存储网关"), (5, "停止存储网关"), (6, "重启存储网关"), (0, "返回"),
+        )))
+        action = choose(self.ui, "选择操作", ("0", "1", "2", "3", "4", "5", "6"), "0")
         if action == "0":
             return
-        name = self.product.bot_container if target == "1" else self.product.storage_container
-        verb = {"1": "start", "2": "stop", "3": "restart"}[action]
-        if not self.ui.confirm(f"确认 {verb} {name}？进行中的任务或外部访问可能中断"):
+        number = int(action) - 1
+        name = self.product.bot_container if number < 3 else self.product.storage_container
+        verb, label = (("start", "启动"), ("stop", "停止"), ("restart", "重启"))[number % 3]
+        if not self.ui.confirm(f"确认{label} {name}？进行中的任务或外部访问可能中断"):
             return
         with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
             self.recheck(instance)
@@ -267,13 +269,13 @@ class Management:
     def run(self):
         while True:
             instance = self.discover()
-            self.log(f"\n{self.product.display_name} · 版本 {instance.version or '未安装'} · Bot {'运行中' if instance.running else '未运行'}\n安装目录：{instance.directory}")
+            self.log(f"\n── TG2Cloud 本地管理 ──\n\n{self.product.display_name} · 版本 {instance.version or '未安装'} · Bot {'运行中' if instance.running else '未运行'}\n安装目录：{instance.directory}\n\n")
             if not instance.present:
                 if self.ui.confirm(self.product.display_name + " 尚未安装，是否进入安装向导？"):
                     self.upgrade(instance)
                 return 0
-            self.log(MENU)
-            action = choose(self.ui, "选择操作", tuple(str(n) for n in range(15)), "0")
+            self.log(MENU + "\n")
+            action = choose(self.ui, "选择操作", MENU_ACTIONS, "0")
             if action == "0":
                 return 0
             try:
@@ -282,37 +284,38 @@ class Management:
                     continue
                 if not instance.present:
                     raise ValueError("尚无完整实例，请先安装；不会执行维护操作")
-                handlers = {"2": self.status, "3": self.logs, "4": self.control, "5": self.verify,
-                            "6": self.entry, "7": self.backups}
-                if action == "8":
+                handlers = {"2": self.status, "3": self.logs, "4": self.control,
+                            "7": self.entry, "11": self.verify, "13": self.backups}
+                if action == "6":
                     terminal.show_credentials(self.ui, self.product, instance.config, self.log)
-                elif action == "9":
+                elif action == "14":
                     if self.remove(instance):
                         return 0  # The final uninstall may have removed this offline runtime.
-                elif action == "10":
+                elif action == "5":
                     from tg2cloud.deployment.users import manage
                     manage(self, instance)
-                elif action == "11":
+                elif action in {"8", "9"}:
+                    from tg2cloud.deployment.feature_settings import (
+                        manage_classification,
+                        manage_notifications,
+                    )
+                    operation = manage_classification if action == "8" else manage_notifications
+                    operation(self, instance)
+                elif action == "10":
                     from tg2cloud.deployment.readiness import check
                     check(instance, self.session, self.log)
                 elif action == "12":
-                    from tg2cloud.cli.naming import interactive
-                    interactive(self.ui, self.log)
-                elif action == "13":
                     from tg2cloud.deployment.diagnostics import collect, save
                     report = collect(instance, self.session)
                     self.log(report)
                     if self.ui.confirm("保存已脱敏报告到本机私密目录？不会自动上传"):
                         parent = Path(self.ui.ask("报告目录（绝对路径）", default="/opt/tg2cloud-reports"))
                         self.log("报告已保存：" + str(save(report, parent)))
-                elif action == "14":
-                    from tg2cloud.deployment.feature_settings import manage
-                    manage(self, instance)
                 else:
                     handlers[action](instance)
             except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
                 self.log("操作未完成：" + str(exc))
-                if action == "9":
+                if action == "14":
                     return 1  # Do not offer a fresh install after a partial uninstall.
 
 

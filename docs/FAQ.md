@@ -1,8 +1,25 @@
 # 常见问题
 
-适用于当前正式 Linux v1.4.2；旧版本的行为差异另有说明。本文给排查方向，完整命令和风险集中在链接的专题，不重复维护另一套操作流程。
+适用于当前正式 Linux v1.4.3；旧版本的行为差异另有说明。本文给排查方向，完整命令和风险集中在链接的专题，不重复维护另一套操作流程。
 
 ## 安装和升级
+
+### 升级出现 WARNING 需要处理吗？
+
+v1.4.4 源码增加日志分类和逐项结果摘要：常见构建提醒只解释，未知 WARNING 标为待核对；只有原命令和校验通过才记录通过，不屏蔽错误。旧 v1.4.3 工具仍是原显示，须显式升级离线管理工具才生效，见[日志与摘要说明](OPERATIONS.md#安装日志与结果摘要v144)。
+
+先看具体内容和最终结果，不以单个 `WARNING` 判定失败，也不要一概忽略。2026-10-23 用户提供的 CloudDrive2 v1.4.2 → v1.4.3 日志中，下列提示未导致升级失败：
+
+| 提示 | 含义与处理 |
+| --- | --- |
+| `Running pip as the 'root' user` | pip 默认对 root 安装发出提醒。本项目该步骤位于 Docker 镜像构建中，不是在宿主 Python 环境装 Bot 依赖；正式镜像／Compose 配置为非 root `10001:10001`。不需要为此在 VPS 上重装 Python 或改容器为 root。见 [pip 官方说明](https://pip.pypa.io/en/stable/cli/pip_install/#cmdoption-root-user-action) |
+| `skipping ca-certificates.crt` | CA 合集包含多张证书，不适合作为 rehash 的单证书索引对象；这条提示本身不是域名证书错误。只有这条提示、包安装成功且后续 TLS 检查正常时无需删证书。见 [OpenSSL 说明](https://docs.openssl.org/3.0/man1/openssl-rehash/) |
+| `uid 10001 is greater than SYS_UID_MAX 999` | 固定容器 UID 超出系统账号默认编号范围的提醒，账号仍可成功创建；不表示 Bot 以 root 运行，不需改动已有文件归属 |
+| 总容量低于推荐 50GB | 是推荐总容量，不是硬性门槛。仍须通过容量校验并留意暂存、备份、Docker 和网关缓存，不能因此忽略后续空间不足 |
+
+本次日志最后有 `TG2CLOUD_VERSION=1.4.3`、`TG2CLOUD_CODE=OK`、`TG2CLOUD_BOT_HEALTH=healthy`、`TG2CLOUD_RESULT=SUCCESS`，并通过本机 HTTPS 检查，支持“基础升级成功”。真实转存和公网访问仍单独验收，详见[本次脱敏记录](development/V143-ACCEPTANCE.md)。
+
+如果还有依赖安装失败、`Permission denied`、`No space left on device`、TLS 校验失败、容器不健康或 `TG2CLOUD_RESULT=FAILED`，按具体错误排查，不照搬上述解释。不要通过关闭证书校验、放宽到 `chmod 777` 或屏蔽全部警告解决问题。
 
 ### Oracle 的 A 记录正确，为什么 HTTPS 预检仍失败？
 
@@ -60,7 +77,7 @@ healthy 证明基础心跳；HTTPS 自检证明本机入口／证书等检查；
 
 ### 两个用户 ID 一起填写就能共用 Bot 吗？
 
-不能。安装只填一个固定管理员 ID；之后用 `tg2cloud` → **10. Bot 用户管理**授权家人。成员各自管理任务，共用目录与资源；不是个人文件夹隔离。手机访问授权是另一套独立账号，见[家庭共享](FAMILY-SHARING.md)。
+不能。安装只填一个固定管理员 ID；之后用 `tg2cloud` → **Bot 用户管理**授权家人（正式 v1.4.3 为 10，v1.4.4 新菜单为 5）。成员各自管理任务，共用目录与资源；不是个人文件夹隔离。手机访问授权是另一套独立账号，见[家庭共享](FAMILY-SHARING.md)。
 
 ### 为什么数字名视频仍没有变成标题？
 

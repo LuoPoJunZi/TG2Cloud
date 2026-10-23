@@ -59,11 +59,13 @@ def manage(manager, instance) -> None:
         ui.private("管理员 ID", str(admin))
         for index, member in enumerate(record["users"], 1):
             ui.private(str(index), f"{member['name']} · {member['id']} · {'启用' if member['enabled'] else '停用'}")
-        log(numbered_menu(((1, "添加家人"), (2, "启用家人"), (3, "停用家人"), (4, "移除授权"), (5, "成员配额与用量"), (0, "返回"))))
-        selected = choose(ui, "选择操作", ("0", "1", "2", "3", "4", "5"), "0")
+        log(numbered_menu(((1, "添加家人"), (2, "启用家人"), (3, "停用家人"), (4, "移除授权"),
+                           (5, "查看成员配额"), (6, "设置成员配额"), (7, "取消成员限额"), (0, "返回"))))
+        selected = choose(ui, "选择操作", ("0", "1", "2", "3", "4", "5", "6", "7"), "0")
         if selected == "0":
             return
-        action = {"1": "add", "2": "enable", "3": "disable", "4": "remove", "5": "quota"}[selected]
+        action = {"1": "add", "2": "enable", "3": "disable", "4": "remove",
+                  "5": "quota-view", "6": "quota-set", "7": "quota-clear"}[selected]
         if action == "add":
             member_id = int(ui.ask("家人的 Telegram 用户 ID", validate=numeric_id))
             def label(value):
@@ -82,9 +84,10 @@ def manage(manager, instance) -> None:
             member_id, name = member["id"], member["name"]
         if member_id == admin:
             raise ValueError("不能通过家庭成员管理修改管理员。")
-        if action == "quota":
+        if action.startswith("quota-"):
             from tg2cloud.deployment.feature_settings import member_quota
-            member_quota(manager, instance, record, member_id)
+            ui.private("操作对象", f"{name} · {member_id}")
+            member_quota(manager, instance, record, member_id, action=action.removeprefix("quota-"))
             continue
         ui.private("操作对象", f"{name} · {member_id}")
         log("仅变更 Bot 授权；已接收任务继续处理，不删除任务或文件，不开通/撤销外部 WebDAV 账号。")

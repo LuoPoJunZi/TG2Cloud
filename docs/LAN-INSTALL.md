@@ -6,6 +6,8 @@ TG2Cloud 后续以 Linux 脚本为主要维护入口，Windows 部署器停留�
 
 ## 支持范围与边界
 
+v1.4.4 源码在确认执行后补充内网安装／升级摘要、日志分级和一次只读业务就绪观察；公网 HTTPS 明确不适用，局域网其他设备访问和真实转存仍须人工验收。沿用原 WebDAV 确认，不新增写入或网络探测，不改内网模式和下面的支持范围。旧 v1.4.3 入口与工具不包含这些新增反馈，见[结果与验收说明](OPERATIONS.md#安装日志与结果摘要v144)。
+
 当前源码入口为 `python3 scripts/run_source.py lan --help`；公共在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交。CLI 与 VPS 入口共享部署模块，不导入另一个向导；内网 IP 收集和 HTTPS 边界不变。见[Linux 重构说明](development/LINUX-REFACTOR.md)。
 
 - Debian/Ubuntu、64 位原生用户态、root、Python 3.10+、Bash、curl（在线入口）、iproute2、CA 证书、时区数据库及可交互终端。正式 v1.4.1 支持原生 AMD64 / ARM64；匹配稳定包和 helper 已发布，原生隔离 CI 通过，NAS 实机仍需独立验收，见[双架构说明](ARCHITECTURES.md)。

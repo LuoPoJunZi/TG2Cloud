@@ -2,16 +2,19 @@ from __future__ import annotations
 
 import shlex
 import tempfile
-from dataclasses import dataclass, field
+from contextlib import contextmanager
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 
 from tg2cloud.cli import terminal
+from tg2cloud.cli.presentation import InstallerLog, OperationReport
 from tg2cloud.deployment import (
     architecture,
     configuration,
     instances,
     payload,
     preflight,
+    readiness,
     releases,
     upgrade,
 )
@@ -37,6 +40,48 @@ class Plan:
     domain: str = ""
     email: str = ""
     configure_https: bool = False
+    feedback: OperationReport | None = field(default=None, repr=False)
+
+
+@contextmanager
+def execution_feedback(plan, release, session, log, *, mode):
+    instance = plan.instance
+    target = release.version if plan.action in {"install", "upgrade"} else instance.version
+    feedback = OperationReport(instance.product.key, instance.product.display_name, instance.version, target, plan.action, mode)
+    feedback.checks.update(base="not_run", config="unknown" if instance.present else "na",
+                           backup="unknown" if plan.action == "upgrade" else "na", webdav="not_run")
+    plan.feedback = feedback
+    previous = log.operation if isinstance(log, InstallerLog) else None
+    if isinstance(log, InstallerLog):
+        log.operation = feedback
+    try:
+        yield feedback
+        feedback.completed = True
+    except (KeyboardInterrupt, EOFError):
+        feedback.interrupted = True
+        feedback.failure_stage = feedback.stage
+        raise
+    except Exception:
+        feedback.failure_stage = feedback.stage
+        key = {"基础安装与升级": "base", "管理入口检查": "entry", "WebDAV 写入验收": "webdav"}.get(feedback.stage)
+        if key:
+            feedback.checks[key] = "failed"
+        raise
+    finally:
+        try:
+            if feedback.checks.get("entry") == "ok" and not feedback.interrupted:
+                feedback.readiness = readiness.inspect(replace(instance, version=target), session)
+        except (KeyboardInterrupt, EOFError):
+            feedback.interrupted = True
+            feedback.failure_stage = "业务就绪观察读取"
+            raise
+        finally:
+            if isinstance(log, InstallerLog):
+                log.operation = previous
+            try:
+                feedback.render(log)
+            except OSError:
+                pass  # A closed terminal must not replace an installation's result.
 
 
 def make_plan(
@@ -133,12 +178,18 @@ def apply_base(plan: Plan, release: releases.Release, source: Path, session: Loc
                    + shlex.quote(str(payload_dir / "remote_install.sh")) + " "
                    + shlex.quote(str(payload_dir)) + " " + shlex.quote(str(candidate)))
         code, output = session.run(command, stream=log, timeout=2400)
+        if plan.feedback is not None:
+            plan.feedback.observe_base(code, output)
         if code or "TG2CLOUD_RESULT=SUCCESS" not in output.splitlines() or "TG2CLOUD_BOT_HEALTH=healthy" not in output.splitlines():
             raise RuntimeError("基础安装/升级失败；请核对现有安装器的回退结果和备份，不假定已恢复")
     architecture.check_container(session, instance.product.bot_container, require_running=True)
     architecture.check_container(session, instance.product.storage_container, require_running=True)
     if instance.present and configuration.regular_private(instance.directory / ".env") != instance.raw_config:
+        if plan.feedback is not None:
+            plan.feedback.checks["config"] = "failed"
         raise RuntimeError("升级后 .env 字节发生变化，停止后续操作；请核对备份")
+    if instance.present and plan.feedback is not None:
+        plan.feedback.checks["config"] = "ok"
     upgrade.record_release(instance.directory, release)
 
 
@@ -159,7 +210,9 @@ def execute_plan(
     session: LocalSession, log: SafeLog, ui: terminal.Terminal, *, verify: bool = False,
 ) -> None:
     instance = plan.instance
-    with edition_lock(Path("/opt/tg2cloud-cli-locks") / (instance.product.key + ".lock")):
+    with edition_lock(Path("/opt/tg2cloud-cli-locks") / (instance.product.key + ".lock")), execution_feedback(
+        plan, release, session, log, mode="https"
+    ) as feedback:
         if instance.present:
             current = instances.discover(instance.product, instances.docker_inventory(session), session, log, install_dir=str(instance.directory))
             if (current.raw_config != instance.raw_config or current.version != instance.version
@@ -173,19 +226,28 @@ def execute_plan(
         if plan.action in {"install", "upgrade"}:
             instances.check_foreign_gateway(instance.product, session)
             preflight.resource_check(instance, plan.config, session, log)
+        feedback.stage = "基础安装与升级"
         apply_base(plan, release, source, session, log)
+        if plan.action in {"install", "upgrade"}:
+            feedback.checks["base"] = "ok"
+        feedback.stage = "管理入口检查"
         if plan.configure_https:
             plan.manager.configure(plan.domain, plan.email)
         report = plan.manager.status()
         log(report.message)
         if report.state != "healthy":
             raise RuntimeError("基础服务可能已安装，但 HTTPS 尚未通过；用 --configure-https 显式续做，不要重装/删除数据")
+        feedback.checks["entry"] = "ok"
+        feedback.stage = "安装后检查"
         log("TG2CLOUD_CLI_BASE_HTTPS=OK；公网访问仍需外部网络检查")
         if plan.action == "install" or plan.configure_https:
+            feedback.stage = "后台账号设置"
             log("请在 https://" + report.domain + " 配置自己的云存储，再建立专用 WebDAV 用户。")
             if plan.action == "install":
                 terminal.show_setup_credentials(ui, instance.product, plan.config, log)
             else:
                 terminal.show_credentials(ui, instance.product, plan.config, log)
         if verify or plan.action == "install":
-            verify_destination(plan, session, log, ui)
+            feedback.stage = "WebDAV 写入验收"
+            verified = verify_destination(plan, session, log, ui)
+            feedback.checks["webdav"] = "ok" if verified is True else "not_run"

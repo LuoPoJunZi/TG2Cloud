@@ -2,7 +2,7 @@
 
 
 
-当前正式版本为 **TG2Cloud v1.4.3**：维护增强、可选分类／通知／配额、脱敏报告与测速／菜单修复。辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 升级前备份业务数据库，schema 2 回退不能只降级镜像，见[备份说明](/operations/backup/)。项目继续维护 Linux 两 Edition，Windows 停留在 v1.2.1；本版真实 VPS／网盘验收未执行。
+当前源码为 **TG2Cloud v1.4.4**（待发布），正式下载仍为 **TG2Cloud v1.4.3**：维护增强、可选分类／通知／配额、脱敏报告与测速／菜单修复。辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 升级前备份业务数据库，schema 2 回退不能只降级镜像，见[备份说明](/operations/backup/)。项目继续维护 Linux 两 Edition，Windows 停留在 v1.2.1；本版已收到限定的[用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)；真实转存、外网访问和故障回退尚未确认。
 
 截至 2026-10-21，GitHub 保留 v1.4.2、v1.4.1、v1.2.1 三个 Release／Tag。其他版本虽已移除发布页和标签，[全版本记录](/changelog/)仍保留每一版的功能和修复，不能把下载列表当作完整开发历史。
 
@@ -66,7 +66,7 @@ Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 
 ## 没有 Windows：VPS 单行入口
 
-后续主要使用脚本维护。在自己的 Debian/Ubuntu x86_64 VPS 上，以 root 运行以下命令；需要 Python 3.10+、curl、CA 证书及可交互终端。
+后续主要使用脚本维护。在自己的 Debian/Ubuntu 原生 AMD64／ARM64 VPS 上，以 root 运行以下命令；需要 Python 3.10+、curl、CA 证书及可交互终端。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
@@ -112,7 +112,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 独立卸载：先预检
 
-v1.3.2 默认公网／内网入口整合管理菜单：选择已有 Edition 后可从菜单 9 卸载，无需另记独立命令；确认安装管理命令后，本机也可运行 `tg2cloud`。最后一套完整卸载后，无依赖且归属可验证时清理快捷命令及其代码。下方 `uninstall.sh` URL 保留作兼容／救援及只读预检，不删除旧入口；旧主机需显式更新，不会自动更换管理代码。见[管理菜单](/operations/maintenance/)。
+v1.3.2 默认公网／内网入口整合管理菜单：选择已有 Edition 后可按名称选择“卸载当前实例”（旧 v1.4.3 为 9，v1.4.4 为 14），无需另记独立命令；确认安装管理命令后，本机也可运行 `tg2cloud`。最后一套完整卸载后，无依赖且归属可验证时清理快捷命令及其代码。下方 `uninstall.sh` URL 保留作兼容／救援及只读预检，不删除旧入口；旧主机需显式更新，不会自动更换管理代码。见[管理菜单](/operations/maintenance/)。
 
 卸载不是升级步骤。v1.2.0 Tag 中的原入口默认保留实例数据、证书和历史备份；主分支追加的完整清理增强会在双重确认后删除所选配置、数据库、下载和可识别历史备份。需要保留数据时必须明确使用 `--keep-data`。用户已反馈原保留数据卸载在其 VPS 通过，但完整清理增强仍待新的实机验收，不据此推定 NAS 或两个 Edition 均通过。两个 EXE 与正式 Release 不变，详情见 [卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
 

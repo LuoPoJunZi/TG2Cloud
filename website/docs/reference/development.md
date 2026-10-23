@@ -2,7 +2,7 @@
 
 v1.4.3 已发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 隔离网络夹具补齐显式子网并保留原断言，不改生产网络。
 
-当前文档对应已发布 v1.4.3，使用下方不可变 Tag 复现。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
+当前源码 v1.4.4 待发布，开发使用 main 并记录提交；已发布 v1.4.3 的历史验证保留如下。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
 
 以下保留 v1.4.2 及更早版本的历史发布证据，不外推为 v1.4.3 真实 VPS 验收。
 
@@ -23,11 +23,11 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.4.3
+git checkout main
 git rev-parse HEAD
 ```
 
-本次正式源码使用 v1.4.3 Tag，下载见[下载页](/download/)。开发使用 main 并记录提交号，不把后续修改当作 Release 行为。
+本次候选源码使用 main；正式发布后使用不可变 v1.4.4 Tag，下载见[下载页](/download/)。开发使用 main 并记录提交号，不把后续修改当作 Release 行为。
 
 ## 关键目录与入口
 

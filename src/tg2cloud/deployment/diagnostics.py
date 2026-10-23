@@ -60,7 +60,7 @@ def collect(instance, session) -> str:
             lines.append("当前无此范围内的失败任务；不代表从未发生错误。")
     except (ValueError, TypeError, KeyError):
         lines.append("Bot 诊断快照：未检查（未运行、旧版本或响应不受支持）")
-    lines += ["", "HTTPS / LAN 入口：未检查（请使用本地管理菜单 6 单独检查）",
+    lines += ["", "HTTPS / LAN 入口：未检查（请使用本地管理菜单“HTTPS 与管理”单独检查）",
               "日志摘要：不读取原始容器日志，仅输出上面的白名单错误分类。",
               "未执行 WebDAV 写入、服务重启或软件安装。目录可读不代表可写或云盘官方最终完成。", ""]
     return "\n".join(lines)

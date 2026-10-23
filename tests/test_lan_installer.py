@@ -486,9 +486,11 @@ class PlanExecutionTests(unittest.TestCase):
         self.patches["save_state"].assert_called_once_with(self.product, IP)
         self.patches["wait_for_entry"].assert_called_once()
         commands = [call.args[0] for call in session.run.call_args_list]
-        self.assertEqual(len(commands), 4)
+        self.assertEqual(len(commands), 5)
         self.assertIn("run --rm --no-deps lan -t", commands[2])
-        self.assertTrue(all("compose.json" in command for command in commands))
+        self.assertTrue(all("compose.json" in command for command in commands[:4]))
+        self.assertEqual(commands[4], "docker exec " + self.product.bot_container + " python -B -m tg2cloud.monitoring.readiness")
+        self.assertEqual(session.run.call_args.kwargs, {"timeout": 20})
         self.assertFalse(any("certbot" in command or "tg2cloud-proxy" in command for command in commands))
         self.patches["verify_destination"].assert_not_called()
         self.assertIn("HTTPS=NOT_APPLICABLE", "\n".join(self.messages))
@@ -525,7 +527,7 @@ class PlanExecutionTests(unittest.TestCase):
         self.patches["inspect_lan"].side_effect = None
         self.patches["inspect_lan"].return_value = inspected(self.product)
         lan.execute(plan, RELEASE, ROOT, ROOT, session, self.log, Mock(), verify=True)
-        session.run.assert_not_called()
+        session.run.assert_called_once_with("docker exec " + self.product.bot_container + " python -B -m tg2cloud.monitoring.readiness", timeout=20)
         self.patches["show_credentials"].assert_not_called()
         self.patches["verify_destination"].assert_called_once()
         apply.assert_called_once()

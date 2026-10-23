@@ -87,6 +87,40 @@ test('latest changelog entry matches source version without claiming an unpublis
   }
 });
 
+test('management menu matches source labels and keeps old-version boundaries',async()=>{
+  const source=await readFile(new URL('../../src/tg2cloud/cli/management.py',import.meta.url),'utf8');
+  const items=source.match(/MENU_ITEMS = \(([\s\S]*?)\r?\n\)/)?.[1];
+  assert.ok(items);
+  const entries=[...items.matchAll(/\((\d+), "([^"]+)"\)/g)].map(match=>[match[1],match[2]]);
+  assert.deepEqual(entries.map(([number])=>number),[...Array.from({length:14},(_,index)=>String(index+1)),'0']);
+  const article=await read('docs/operations/maintenance.md');
+  const guide=await readFile(new URL('../../docs/OPERATIONS.md',import.meta.url),'utf8');
+  for(const [number,label] of entries){
+    assert.ok(article.includes(`${(number+'.').padEnd(3)} ${label}`),label);
+    assert.ok(guide.includes(`| ${number} | ${label} |`),label);
+  }
+  for(const text of ['v1.4.4 菜单','旧版 v1.4.3','更新文档不会更新 VPS','tg2cloud naming-preview']){
+    assert.ok(article.includes(text),text);
+  }
+  assert.ok(!entries.some(([,label])=>label.includes('命名预览')));
+});
+
+test('installation feedback distinguishes evidence from manual acceptance',async()=>{
+  const update=await read('docs/operations/update.md');
+  for(const text of ['v1.4.4','旧 v1.4.3 工具不包含新增反馈','[信息]','[提醒]','[待核对]','[错误]','20 秒',
+                    'WebDAV 写入与大小复验：未执行','实际 Telegram 转存：待人工验收',
+                    '公网访问：待外部网络验收','原命令退出码','用户中断时不追加读取']){
+    assert.ok(update.includes(text),text);
+  }
+  const guide=await readFile(new URL('../../docs/OPERATIONS.md',import.meta.url),'utf8');
+  for(const text of ['v1.4.4','显式参数模式的 `TG2CLOUD_*` 标记保持原样',
+                    '不持久化原日志','不新增生产数据库字段','不因就绪未确认自动重启或回退']){
+    assert.ok(guide.includes(text),text);
+  }
+  const faq=await read('docs/faq.md');
+  assert.ok(faq.includes('旧工具须显式升级后使用'));
+});
+
 test('content source metadata matches the site configuration',async()=>{
   for(const path of ['README.md','THIRD_PARTY_NOTICES.md']){
     const content=await read(path);
@@ -162,6 +196,25 @@ test('v1.3.0 acceptance separates checked migration, user feedback and untested 
     assert.ok(content.includes(path),name);
   }
   for(const name of ['docs/download.md','docs/operations/update.md','docs/changelog.md','docs/reference/sources.md']){
+    assert.ok((await read(name)).includes(`${config.repo}/blob/main/${path}`),name);
+  }
+});
+
+test('v1.4.3 log review keeps user evidence, warnings and unverified scopes separate',async()=>{
+  const path='docs/development/V143-ACCEPTANCE.md';
+  const record=await readFile(new URL('../../'+path,import.meta.url),'utf8');
+  for(const value of ['证据来源：用户提供的升级日志','没有独立登录','v1.4.2 → v1.4.3',
+    'TG2CLOUD_DATABASE_BACKUP=OK','TG2CLOUD_CODE=OK','TG2CLOUD_BOT_HEALTH=healthy',
+    'TG2CLOUD_RESULT=SUCCESS','Running pip as the','ca-certificates.crt','SYS_UID_MAX',
+    '50GB','尚未确认与仍需验收','独立 SQL 查询'])assert.ok(record.includes(value),value);
+  assert.doesNotMatch(record,/root@|\b(?:\d{1,3}\.){3}\d{1,3}\b/,'do not publish raw host prompts or IP addresses');
+  for(const name of ['README.md','README_EN.md','CHANGELOG.md','RELEASE_NOTES.md',
+    'docs/README.md','docs/FAQ.md','docs/VPS-INSTALL.md']){
+    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
+    assert.ok(content.includes('V143-ACCEPTANCE.md'),name);
+  }
+  for(const name of ['docs/operations/update.md','docs/faq.md','docs/download.md',
+    'docs/changelog.md','docs/reference/sources.md']){
     assert.ok((await read(name)).includes(`${config.repo}/blob/main/${path}`),name);
   }
 });

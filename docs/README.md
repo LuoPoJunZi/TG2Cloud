@@ -57,6 +57,7 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 - [v1.3.3 CloudDrive2 升级与转存验收](development/V133-ACCEPTANCE.md)：正式 v1.3.2 → v1.3.3 升级、配置／Session 保留及用户实际转存确认，其他场景不外推。
 - [v1.4.1 CloudDrive2 ARM64 首次安装验收](development/V141-ACCEPTANCE.md)：Ubuntu 26.04.1 公网 NAT、原生构建、Bot 健康、本机 HTTPS 与 WebDAV 操作；APT 问题及未验证范围单列。
 - [v1.4.2 CloudDrive2 人工升级验收](development/V142-ACCEPTANCE.md)：Debian AMD64、核验原 v1.3.4 提交后保留配置升级；备份、数据保留、只读 WebDAV、外部 HTTPS，以及旧 Release 缺失的自动升级限制。
+- [v1.4.3 CloudDrive2 在线升级日志核验](development/V143-ACCEPTANCE.md)：用户日志确认 v1.4.2 → v1.4.3、Bot healthy 和本机 HTTPS；解释构建 WARNING，真实转存／公网访问及回退尚未确认。
 - [第三方组件说明](第三方组件说明.md)
 - [安全政策](../.github/SECURITY.md)
 - [许可证](../LICENSE)

@@ -1,39 +1,34 @@
-## TG2Cloud v1.4.3 · 可靠性与日常管理增强
+## TG2Cloud v1.4.4 · 稳定性与用户体验维护
 
-本版继续维护 Linux Python + Bash、CloudDrive2 / OpenList 和原生 AMD64 / ARM64，不生成 Windows EXE。公开安装命令不变，业务代码仍只取正式稳定 Release。
+继续维护 Linux Python + Bash、CloudDrive2 / OpenList 和原生 AMD64 / ARM64，不生成 Windows EXE。公开安装命令不变。
 
 ## 本次更新
 
-- 完善上传速度采样：兼容 rclone 总体统计、每秒读取、区分真实 0 与暂时无数据，排除已过期和校验／清理阶段的旧速度；保留简洁 Bot 首页与成员数据隔离，不推算网关到云盘速度。
-- 统一 Linux 编号菜单左对齐；外部 WebDAV 交互选择回车默认 CloudDrive2，首次主账号默认 tg2-webdav，已有账号和隔离目录保持不变。
-- 新增可信旧版升级基线，覆盖 v1.3.4、v1.4.0、v1.4.1、v1.4.2；删除旧 Release 时仍核对原不可变提交和载荷，未知版本／修改源码仍安全停止。
-- 增加实例快照导出、隔离恢复预检、只读业务就绪检查、独立命名预览；扩展已有 Docker Nginx 生命周期回归。
-- 新增可选类型／日期分类、持久化管理员异常通知、成员每日／排队／并发额度和白名单脱敏诊断报告。分类／通知默认关闭，成员默认不限额；不增加主安装问题或 Bot 首页按钮。
+- 安装日志区分 `[信息]`、已识别构建 `[提醒]`、未知 WARNING `[待核对]` 与明确 `[错误]`。保留原日志和失败退出码，同类解释仅出现一次，不把警告一概视为无害。
+- 公网／内网安装与升级结束时逐项汇总基础步骤、原配置保留、数据库备份确认、运行代码／版本、容器健康和本机入口。失败或中断说明停止阶段，不冒充已完成或已回退。
+- 入口通过后只读取一次 Bot 现有的业务就绪观察，不额外探测网络、不绕过冷却。明确区分基础升级、WebDAV 写入与大小复验、真实 Telegram 转存及外部网络验收。
+- 按已确认的文案重排本地管理菜单：安装与升级仍为 1，分类／通知分别为 8／9，诊断 12、备份 13、卸载 14。服务启停、分类、通知和成员配额减少功能选择层级，保留权限、确认、锁与 revision 校验。
+- 直接移除命名预览菜单及菜单分派；独立命令 `tg2cloud naming-preview`、Bot 自动命名和传输核心继续保留。
+- 补充历史 v1.4.3 用户升级日志中的 WARNING 解释与验收边界，统一仓库及文档站操作说明。
 
-## 升级与兼容
-
-**升级前备份配置、Session 和业务数据库。** 本版自动事务迁移业务数据库到 schema 2，保留历史任务和 data/tg115.db、bot.session 等运行名称。旧未完成任务纳入额度预留，不追溯计量旧完成历史；旧 Bot 拒绝打开新 schema。回退不能只降级镜像：先停止所选 Bot，保留当前副本，再人工核验并恢复匹配旧代码的数据库快照。没有删表降级或一键覆盖生产恢复。
-
-同时升级 Bot 与离线 tg2cloud 管理工具；无需新增必填环境变量，不修改网关账号、rclone 配置或已有云端文件。共享代理 schema 与业务数据库 schema 相互独立。镜像增加系统时区包 tzdata；不增加 Python/npm 依赖，不升级固定镜像或恢复桌面部署器。
-
-安装与保留配置升级：
+## 安装与升级
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-功能开关、额度与回退见[功能说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/FEATURE-ENHANCEMENTS.md)，实例快照与就绪检查见[维护增强](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md)。入口的只读预检不等于安装或转存验收。
+内网实例使用 `install-lan.sh`，不混用公网入口改变模式。确认更新后，离线管理工具才使用新版菜单；只更新文档或重启容器不会升级工具。
 
-## 发布与验证边界
+**升级前保存配置、Session 和业务数据库备份。** 本版不新增依赖、环境变量或数据库结构变更，继续使用 v1.4.3 的 schema 2；更旧版本跨版本升级仍按既有事务迁移执行。回退需匹配旧代码和经验证的数据库快照，不能只降级镜像。
 
-辅助提交 A cace622ffbbcecd28db7b00a29c26901e8fa139d 的五项 CI 已通过，含[原生 AMD64／ARM64 完整检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899880815)、[四组最低版本 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899900269)、仓库和两套文档。隔离 Nginx 换 IP 测试补齐显式子网，保留全部断言，新增两项夹具回归；生产网络不变。正式发布仍须从下述同一 Tag 再次验证，不借用 A 绕过门禁。
+保留历史数据路径、用户账号、云端文件和 rclone 配置语义。不自动开启分类／通知，不改家庭授权、网关镜像或后端提交策略，外部 WebDAV 仍独立维护。
 
-发布工作流必须从同一不可变 v1.4.3 Tag 完成原生 AMD64／ARM64 回归、隔离 Docker／WebDAV、代码与依赖审计后，才发布 TG2Cloud-v1.4.3-source.tar.gz 和 SHA256SUMS.txt。helper 先公开并验证提交 A，再由入口 B 固定 A；不在失败时退回 moving main。校验和是完整性检查，不是数字签名。
+## 验收与发布边界
 
-版本整理后本地完整回归 1041 项：1010 项执行通过，31 项因缺少 Docker／rclone／原生 Linux 等条件跳过，0 失败；Ruff、Bandit、Python 3.10 关键 CLI、两 Edition 载荷及网站构建／19 项测试通过。修正了写死旧版本的就绪测试夹具，并补测版本不匹配仍须拒绝；生产校验保持不变。线上结果以本次 Actions 为准，不将环境跳过写成通过。
+普通升级不会擅自执行 WebDAV 写入；首次安装与显式 `--verify` 保留原确认。摘要未执行／未核实的项目不会显示通过。按提示完成业务就绪检查、WebDAV 验收，再向 Bot 转发自有小文件并在云存储官方客户端核对；本机 HTTPS 不替代外部连通性验收，大小复验不等于内容哈希或官方云盘最终入库。
 
-本轮不连接真实 VPS、不操作用户网盘。真实 Telegram 转存、生产升级／数据库回退、可选通知与配额的长期使用、ACME／续期和手机播放仍需独立验收；历史 [v1.3.0 人工迁移记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)与 [v1.4.2 升级记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)不外推为 v1.4.3 实机通过。
+发布使用先验证辅助提交 A、后固定入口 B 的流程；同一不可变 Tag 通过原生 AMD64／ARM64、隔离 Docker／WebDAV、静态与依赖检查后，发布 `TG2Cloud-v1.4.4-source.tar.gz` 和 `SHA256SUMS.txt`。不在失败时回退到未校验 main；SHA256 是完整性校验，不是数字签名。
 
-### 发布后核验（2026-10-23，仅补充仓库文档）
+v1.4.4 本地完整回归 1080 项：1049 项执行通过，31 项因环境条件跳过，0 失败；网站构建与 22 项测试、Ruff、Bandit、语法、最低 Python 3.10 的独立 CLI／19 项反馈回归及发布资料检查通过。远端仍须通过本次同标签门禁，不将跳过或模拟测试写成实机通过。本轮未连接真实 VPS 或用户网盘，v1.4.4 的真实升级、Telegram 转存、故障回退、ACME／长期续期及手机播放仍需独立验收；历史 [v1.3.0 人工迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)及 [v1.4.3 用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)不外推本版。
 
-[v1.4.3 同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)已成功，原生 AMD64／ARM64 门禁全部通过；Release 为最新稳定版，仅包含源码包和 SHA256SUMS.txt。实际下载的源码包通过结构／清单校验，两个资产的本地 SHA256 均匹配 GitHub 摘要。源码包 SHA256：`3788bd749dd2f4674eb7dbb858357d5be538a987157fb5a718d474dd2a3dd63b`。本段不改写已发布 Tag、资产或远端 Release 正文；不代表真实 VPS／网盘验收。
+详细操作见[运维与结果摘要](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md)、[升级与备份](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/BACKUP-RESTORE.md)及[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。

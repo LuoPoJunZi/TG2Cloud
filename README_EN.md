@@ -33,9 +33,9 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 
 v1.4.2 adds [reuse of an existing Docker Nginx](docs/DOCKER-NGINX.md) with explicit authorization, without stopping it or adding a second proxy. The default managed mode is unchanged; see the prerequisites, certificate responsibilities and untested live scenarios in the guide.
 
-Current stable version: **v1.4.3**, maintained through Linux scripts with native AMD64 / ARM64 support. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3). Explicitly upgrade running instances; updating documentation does not upgrade the Bot. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [historical v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify the current version or other deployment or recovery scenarios.
+Source: **v1.4.4 (unreleased)**. Current stable version: **v1.4.3**, maintained through Linux scripts with native AMD64 / ARM64 support. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3). Explicitly upgrade running instances; updating documentation does not upgrade the Bot. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [historical v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify the current version or other deployment or recovery scenarios.
 
-On 2026-10-21, an authorized manual CloudDrive2 v1.3.4 → v1.4.2 upgrade on a dedicated Debian AMD64 test host passed health, data-preservation, read-only WebDAV and external HTTPS checks. See the [acceptance record](docs/development/V142-ACCEPTANCE.md) for the deleted-old-Release automatic-upgrade limitation and untested file transfers and new proxy mode.
+User-provided logs dated 2026-10-23 confirm a CloudDrive2 v1.4.2 → v1.4.3 upgrade on Debian 13 AMD64: basic upgrade, Bot health, code/configuration and on-host HTTPS checks passed. See the [redacted log review](docs/development/V143-ACCEPTANCE.md) for build warnings and unverified file transfers, external access and rollback; the [v1.4.2 manual record](docs/development/V142-ACCEPTANCE.md) remains historical.
 
 ## Getting started
 
@@ -84,7 +84,7 @@ This command only previews; it does not uninstall. Actual complete removal delet
 
 ## Documentation
 
-v1.4.3 includes maintenance and optional features, transfer-rate fixes and menu refinements. Back up before the schema 2 migration; rollback requires matching old code and a verified old database snapshot. See [release notes](RELEASE_NOTES.md). No live VPS/cloud acceptance was performed for this release.
+v1.4.4 adds classified installation logs, evidence-based upgrade/acceptance summaries and a shallower management menu. No new dependencies or database migrations. v1.4.3 introduced optional features and schema 2. Back up before the schema 2 migration; rollback requires matching old code and a verified old database snapshot. See [release notes](RELEASE_NOTES.md). The logs above concern v1.4.3 only; v1.4.4 live upgrades, transfers and rollback remain unverified.
 
 See the [v1.4.3 maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) for trusted historical baselines, instance snapshots, readiness checks and naming previews. Explicitly upgrade the Bot and offline management tools.
 

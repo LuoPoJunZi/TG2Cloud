@@ -2,6 +2,8 @@
 
 v1.4.3 的 `/quota` 只显示自己的配额，不增加首页按钮；分类与通知在本机菜单 14 设置。见[可选增强](FEATURE-ENHANCEMENTS.md)，需同步升级 Bot 和管理工具。
 
+v1.4.4 UI 将分类与通知拆为 `tg2cloud` 主菜单 8／9，不改 Telegram 命令、Bot 首页或转存流程。新编号须升级离线管理工具后才生效，旧主机以实际菜单名称为准。
+
 适用于当前 Linux 版的共享 Bot 核心，CloudDrive2 和 OpenList 操作相同；页面中的网关名称按实际 Edition 显示。安装入口见 [VPS 指南](VPS-INSTALL.md)和[内网指南](LAN-INSTALL.md)，首次挂载与验收见[存储网关配置](STORAGE.md)。
 
 ## 提交与处理流程

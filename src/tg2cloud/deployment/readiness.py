@@ -10,21 +10,30 @@ STATES = {"ok": "通过", "failed": "未通过", "unknown": "未核实／记录�
           "partial": "仅账号根目录可读，目标目录未确认", "paused": "手动暂停", "cooldown": "冷却中，不追加请求"}
 
 
-def check(instance, session, log) -> bool:
+def inspect(instance, session) -> dict[str, str] | None:
+    """Read one bounded local observation; never trigger a network probe or retry."""
     command = "docker exec " + shlex.quote(instance.product.bot_container) + " python -B -m tg2cloud.monitoring.readiness"
-    code, output = session.run(command, timeout=20)
     try:
+        code, output = session.run(command, timeout=20)
         if code or len(output) > 16384:
             raise ValueError
         report = json.loads(output)
         checks = report["checks"]
-        if (report.get("schema") != 1 or report.get("version") != instance.version or set(checks) != set(LABELS)
+        if (type(report.get("schema")) is not int or report["schema"] != 1
+                or report.get("version") != instance.version or set(checks) != set(LABELS)
                 or any(value not in STATES for value in checks.values())
                 or type(report.get("ready")) is not bool):
             raise ValueError
         if report.get("edition") not in {None, instance.product.key}:
             raise ValueError
-    except (ValueError, KeyError, TypeError):
+    except (ValueError, KeyError, TypeError, OSError, RuntimeError, TimeoutError):
+        return None
+    return {key: checks[key] for key in LABELS}
+
+
+def check(instance, session, log) -> bool:
+    checks = inspect(instance, session)
+    if checks is None:
         log("业务就绪未核实：运行中的 Bot 可能未支持本协议，或返回不完整；请核对版本与运行日志，不重启／重装。")
         return False
     for key, label in LABELS.items():

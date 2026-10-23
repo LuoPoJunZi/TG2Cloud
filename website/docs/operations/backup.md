@@ -6,7 +6,7 @@ v1.4.3在备份子菜单新增 **6. 实例快照／导出**、**7. 实例快照�
 
 先明确哪些数据被包含，哪些没有被包含。备份包本身可能含敏感凭据，不能公开上传。
 
-v1.3.4 继续保留下面的备份边界。当前 Linux 使用 `tg2cloud` → 7 备份管理，代理检查／修复／续期 dry-run 在菜单 6；不提供覆盖生产数据的 Restore。CloudDrive2 正式 v1.3.2 → v1.3.3 升级和用户转存已确认，但不等于本版或灾难恢复验收，范围见[记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)。
+v1.3.4 继续保留下面的备份边界。Linux 使用 `tg2cloud` 的备份管理，代理检查／修复／续期 dry-run 在 HTTPS 管理入口；正式 v1.4.3 为菜单 7／6，v1.4.4 菜单为“13. 数据备份管理”／“7. HTTPS 与管理”，须后续发布并更新离线工具才生效，见[菜单说明](/operations/maintenance/)。不提供覆盖生产数据的 Restore。CloudDrive2 正式 v1.3.2 → v1.3.3 升级和用户转存已确认，但不等于本版或灾难恢复验收，范围见[记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)。
 
 v1.4.2 的授权人工升级另核验了配置、业务 DB／Session 一致性备份、共享代理归档与隔离解包，升级后数据比对通过。网关在线副本不等于全状态一致快照，未执行生产恢复或回退；完整范围见[本次验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)。
 

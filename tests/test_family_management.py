@@ -93,6 +93,24 @@ class ManagementTests(unittest.TestCase):
             with closing(sqlite3.connect(path)) as connection:
                 self.assertEqual(users.read(connection, 123), record)
 
+    def test_member_quota_actions_are_selected_directly_from_family_menu(self):
+        for selected, action in (("5", "view"), ("6", "set"), ("7", "clear")):
+            with self.subTest(action=action):
+                record = self.record()
+                record["users"] = [{"id": 456, "name": "家人", "enabled": True}]
+                manager = SimpleNamespace(ui=Mock(), log=Mock(), session=Mock(), product=PRODUCTS["openlist"], recheck=Mock())
+                manager.ui.ask.side_effect = [selected, "1", "0"]
+                instance = SimpleNamespace(running=True, config={"ALLOWED_USER_ID": "123"})
+                with patch.object(host, "request", return_value=record) as request, patch(
+                    "tg2cloud.deployment.feature_settings.member_quota"
+                ) as quota:
+                    host.manage(manager, instance)
+                quota.assert_called_once_with(manager, instance, record, 456, action=action)
+                self.assertEqual([call.args[0] for call in manager.ui.ask.call_args_list],
+                                 ["选择操作", "选择上方成员序号（0 返回）", "选择操作"])
+                self.assertTrue(all(call.kwargs["action"] == "list" for call in request.call_args_list))
+                manager.session.run.assert_not_called()
+
     def test_metadata_limits_and_malformed_records_never_expand_authorization(self):
         item = self.record()
         for value in (True, "1,2", "0", "-1", "9" * 16):

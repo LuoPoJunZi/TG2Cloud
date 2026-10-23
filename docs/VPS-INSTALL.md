@@ -1,5 +1,7 @@
 # VPS 安装与升级脚本
 
+2026-10-23 用户日志确认：CloudDrive2 在 Debian 13／AMD64 通过公开入口完成 v1.4.2 → v1.4.3 基础升级，Bot healthy、代码／配置和本机 HTTPS 检查通过。构建中的 pip root、CA rehash、UID 与推荐容量提示未阻断本次升级；具体含义见[FAQ](FAQ.md)，证据与尚未验收的转存／外网／回退范围见[脱敏记录](development/V143-ACCEPTANCE.md)。
+
 v1.4.3 已正式发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 新清单带齐标准库 helper；业务数据库迁移至 schema 2，升级前须备份，不能只降级镜像回退。下面保留 v1.4.2 历史发布与实机记录，不外推本版。
 
 v1.4.2 已正式发布：辅助 A `840472f919409531e99da55c62070ea262ebed6d`、入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际源码包、SHA256 和 GitHub 摘要已核验。三个在线入口固定 A 并带齐递归清单；新增[复用已有 Docker Nginx](DOCKER-NGINX.md)，需显式授权，不改变默认 managed 模式。
@@ -178,7 +180,7 @@ v1.4.1 的三个入口固定向导 commit 为 `3d222b90599f777d7646ff14ccebe466b
 
 v1.3.2 的公网／内网入口不带参数时进入新版向导；业务 payload 仍只取正式稳定 Release，不部署 main 或预发布 Bot。本地运行 `bash ./install.sh` 同样有效。在线入口必须按[发布门槛](development/LINUX-REFACTOR.md#递归指纹与发布门槛)先验证 helper A，再更新入口 B 的 pin 和清单；已部署主机需显式运行向导确认更新。
 
-不带参数的公网／内网入口先选择 Edition：未安装则确认进入其安装向导；已有实例则打开统一管理菜单，可选择“9. 卸载当前实例”，不必另找卸载命令。已保存的公网／内网模式优先于入口名称，不会隐式转模式。独立 `uninstall.sh` 继续保留作兼容／救援，显式 `--edition` 等参数仍按原安装器解释，不自动进入菜单。
+不带参数的公网／内网入口先选择 Edition：未安装则确认进入其安装向导；已有实例则打开统一管理菜单，可按名称选择“卸载当前实例”，不必另找卸载命令。正式 v1.4.3 为 9，v1.4.4 新菜单为 14，须更新离线工具才会变化，完整说明见[运维菜单](OPERATIONS.md#本地管理菜单)。已保存的公网／内网模式优先于入口名称，不会隐式转模式。独立 `uninstall.sh` 继续保留作兼容／救援，显式 `--edition` 等参数仍按原安装器解释，不自动进入菜单。
 
 - Edition 使用编号选择；版本提示不显示提交摘要，实际 commit 仍保存在引导元数据并校验。
 - WebDAV 用户名提示为“回车默认 tg2cloud”；手动填写的值原样使用。密码隐藏输入，回车生成 **8 位**大小写字母与数字，手动密码仍可使用更长值。只改变 Bot 默认 WebDAV 密码，不改变 OpenList 初始化管理员密码和外部 WebDAV 的密码策略。
@@ -265,7 +267,7 @@ HTTPS 配置收到 Ctrl+C、TERM 或 HUP 时会尝试恢复原代理配置；状
 - `TG2CLOUD_CLI_WEBDAV=NOT_RUN/OK`：独立写入验收的实际结果。
 - `TG2CLOUD_CLI_RESULT=FAILED/INTERRUPTED`：停止后续操作；请核对备份、回退及当前实例状态，不假定已恢复。
 
-无参数的统一菜单可进入“9. 卸载当前实例”，但核心安装器没有 `--uninstall` 参数，`manage.sh` 也没有 `uninstall` 子命令；菜单复用独立的[卸载核心](UNINSTALL.md)，不在升级流程中删除业务数据。不要用不存在的参数、手工删除目录或卸载来解决升级问题。旧 TG115 请参考[迁移说明](MIGRATION_FROM_TG115.md)。
+无参数的统一菜单可按名称进入“卸载当前实例”，但核心安装器没有 `--uninstall` 参数，`manage.sh` 也没有 `uninstall` 子命令；菜单复用独立的[卸载核心](UNINSTALL.md)，不在升级流程中删除业务数据。不要用不存在的参数、手工删除目录或卸载来解决升级问题。旧 TG115 请参考[迁移说明](MIGRATION_FROM_TG115.md)。
 
 ## 停止并移除容器（保留数据，不是完整卸载）
 
@@ -298,6 +300,8 @@ OpenList 脚本实机验收暂缓。仅有网关、没有 Bot 的部分实例会
 Linux CI 和正式 Release 不再构建 EXE，分别执行对应回归与同 Tag 源码包校验。2026-10-19 的 CloudDrive2 正式 v1.3.2 → v1.3.3 升级已核对配置、任务、Session 与共享入口保留，用户确认实际转存完成；不是人工候选覆盖。2026-10-21 的[v1.4.1 ARM64 公网NAT 首装](development/V141-ACCEPTANCE.md)另有用户日志确认。中断／故障回退、NAS、OpenList、双 Edition 同时升级、长期续期及全部异常转存场景仍需独立验收。
 
 ## 参数、升级后检查与下一步
+
+v1.4.4 源码在确认执行后增加日志分类、逐项结果摘要与一次只读业务就绪观察，原命令退出码、成功标记、WebDAV 确认和真实转存人工验收边界不变。旧 v1.4.3 入口及工具不含新增反馈，须升级为 v1.4.4 匹配的离线工具后才生效；完整用法见[安装日志与结果摘要](OPERATIONS.md#安装日志与结果摘要v144)。不重复调整已确认菜单，不改预算、配置、数据库或后端提交策略。
 
 v1.4.2 提供[复用已有 Docker Nginx](DOCKER-NGINX.md)，由只读检测、明确授权和持久化条件决定是否接入，不停止原 Nginx、不增加第二层代理。新参数 `--proxy-mode`、`--nginx-container`、`--authorize-proxy` 的实际用法及支持边界见专题。原有 managed 实例不会自动切换。
 

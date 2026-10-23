@@ -31,9 +31,9 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前正式版本 **v1.4.3**，以 Linux 脚本维护，支持原生 AMD64 / ARM64；源码包与校验清单见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3)。更新文档不会替换已有实例，需显式升级。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 v1.3.3 正式升级及用户转存确认见[历史验收记录](docs/development/V133-ACCEPTANCE.md)，不外推当前版本或其他部署与恢复场景。
+源码 **v1.4.4（待发布）**，当前正式版本 **v1.4.3**，以 Linux 脚本维护，支持原生 AMD64 / ARM64；源码包与校验清单见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3)。更新文档不会替换已有实例，需显式升级。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 v1.3.3 正式升级及用户转存确认见[历史验收记录](docs/development/V133-ACCEPTANCE.md)，不外推当前版本或其他部署与恢复场景。
 
-2026-10-21，专用 Debian AMD64 测试机已完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，健康、数据保留、只读 WebDAV 和外部 HTTPS 检查通过；旧 Release 已删除的自动升级限制、实际转存及新代理模式未验收范围见[本次记录](docs/development/V142-ACCEPTANCE.md)。
+2026-10-23 用户日志确认 CloudDrive2 v1.4.2 → v1.4.3 基础升级、Bot 健康与本机 HTTPS 检查通过；构建 WARNING 未阻断本次升级。证据及尚未确认的转存／公网／回退范围见[升级记录](docs/development/V143-ACCEPTANCE.md)，历史人工路径见[v1.4.2 记录](docs/development/V142-ACCEPTANCE.md)。
 
 ## 开始使用
 
@@ -82,7 +82,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 使用文档
 
-v1.4.3 包含维护、可选功能与测速／菜单修复。业务数据库事务迁移至 schema 2，升级前须备份；回退需匹配旧数据库与旧代码。详见[本次发布说明](RELEASE_NOTES.md)。本版未进行真实 VPS／网盘验收，不外推历史反馈。
+v1.4.4 补充安装日志分级、升级结果与验收摘要，精简本地菜单与设置层级；未增加依赖或数据库迁移。v1.4.3 包含维护、可选功能与测速修复。业务数据库事务迁移至 schema 2，升级前须备份；回退需匹配旧数据库与旧代码。详见[本次发布说明](RELEASE_NOTES.md)。上述日志仅对应 v1.4.3，不代表 v1.4.4 的真实升级、转存或故障回退通过。
 
 v1.4.3 的升级兼容、实例快照、业务就绪与命名预览，见[维护增强说明](docs/development/MAINTENANCE-IMPROVEMENTS.md)；须显式升级 Bot 与离线管理工具后使用。
 
