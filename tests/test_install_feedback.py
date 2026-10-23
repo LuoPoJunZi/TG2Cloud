@@ -2,11 +2,13 @@
 from __future__ import annotations
 
 import json
+import stat
 import tempfile
 import unittest
 from contextlib import ExitStack, nullcontext
 from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from tg2cloud.cli import vps
@@ -307,7 +309,11 @@ class ExecutionSummaryTests(unittest.TestCase):
         self.session.run.return_value = (0, SUCCESS)
         with patch.object(install.architecture, "check_docker"), patch.object(install.architecture, "check_container"), patch.object(
             install.payload, "build_payload"
-        ), patch("tg2cloud.deployment.proxy.external_entry.apply_payload_network"), patch.object(install.upgrade, "record_release") as record:
+        ), patch("tg2cloud.deployment.proxy.external_entry.apply_payload_network"), patch.object(
+            configuration, "regular_private", side_effect=lambda path: path.read_bytes()
+        ), patch.object(install.upgrade, "record_release") as record:
+            # This test owns a runner-user fixture, not a root-owned installation.
+            # Exercise the real owner/mode policy separately below; keep real bytes here.
             install.apply_base(plan, RELEASE, ROOT, self.session, self.log)
             self.assertEqual(plan.feedback.checks["config"], "ok")
             record.assert_called_once()
@@ -316,6 +322,22 @@ class ExecutionSummaryTests(unittest.TestCase):
                 install.apply_base(plan, RELEASE, ROOT, self.session, self.log)
             self.assertEqual(plan.feedback.checks["config"], "failed")
             record.assert_not_called()
+
+    def test_private_config_still_requires_root_and_restrictive_permissions(self):
+        path = self.root / ".env"
+        # Only POSIX metadata is simulated, so the unchanged production guard
+        # runs on non-root Linux runners and Windows without sudo or a skip.
+        for uid, mode in ((1001, 0o600), (0, 0o640), (0, 0o604), (0, 0o644)):
+            info = SimpleNamespace(st_uid=uid, st_mode=stat.S_IFREG | mode, st_size=len(self.instance.raw_config))
+            with self.subTest(uid=uid, mode=oct(mode)), patch.object(
+                configuration, "os", SimpleNamespace(name="posix")
+            ), patch.object(Path, "stat", autospec=True, return_value=info), self.assertRaisesRegex(ValueError, "root"):
+                configuration.regular_private(path)
+        info = SimpleNamespace(st_uid=0, st_mode=stat.S_IFREG | 0o600, st_size=len(self.instance.raw_config))
+        with patch.object(configuration, "os", SimpleNamespace(name="posix")), patch.object(
+            Path, "stat", autospec=True, return_value=info
+        ):
+            self.assertEqual(configuration.regular_private(path), self.instance.raw_config)
 
     def test_cli_exit_codes_distinguish_skipped_passed_and_failed_webdav(self):
         for verify, confirmation, verify_result, expected in (
