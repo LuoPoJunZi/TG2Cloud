@@ -1,5 +1,7 @@
 # VPS 安装与升级脚本
 
+v1.4.4 发布候选：三个主入口固定辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`，其[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918850733)、[Python 3.10／3.13 四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918854646)、仓库与两套文档检查均已通过。入口 B 与同标签发布仍须独立验证，正式下载以 Release 为准。下方 v1.4.3 及更旧记录保留历史范围，不作为本版实机验收。
+
 2026-10-23 用户日志确认：CloudDrive2 在 Debian 13／AMD64 通过公开入口完成 v1.4.2 → v1.4.3 基础升级，Bot healthy、代码／配置和本机 HTTPS 检查通过。构建中的 pip root、CA rehash、UID 与推荐容量提示未阻断本次升级；具体含义见[FAQ](FAQ.md)，证据与尚未验收的转存／外网／回退范围见[脱敏记录](development/V143-ACCEPTANCE.md)。
 
 v1.4.3 已正式发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 新清单带齐标准库 helper；业务数据库迁移至 schema 2，升级前须备份，不能只降级镜像回退。下面保留 v1.4.2 历史发布与实机记录，不外推本版。

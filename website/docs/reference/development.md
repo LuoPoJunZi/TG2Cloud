@@ -1,5 +1,7 @@
 # 开发与贡献
 
+v1.4.4 发布候选的辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b` 已通过[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918850733)、[最低版本四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918854646)、仓库、网站与文档检查。三个入口 B 固定该公开提交，正式发布仍须从同一 Tag 验证；不改变历史 Tag、不使用自指 pin。普通 Runner 临时配置夹具已限定修复，并补充真实权限拒绝回归，生产 root／权限检查不变。
+
 v1.4.3 已发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 隔离网络夹具补齐显式子网并保留原断言，不改生产网络。
 
 当前源码 v1.4.4 待发布，开发使用 main 并记录提交；已发布 v1.4.3 的历史验证保留如下。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。

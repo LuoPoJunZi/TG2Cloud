@@ -25,6 +25,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 验收与发布边界
 
+辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b` 的五项 CI 已通过，包括[原生 AMD64／ARM64 与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918850733)及[Python 3.10／3.13 四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918854646)。限定修正普通 Runner 的临时配置夹具，并补充非 root／权限过宽拒绝及 root 0600 正例；不修改生产权限、不跳过测试。正式发布仍由同标签门禁决定，不借用 A 绕过检查。
+
 普通升级不会擅自执行 WebDAV 写入；首次安装与显式 `--verify` 保留原确认。摘要未执行／未核实的项目不会显示通过。按提示完成业务就绪检查、WebDAV 验收，再向 Bot 转发自有小文件并在云存储官方客户端核对；本机 HTTPS 不替代外部连通性验收，大小复验不等于内容哈希或官方云盘最终入库。
 
 发布使用先验证辅助提交 A、后固定入口 B 的流程；同一不可变 Tag 通过原生 AMD64／ARM64、隔离 Docker／WebDAV、静态与依赖检查后，发布 `TG2Cloud-v1.4.4-source.tar.gz` 和 `SHA256SUMS.txt`。不在失败时回退到未校验 main；SHA256 是完整性校验，不是数字签名。
