@@ -82,6 +82,12 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 使用文档
 
+**v1.4.3 正在准备发布**：包含以下维护、可选功能与测速／菜单修复。业务数据库将事务迁移至 schema 2，升级前须备份，回退需匹配旧数据库与旧代码；当前正式下载仍以已发布版本为准。详见[本次发布说明](RELEASE_NOTES.md)。
+
+本地待发布的升级兼容、实例快照、业务就绪与命名预览，见[维护增强说明](docs/development/MAINTENANCE-IMPROVEMENTS.md)；现有正式 v1.4.2 在线入口不包含这些新增能力。
+
+另有[可选分类、主动通知、家庭配额与脱敏报告](docs/FEATURE-ENHANCEMENTS.md)的本地增强：分类/通知默认关闭、成员默认不限额，尚未发布，升级前需备份数据库。
+
 v1.3.3 起，[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人转存、共用保存目录及各自的外部只读账号；安装仍只填一个管理员 ID。v1.3.4 增强网址污染名、图片自身说明及一图一视频同标题；完整规则与边界见[命名指南](docs/NAMING.md)。已有实例与离线工具需显式升级。
 
 可选附加功能：[外部 WebDAV](docs/external-webdav.md)。独立安装，通过新 HTTPS 域名只读访问已有上传目录；不复用 Bot/管理员账号，不加入主安装流程。v1.3.1 起提供专用在线安装与离线维护入口。

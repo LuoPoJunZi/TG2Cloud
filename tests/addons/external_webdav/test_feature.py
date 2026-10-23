@@ -416,6 +416,35 @@ class LifecycleTests(unittest.TestCase):
                 self.assertIn("用户名：" + user, self.messages)
                 self.assertNotIn("/115open/Telegram", "\n".join(self.messages))
 
+    def test_enter_uses_default_external_username_but_preserves_existing_account_both_editions(self):
+        for edition in PRODUCTS:
+            for existing in (False, True):
+                with self.subTest(edition=edition, existing=existing):
+                    current = self.configure_fixture()
+                    self.service.product = PRODUCTS[edition]
+                    instance = self.service.preflight.return_value[0]
+                    instance.directory = PurePosixPath(PRODUCTS[edition].install_dir)
+                    if existing:
+                        saved = copy.deepcopy(self.item)
+                        saved.update(edition=edition, instance_dir=str(instance.directory), username="saved-reader")
+                        current["value"] = saved
+                    self.ui.ask.reset_mock()
+                    answers = iter((route(edition)["domain"], "", "/网盘", "", SECRET, "/网盘/Telegram"))
+                    self.ui.ask.side_effect = lambda *args, answers=answers, **kwargs: kwargs["validate"](next(answers) or kwargs.get("default", ""))
+                    with patch.object(verification, "check_backend"), patch.object(config, "password_hash", return_value="synthetic-hash"):
+                        self.service.configure(install_dir=None, install=not existing)
+                    expected = "saved-reader" if existing else "tg2-webdav"
+                    self.assertEqual(current["value"]["username"], expected)
+                    username_prompt = self.ui.ask.call_args_list[3]
+                    self.assertEqual(username_prompt.kwargs["default"], expected)
+                    self.assertEqual("回车默认 tg2-webdav" in username_prompt.args[0], not existing)
+                    self.assertEqual(current["value"]["target_dir"], "/网盘/Telegram")
+                    self.session.run.assert_not_called()
+                    self.assertNotIn(SECRET, "\n".join(self.messages))
+        self.assertEqual(config.username("tg2-webdav", "bot-reader"), "tg2-webdav")
+        with self.assertRaises(ValueError):
+            config.username("tg2-webdav", "tg2-webdav")
+
     def test_blank_password_generates_nine_characters_and_short_manual_input_is_kept(self):
         for entered in ("", "short"):
             with self.subTest(generated=not entered):
@@ -513,6 +542,47 @@ class LifecycleTests(unittest.TestCase):
 
 
 class EntryAndReleaseTests(unittest.TestCase):
+    def test_enter_defaults_to_first_edition_and_install_or_status_without_mutation(self):
+        for installed in (False, True):
+            with self.subTest(installed=installed):
+                service, ui, messages = Mock(), Mock(), []
+                service.record.return_value = {"phase": "enabled"} if installed else None
+                service.configure.return_value = False
+                ui.ask.side_effect = lambda *args, **kwargs: kwargs["validate"](kwargs.get("default", ""))
+                with (patch("tg2cloud.addons.external_webdav.discovery.host"),
+                      patch("tg2cloud.addons.external_webdav.service.Service", return_value=service) as factory,
+                      patch.object(cli, "WebDAVTerminal", return_value=ui), patch.object(cli.signal, "signal"),
+                      patch("tg2cloud.deployment.host.SafeLog", return_value=SafeLog(messages.append))):
+                    self.assertEqual(cli.main([]), 0)
+                self.assertEqual(factory.call_args.args[0].key, "clouddrive2")
+                gateway, operation = ui.ask.call_args_list
+                self.assertEqual(gateway.args[0], "输入序号（回车默认为 1）")
+                self.assertEqual(gateway.kwargs["default"], "1")
+                self.assertEqual(operation.kwargs["default"], "2" if installed else "1")
+                if installed:
+                    service.maintain.assert_called_once_with("status", sample_file="")
+                    service.configure.assert_not_called()
+                else:
+                    service.configure.assert_called_once_with(install_dir=None, install=True, sample_file="")
+                service.install_runtime.assert_not_called()
+                menu = next(text for text in messages if "10. 用户管理" in text)
+                self.assertTrue(menu.startswith("1.  安装外部 WebDAV\n"))
+                self.assertTrue(menu.endswith("0.  退出"))
+
+    def test_real_terminal_enter_uses_default_once_and_label_columns_are_aligned(self):
+        ui = cli.WebDAVTerminal.__new__(cli.WebDAVTerminal)
+        ui.tty, ui.output = io.StringIO("\n"), io.StringIO()
+        messages = []
+        with patch.dict(sys.modules, {"termios": Mock()}):
+            result = cli.choose(ui, messages.append, "操作", tuple(zip(cli.ACTIONS, cli.ACTION_LABELS)), default="1")
+        self.assertEqual(result, "install")
+        self.assertEqual(ui.output.getvalue(), "输入序号（回车默认为 1）: ")
+        self.assertNotIn("[1]", ui.output.getvalue())
+        menu = messages[1].splitlines()
+        for line, label in zip(menu, (*cli.ACTION_LABELS, "退出")):
+            self.assertFalse(line.startswith(" "))
+            self.assertEqual(line.index(label), 4)
+
     def test_idempotent_or_declined_install_never_replaces_offline_code(self):
         service = Mock()
         service.configure.return_value = False

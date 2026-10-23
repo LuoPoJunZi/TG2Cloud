@@ -6,6 +6,13 @@ import re
 from tg2cloud.deployment.host import SafeLog
 
 
+def numbered_menu(items) -> str:
+    """Left-align both the number column and the label column, without tabs."""
+    rows = [(str(number) + ".", label) for number, label in items]
+    width = max((len(number) for number, _ in rows), default=0)
+    return "\n".join(f"{number:<{width}} {label}" for number, label in rows)
+
+
 class InstallerLog:
     def __init__(self, log: SafeLog) -> None:
         self.log = log
@@ -43,7 +50,8 @@ class InstallerLog:
 
 
 def edition_menu(ui, log, *, default: str = "1", both: bool = False, title: str = "安装向导") -> str:
-    log("\n── TG2Cloud " + title + " ──\n1. CloudDrive2\n2. OpenList" + ("\n3. 升级两套已有实例" if both else ""))
+    labels = ("CloudDrive2", "OpenList") + (("升级两套已有实例",) if both else ())
+    log("\n── TG2Cloud " + title + " ──\n" + numbered_menu(enumerate(labels, 1)))
     def validate(value):
         if value not in ({"1", "2", "3"} if both else {"1", "2"}):
             raise ValueError("请选择菜单中的序号")

@@ -317,6 +317,25 @@ class LifecycleTests(unittest.TestCase):
         self.assertEqual(final["tg2cloud-clouddrive2.conf"], bootstrap["tg2cloud-clouddrive2.conf"])
         self.assertNotIn(b"listen 443", bootstrap["tg2cloud-webdav-clouddrive2.conf"])
 
+    def test_removing_management_preserves_dav_route_files_and_certificate_domain(self):
+        # This test isolates route/renewal ownership; actual hash replacement
+        # has its own file and opt-in Docker regressions.
+        self.adapter.copy_auth = Mock()
+        value = self.target()
+        value["external_webdav"]["clouddrive2"] = {"kind": "external_webdav", "owner": "tg2cloud.external_webdav",
+            "edition": "clouddrive2", "instance_dir": "/opt/tg2cloud-clouddrive2", "domain": "dav.example.com", "enabled": True,
+            "backend_port": 19798, "auth_file": "external-auth/clouddrive2.htpasswd"}
+        for domain in ("cd.example.com", "dav.example.com"):
+            self.adapter.entry["certificates"][domain] = self.adapter.certificate_record(domain)
+        self.adapter.transaction(value)
+        previous = read(self.adapter.directory / "tg2cloud-webdav-clouddrive2.conf")
+        self.adapter.remove_locked()
+        self.assertFalse(self.current["domains"])
+        self.assertEqual(read(self.adapter.directory / "tg2cloud-webdav-clouddrive2.conf"), previous)
+        self.assertIn("dav.example.com", certificate_domains(self.current))
+        self.assertNotIn("cd.example.com", certificate_domains(self.current))
+        self.assertFalse(self.adapter.docker.command.called)
+
     def test_private_backup_roundtrip_and_isolated_drill(self):
         self.adapter.backup = ExternalEntry.backup.__get__(self.adapter)
         archive = self.adapter.backup(self.current)

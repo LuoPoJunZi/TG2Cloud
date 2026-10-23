@@ -1,0 +1,59 @@
+"""Reviewed historical payload identities, shipped with the trusted helper.
+
+This is a compatibility allowlist, not a signature or an operator override.
+Downloaded historical Python is never imported to discover its identity.
+"""
+from __future__ import annotations
+
+import hashlib
+
+from tg2cloud.deployment.payload import payload_sources
+from tg2cloud.deployment.profiles import PRODUCTS
+
+CATALOG = {
+    "v1.3.4": {
+        "commit": "ef35d133a9e25572ff5f8363819d5c8e8984e74c",
+        "payloads": {
+            "clouddrive2": "2f560dbc5b4ebeabb4b2ebf3a1729bd57e9c152c60fe40567e1fe0daa98c211e",
+            "openlist": "47e37f326e3ca23060c5d78935ef77acd00cde1f6bbb1f440d2c7dcac8bb612d",
+        },
+    },
+    "v1.4.0": {
+        "commit": "8bd4cf1fd7180f31579f5fe702d2c2d07c3b13f8",
+        "payloads": {
+            "clouddrive2": "179efd2ade423282df244c87fb8a3e7b6a72a7a578acf336eba935e13fb8843b",
+            "openlist": "abd0667c4f5d5517a52af2a0fd8d8c6579d55aea9dd6b2c9c2a25cbfbc47b971",
+        },
+    },
+    "v1.4.1": {
+        "commit": "dde550bc7fa6047ddcc945ef82131962611fec05",
+        "payloads": {
+            "clouddrive2": "9ffefb84b62ecca95f48e882a43fd0f094f2c43138d528725fa09289b1839619",
+            "openlist": "358227fddc3f452cb79b2dde812bba78e12ed2a052432cb12ae5a6e0d13a7e85",
+        },
+    },
+    "v1.4.2": {
+        "commit": "42e2c372823a085c36a7a7597ce775441598aaf9",
+        "payloads": {
+            "clouddrive2": "81946a7f106e0a551bb29365b4dda1817823e41f06aa67c3fe1c86759027cfbe",
+            "openlist": "248e1aa8a273b96d65aa6e8dcb6cd7c312c213371f5ef3e3282973694cb9e1fc",
+        },
+    },
+}
+
+
+def payload_digest(source, product) -> str:
+    records = []
+    for name, path in sorted(payload_sources(source, product, strict=False).items()):
+        digest = hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n")).hexdigest()
+        records.append(f"{digest}  {name}\n")
+    return hashlib.sha256("".join(records).encode("utf-8")).hexdigest()
+
+
+def verify(source, tag: str, commit: str) -> None:
+    record = CATALOG.get(tag)
+    if not record or record["commit"] != commit or set(record["payloads"]) != set(PRODUCTS):
+        raise ValueError("历史基线不在本版可信目录中；停止，不接受任意提交")
+    for key, product in PRODUCTS.items():
+        if payload_digest(source, product) != record["payloads"][key]:
+            raise ValueError("历史基线载荷清单不匹配；停止，不覆盖实例")

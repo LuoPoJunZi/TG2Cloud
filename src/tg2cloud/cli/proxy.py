@@ -23,6 +23,7 @@ from tg2cloud.deployment.proxy.state import has_routes
 
 def select_entry(manager, ui, domain: str, options: dict | None = None):
     """Read-only plan; final installation confirmation is still mandatory."""
+    from tg2cloud.cli.presentation import numbered_menu
     options = options or {}
     state = manager.read_state()
     if state.get("version") == 3:
@@ -56,7 +57,8 @@ def select_entry(manager, ui, domain: str, options: dict | None = None):
         valid = [item for item in candidates if item["kind"] == "external_docker"]
         if not valid:
             raise ValueError("没有可安全复用的 Docker Nginx；请用 tg2cloud proxy export 查看人工接入说明。")
-        manager.log("1. 复用已有 Docker Nginx（推荐）\n2. 使用独立 Nginx（端口占用时不可用）\n3. 查看详细检测结果\n0. 返回")
+        manager.log(numbered_menu(((1, "复用已有 Docker Nginx（推荐）"), (2, "使用独立 Nginx（端口占用时不可用）"),
+                                   (3, "查看详细检测结果"), (0, "返回"))))
         while True:
             choice = ui.ask("请选择", default="1")
             if choice == "3":
@@ -70,8 +72,7 @@ def select_entry(manager, ui, domain: str, options: dict | None = None):
             if choice != "1":
                 continue
             break
-        for number, item in enumerate(valid, 1):
-            manager.log(str(number) + ". " + item["name"])
+        manager.log(numbered_menu((number, item["name"]) for number, item in enumerate(valid, 1)))
         chosen = ui.ask("选择目标容器", default="1" if len(valid) == 1 else "")
         if not chosen.isdigit() or not 1 <= int(chosen) <= len(valid):
             raise ValueError("未选择有效容器；不随机选择。")

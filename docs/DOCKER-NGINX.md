@@ -15,6 +15,8 @@
 
 ## 支持条件
 
+本地待发布的密码轮换、证书加载、后端换 IP 与路由移除集成用例及执行门槛见[生命周期回归](development/MAINTENANCE-IMPROVEMENTS.md#4-nginx-生命周期回归与实机门槛)。本机未运行 Docker／真实 ACME，不把测试代码存在写成实机通过。
+
 - Debian / Ubuntu、Python 3.10+、原生 AMD64 / ARM64、本机默认 rootful Docker daemon；不使用 QEMU、远端 daemon、rootless 或用户命名空间重映射。
 - 普通 Nginx，有真实 master 进程和标准 `nginx -T` 输出；需完整配置检查及 `nginx -s reload`。
 - 首版自动复用针对标准 `/opt/tg2cloud-clouddrive2`、`/opt/tg2cloud-openlist` 实例；自定义目录需导出方案人工接入，不在不明确归属时重配现有网关。

@@ -64,6 +64,8 @@ def pack(snapshot: Path, archive: Path, edition: str, source_version: str) -> No
     if snapshot.is_symlink() or not snapshot.is_dir() or archive.is_relative_to(snapshot):
         raise ValueError("invalid offline snapshot/destination")
     selected = [*required(edition), "config", "clouddrive/config" if edition == "clouddrive2" else "openlist/data"]
+    if (snapshot / "tg2cloud-release.json").is_file():
+        selected.append("tg2cloud-release.json")
     records = {}
     total = 0
     for name in selected:

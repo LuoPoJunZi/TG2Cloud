@@ -253,7 +253,8 @@ class Service:
                                validate=lambda v: config.logical_path(v, allow_root=True))
         target = config.logical_path(bot_root.rstrip("/") + "/" + relative if relative else bot_root)
         self.log("本次共享目录：" + target)
-        user = self.ui.ask("新的外部专用用户名", default=(previous or {}).get("username", ""),
+        user = self.ui.ask("新的外部专用用户名（回车默认 tg2-webdav）" if not previous else "新的外部专用用户名",
+                           default=(previous or {}).get("username", "tg2-webdav"),
                            validate=lambda v: config.username(v, config.decode(instance.config, "USERNAME")))
         generated = config.new_password()
         secret = self.ui.ask("新的外部密码（回车自动生成 9 位随机密码）", default=generated, secret=True, validate=config.password)

@@ -3,7 +3,7 @@ import sqlite3
 
 from tg2cloud.domain.states import FAILED_STATES
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 def migrate(connection: sqlite3.Connection, columns: set[str]) -> None:
     connection.execute("BEGIN IMMEDIATE")
@@ -16,6 +16,8 @@ def migrate(connection: sqlite3.Connection, columns: set[str]) -> None:
             ("verification_method", "TEXT"),
             ("verified_at", "REAL"),
             ("original_file_name", "TEXT"),
+            ("target_directory", "TEXT NOT NULL DEFAULT ''"),
+            ("target_base", "TEXT"),
         ):
             if name not in columns:
                 connection.execute(f"ALTER TABLE tasks ADD COLUMN {name} {declaration}")
@@ -40,6 +42,26 @@ def migrate(connection: sqlite3.Connection, columns: set[str]) -> None:
             "CREATE INDEX IF NOT EXISTS idx_events_task ON task_events(task_id, id)"
         )
         connection.execute("CREATE INDEX IF NOT EXISTS idx_tasks_owner_id ON tasks(sender_id, id)")
+        connection.execute("CREATE TABLE IF NOT EXISTS member_quotas (user_id INTEGER PRIMARY KEY, "
+                           "daily_bytes INTEGER NOT NULL DEFAULT 0, max_queued INTEGER NOT NULL DEFAULT 0, "
+                           "max_active INTEGER NOT NULL DEFAULT 0)")
+        connection.execute("CREATE TABLE IF NOT EXISTS quota_ledger (task_id INTEGER PRIMARY KEY REFERENCES tasks(id), "
+                           "user_id INTEGER NOT NULL, bytes INTEGER NOT NULL, charged_at REAL, released INTEGER NOT NULL DEFAULT 0)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_quota_owner_time ON quota_ledger(user_id,charged_at)")
+        # Do not retroactively bill historical completions. Existing unfinished
+        # tasks do reserve their known size before a member can receive a limit.
+        connection.execute("INSERT OR IGNORE INTO quota_ledger(task_id,user_id,bytes) "
+                           "SELECT id,sender_id,file_size FROM tasks WHERE state NOT IN ('completed','confirmed','cancelled')")
+        connection.execute("CREATE TABLE IF NOT EXISTS quota_slots (task_id INTEGER PRIMARY KEY REFERENCES tasks(id))")
+        connection.execute("""CREATE TRIGGER IF NOT EXISTS quota_state AFTER UPDATE OF state ON tasks BEGIN
+            UPDATE quota_ledger SET charged_at=COALESCE(charged_at,NEW.updated_at)
+                WHERE task_id=NEW.id AND NEW.state IN ('cleanup_pending','completed','confirmed')
+                AND NEW.verification_method IN ('size','hash') AND NEW.verified_at IS NOT NULL;
+            UPDATE quota_ledger SET released=CASE WHEN NEW.state='cancelled' THEN 1 ELSE 0 END
+                WHERE task_id=NEW.id AND charged_at IS NULL;
+            DELETE FROM quota_slots WHERE task_id=NEW.id AND NEW.state NOT IN
+                ('reserved','downloading','streaming','uploading','verifying','finalizing');
+            END""")
         connection.execute(
             """CREATE TABLE IF NOT EXISTS task_recoveries (
                 id INTEGER PRIMARY KEY, task_id INTEGER NOT NULL REFERENCES tasks(id),

@@ -1,5 +1,7 @@
 # 家庭共享（v1.3.3）
 
+待发布代码支持菜单10 → 5的配额/用量，以及家人私聊`/quota`，默认不限额；见[使用与计量规则](FEATURE-ENHANCEMENTS.md)。正式v1.4.2未包含此扩展。
+
 本功能由 [v1.3.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.3.3) 提供；v1.3.2 及更旧版本没有这些菜单。在线安装仍只获取正式稳定 Release；已有 Bot 实例、本地管理工具与独立 WebDAV 离线工具需分别显式升级。
 
 ## 范围

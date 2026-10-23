@@ -56,7 +56,8 @@ class OpenListReviewTests(unittest.IsolatedAsyncioTestCase):
         self.assertTrue(await client.exists("existing.bin"))
         service = TransferService.__new__(TransferService)
         service.rclone = client
-        service.db = SimpleNamespace(remote_claimed=lambda *_: False)
+        service.db = SimpleNamespace(remote_claimed=lambda *_: False, get=lambda _: {"target_directory": ""})
+        service.settings = SimpleNamespace(cd2_target="")
         self.assertEqual(
             await service._choose_remote_final("existing.bin", 7),
             "existing (task-7).bin",
@@ -68,7 +69,8 @@ class OpenListReviewTests(unittest.IsolatedAsyncioTestCase):
         client._run = AsyncMock(side_effect=[(4, "", "not found"), (0, "not json", "")])
         service = TransferService.__new__(TransferService)
         service.rclone = client
-        service.db = SimpleNamespace(remote_claimed=lambda *_: False)
+        service.db = SimpleNamespace(remote_claimed=lambda *_: False, get=lambda _: {"target_directory": ""})
+        service.settings = SimpleNamespace(cd2_target="")
         with self.assertRaises(RcloneError):
             await service._choose_remote_final("existing.bin", 7)
 

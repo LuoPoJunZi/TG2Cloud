@@ -11,11 +11,19 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def helper_files(root: Path) -> list[str]:
     paths = ["scripts/run_source.py", "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/config.py"]
+    if (root / "src/tg2cloud/deployment/backup.py").is_file() or (root / "src/tg2cloud/cli/naming.py").is_file():
+        paths.extend("src/tg2cloud/" + name for name in (
+            "persistence/__init__.py", "persistence/backup.py", "persistence/bundle.py",
+            "domain/__init__.py", "domain/naming.py"))
     for directory in ("cli", "deployment", "addons"):
         for path in (root / "src/tg2cloud" / directory).rglob("*.py"):
             if path.is_symlink() or path.absolute() != path.resolve():
                 raise ValueError("helper source contains a link")
             paths.append(path.relative_to(root).as_posix())
+    for name in paths:
+        path = root / name
+        if not path.is_file() or path.is_symlink() or path.absolute() != path.resolve():
+            raise ValueError("helper source missing or contains a link")
     return sorted(set(paths))
 
 

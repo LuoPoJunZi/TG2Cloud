@@ -1,6 +1,8 @@
 # 开发与贡献
 
-当前文档对应正式 v1.4.2；新增外部 Docker Nginx 模块与隔离回归，源码资产已发布并实际核验。历史发布证据保留，不外推为本次真实 VPS 验收。
+当前源码文档为 v1.4.3 待发布版本。请使用 main 审阅本次差异并记录提交号，待辅助 A、固定入口 B、双架构发布和资产核验完成后，才切换新正式 Tag。业务数据库 schema 2 升级前须备份；后文 v1.4.2 CI 证据保留为历史记录。
+
+以下保留 v1.4.2 及更早版本的历史发布证据，不外推为 v1.4.3 真实 VPS 验收。
 
 本版辅助 A `840472f919409531e99da55c62070ea262ebed6d` 已通过五项 CI：[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591006899)、[Python 3.10／3.13 四组检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591011059)、仓库与两套文档检查。三个入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 固定 A，B 的五项 CI 与[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)亦全部通过，实际下载资产已核验；不把自动检查等同实机验收。
 
@@ -14,14 +16,16 @@ v1.4.0 辅助提交 A 为 `1480fd60ad94bd841961a4932a3b03e4cfde4414`，五项 CI
 
 ## 获取主项目源码
 
+本地工作树的待发布维护增强需使用维护者审阅的候选源码，不属于下方稳定 Tag：新快照／命名预览复用 stdlib 共享模块，host helper 和 runtime 清单一起校验。原生 Nginx 生命周期集成沿用现有 CI 开关；本机未运行 Docker，不代表实机 ACME 通过。后续仍须 helper A 公开验证后再固定入口 B，不填写未公开或自指 pin。说明与样例命令见[维护增强](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md)。
+
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.4.2
+git checkout main
 git rev-parse HEAD
 ```
 
-本文档对应正式 v1.4.2，下载见[下载页](/download/)。上面的不可变标签用于复现；main 用于当前开发并须记录提交号，不能把后续修改当成 Release 行为。
+本次 v1.4.3 待发布源码使用 main 并记录提交号，实际稳定下载见[下载页](/download/)。发布后再使用对应不可变标签复现，不将 main 后续修改当作 Release 行为。
 
 ## 关键目录与入口
 

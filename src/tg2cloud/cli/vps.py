@@ -99,10 +99,9 @@ def main(argv: list[str] | None = None, *, friendly: bool | None = None) -> int:
                 if instance.present:
                     tag = "v" + instance.version
                     if tag not in baselines:
-                        old_release = client.resolve(tag)
                         old_dir = root / ("baseline-" + tag)
                         old_dir.mkdir(mode=0o700)
-                        baselines[tag] = client.download(old_release, old_dir)
+                        baselines[tag] = releases.download_baseline(client, tag, old_dir, log)
                     old_source = baselines[tag]
                 if not args.check and ui is None:
                     ui = terminal.Terminal()

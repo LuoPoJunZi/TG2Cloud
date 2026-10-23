@@ -131,6 +131,7 @@ async def _stream_one(self, task_id: int) -> None:
                         self._record_progress(task_id, "stream", int(received))
                         last_progress_at = now
 
+                self._record_progress(task_id, "stream", 0, reset=True)
                 await self.source.download_media(
                     message,
                     file=stream,

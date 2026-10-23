@@ -108,6 +108,16 @@ async def _resource_loop(self) -> None:
                 active_count=len(self.upload_tasks) + self._stream_count(),
             )
             (self.settings.data_dir / "resource-heartbeat").touch()
+            try:
+                from tg2cloud.monitoring.readiness import publish
+                publish(self, counts)
+            except Exception:  # noqa: BLE001 - optional diagnostics must not change scheduling decisions
+                # A diagnostic export must never change scheduling decisions.
+                if not getattr(self, "_readiness_warning", False):
+                    self.log.warning("业务就绪观察记录暂不可用；不影响原调度逻辑")
+                self._readiness_warning = True
+            else:
+                self._readiness_warning = False
         except Exception:
             self.snapshot = None
             self.log.exception("资源控制循环异常")
@@ -210,6 +220,10 @@ async def _start_uploads(self) -> None:
             if self.db.is_paused() and task["state"] != "cleanup_pending":
                 continue
             if task_id in self.upload_tasks:
+                continue
+            admit = getattr(self.db, "admit_upload", None)
+            if admit and not admit(task_id):
+                self.db.update(task_id, wait_reason="等待个人并发额度")
                 continue
             async_task = asyncio.create_task(
                 self._upload_one(task_id), name=f"upload-{task_id}"

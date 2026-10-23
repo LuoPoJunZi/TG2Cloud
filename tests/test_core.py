@@ -1203,6 +1203,8 @@ class FlatDestinationTests(unittest.TestCase):
     def service(self, existing: set[str]) -> TransferService:
         service = TransferService.__new__(TransferService)
         service.rclone = self.FakeRclone(existing)  # type: ignore[assignment]
+        service.db = SimpleNamespace(get=lambda _: {"target_directory": ""})
+        service.settings = SimpleNamespace(cd2_target="")
         return service
 
     def test_new_file_is_saved_directly_in_configured_target(self) -> None:

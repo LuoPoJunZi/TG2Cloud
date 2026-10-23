@@ -101,6 +101,32 @@ class TaskDB:
         with self._lock:
             return read(self._conn, admin_id)
 
+    def feature_settings(self) -> dict:
+        from tg2cloud.persistence.features import read
+        with self._lock:
+            return read(self._conn)
+
+    def quota_usage(self, user_id: int) -> dict:
+        from tg2cloud.persistence.quotas import usage
+        with self._lock:
+            return usage(self._conn, user_id, time.time(), self.feature_settings()["timezone"])
+
+    def admit_upload(self, task_id: int) -> bool:
+        from tg2cloud.persistence.quotas import slot_available
+        with self._lock:
+            self._conn.execute("BEGIN IMMEDIATE")
+            try:
+                task = self._conn.execute("SELECT sender_id,state,cancel_requested FROM tasks WHERE id=?", (task_id,)).fetchone()
+                allowed = bool(task and not task["cancel_requested"] and task["state"] in {"downloaded", "waiting_upload", "cleanup_pending"})
+                allowed = allowed and (task["state"] == "cleanup_pending" or slot_available(self._conn, task["sender_id"], task_id))
+                if allowed and task["state"] != "cleanup_pending":
+                    self._conn.execute("INSERT OR IGNORE INTO quota_slots(task_id) VALUES(?)", (task_id,))
+                self._conn.execute("COMMIT")
+                return allowed
+            except BaseException:
+                self._conn.execute("ROLLBACK")
+                raise
+
     def change_family_user(self, admin_id: int, request: dict) -> dict:
         from tg2cloud.persistence.users import change
         with self._lock:
@@ -167,6 +193,12 @@ class TaskDB:
                     "state", "remote_path", "remote_temp_path", "remote_final_path",
                     "verification_method", "verified_at", "failure_kind",
                 )}
+                from tg2cloud.persistence.quotas import QuotaExceeded, admit
+                try:
+                    admit(self._conn, sender_id, task["file_size"], time.time(), self.feature_settings()["timezone"], task_id=task_id)
+                except QuotaExceeded:
+                    self._conn.execute("ROLLBACK")
+                    return False
                 now = time.time()
                 if fresh_path:
                     for key in ("remote_path", "remote_temp_path", "remote_final_path"):
@@ -230,16 +262,35 @@ class TaskDB:
         file_name: str,
         file_size: int,
         original_file_name: str | None = None,
+        media_kind: str = "", mime_type: str = "", media_extension: str = "",
+        target_base: str | None = None, created_at: float | None = None,
+        classification_options: dict | None = None,
     ) -> tuple[dict[str, Any], bool]:
-        now = time.time()
+        now = time.time() if created_at is None else created_at
         with self._lock:
+            self._conn.execute("BEGIN IMMEDIATE")
             try:
+                # Resolve duplicates before any quota/path decision; repeated
+                # forwards must return the original persisted task unchanged.
+                row = self._conn.execute(
+                    "SELECT * FROM tasks WHERE (chat_id=? AND message_id=?) "
+                    "OR (sender_id=? AND media_key=? AND ? IS NOT NULL) LIMIT 1",
+                    (chat_id, message_id, sender_id, media_key, media_key)).fetchone()
+                if row:
+                    self._conn.execute("COMMIT")
+                    return dict(row), False
+                from tg2cloud.domain.classification import directory
+                from tg2cloud.persistence.quotas import admit
+                admit(self._conn, sender_id, file_size, now, self.feature_settings()["timezone"])
+                target_directory = directory(classification_options or self.feature_settings(), now, kind=media_kind,
+                                             mime=mime_type, extension=media_extension)
                 cursor = self._conn.execute(
                     """
                     INSERT INTO tasks (
                         chat_id, message_id, sender_id, media_key, file_name,
-                        file_size, state, created_at, updated_at, original_file_name
-                    ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?)
+                        file_size, state, created_at, updated_at, original_file_name,
+                        target_directory, target_base
+                    ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?)
                     """,
                     (
                         chat_id,
@@ -251,13 +302,18 @@ class TaskDB:
                         now,
                         now,
                         original_file_name,
+                        target_directory, target_base,
                     ),
                 )
                 row = self._conn.execute(
                     "SELECT * FROM tasks WHERE id = ?", (cursor.lastrowid,)
                 ).fetchone()
+                self._conn.execute("INSERT INTO quota_ledger(task_id,user_id,bytes) VALUES(?,?,?)",
+                                   (cursor.lastrowid, sender_id, file_size))
+                self._conn.execute("COMMIT")
                 return dict(row), True
             except sqlite3.IntegrityError:
+                self._conn.execute("ROLLBACK")
                 row = self._conn.execute(
                     "SELECT * FROM tasks WHERE chat_id = ? AND message_id = ?",
                     (chat_id, message_id),
@@ -273,6 +329,9 @@ class TaskDB:
                 if row is None:
                     raise
                 return dict(row), False
+            except BaseException:
+                self._conn.execute("ROLLBACK")
+                raise
 
     def get(self, task_id: int) -> dict[str, Any] | None:
         with self._lock:
@@ -414,6 +473,11 @@ class TaskDB:
                 if task is None or task["state"] != "queued" or task["cancel_requested"]:
                     self._conn.execute("ROLLBACK")
                     return False, "任务状态已经改变"
+                from tg2cloud.persistence.quotas import slot_available
+                if not slot_available(self._conn, task["sender_id"], task_id):
+                    self._conn.execute("UPDATE tasks SET wait_reason='等待个人并发额度' WHERE id=?", (task_id,))
+                    self._conn.execute("COMMIT")
+                    return False, "等待个人并发额度"
                 row = self._conn.execute(
                     local_sum_query,
                     LOCAL_STATES,

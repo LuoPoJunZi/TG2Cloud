@@ -18,17 +18,25 @@ from tg2cloud.storage.rclone import MoveUncertainError
 
 
 async def _choose_remote_final(self, file_name: str, task_id: int) -> str:
+    from tg2cloud.domain.classification import check_scope, safe_directory
+    task = self.db.get(task_id) or {}
+    check_scope(task, self.settings)
+    directory = safe_directory(task.get("target_directory", ""))
+    if directory:
+        await self.rclone.ensure_directory(directory)
+    def in_directory(name):
+        return directory + "/" + name if directory else name
     def claimed(path: str) -> bool:
         check = getattr(getattr(self, "db", None), "remote_claimed", None)
         return bool(check and check(path, task_id))
 
-    if not claimed(file_name) and not await self.rclone.exists(file_name):
-        return file_name
+    if not claimed(in_directory(file_name)) and not await self.rclone.exists(in_directory(file_name)):
+        return in_directory(file_name)
     path = Path(file_name)
-    candidate = f"{path.stem} (task-{task_id}){path.suffix}"
+    candidate = in_directory(f"{path.stem} (task-{task_id}){path.suffix}")
     suffix = 2
     while claimed(candidate) or await self.rclone.exists(candidate):
-        candidate = f"{path.stem} (task-{task_id}-{suffix}){path.suffix}"
+        candidate = in_directory(f"{path.stem} (task-{task_id}-{suffix}){path.suffix}")
         suffix += 1
     return candidate
 
@@ -108,6 +116,18 @@ async def _complete_cloud_receive(
 async def _upload_one(self, task_id: int) -> None:
     task = self.db.get(task_id)
     if not task or task.get("cancel_requested") or task.get("state") in {"completed", "confirmed", "cancelled"}:
+        return
+    from tg2cloud.domain.classification import check_scope
+    from tg2cloud.domain.states import can_transition
+    try:
+        check_scope(task, self.settings)
+    except ValueError:
+        # In particular, never re-check a cleanup_pending file in a different
+        # base directory and then delete the only retained local copy.
+        failed = "verification_failed_retained" if can_transition(task["state"], "verification_failed_retained") else "download_failed"
+        self.db.transition(task_id, failed, failure_kind="remote_conflict",
+                           error="任务接收后 WebDAV 基础目录变化；保留文件并停止自动恢复，请核对配置",
+                           wait_reason="需要人工核对原任务目标目录", verification_method=None, verified_at=None)
         return
     local_path = Path(task["local_path"]) if task.get("local_path") else None
     if task.get("state") == "cleanup_pending":
@@ -237,9 +257,9 @@ async def _upload_one(self, task_id: int) -> None:
                 remote_write = await self._begin_remote_write(
                     task_id, task, safe_name, "uploading", remote_temp,
                 )
-                self._record_progress(task_id, "upload", 0, 0)
+                self._record_progress(task_id, "upload", 0, reset=True)
 
-                def progress(count: int, speed: float) -> None:
+                def progress(count: int, speed: float | None) -> None:
                     self.db.update(task_id, uploaded_bytes=min(count, int(task["file_size"])))
                     self._record_progress(task_id, "upload", count, speed)
 

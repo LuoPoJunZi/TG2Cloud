@@ -34,6 +34,8 @@
 
 ### 原版本 Release／Tag 被删除，还能升级吗？
 
+本地开发已为部分受支持旧版补充可信提交／载荷目录，详见[待发布说明](development/MAINTENANCE-IMPROVEMENTS.md#1-旧版本可信基线)。正式线上 helper 尚未更新，以下是当前已发布版本的限制。
+
 在线向导不能在缺少正式基线时盲目覆盖，会先停止。保留现有服务，按[缺失旧版基线的处理](VPS-INSTALL.md#旧版本-releasetag-已删除)备份并单独审阅可追溯原提交；不要改版本标记或卸载重装。本次已授权完成 CloudDrive2 v1.3.4 → v1.4.2 的[人工升级](development/V142-ACCEPTANCE.md)，不代表公开脚本已经支持自动恢复被删 Release。
 
 ## 管理页与 WebDAV

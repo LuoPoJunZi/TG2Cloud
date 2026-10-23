@@ -10,6 +10,7 @@ import sys
 import tempfile
 from pathlib import Path
 
+from tg2cloud.cli.presentation import numbered_menu
 from tg2cloud.cli.terminal import Terminal
 from tg2cloud.deployment.configuration import plain
 
@@ -51,8 +52,7 @@ def choose(ui, log, title: str, choices: tuple[tuple[str, str], ...], *, default
     numbers = {}
     for index, (key, label) in enumerate(choices, 1):
         numbers[str(index)] = key
-        log(f"  {index}. {label}")
-    log("  0. 退出")
+    log(numbered_menu((*((index, label) for index, (_, label) in enumerate(choices, 1)), (0, "退出"))))
 
     def selected(value: str) -> str:
         value = value.strip()
@@ -64,7 +64,8 @@ def choose(ui, log, title: str, choices: tuple[tuple[str, str], ...], *, default
             return value  # Existing interactive names remain accepted.
         raise ValueError("请选择菜单中的序号。")
 
-    return ui.ask("输入序号", default=default, validate=selected)
+    prompt = "输入序号" + (f"（回车默认为 {default}）" if default else "")
+    return ui.ask(prompt, default=default, validate=selected)
 
 
 def parser() -> argparse.ArgumentParser:
@@ -121,7 +122,7 @@ def main(argv: list[str] | None = None) -> int:
         if args.edition is None:
             # Never silently choose when two Editions exist. Selection is cheap
             # and explicit even before probing a custom instance directory.
-            args.edition = choose(ui, log, "请选择存储网关：", (("clouddrive2", "CloudDrive2"), ("openlist", "OpenList")))
+            args.edition = choose(ui, log, "请选择存储网关：", (("clouddrive2", "CloudDrive2"), ("openlist", "OpenList")), default="1")
             if not args.edition:
                 return 0
             if args.edition not in PRODUCTS:

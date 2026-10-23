@@ -53,9 +53,14 @@ def manifest_files(content: bytes, expected: set[str]) -> list[str]:
 
 
 def helpers_in_tree(files: set[str]) -> set[str]:
-    return {"scripts/run_source.py", "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/config.py"} | {
+    result = {"scripts/run_source.py", "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/config.py"} | {
         path for path in files if path.endswith(".py") and path.startswith(("src/tg2cloud/cli/", "src/tg2cloud/deployment/", "src/tg2cloud/addons/"))
     }
+    if {"src/tg2cloud/deployment/backup.py", "src/tg2cloud/cli/naming.py"} & files:
+        result.update("src/tg2cloud/" + name for name in (
+            "persistence/__init__.py", "persistence/backup.py", "persistence/bundle.py",
+            "domain/__init__.py", "domain/naming.py"))
+    return result
 
 
 def git(root: Path, *args: str) -> bytes:

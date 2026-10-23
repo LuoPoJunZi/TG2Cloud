@@ -548,7 +548,7 @@ def main(argv=None, *, friendly=None) -> int:
                 else:
                     old_root = root / "baseline"
                     old_root.mkdir(mode=0o700)
-                    baseline = client.download(client.resolve("v" + instance.version), old_root)
+                    baseline = releases.download_baseline(client, "v" + instance.version, old_root, log)
             if not args.check and ui is None:
                 ui = terminal.Terminal()
                 ui.friendly = friendly

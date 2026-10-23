@@ -1,38 +1,33 @@
-## TG2Cloud v1.4.2 · 复用已有 Docker Nginx
+## TG2Cloud v1.4.3 · 可靠性与日常管理增强
 
-新增显式授权的 external_docker 入口：不关闭原有 Docker Nginx，不启动第二层代理，将 TG2Cloud 管理站点接入可核验的现有持久化配置。原 managed 模式继续默认使用，已有实例不会自动迁移。
+本版继续维护 Linux Python + Bash、CloudDrive2 / OpenList 和原生 AMD64 / ARM64，不生成 Windows EXE。公开安装命令不变，业务代码仍只取正式稳定 Release。
 
 ## 本次更新
 
-- 新增只读检测、配置导出、显式配置、维护、漂移复核、事务恢复与受限迁移命令。核对真实端口占用、容器／Compose 身份、挂载与网络，不把 EXPOSE 当成公网发布。
-- host 模式使用受控回环后端；bridge 模式连接经过核验的持久化 Compose 网络，使用稳定别名与 Docker DNS，Bot 保持原网络，不公开网关后端端口。
-- 对 TG2Cloud 专属文件执行逐文件比较后写入、私密备份与故障恢复；先 nginx -t，再 reload，实际检查 HTTPS、跳转、证书及管理域名 /dav 阻断。不修改外部 Compose，不停止或重建外部代理。
-- 支持核验后复用已有证书，或以 Webroot 方式签发并建立调用离线代码的宿主续期任务。新证书自动化要求系统 cron/crond 已运行；Certbot 不挂载 Docker Socket，不使用 standalone 抢占端口。
-- 共享状态升级至 schema 3，兼容独立外部 WebDAV 的认证资源、禁用与卸载保护；不会将管理域名的 /dav 放开。
-- 卸载只移除所选实例拥有的站点；不删除外部 Nginx、Compose 或网络。最后路由移除后撤销本功能续期任务，默认保留外部证书、私密恢复状态及离线维护命令。
+- 完善上传速度采样：兼容 rclone 总体统计、每秒读取、区分真实 0 与暂时无数据，排除已过期和校验／清理阶段的旧速度；保留简洁 Bot 首页与成员数据隔离，不推算网关到云盘速度。
+- 统一 Linux 编号菜单左对齐；外部 WebDAV 交互选择回车默认 CloudDrive2，首次主账号默认 tg2-webdav，已有账号和隔离目录保持不变。
+- 新增可信旧版升级基线，覆盖 v1.3.4、v1.4.0、v1.4.1、v1.4.2；删除旧 Release 时仍核对原不可变提交和载荷，未知版本／修改源码仍安全停止。
+- 增加实例快照导出、隔离恢复预检、只读业务就绪检查、独立命名预览；扩展已有 Docker Nginx 生命周期回归。
+- 新增可选类型／日期分类、持久化管理员异常通知、成员每日／排队／并发额度和白名单脱敏诊断报告。分类／通知默认关闭，成员默认不限额；不增加主安装问题或 Bot 首页按钮。
 
-## 使用与兼容边界
+## 升级与兼容
 
-安装命令保持不变：
+**升级前备份配置、Session 和业务数据库。** 本版自动事务迁移业务数据库到 schema 2，保留历史任务和 data/tg115.db、bot.session 等运行名称。旧未完成任务纳入额度预留，不追溯计量旧完成历史；旧 Bot 拒绝打开新 schema。回退不能只降级镜像：先停止所选 Bot，保留当前副本，再人工核验并恢复匹配旧代码的数据库快照。没有删表降级或一键覆盖生产恢复。
+
+同时升级 Bot 与离线 tg2cloud 管理工具；无需新增必填环境变量，不修改网关账号、rclone 配置或已有云端文件。共享代理 schema 与业务数据库 schema 相互独立。镜像增加系统时区包 tzdata；不增加 Python/npm 依赖，不升级固定镜像或恢复桌面部署器。
+
+安装与保留配置升级：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-复用外部代理不是自动接管。先按[Docker Nginx 说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/DOCKER-NGINX.md)执行只读检测和计划导出，核实后显式授权。首次自动接入只支持标准实例目录、普通 Nginx、可验证的持久化挂载和原生本机 rootful Docker；不接管 Nginx Proxy Manager、SWAG、面板生成配置或 OpenResty。自定义目录提供人工方案，不假报自动成功。
+功能开关、额度与回退见[功能说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/FEATURE-ENHANCEMENTS.md)，实例快照与就绪检查见[维护增强](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md)。入口的只读预检不等于安装或转存验收。
 
-现有证书的外部续期工具仍由原工具负责，程序不会假定其已可自动续期。managed → external_docker 迁移需要人工安排维护窗口并先完成端口切换，不承诺零中断或自动回滚外部项目。未知资源、配置漂移与未恢复事务均安全停止。
+## 发布与验证边界
 
-无需数据库迁移或调整 Bot 环境变量；保留配置、任务、Telegram Session、网关数据和上传策略。Bot 依赖、固定镜像与内网入口不变。schema 3 只能由本版及兼容的新工具写入；请更新离线管理工具，旧助手不应操作新状态。历史 Windows EXE 保持 v1.2.1，不生成新版 EXE。
+发布工作流必须从同一不可变 v1.4.3 Tag 完成原生 AMD64／ARM64 回归、隔离 Docker／WebDAV、代码与依赖审计后，才发布 TG2Cloud-v1.4.3-source.tar.gz 和 SHA256SUMS.txt。helper 先公开并验证提交 A，再由入口 B 固定 A；不在失败时退回 moving main。校验和是完整性检查，不是数字签名。
 
-## 发布与验证
+版本整理后本地完整回归 1041 项：1010 项执行通过，31 项因缺少 Docker／rclone／原生 Linux 等条件跳过，0 失败；Ruff、Bandit、Python 3.10 关键 CLI、两 Edition 载荷及网站构建／19 项测试通过。修正了写死旧版本的就绪测试夹具，并补测版本不匹配仍须拒绝；生产校验保持不变。线上结果以本次 Actions 为准，不将环境跳过写成通过。
 
-发布工作流从同一不可变 v1.4.2 Tag 进行原生 AMD64／ARM64 验证，新增隔离 Nginx 单层代理、原站保留与 reload 回归，所有门禁通过后才发布 TG2Cloud-v1.4.2-source.tar.gz 和 SHA256SUMS.txt。helper 先验证辅助提交 A，再在 B 固定真实提交；业务只使用正式稳定 Release，不在失败时退回 moving main。校验和用于完整性检查，不是数字签名。
-
-本地完整回归949项：921执行通过、28因环境条件跳过、0失败；随后对最后的参数／认证保护调整复跑 Python 3.10 新代理52项、外部 WebDAV55项和HTTP1项，通过。Ruff、Bandit、源码清单、双 Edition 载荷组装、Shell 语法及文档构建／19项测试通过。本地没有 Docker，隔离 Docker 验证交由本次双架构 CI，不把跳过写成已通过。
-
-发布前开发阶段未连接真实 VPS、未操作用户网盘。真实 ACME 签发、长期续期、现有网站业务、代理迁移／回退、卸载及手机外网仍需独立实机验收。历史 CloudDrive2 验收范围见[v1.3.0 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)和[v1.4.1 ARM64 NAT 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)，不外推为本次新模式通过。
-
-### 发布后验收补充（2026-10-21）
-
-专用 Debian AMD64 测试机已按授权核验原提交、备份，并完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级；数据保留、Bot 健康、只读 WebDAV 和外部电脑 HTTPS 检查通过，保留 managed／schema 2。旧 Release／Tag 缺失的自动升级限制仍在，未执行真实转存或新增代理模式实机验收，详见[完整记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)。本段仅补充仓库文档，不改写已发布的 Tag、资产或远端 Release 正文。
+本轮不连接真实 VPS、不操作用户网盘。真实 Telegram 转存、生产升级／数据库回退、可选通知与配额的长期使用、ACME／续期和手机播放仍需独立验收；历史 [v1.3.0 人工迁移记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)与 [v1.4.2 升级记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)不外推为 v1.4.3 实机通过。

@@ -1,8 +1,8 @@
 # TG2Cloud Docs
 
-TG2Cloud 中文网页文档。包含品牌首页、31 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
+**源码文档：TG2Cloud v1.4.3；资料核对日期：2026-10-23；待发布。** 包含维护增强、分类／通知／配额、脱敏报告与测速／菜单修复。实际下载暂保留 v1.4.2；发布并核验资产后同步。涉及业务数据库 schema 2，升级前须备份；下面的旧版发布与实机记录不外推本版。
 
-**文档源码与正式版本：TG2Cloud v1.4.2；资料核对日期：2026-10-21。** 本轮新增显式复用已有 Docker Nginx、Webroot 证书与宿主续期、逐文件事务恢复，以及外部 WebDAV 和卸载保护；保留默认 managed 模式，不改变 Bot、数据库、依赖或固定镜像。辅助 A／入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)及实际下载资产校验通过。新增 external_docker 的真实 VPS 接入、ACME、长期续期及迁移仍待独立验收，CI 结果不能替代实机。历史 CloudDrive2 ARM64／公网 NAT 首装反馈见[脱敏记录](../docs/development/V141-ACCEPTANCE.md)，不外推到本次新模式；Windows EXE 仍停留 v1.2.1。
+TG2Cloud 中文网页文档。包含品牌首页、31 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
 
 发布后已完成专用 Debian AMD64 测试机的 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，健康、历史数据、只读 WebDAV 和外部 HTTPS 通过。旧 Release 已删除的自动升级限制与未执行项目见[本次记录](../docs/development/V142-ACCEPTANCE.md)；继续使用 managed，不作为新增代理模式或实际文件转存验收。
 

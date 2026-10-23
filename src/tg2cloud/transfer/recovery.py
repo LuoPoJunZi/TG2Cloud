@@ -14,6 +14,11 @@ async def _resume_remote(
     safe_name: str,
 ) -> bool:
     current = self.db.get(task_id) or task
+    from tg2cloud.domain.classification import check_scope
+    try:
+        check_scope(current, self.settings)
+    except ValueError as exc:
+        raise RemoteReviewRequired("WebDAV 基础目录变化，需人工核对") from exc
     legacy = str(current.get("remote_path") or "")
     final = str(current.get("remote_final_path") or
                 (legacy if legacy and not legacy.startswith(".uploading-") else ""))

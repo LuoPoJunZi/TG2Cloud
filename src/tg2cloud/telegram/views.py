@@ -11,6 +11,7 @@ from tg2cloud.domain.errors import (
     safe_failure,
 )
 from tg2cloud.domain.states import FAILED_STATES, STATE_LABELS
+from tg2cloud.monitoring.progress import dashboard_rates, sample_rate
 
 ORPHAN_CLEANUP_LIMIT = 100
 ORPHAN_CLEANUP_TTL_SECONDS = 5 * 60
@@ -72,8 +73,8 @@ def format_bytes(value: float) -> str:
         size /= 1024
     return f"{size:.2f}TB"
 
-def format_rate(value: float) -> str:
-    return "0B/s" if value <= 0 else f"{format_bytes(value)}/s"
+def format_rate(value: float | None) -> str:
+    return "--" if value is None else "0B/s" if value <= 0 else f"{format_bytes(value)}/s"
 
 def format_dashboard_bytes(value: float | None) -> str:
     if value is None:
@@ -114,6 +115,7 @@ class TaskViews:
             "提交文件：直接发送或转发视频、文档等文件\n"
             "状态查看：/status、/queue [页码]\n"
             "任务查看：/task <编号>\n"
+            "个人配额：/quota\n"
             "进度跟踪：/watch <编号>\n"
             "失败重试：/retry <编号|all>\n"
             "重新转存：/restart <编号>（已取消任务，需确认）\n"
@@ -265,8 +267,7 @@ class TaskViews:
         )
         progress = getattr(self, "_progress", {}).get(int(task["id"]))
         if progress and task["state"] in {"downloading", "uploading", "streaming"}:
-            age = time.monotonic() - progress["at"]
-            speed = progress["speed"] if age <= 20 else 0
+            speed = sample_rate(progress)
             percent = min(100, 100 * progress["bytes"] / max(1, task["file_size"]))
             text += f"\n传输进度：{percent:.1f}%｜{format_rate(speed)}"
         elif task.get("wait_reason"):
@@ -297,8 +298,7 @@ class TaskViews:
         )
         progress = getattr(self, "_progress", {}).get(int(task["id"]))
         if progress and task["state"] in {"downloading", "uploading", "streaming"}:
-            age = time.monotonic() - progress["at"]
-            speed = progress["speed"] if age <= 20 else 0
+            speed = sample_rate(progress)
             percent = min(100, 100 * progress["bytes"] / max(1, task["file_size"]))
             text += (
                 f"\n传输进度：{percent:.1f}%｜{format_rate(speed)}"
@@ -355,22 +355,14 @@ class TaskViews:
             downloading = counts.get("downloading", 0)
             uploading = sum(counts.get(s, 0) for s in ("uploading", "streaming", "verifying", "finalizing", "cleanup_pending"))
             failed = self.db.weekly_failed_count(sender_id=actor)
-            rates = {"download": 0.0, "upload": 0.0, "stream": 0.0}
-            for task_id, progress in getattr(self, "_progress", {}).items():
-                task = self.db.get(task_id)
-                if task and task["sender_id"] == actor and time.monotonic() - progress["at"] <= 20:
-                    rates[progress["stage"]] += progress["speed"]
-            download_rate = rates["download"] + rates["stream"]
-            upload_rate = rates["upload"] + rates["stream"]
-            network_rate = download_rate + upload_rate
+            download_rate, upload_rate = dashboard_rates(self, counts, sender_id=actor)
+            network_rate = (download_rate + upload_rate) if download_rate is not None and upload_rate is not None else None
         else:
             counts = self.db.counts()
             downloading = len(self.download_tasks)
             uploading = len(self.upload_tasks) + self._stream_count()
             failed = self.db.weekly_failed_count()
-            stream_rate = self._stage_rate("stream")
-            download_rate = self._stage_rate("download") + stream_rate
-            upload_rate = self._stage_rate("upload") + stream_rate
+            download_rate, upload_rate = dashboard_rates(self, counts)
             network_rate = self.snapshot.network_bytes_per_second if self._sample_fresh() else None
         queued = counts.get("queued", 0)
         return (
@@ -382,8 +374,6 @@ class TaskViews:
             f"⬇️ {format_dashboard_rate(download_rate)}\n"
             f"⬆️ {format_dashboard_rate(upload_rate)}\n"
             f"🌐 {format_dashboard_rate(network_rate)}\n\n"
-            + ("仅你的任务与传输速度 · 共用保存目录\n\n" if member else "")
-            +
             f"🕐 更新于 {self._dashboard_time()}"
         )
 

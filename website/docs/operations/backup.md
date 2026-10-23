@@ -1,5 +1,9 @@
 # 备份与恢复边界
 
+待发布分类/配额将数据库从schema1迁到schema2，保留任务，旧未完成任务纳入预留，旧完成历史不追溯计量。升级前保存匹配旧程序的数据库快照。旧Bot拒绝打开schema2，不能只降级镜像；回退需先停止所选Bot、另存当前数据库，再人工恢复已核验的旧快照与代码。不提供删表降级或自动覆盖生产恢复。新功能须更新Bot容器和管理工具，无旧`.env`新必填项。
+
+待发布工作树在备份子菜单新增 **6. 实例快照／导出**、**7. 实例快照隔离预检**。创建快照需确认短暂停止所选 Bot／网关，包含配置、业务数据库、Session 与限定网关配置；downloads、共享 HTTPS、附加状态及云端文件另存。恢复只恢复原容器运行状态，不提供覆盖生产数据的 Restore。范围与中断记录见[维护增强说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md)，线上 v1.4.2 菜单未更新。
+
 先明确哪些数据被包含，哪些没有被包含。备份包本身可能含敏感凭据，不能公开上传。
 
 v1.3.4 继续保留下面的备份边界。当前 Linux 使用 `tg2cloud` → 7 备份管理，代理检查／修复／续期 dry-run 在菜单 6；不提供覆盖生产数据的 Restore。CloudDrive2 正式 v1.3.2 → v1.3.3 升级和用户转存已确认，但不等于本版或灾难恢复验收，范围见[记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)。

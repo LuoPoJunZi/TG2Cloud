@@ -232,6 +232,9 @@ class TerminalTests(unittest.TestCase):
         self.assertTrue(reader.closed)
 
     def test_main_requires_actual_terminal_confirmation_for_both_editions(self):
+        baseline = patch.object(tgdep_releases, "download_baseline", return_value=ROOT)
+        baseline.start()
+        self.addCleanup(baseline.stop)
         for product in PRODUCTS.values():
             for check, answer in ((True, ""), (False, "\n"), (False, "y\n"), (False, "")):
                 with self.subTest(edition=product.key, check=check, answer=answer):
@@ -995,6 +998,9 @@ class InstanceTests(unittest.TestCase):
         resources.assert_not_called()
 
     def test_main_cancelled_and_readonly_never_mutate(self):
+        baseline = patch.object(tgdep_releases, "download_baseline", return_value=ROOT)
+        baseline.start()
+        self.addCleanup(baseline.stop)
         plan = tgdep_install.Plan(self.instance, "upgrade", Mock())
         for args in (["--edition", "openlist"], ["--edition", "openlist", "--check"]):
             ui = Mock()
@@ -1007,6 +1013,9 @@ class InstanceTests(unittest.TestCase):
             execute.assert_not_called()
 
     def test_wizard_defaults_to_single_detected_edition_not_a_new_install(self):
+        baseline = patch.object(tgdep_releases, "download_baseline", return_value=ROOT)
+        baseline.start()
+        self.addCleanup(baseline.stop)
         ui = Mock()
         ui.ask.return_value = "2"
         ui.confirm.return_value = False

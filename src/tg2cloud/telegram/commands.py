@@ -363,6 +363,13 @@ class CommandHandlers:
             await event.reply(self._format_status(), buttons=self._user_home_buttons())
         elif command == "/help":
             await event.reply(self._format_help(admin=actor == self.settings.allowed_user_id))
+        elif command == "/quota":
+            from tg2cloud.telegram.quota import format_quota
+            try:
+                text = format_quota(self.db.quota_usage(actor))
+            except (ValueError, KeyError):
+                text = "个人用量暂时无法核实，请联系管理员核对时区、数据库和版本。"
+            await event.reply(text)
         elif command == "/queue":
             page = self._parse_queue_page(parts)
             if page is None:
@@ -628,7 +635,7 @@ class CommandHandlers:
                 self._format_operation_result(
                     status="没有执行",
                     operation="重新加入队列",
-                    note="当前任务状态不需要手动重试",
+                    note="状态不适用、任务仍在执行或个人配额不足；可用 /quota 核对",
                     task=task,
                 )
             )
@@ -683,7 +690,7 @@ class CommandHandlers:
                     expected_updated_at=plan["revision"], local_complete=self._local_complete(task),
                     fresh_path=True, restart_cancelled=not plan["rename"], message_id=plan["message_id"],
                 )
-        text = "已确认恢复；原远端文件保持不变，等待调度。" if updated else "确认已失效或任务状态已改变，请刷新详情。"
+        text = "已确认恢复；原远端文件保持不变，等待调度。" if updated else "确认已失效、任务状态已改变或个人配额不足；请查看 /quota 并刷新详情。"
         await self._edit_callback(event, text, self._task_buttons(self.db.get(task_id)))
 
     async def _command_search(self, event: Any, parts: list[str]) -> None:
@@ -713,6 +720,10 @@ class CommandHandlers:
 
 
     async def _refresh_destination_for_dashboard(self) -> None:
+        last = getattr(self, "destination_last_checked", 0)
+        interval = self.settings.remote_health_interval
+        if last > 0 and 0 <= time.time() - last <= interval:
+            return  # Refresh speeds immediately using a still-fresh health result.
         refresh = getattr(self, "_probe_destination_once", None)
         if callable(refresh):
             await refresh()

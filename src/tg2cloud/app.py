@@ -37,7 +37,9 @@ class TransferService(TaskService, TelegramHandlers, CommandHandlers, TaskViews)
         me = await self.client.get_me()
         self.log.info("Telegram Bot 已登录：@%s", me.username)
         await self._register_bot_menu()
+        from tg2cloud.monitoring.notifications import run as notifications
         self._background = [
+            asyncio.create_task(notifications(self), name="optional-notifications"),
             asyncio.create_task(self._resource_loop(), name="resource-loop"),
             asyncio.create_task(self._destination_loop(), name="destination-loop"),
             asyncio.create_task(self._scheduler_loop(), name="scheduler-loop"),

@@ -14,6 +14,8 @@ v1.3.0 向导的磁盘推荐仅用于新安装，升级不静默改预算。Clou
 
 ## v1.4.2 人工升级验收与旧 Release 缺失
 
+待发布改进：本地已为 v1.3.4／v1.4.0／v1.4.1／v1.4.2 建立固定原提交和两 Edition 载荷目录，旧发布页删除时可先验证这些已受审阅的基线，再逐文件核对实例。未知版本仍按正式 Release 查验，不接受任意 SHA 或关闭指纹。该改进尚未进入线上 helper，以下保留当时的实际验收事实，详见[维护增强说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md)。
+
 2026-10-21，专用 Debian13／原生 AMD64 测试机完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级。原版 Release 和 Tag 已删除，在线向导查询基线返回 404 并先停止；经用户授权，核验原不可变提交与受管文件、备份后，调用正式 v1.4.2 原有升级核心完成切换，没有关闭指纹保护或添加强制覆盖。
 
 `.env`、任务记录、Session 授权和暂存清单保留，Bot healthy、非 root，网关／OpenList／共享代理容器身份和启动时间未变。本机 HTTPS、只读 WebDAV 207，以及另一台电脑的 TLS、HTTP 跳转与管理域名 `/dav` 阻断通过。升级后的公开 `--check` 识别已是 v1.4.2、不重建；不代表旧 Release 缺失的自动升级路径已经修复。

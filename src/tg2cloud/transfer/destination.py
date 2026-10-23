@@ -51,7 +51,7 @@ async def _probe_destination_once(self) -> None:
                 cooldown = min(900, 60 * 2 ** (failures - 1))
             else:
                 self._destination_rate_limit_failures = 0
-                if failure_kind == "unauthorized":
+                if failure_kind in {"unauthorized", "permission"}:
                     cooldown = 300
                 elif self.destination_healthy:
                     cooldown = min(10, self.settings.remote_health_interval)

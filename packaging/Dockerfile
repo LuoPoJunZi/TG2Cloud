@@ -6,7 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONPATH=/opt/tg2cloud:/opt/tg2cloud/app
 
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates rclone tini \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends ca-certificates rclone tini tzdata \
     && groupadd --system --gid 10001 tg2cloud \
     && useradd --system --uid 10001 --gid 10001 --home-dir /nonexistent \
         --shell /usr/sbin/nologin tg2cloud \

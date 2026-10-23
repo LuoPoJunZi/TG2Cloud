@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import math
 import os
 import posixpath
 import re
@@ -22,22 +23,41 @@ class MoveUncertainError(RcloneError):
     """A MOVE may have happened, but its final state could not be verified."""
 
 
-def parse_progress(line: bytes) -> tuple[int, float] | None:
+def parse_progress(line: bytes) -> tuple[int, float | None] | None:
     try:
         stats = json.loads(line).get("stats", {})
         if "bytes" in stats:
             active = stats.get("transferring") or []
             item = active[0] if active else stats
-            count, speed = int(item.get("bytes", stats["bytes"])), float(item.get("speed", 0))
-            if count >= 0 and 0 <= speed < float("inf"):
-                return count, speed
-    except (ValueError, TypeError, AttributeError, KeyError, IndexError):
+            raw_count = item.get("bytes", stats["bytes"])
+            if isinstance(raw_count, bool):
+                return None
+            count = int(raw_count)
+            if count < 0:
+                return None
+            # rclone documents speedAvg as current EWMA, speed as an average.
+            # One file per copyto process: aggregate speed is a safe fallback.
+            # A present, valid zero is real data and must not be overwritten.
+            candidates = (item.get("speedAvg"), item.get("speed"), stats.get("speed"))
+            for candidate in candidates:
+                if candidate is None or isinstance(candidate, bool):
+                    continue
+                try:
+                    speed = float(candidate)
+                except (TypeError, ValueError, OverflowError):
+                    continue
+                if math.isfinite(speed) and speed >= 0:
+                    return count, speed
+            if any(candidate is not None for candidate in candidates):
+                return None  # Reject malformed rates; never manufacture zero.
+            return count, None  # Caller may derive a rate from successive bytes.
+    except (ValueError, TypeError, AttributeError, KeyError, IndexError, OverflowError):
         pass
     return None
 
 
 async def _read_progress_tail(
-    stream: asyncio.StreamReader | None, progress: Callable[[int, float], None],
+    stream: asyncio.StreamReader | None, progress: Callable[[int, float | None], None],
 ) -> str:
     if stream is None:
         return ""
@@ -55,6 +75,10 @@ async def _read_progress_tail(
                 progress(*parsed)
         if len(pending) > 65536:
             pending.clear()
+    if pending:
+        parsed = parse_progress(pending)
+        if parsed is not None:
+            progress(*parsed)
     return tail.decode("utf-8", errors="replace").strip()
 
 
@@ -165,7 +189,7 @@ class RcloneClient:
         *args: str,
         timeout: float | None = None,
         check: bool = True,
-        progress: Callable[[int, float], None] | None = None,
+        progress: Callable[[int, float | None], None] | None = None,
     ) -> tuple[int, str, str]:
         command = [
             "rclone",
@@ -305,6 +329,12 @@ class RcloneClient:
             await self._run("mkdir", self.remote(), timeout=45)
         await self._run("lsd", self.remote(), "--max-depth", "1", timeout=45)
 
+    async def ensure_directory(self, relative_path: str) -> None:
+        from tg2cloud.domain.classification import safe_directory
+        safe_directory(relative_path)
+        await self.ensure_config()
+        await self._run("mkdir", self.remote(relative_path), timeout=45)
+
     async def probe(self) -> DestinationProbe:
         try:
             await self.ensure_config()
@@ -319,8 +349,8 @@ class RcloneClient:
                 "lsd", self.remote(), "--max-depth", "1", *probe_options,
                 timeout=20, check=False,
             )
-            if openlist and code != 0:
-                failure = self._openlist_probe_failure(out + "\n" + err, "target")
+            if code != 0:
+                failure = self._openlist_probe_failure(out + "\n" + err, "target", label=self.destination_label)
                 if failure is not None:
                     return failure
             if code in {3, 4} and self.settings.cd2_target:
@@ -338,10 +368,9 @@ class RcloneClient:
                     return DestinationProbe(
                         True, "root_fallback", "WebDAV 根目录可访问；配置的目标目录尚未创建，不代表可写",
                     )
-                if openlist:
-                    failure = self._openlist_probe_failure(root_out + "\n" + root_err, "root_fallback")
-                    if failure is not None:
-                        return failure
+                failure = self._openlist_probe_failure(root_out + "\n" + root_err, "root_fallback", label=self.destination_label)
+                if failure is not None:
+                    return failure
                 return DestinationProbe(
                     False, "root_fallback", f"WebDAV 根目录访问失败（退出码 {root_code}）"
                 )
@@ -359,18 +388,20 @@ class RcloneClient:
             return DestinationProbe(False, "unknown", "目录探测异常；请查看 VPS 最近日志")
 
     @staticmethod
-    def _openlist_probe_failure(output: str, scope: str) -> DestinationProbe | None:
+    def _openlist_probe_failure(output: str, scope: str, *, label: str = "OpenList") -> DestinationProbe | None:
         # Emit only fixed messages: rclone stderr may contain URLs/credentials.
         if re.search(r"\b429\b|too many requests", output, re.IGNORECASE):
             return DestinationProbe(
-                False, scope, "OpenList 返回 HTTP 429；健康探测已冷却，请勿反复验收",
+                False, scope, f"{label} 返回 HTTP 429；请等待探测冷却，勿反复验收",
                 "rate_limited",
             )
         if re.search(r"\b401\b|unauthorized", output, re.IGNORECASE):
             return DestinationProbe(
-                False, scope, "OpenList 返回 HTTP 401；请核对当前运行的 WebDAV 凭据",
+                False, scope, f"{label} 返回 HTTP 401；请核对当前运行的 WebDAV 凭据",
                 "unauthorized",
             )
+        if re.search(r"\b403\b|forbidden", output, re.IGNORECASE):
+            return DestinationProbe(False, scope, f"{label} 返回 HTTP 403；请核对 WebDAV 目录权限", "permission")
         return None
 
     async def healthy(self) -> bool:
@@ -456,7 +487,7 @@ class RcloneClient:
 
     async def upload(
         self, local_path: Path, remote_temp: str, *,
-        progress: Callable[[int, float], None] | None = None,
+        progress: Callable[[int, float | None], None] | None = None,
     ) -> None:
         await self.prepare_destination()
         await self._run(
@@ -476,7 +507,7 @@ class RcloneClient:
             "--timeout",
             "5m",
             "--stats",
-            "5s",
+            "1s",
             "--stats-log-level", "NOTICE",
             "--use-json-log",
             timeout=None,

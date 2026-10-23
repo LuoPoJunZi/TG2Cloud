@@ -55,6 +55,7 @@ async def _download_one(self, task_id: int) -> None:
                 )
                 if not message or not message.media:
                     raise RuntimeError("Telegram 消息或文件已经不可访问")
+                self._record_progress(task_id, "download", 0, reset=True)
                 result = await self.source.download_media(
                     message, file=str(part_path), progress_callback=progress
                 )

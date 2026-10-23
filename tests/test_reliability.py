@@ -119,10 +119,16 @@ class ResourceAndMigrationTests(unittest.TestCase):
             db.update(task["id"], state="completed")
             db.close()
             with closing(sqlite3.connect(path)) as conn:
-                for name in ("failure_kind", "verified_at", "verification_method"):
+                # Reconstruct the old fixture without schema2 objects first;
+                # SQLite correctly refuses to drop columns a live trigger uses.
+                conn.execute("DROP TRIGGER quota_state")
+                for table in ("quota_slots", "quota_ledger", "member_quotas"):
+                    conn.execute(f"DROP TABLE {table}")
+                for name in ("failure_kind", "verified_at", "verification_method", "target_directory", "target_base"):
                     conn.execute(f"ALTER TABLE tasks DROP COLUMN {name}")
                 conn.execute("DROP TABLE task_recoveries")
                 conn.execute("DROP TABLE retained_objects")
+                conn.execute("PRAGMA user_version=1")
                 conn.commit()
             db = TaskDB(path)
             try:

@@ -194,6 +194,7 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_dashboard_callbacks_edit_one_message_and_refresh_data(self) -> None:
         self.service._probe_destination_once = AsyncMock()
+        self.service.destination_last_checked = 0  # No cached health observation yet.
         home = SimpleNamespace(
             data=b"refresh:home",
             answer=AsyncMock(),
@@ -280,6 +281,7 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_legacy_status_callback_returns_current_dashboard(self) -> None:
         self.service._probe_destination_once = AsyncMock()
+        self.service.destination_last_checked = 0  # Legacy callback must also obtain missing health data.
         event = SimpleNamespace(
             data=b"menu:status",
             answer=AsyncMock(),

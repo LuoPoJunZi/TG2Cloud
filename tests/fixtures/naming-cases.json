@@ -1,0 +1,14 @@
+[
+  {"input": {"file_name": "89457236812.mp4", "caption": "三体 黑暗森林 第12集\n高清视频完整版\n@movie_share\nwww.example.com"}, "expected": "三体 黑暗森林 第12集.mp4"},
+  {"input": {"file_name": "000123.mp4", "caption": "夏の旅"}, "expected": "夏の旅.mp4"},
+  {"input": {"file_name": "000123.mp4", "caption": "오늘의 여행"}, "expected": "오늘의 여행.mp4"},
+  {"input": {"file_name": "000123.mp4", "caption": "The Last Journey"}, "expected": "The Last Journey.mp4"},
+  {"input": {"file_name": "000123.mp4", "caption": "2026年东京旅行"}, "expected": "2026年东京旅行.mp4"},
+  {"input": {"file_name": "River Walk.mp4", "caption": "河边旅行"}, "expected": "River Walk.mp4"},
+  {"input": {"file_name": "000123.mp4", "caption": "https://example.com\n@movie_share\n#资源"}, "expected": "000123.mp4"},
+  {"input": {"file_name": "000123.mp4", "caption": ""}, "expected": "000123.mp4"},
+  {"input": {"file_name": "000123.mp4", "caption": "标题：1917"}, "expected": "1917.mp4"},
+  {"input": {"file_name": "000123.jpg", "caption": "河边落日与飞鸟", "media_extension": ".jpg"}, "expected": "河边落日与飞鸟.jpg"},
+  {"input": {"file_name": "000123.mp4", "caption": "河边旅行.exe", "media_extension": ".mp4"}, "expected": "000123.mp4"},
+  {"input": {"file_name": "000123.mp4", "caption": "更多资源请关注 @example\n标题：One Piece 第1080集"}, "expected": "One Piece 第1080集.mp4"}
+]

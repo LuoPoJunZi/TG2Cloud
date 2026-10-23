@@ -164,7 +164,7 @@ def _title_path_separators(title: str) -> str:
     return re.sub(r"[/\\]", "_", title).strip("_ ")
 
 
-def media_file_name(name: str, caption: str, fallback: str, entities=(), *, media_extension: str = "") -> str:
+def explain_media_name(name: str, caption: str, fallback: str, entities=(), *, media_extension: str = "") -> dict[str, str]:
     """Use a visible caption for machine-generated or polluted visual-media names.
 
     Do not infer content, follow URLs, or rename an already descriptive filename.
@@ -180,18 +180,30 @@ def media_file_name(name: str, caption: str, fallback: str, entities=(), *, medi
         r"|(?:video|vid|file|telegram|document|clip|processed|photo|image|img)(?:[\W_]+[\da-f]+|\d+)*)",
         stem, re.IGNORECASE,
     ))
-    if not weak or not caption:
-        return original
+    def result(value, source, reason):
+        return {"file_name": value, "source": source, "reason": reason}
+
+    if not weak:
+        return result(original, "original", "meaningful_original")
+    if not caption:
+        return result(original, "original" if name else "fallback", "no_caption")
     title = caption_title(caption, entities)
     title = _CAPTION_SUFFIX.sub("", title)
     if title and suffix and title.lower().endswith(suffix.lower()):
         title = title[:-len(suffix)]
     if not title:
-        return original
+        return result(original, "original" if name else "fallback", "no_valid_title")
     candidate = safe_file_name(_title_path_separators(title) + suffix, original)
     # A hostile title ending in '/..' or '/.' must not collapse to a basename
     # such as 'mp4' during cleanup and lose the attachment's real extension.
-    return candidate if not suffix or candidate.lower().endswith(suffix.lower()) else original
+    if not suffix or candidate.lower().endswith(suffix.lower()):
+        return result(candidate, "caption", "caption_replaced_weak_name")
+    return result(original, "original" if name else "fallback", "safe_fallback")
+
+
+def media_file_name(name: str, caption: str, fallback: str, entities=(), *, media_extension: str = "") -> str:
+    """Stable filename API; explanations use exactly the same selection path."""
+    return explain_media_name(name, caption, fallback, entities, media_extension=media_extension)["file_name"]
 
 
 def video_file_name(name: str, caption: str, fallback: str, entities=(), *, media_extension: str = "") -> str:

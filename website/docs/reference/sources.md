@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 21 日**，对应 TG2Cloud **v1.4.2**，已正式发布。辅助 A／入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)和实际源码资产、SHA256、GitHub 摘要核验通过。Docker Nginx 复用的限制见[仓库专题](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/DOCKER-NGINX.md)；external_docker 的真实 VPS 接入、ACME、长期续期与代理迁移仍待独立验收，不能借用历史 ARM64／公网 NAT 首装或本次 managed 人工升级结论。
+本次内容核对日期为 **2026 年 10 月 23 日**，源码文档对应 **v1.4.3**（待发布）。维护、分类／通知／配额、报告与测速／菜单改动以新源码为准，线上入口需完成 A／B 与同标签发布后才能提供。以下 v1.4.2 的下载与验收为历史事实，不外推本版。
 
 ## 主要来源
 
@@ -11,6 +11,7 @@
 | [已发布 v1.4.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1) | NAT 预检修复、同标签双架构验证、源码包与实际 SHA256；保留命名、家庭共享及外部只读功能 |
 | [已发布 v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) | 同一次 Actions 构建的实际资产与 SHA256；不是实机验收结论 |
 | [运行维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md) | 实际版本、阶段提示、续期记录、代理备份与清理边界 |
+| [待发布维护增强](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md) | 旧版基线目录、实例快照、就绪观察、命名预览与尚未完成的 Docker／发布门槛 |
 | [HTTPS 验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md) | 各次实机检查与尚未完成的验收 |
 | [VPS 一键脚本](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md) | 单行入口、正式稳定 payload、配置保留与未验收范围 |
 | [v1.3.0 升级验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md) | CloudDrive2 人工迁移的实际检查、用户确认及未执行项；不扩大为 OpenList 或全部自动升级验证 |

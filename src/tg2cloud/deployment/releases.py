@@ -16,6 +16,31 @@ API = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 TAG = re.compile(r"v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)")
 SHA = re.compile(r"[0-9a-f]{40}")
 MAX_ARCHIVE = 100 * 1024 * 1024
+
+
+class ReleaseLookupError(RuntimeError):
+    """Classified public lookup error; never include a remote response body."""
+
+    def __init__(self, message: str, *, status: int | None = None):
+        super().__init__(message)
+        self.status = status
+
+
+def download_baseline(client, tag: str, destination: Path, log) -> Path:
+    from tg2cloud.deployment import baselines
+
+    if not TAG.fullmatch(tag):
+        raise ValueError("历史基线必须是正式版本")
+    record = baselines.CATALOG.get(tag)
+    if record:
+        release = Release(tag, record["commit"])
+        source = client.download(release, destination)
+        baselines.verify(source, tag, release.commit)
+        log("历史源码基线：" + tag + "；本版可信目录核验通过（仍需比对实例文件）")
+        return source
+    return client.download(client.resolve(tag), destination)
+
+
 def validate_public_url(url: str) -> None:
     parsed = urllib.parse.urlsplit(url)
     if (parsed.scheme != "https" or parsed.hostname not in {
@@ -77,8 +102,14 @@ class ReleaseClient:
             if not isinstance(value, dict):
                 raise ValueError("GitHub 响应格式不正确")  # noqa: TRY004 - invalid wire format
             return value
+        except urllib.error.HTTPError as exc:
+            messages = {404: "正式 Release／Tag 不存在，可能已删除；未知旧版请先备份并人工核对",
+                        429: "GitHub 请求限流，请稍后重试",
+                        403: "GitHub 拒绝访问或达到 API 限额，请稍后核对网络与额度"}
+            raise ReleaseLookupError(messages.get(exc.code, "GitHub 服务返回 HTTP " + str(exc.code))
+                                     + "；未改用 main 或修改实例", status=exc.code) from None
         except (OSError, ValueError) as exc:
-            raise RuntimeError("无法读取 GitHub 正式 Release；请检查网络/限流后重试，不会改用 main") from exc
+            raise ReleaseLookupError("无法读取 GitHub 正式 Release；网络/TLS/超时或响应无效，不会改用 main") from exc
 
     def resolve(self, tag: str | None = None) -> Release:
         if tag is not None and not TAG.fullmatch(tag):

@@ -84,6 +84,12 @@ This command only previews; it does not uninstall. Actual complete removal delet
 
 ## Documentation
 
+**v1.4.3 is being prepared for release**, including the maintenance and optional features below, transfer-rate fixes and menu refinements. Back up before the schema 2 database migration; rollback requires matching old code and a verified old database snapshot. Use the actual published Release until validation finishes. See [release notes](RELEASE_NOTES.md).
+
+See the [unreleased maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) for trusted historical baselines, instance snapshots, readiness checks and naming previews. These local additions are not included in the published v1.4.2 online installer.
+
+Local, unreleased [optional enhancements](docs/FEATURE-ENHANCEMENTS.md) add classification, administrator alerts, member quotas and redacted reports. Classification/alerts default off; members default unlimited. Back up the database before the schema2 upgrade.
+
 Optional add-on: [External WebDAV](docs/external-webdav.md). Available since v1.3.1: separately installed, read-only HTTPS access to an existing upload directory with an independent native account, an online installer and offline maintenance commands.
 
 Browse the repository guides by topic below. Most are in Chinese; see the [full documentation index](docs/README.md) or the [documentation website](https://tg2cloud.pages.dev/).

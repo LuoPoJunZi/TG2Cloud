@@ -7,7 +7,7 @@ import shlex
 from pathlib import Path
 
 from tg2cloud.cli import terminal
-from tg2cloud.cli.presentation import InstallerLog, edition_menu
+from tg2cloud.cli.presentation import InstallerLog, edition_menu, numbered_menu
 from tg2cloud.deployment import architecture, instances, preflight, runtime, uninstall
 from tg2cloud.deployment.host import LocalSession, SafeLog, edition_lock
 from tg2cloud.deployment.profiles import PRODUCTS
@@ -18,20 +18,13 @@ from tg2cloud.deployment.proxy.manager import (
     validate_email,
 )
 
-MENU = """
-── TG2Cloud 本地管理 ──
-1. 安装 / 升级
-2. 查看运行状态
-3. 查看运行日志
-4. 启动 / 停止 / 重启
-5. WebDAV 验收
-6. HTTPS / 管理入口
-7. 备份管理
-8. 查看 WebDAV 凭据
-9. 卸载当前实例
-10. Bot 用户管理
-0. 退出
-"""
+MENU = "\n── TG2Cloud 本地管理 ──\n" + numbered_menu((
+    (1, "安装 / 升级"), (2, "查看运行状态"), (3, "查看运行日志"),
+    (4, "启动 / 停止 / 重启"), (5, "WebDAV 验收"), (6, "HTTPS / 管理入口"),
+    (7, "备份管理"), (8, "查看 WebDAV 凭据"), (9, "卸载当前实例"),
+    (10, "Bot 用户管理"), (11, "业务就绪检查"), (12, "命名预览（不转存）"),
+    (13, "故障诊断报告"), (14, "分类 / 异常通知设置"), (0, "退出"),
+)) + "\n"
 
 
 def choose(ui, prompt: str, values: tuple[str, ...], default: str = "") -> str:
@@ -109,11 +102,11 @@ class Management:
             self.checked_run("docker logs --since 30m --tail 100 " + shlex.quote(name), timeout=30)
 
     def control(self, instance):
-        self.log("1. Bot（默认，仅影响任务处理）\n2. 存储网关（会中断存储访问）\n0. 返回")
+        self.log(numbered_menu(((1, "Bot（默认，仅影响任务处理）"), (2, "存储网关（会中断存储访问）"), (0, "返回"))))
         target = choose(self.ui, "操作对象", ("0", "1", "2"), "1")
         if target == "0":
             return
-        self.log("1. 启动\n2. 停止\n3. 重启\n0. 返回")
+        self.log(numbered_menu(((1, "启动"), (2, "停止"), (3, "重启"), (0, "返回"))))
         action = choose(self.ui, "选择操作", ("0", "1", "2", "3"))
         if action == "0":
             return
@@ -144,7 +137,7 @@ class Management:
             if self.mode_hint:
                 use_lan = self.mode_hint == "lan"
             else:
-                self.log("1. 公网 VPS（HTTPS 域名）\n2. 可信内网（HTTP 地址）\n0. 返回")
+                self.log(numbered_menu(((1, "公网 VPS（HTTPS 域名）"), (2, "可信内网（HTTP 地址）"), (0, "返回"))))
                 selected = choose(self.ui, "安装模式", ("0", "1", "2"))
                 if selected == "0":
                     return
@@ -167,7 +160,7 @@ class Management:
             self.status(instance)
             self.log("当前是内网 HTTP 模式，不申请证书或隐式切换为公网模式。")
             return
-        self.log("1. 检查 HTTPS\n2. 显式修复 HTTPS（保留已有域名）\n3. 证书续期演练（dry-run）\n0. 返回")
+        self.log(numbered_menu(((1, "检查 HTTPS"), (2, "显式修复 HTTPS（保留已有域名）"), (3, "证书续期演练（dry-run）"), (0, "返回"))))
         action = choose(self.ui, "选择操作", ("0", "1", "2", "3"), "1")
         if action == "1":
             self.log(self.proxy().status().message)
@@ -199,8 +192,11 @@ class Management:
                 self.log(self.proxy().maintenance("renew_dry_run"))
 
     def backups(self, instance):
-        self.log("1. 查看实例历史备份\n2. 创建共享代理备份\n3. 查看共享代理备份\n4. 校验/隔离解包最近代理备份\n5. 清理旧代理备份\n0. 返回\n不提供覆盖运行数据的一键恢复；实例备份由原升级流程生成。")
-        action = choose(self.ui, "选择操作", ("0", "1", "2", "3", "4", "5"))
+        self.log(numbered_menu(((1, "查看实例历史备份"), (2, "创建共享代理备份"), (3, "查看共享代理备份"),
+                                (4, "校验/隔离解包最近代理备份"), (5, "清理旧代理备份"),
+                                (6, "创建实例快照／导出"), (7, "实例快照隔离预检"), (0, "返回")))
+                 + "\n不提供覆盖运行数据的一键恢复；实例快照不包含下载文件和共享 HTTPS。")
+        action = choose(self.ui, "选择操作", ("0", "1", "2", "3", "4", "5", "6", "7"))
         if action == "0":
             return
         if action == "1":
@@ -211,6 +207,28 @@ class Management:
                 self.log(item[0] + f"（{item[3]} 字节，尚未校验内容）")
             if not identity or not identity[-1]:
                 self.log("没有受管实例历史备份。")
+            return
+        if action in {"6", "7"}:
+            from tg2cloud.deployment import backup
+            from tg2cloud.persistence import bundle
+            parent = Path(self.ui.ask("私密备份目录", default="/opt/tg2cloud-snapshots/" + self.product.key))
+            backup.output_directory(parent, instance)
+            if action == "6":
+                self.log("备份配置、业务数据库、Session 和网关配置；不备份云端、downloads、日志、共享代理或附加功能状态。请另存这些资料；导出目录在默认卸载清理范围之外。")
+                if not self.ui.confirm("确认短暂停止所选 Bot 与网关创建快照？会暂时中断该网关的管理和外部 WebDAV 读取；不停止其他 Edition"):
+                    return
+                with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
+                    current = self.recheck(instance)
+                    archive = backup.create(current, self.session, parent)
+                self.log("实例快照已核验：" + str(archive) + "；原服务已恢复运行状态，仍需检查业务就绪。含敏感信息，请私密离机保存。")
+            else:
+                archive = Path(self.ui.ask("实例快照归档绝对路径"))
+                runtime.safe_path(archive, private=True)
+                runtime.safe_path(parent, private=True)
+                if not self.ui.confirm("确认在上述私密目录隔离解包并检查？不覆盖运行数据，不启动第二个 Bot"):
+                    return
+                result = bundle.preflight(archive, parent, self.product.key, instance.version)
+                self.log(f"实例快照结构／数据库预检通过：{result['files']} 文件；不代表运行恢复或全部网关授权已验收。")
             return
         with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
             self.recheck(instance)
@@ -255,7 +273,7 @@ class Management:
                     self.upgrade(instance)
                 return 0
             self.log(MENU)
-            action = choose(self.ui, "选择操作", tuple(str(n) for n in range(11)), "0")
+            action = choose(self.ui, "选择操作", tuple(str(n) for n in range(15)), "0")
             if action == "0":
                 return 0
             try:
@@ -273,6 +291,22 @@ class Management:
                         return 0  # The final uninstall may have removed this offline runtime.
                 elif action == "10":
                     from tg2cloud.deployment.users import manage
+                    manage(self, instance)
+                elif action == "11":
+                    from tg2cloud.deployment.readiness import check
+                    check(instance, self.session, self.log)
+                elif action == "12":
+                    from tg2cloud.cli.naming import interactive
+                    interactive(self.ui, self.log)
+                elif action == "13":
+                    from tg2cloud.deployment.diagnostics import collect, save
+                    report = collect(instance, self.session)
+                    self.log(report)
+                    if self.ui.confirm("保存已脱敏报告到本机私密目录？不会自动上传"):
+                        parent = Path(self.ui.ask("报告目录（绝对路径）", default="/opt/tg2cloud-reports"))
+                        self.log("报告已保存：" + str(save(report, parent)))
+                elif action == "14":
+                    from tg2cloud.deployment.feature_settings import manage
                     manage(self, instance)
                 else:
                     handlers[action](instance)

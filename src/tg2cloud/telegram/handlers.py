@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import time
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
@@ -129,6 +130,8 @@ class TelegramHandlers:
                 and all(message.file for message in messages)
                 and len({extension.casefold() for extension in extensions}) == 2)
         deliveries = []
+        group_created_at = time.time()
+        group_options = self.db.feature_settings()
         for message, kind, extension in zip(messages, kinds, extensions):
             file = message.file
             name = None
@@ -138,7 +141,8 @@ class TelegramHandlers:
             proxy = SimpleNamespace(sender_id=message.sender_id, chat_id=message.chat_id,
                                     is_private=True, message=message, raw_text=self._media_caption(message),
                                     reply=message.reply)
-            deliveries.append(self._on_message(proxy, album_name=name, album_delivery=True))
+            deliveries.append(self._on_message(proxy, album_name=name, album_delivery=True, created_at=group_created_at,
+                                              classification_options=group_options))
         # Each ingestion writes its SQLite task before awaiting the reply. A slow
         # reply for one photo must not delay registration of the other members.
         results = await asyncio.gather(*deliveries, return_exceptions=True)
@@ -148,7 +152,8 @@ class TelegramHandlers:
 
     @user_event
     async def _on_message(self, event: events.NewMessage.Event, *,
-                          album_name: str | None = None, album_delivery: bool = False) -> None:
+                          album_name: str | None = None, album_delivery: bool = False,
+                          created_at: float | None = None, classification_options: dict | None = None) -> None:
         if not self._authorized(event.sender_id) or not getattr(event, "is_private", False):
             self.log.warning("忽略未授权或非私聊消息")
             return
@@ -198,15 +203,27 @@ class TelegramHandlers:
                 self.log.warning("媒体标题识别失败，使用原有文件命名；未影响任务接收。")
         if album_name:
             file_name = album_name
-        task, created = self.db.create_task(
-            chat_id=int(event.chat_id),
-            message_id=int(message.id),
-            sender_id=int(event.sender_id),
-            media_key=self._media_key(message),
-            file_name=file_name,
-            file_size=file_size,
-            original_file_name=safe_file_name(message.file.name or "", fallback),
-        )
+        from tg2cloud.persistence.quotas import QuotaExceeded
+        try:
+            task, created = self.db.create_task(
+                chat_id=int(event.chat_id),
+                message_id=int(message.id),
+                sender_id=int(event.sender_id),
+                media_key=self._media_key(message),
+                file_name=file_name,
+                file_size=file_size,
+                original_file_name=safe_file_name(message.file.name or "", fallback),
+                media_kind=kind, mime_type=str(getattr(message.file, "mime_type", "") or ""),
+                media_extension=getattr(message.file, "ext", "") or Path(file_name).suffix,
+                target_base=self.settings.cd2_target, created_at=created_at,
+                classification_options=classification_options,
+            )
+        except QuotaExceeded as exc:
+            await event.reply(str(exc))
+            return
+        except (ValueError, RuntimeError):
+            await event.reply("任务未登记：分类或配额配置暂不可用，请联系管理员核对；未上传到其他目录。")
+            return
         if not created:
             if task["state"] == "cancelled":
                 await self._offer_recovery(event, int(task["id"]), message_id=int(message.id))

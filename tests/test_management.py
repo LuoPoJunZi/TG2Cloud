@@ -16,7 +16,7 @@ from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
 from tg2cloud.cli import commands, management, terminal, vps
-from tg2cloud.cli.presentation import InstallerLog
+from tg2cloud.cli.presentation import InstallerLog, numbered_menu
 from tg2cloud.deployment import (
     configuration,
     host,
@@ -57,6 +57,31 @@ class InputUI:
 
 
 class InstallationUITests(unittest.TestCase):
+    def test_number_and_label_columns_are_both_left_aligned(self):
+        labels = ("安装外部 WebDAV", "查看运行状态", "检查连接与配置", "启用访问", "停用访问",
+                  "修改域名或账号配置", "卸载外部 WebDAV", "升级附加功能", "查看手机连接配置", "用户管理")
+        menu = numbered_menu((*enumerate(labels, 1), (0, "退出")))
+        lines = menu.splitlines()
+        self.assertEqual(lines[0], "1.  安装外部 WebDAV")
+        self.assertEqual(lines[9], "10. 用户管理")
+        self.assertEqual(lines[-1], "0.  退出")
+        for line, label in zip(lines, (*labels, "退出")):
+            self.assertFalse(line.startswith(" "))
+            self.assertEqual(line.index(label), 4)
+            self.assertNotIn("\t", line)
+        self.assertEqual(numbered_menu(()), "")
+
+    def test_short_submenus_and_long_dynamic_lists_keep_numbers_and_labels(self):
+        self.assertEqual(numbered_menu(((1, "启用"), (2, "停用"), (0, "返回"))), "1. 启用\n2. 停用\n0. 返回")
+        lines = numbered_menu((number, "用户") for number in range(1, 101)).splitlines()
+        self.assertEqual(lines[0], "1.   用户")
+        self.assertEqual(lines[-1], "100. 用户")
+        self.assertEqual({line.index("用户") for line in lines}, {5})
+        main = management.MENU.splitlines()[2:]
+        self.assertEqual(main[0], "1.  安装 / 升级")
+        self.assertEqual(main[9], "10. Bot 用户管理")
+        self.assertEqual(main[-1], "0.  退出")
+
     def test_new_config_default_password_eight_chars_no_timezone_prompt_both_editions(self):
         for product in PRODUCTS.values():
             ui = InputUI()
@@ -372,6 +397,15 @@ class ManagementTests(unittest.TestCase):
         self.assertEqual(proxy.manage_backups.call_args_list[-1].kwargs, {"keep": 5, "plan": "a" * 64})
         self.assertEqual(proxy.manage_backups.call_args_list[-1].args, ("prune",))
 
+    def test_instance_snapshot_cancel_never_stops_services_or_creates_backup(self):
+        from tg2cloud.deployment import backup
+        self.ui.ask.side_effect = ["6", "/opt/tg2cloud-snapshots/clouddrive2"]
+        self.ui.confirm.return_value = False
+        with patch.object(backup, "output_directory"), patch.object(backup, "create") as create:
+            self.manager.backups(self.instance)
+        create.assert_not_called()
+        self.session.run.assert_not_called()
+
     def test_external_proxy_does_not_use_managed_directory_prune(self):
         self.ui.ask.return_value = "5"
         proxy = Mock()
@@ -421,7 +455,7 @@ class ManagementTests(unittest.TestCase):
         with patch.object(self.manager, "discover", return_value=self.instance) as discover, patch.object(self.manager, "remove", return_value=True):
             self.assertEqual(self.manager.run(), 0)
         discover.assert_called_once()
-        self.assertIn("9. 卸载当前实例", "\n".join(self.messages))
+        self.assertIn("9.  卸载当前实例", "\n".join(self.messages))
 
     def test_failed_or_partial_removal_exits_without_offering_reinstallation(self):
         self.ui.ask.return_value = "9"

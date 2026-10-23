@@ -47,6 +47,12 @@ def safe_path(path: Path, *, private: bool = False) -> None:
 
 def files(source: Path) -> dict[str, bytes]:
     names = ["scripts/run_source.py", "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/config.py"]
+    # Old installed manager bundles remain verifiable under their original
+    # layout. New commands explicitly require these stdlib-only shared helpers.
+    if (source / "src/tg2cloud/deployment/backup.py").is_file() or (source / "src/tg2cloud/cli/naming.py").is_file():
+        names.extend("src/tg2cloud/" + name for name in (
+            "persistence/__init__.py", "persistence/backup.py", "persistence/bundle.py",
+            "domain/__init__.py", "domain/naming.py"))
     for directory in ("cli", "deployment", "addons"):
         names.extend(p.relative_to(source).as_posix() for p in (source / "src/tg2cloud" / directory).rglob("*.py"))
     result = {}

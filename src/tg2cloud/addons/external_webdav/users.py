@@ -10,6 +10,7 @@ import os
 import secrets
 
 from tg2cloud.addons.external_webdav import config, verification
+from tg2cloud.cli.presentation import numbered_menu
 
 
 def entries(service, item):
@@ -175,8 +176,11 @@ def menu(service, *, sample_file: str = "") -> None:
             raise ValueError("请先安装外部 WebDAV。")
         service.log("\n── 外部 WebDAV 用户管理 ──\n共同目录：" + item["target_dir"])
         service.log("主账号：" + item["username"] + "（由入口配置管理）")
-        for index, member in enumerate(item.get("members", []), 1):
-            service.log(f"  {index}. {member['username']} · " + {"enabled": "已启用", "disabled": "已停用", "pending": "待完成", "needs_repair": "需修复"}[member["phase"]])
+        members = item.get("members", [])
+        if members:
+            phases = {"enabled": "已启用", "disabled": "已停用", "pending": "待完成", "needs_repair": "需修复"}
+            service.log(numbered_menu((index, member["username"] + " · " + phases[member["phase"]])
+                                      for index, member in enumerate(members, 1)))
         action = choose(service.ui, service.log, "请选择操作：", (
             ("add", "添加只读账号"), ("check", "检查账号"), ("enable", "启用账号"),
             ("disable", "停用账号"), ("rotate", "更改密码"), ("remove", "移除入口授权")))
