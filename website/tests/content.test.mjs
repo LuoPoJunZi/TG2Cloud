@@ -191,10 +191,8 @@ test('v1.3.0 acceptance separates checked migration, user feedback and untested 
   }
   const index=await readFile(new URL('../../docs/README.md',import.meta.url),'utf8');
   assert.ok(index.includes('(development/V130-ACCEPTANCE.md)'));
-  for(const name of ['README.md','README_EN.md','RELEASE_NOTES.md']){
-    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
-    assert.ok(content.includes(path),name);
-  }
+  const notes=await readFile(new URL('../../RELEASE_NOTES.md',import.meta.url),'utf8');
+  assert.ok(notes.includes(path),'release notes retain the historical acceptance link');
   for(const name of ['docs/download.md','docs/operations/update.md','docs/changelog.md','docs/reference/sources.md']){
     assert.ok((await read(name)).includes(`${config.repo}/blob/main/${path}`),name);
   }
@@ -208,7 +206,7 @@ test('v1.4.3 log review keeps user evidence, warnings and unverified scopes sepa
     'TG2CLOUD_RESULT=SUCCESS','Running pip as the','ca-certificates.crt','SYS_UID_MAX',
     '50GB','尚未确认与仍需验收','独立 SQL 查询'])assert.ok(record.includes(value),value);
   assert.doesNotMatch(record,/root@|\b(?:\d{1,3}\.){3}\d{1,3}\b/,'do not publish raw host prompts or IP addresses');
-  for(const name of ['README.md','README_EN.md','CHANGELOG.md','RELEASE_NOTES.md',
+  for(const name of ['CHANGELOG.md','RELEASE_NOTES.md',
     'docs/README.md','docs/FAQ.md','docs/VPS-INSTALL.md']){
     const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
     assert.ok(content.includes('V143-ACCEPTANCE.md'),name);
@@ -273,6 +271,28 @@ test('current helper identity in installation docs matches every public entry',a
   assert.ok(!guide.includes('新布局尚未发布'));
   assert.ok(!development.includes('新布局只完成本地候选准备'));
   assert.ok(!recovery.includes('尚未进入 v1.3.0 Release'));
+});
+
+test('root READMEs use topic navigation while the documentation index retains acceptance history',async()=>{
+  const index=await readFile(new URL('../../docs/README.md',import.meta.url),'utf8');
+  for(const version of ['130','133','141','142','143','144']){
+    assert.ok(index.includes(`(development/V${version}-ACCEPTANCE.md)`),version+': historical record remains discoverable');
+  }
+  for(const [name,heading] of [['README.md','## 使用文档'],['README_EN.md','## Documentation']]){
+    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
+    const start=content.indexOf(heading);
+    assert.ok(start>=0,name+': documentation section');
+    const section=content.slice(start+heading.length).split(/\r?\n## /)[0];
+    for(const target of ['docs/README.md','RELEASE_NOTES.md','docs/FEATURE-ENHANCEMENTS.md',
+      'docs/DOCKER-NGINX.md','docs/development/MAINTENANCE-IMPROVEMENTS.md',
+      'docs/development/V144-ACCEPTANCE.md']){
+      assert.ok(section.includes('('+target+')'),name+': topic link '+target);
+    }
+    const paragraphs=section.split(/\r?\n\s*\r?\n/).map(block=>block.trim())
+      .filter(block=>block&&!block.startsWith('|'));
+    assert.equal(paragraphs.length,1,name+': documentation section has one introduction followed by topic navigation');
+    assert.doesNotMatch(content,/2026-10-23/,name+': dated upgrade evidence belongs in the linked records');
+  }
 });
 
 test('root READMEs keep repository-first documentation and the original attribution layout',async()=>{

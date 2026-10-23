@@ -31,11 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前正式版本 **v1.4.4**，以 Linux 脚本维护，支持原生 AMD64 / ARM64；源码包与校验清单见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4)。更新文档不会替换已有实例，需显式升级。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 v1.3.3 正式升级及用户转存确认见[历史验收记录](docs/development/V133-ACCEPTANCE.md)，不外推当前版本或其他部署与恢复场景。
-
-2026-10-23 用户日志确认 CloudDrive2 v1.4.2 → v1.4.3 基础升级、Bot 健康与本机 HTTPS 检查通过；构建 WARNING 未阻断本次升级。证据及尚未确认的转存／公网／回退范围见[升级记录](docs/development/V143-ACCEPTANCE.md)，历史人工路径见[v1.4.2 记录](docs/development/V142-ACCEPTANCE.md)。
-
-2026-10-23 用户已确认 CloudDrive2 在 Ubuntu ARM64 与 Debian AMD64 上的 v1.4.3 → v1.4.4 升级验收通过。日志中的配置保留、数据库备份、Bot 健康、本机 HTTPS 与最近业务就绪观察通过；WebDAV 写入、真实转存、外网和回退仍须单独验收，见[双架构升级记录](docs/development/V144-ACCEPTANCE.md)。
+当前稳定版 **v1.4.4**，支持 Linux AMD64 / ARM64；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
 
 ## 开始使用
 
@@ -52,7 +48,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 要求 Debian / Ubuntu、64 位原生用户态、root、Python 3.10+、curl 和可交互终端；主机需能访问 GitHub、Telegram、镜像仓库及目的端。CloudDrive2 还需要 `/dev/fuse`。
 
-支持 AMD64 / ARM64（`linux/amd64` / `linux/arm64`），不使用 QEMU；v1.4.1 修复公网 NAT 的 HTTPS 预检，仍须确认公网映射并通过证书与 HTTPS 检查。用户已完成 CloudDrive2 在 Ubuntu 26.04.1 ARM64 公网 NAT 环境的首次部署、本机 HTTPS 与 WebDAV 验收，见[实机记录](docs/development/V141-ACCEPTANCE.md)；OpenList、升级回退、手机外网访问及长期续期不外推。完整步骤见[安装指南](docs/VPS-INSTALL.md)与[双架构说明](docs/ARCHITECTURES.md)。
+原生支持 AMD64 / ARM64（`linux/amd64` / `linux/arm64`），不使用 QEMU。公网 NAT 条件与平台限制见[安装指南](docs/VPS-INSTALL.md)和[双架构说明](docs/ARCHITECTURES.md)。
 
 ### 公网 VPS
 
@@ -84,19 +80,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 使用文档
 
-v1.4.4 补充安装日志分级、升级结果与验收摘要，精简本地菜单与设置层级；未增加依赖或数据库迁移。v1.4.3 包含维护、可选功能与测速修复。业务数据库事务迁移至 schema 2，升级前须备份；回退需匹配旧数据库与旧代码。详见[本次发布说明](RELEASE_NOTES.md)。v1.4.4 的用户升级结论限于上面的双架构记录，不代表真实转存或故障回退通过。
-
-v1.4.3 的升级兼容、实例快照、业务就绪与命名预览，见[维护增强说明](docs/development/MAINTENANCE-IMPROVEMENTS.md)；须显式升级 Bot 与离线管理工具后使用。
-
-[可选分类、主动通知、家庭配额与脱敏报告](docs/FEATURE-ENHANCEMENTS.md)已纳入 v1.4.3：分类／通知默认关闭，成员默认不限额；升级前需备份数据库。
-
-v1.3.3 起，[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人转存、共用保存目录及各自的外部只读账号；安装仍只填一个管理员 ID。v1.3.4 增强网址污染名、图片自身说明及一图一视频同标题；完整规则与边界见[命名指南](docs/NAMING.md)。已有实例与离线工具需显式升级。
-
-可选附加功能：[外部 WebDAV](docs/external-webdav.md)。独立安装，通过新 HTTPS 域名只读访问已有上传目录；不复用 Bot/管理员账号，不加入主安装流程。v1.3.1 起提供专用在线安装与离线维护入口。
-
-v1.4.2 新增[复用已有 Docker Nginx](docs/DOCKER-NGINX.md)：显式授权接入，不停止原代理、不增加第二层 Nginx；默认 managed 模式不变。支持条件、证书责任与实机验收边界见专题。
-
-按主题查阅仓库内文档；全部文档见[仓库文档目录](docs/README.md)，网页版见[文档网站](https://tg2cloud.pages.dev/)。
+按主题查阅仓库文档；完整目录见 [docs](docs/README.md)，更新内容见 [发布说明](RELEASE_NOTES.md)。
 
 | 主题 | 仓库文档 |
 | --- | --- |
@@ -105,8 +89,9 @@ v1.4.2 新增[复用已有 Docker Nginx](docs/DOCKER-NGINX.md)：显式授权接
 | 命名与常见问题 | [视频、说明及媒体组命名](docs/NAMING.md) · [FAQ](docs/FAQ.md) |
 | 配置与备份 | [配置字段及运行目录](docs/CONFIGURATION.md) · [备份范围与恢复预检](docs/BACKUP-RESTORE.md) |
 | 家庭与手机读取 | [Bot 家人授权](docs/FAMILY-SHARING.md) · [外部 WebDAV 只读入口](docs/external-webdav.md) |
-| 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) |
-| 升级验收 | [v1.4.2 人工升级与检查边界](docs/development/V142-ACCEPTANCE.md) · [v1.3.3 正式升级与转存确认](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 历史迁移](docs/development/V130-ACCEPTANCE.md) |
+| 可选功能 | [文件分类、通知与配额](docs/FEATURE-ENHANCEMENTS.md) · [复用已有 Nginx](docs/DOCKER-NGINX.md) |
+| 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) · [维护增强](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
+| 升级验收 | [v1.4.4 双架构升级记录](docs/development/V144-ACCEPTANCE.md) · [历史验收目录](docs/README.md) |
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |
 | 版本与发布 | [所有版本分别做了什么](CHANGELOG.md) · [当前发布说明](RELEASE_NOTES.md) |
@@ -129,7 +114,7 @@ v1.4.2 新增[复用已有 Docker Nginx](docs/DOCKER-NGINX.md)：显式授权接
         <img src="https://github.com/LuoPoJunZi.png?size=96" width="72" alt="LuoPoJunZi"><br>
         <strong>LuoPoJunZi</strong>
       </a><br>
-      <sub>TG2Cloud 项目维护者</sub>
+      <sub>本项目维护者</sub>
     </td>
     <td align="center" width="50%">
       <a href="https://github.com/whyhhh20">

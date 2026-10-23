@@ -31,13 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-v1.4.2 adds [reuse of an existing Docker Nginx](docs/DOCKER-NGINX.md) with explicit authorization, without stopping it or adding a second proxy. The default managed mode is unchanged; see the prerequisites, certificate responsibilities and untested live scenarios in the guide.
-
-Current stable version: **v1.4.4**, maintained through Linux scripts with native AMD64 / ARM64 support. Source archives and checksums are available in the [stable Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4). Explicitly upgrade running instances; updating documentation does not upgrade the Bot. Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1). See the [historical v1.3.3 CloudDrive2 upgrade and user-confirmed transfer record](docs/development/V133-ACCEPTANCE.md); it does not certify the current version or other deployment or recovery scenarios.
-
-User-provided logs dated 2026-10-23 confirm a CloudDrive2 v1.4.2 → v1.4.3 upgrade on Debian 13 AMD64: basic upgrade, Bot health, code/configuration and on-host HTTPS checks passed. See the [redacted log review](docs/development/V143-ACCEPTANCE.md) for build warnings and unverified file transfers, external access and rollback; the [v1.4.2 manual record](docs/development/V142-ACCEPTANCE.md) remains historical.
-
-On 2026-10-23, the user confirmed CloudDrive2 v1.4.3 → v1.4.4 upgrade acceptance on Ubuntu ARM64 and Debian AMD64. Logs confirm configuration preservation, database backups, Bot health, on-host HTTPS and recent readiness observations. WebDAV writes, actual transfers, external access and rollback remain separate checks; see the [dual-architecture upgrade record](docs/development/V144-ACCEPTANCE.md).
+Current stable version: **v1.4.4**, supporting Linux AMD64 / ARM64. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
 
 ## Getting started
 
@@ -54,7 +48,7 @@ The public/LAN entries offer setup for a missing Edition or its maintenance menu
 
 Requires Debian / Ubuntu with native 64-bit userspace, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
 
-Native AMD64 / ARM64 (`linux/amd64` / `linux/arm64`) are supported without QEMU. v1.4.1 fixes HTTPS preflight on public IPv4 NAT hosts; explicit mapping confirmation, certificate and HTTPS checks remain mandatory. The user completed a CloudDrive2 first install on Ubuntu 26.04.1 ARM64 behind public NAT, including on-host HTTPS and WebDAV verification. See the [acceptance record](docs/development/V141-ACCEPTANCE.md); it does not certify OpenList, upgrade rollback, external phone access or long-term renewal. See the [installation guide](docs/VPS-INSTALL.md) and [architecture evidence](docs/ARCHITECTURES.md).
+Native AMD64 / ARM64 (`linux/amd64` / `linux/arm64`) are supported without QEMU. Public NAT prerequisites and platform limits are covered in the [installation guide](docs/VPS-INSTALL.md) and [architecture guide](docs/ARCHITECTURES.md).
 
 ### Public VPS
 
@@ -86,17 +80,7 @@ This command only previews; it does not uninstall. Actual complete removal delet
 
 ## Documentation
 
-v1.4.4 adds classified installation logs, evidence-based upgrade/acceptance summaries and a shallower management menu. No new dependencies or database migrations. v1.4.3 introduced optional features and schema 2. Back up before the schema 2 migration; rollback requires matching old code and a verified old database snapshot. See [release notes](RELEASE_NOTES.md). The v1.4.4 user acceptance above covers the two CloudDrive2 upgrades only; actual transfers, external access and rollback remain unverified.
-
-See the [v1.4.3 maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) for trusted historical baselines, instance snapshots, readiness checks and naming previews. Explicitly upgrade the Bot and offline management tools.
-
-[Optional enhancements](docs/FEATURE-ENHANCEMENTS.md) in v1.4.3 add classification, administrator alerts, member quotas and redacted reports. Classification/alerts default off; members default unlimited. Back up before the schema 2 database migration.
-
-Optional add-on: [External WebDAV](docs/external-webdav.md). Available since v1.3.1: separately installed, read-only HTTPS access to an existing upload directory with an independent native account, an online installer and offline maintenance commands.
-
-Browse the repository guides by topic below. Most are in Chinese; see the [full documentation index](docs/README.md) or the [documentation website](https://tg2cloud.pages.dev/).
-
-Since v1.3.3, [family sharing](docs/FAMILY-SHARING.md) provides post-install Bot grants and independent read-only WebDAV accounts for the same shared directory. Installation still takes one administrator ID. Version 1.3.4 improves URL-polluted names, individual image captions and shared stems for a cover/video pair. See the [naming guide](docs/NAMING.md) for priorities and limits. Existing instances and offline managers require an explicit upgrade.
+Browse repository guides by topic; see the [full index](docs/README.md) and [release notes](RELEASE_NOTES.md).
 
 | Topic | Repository documents |
 | --- | --- |
@@ -105,8 +89,9 @@ Since v1.3.3, [family sharing](docs/FAMILY-SHARING.md) provides post-install Bot
 | Naming and common questions | [Video, caption and album naming](docs/NAMING.md) · [FAQ](docs/FAQ.md) |
 | Configuration and backups | [Configuration fields and runtime paths](docs/CONFIGURATION.md) · [Backup scope and restore preflight](docs/BACKUP-RESTORE.md) |
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
-| Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) |
-| Upgrade acceptance | [v1.4.2 manual upgrade and verification limits](docs/development/V142-ACCEPTANCE.md) · [v1.3.3 official upgrade and transfer confirmation](docs/development/V133-ACCEPTANCE.md) · [v1.3.0 historical migration](docs/development/V130-ACCEPTANCE.md) |
+| Optional features | [Classification, notifications and quotas](docs/FEATURE-ENHANCEMENTS.md) · [Existing Nginx reuse](docs/DOCKER-NGINX.md) |
+| Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) · [Maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
+| Upgrade acceptance | [v1.4.4 dual-architecture upgrade](docs/development/V144-ACCEPTANCE.md) · [Historical records](docs/README.md) |
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |
 | Versions and releases | [Complete version history](CHANGELOG.md) · [Current release notes](RELEASE_NOTES.md) |
