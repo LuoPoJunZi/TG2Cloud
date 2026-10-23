@@ -36,7 +36,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.4
 
-稳定性与用户体验维护版，当前为待发布候选；正式下载仍为 v1.4.3。完整范围见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，发布状态见[下载页](/download/)。
+[v1.4.4 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4) 已正式发布，定位为稳定性与用户体验维护版。辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 完整范围见[仓库记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，下载与真实验收边界见[下载页](/download/)。
 
 - 安装日志分为正常信息、受管构建提醒、未知警告和错误；保留原文、退出码和成功标记，同类解释仅出现一次。
 - 公网／内网执行后汇总基础步骤、配置保留、数据库备份、代码／版本、健康与本机入口，失败和中断不假定回退；入口通过后读取一次现有业务观察，未执行的 WebDAV、真实转存与外网项目单列。

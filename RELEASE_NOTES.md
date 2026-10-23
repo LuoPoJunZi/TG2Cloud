@@ -34,3 +34,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 修复测试夹具后，v1.4.4 本地完整回归 1081 项：1050 项执行通过，31 项因环境条件跳过，0 失败；网站构建与 22 项测试、Ruff、Bandit、语法、最低 Python 3.10 的独立 CLI／20 项反馈回归及发布资料检查通过。远端仍须通过本次同标签门禁，不将跳过或模拟测试写成实机通过。本轮未连接真实 VPS 或用户网盘，v1.4.4 的真实升级、Telegram 转存、故障回退、ACME／长期续期及手机播放仍需独立验收；历史 [v1.3.0 人工迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)及 [v1.4.3 用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)不外推本版。
 
 详细操作见[运维与结果摘要](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md)、[升级与备份](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/BACKUP-RESTORE.md)及[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+
+### 发布后核验（2026-10-23，仅补充仓库文档）
+
+辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 源码包 SHA256：`521bfbc403a5cf13e0b9102c43909fc15aacfda8cf87033b1bd4772e4f86b152`。Release 仅含源码包与 SHA256SUMS.txt，不生成 EXE。本段不改写正式 Tag、资产或远端 Release 正文，也不代表真实 VPS／网盘验收。

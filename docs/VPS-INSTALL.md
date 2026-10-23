@@ -1,6 +1,6 @@
 # VPS 安装与升级脚本
 
-v1.4.4 发布候选：三个主入口固定辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`，其[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918850733)、[Python 3.10／3.13 四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918854646)、仓库与两套文档检查均已通过。入口 B 与同标签发布仍须独立验证，正式下载以 Release 为准。下方 v1.4.3 及更旧记录保留历史范围，不作为本版实机验收。
+v1.4.4 已正式发布：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 新版日志分级、结果／验收摘要及管理菜单须显式升级匹配工具后使用；业务只取正式稳定 Release。下方旧记录保留历史范围，不作为本版实机验收。
 
 2026-10-23 用户日志确认：CloudDrive2 在 Debian 13／AMD64 通过公开入口完成 v1.4.2 → v1.4.3 基础升级，Bot healthy、代码／配置和本机 HTTPS 检查通过。构建中的 pip root、CA rehash、UID 与推荐容量提示未阻断本次升级；具体含义见[FAQ](FAQ.md)，证据与尚未验收的转存／外网／回退范围见[脱敏记录](development/V143-ACCEPTANCE.md)。
 
@@ -20,7 +20,7 @@ TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本](LAN-INSTALL.md)，具体 NAS 环境仍需验收。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前正式版本为 v1.4.3，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录与本页新增的 v1.4.1 ARM64 首装记录分别理解；正式版自动升级与回退仍需对应版本独立验证，OpenList 脚本实机验收暂缓。详见[历史迁移记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
+> 当前正式版本为 v1.4.4，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录与本页新增的 v1.4.1 ARM64 首装记录分别理解；正式版自动升级与回退仍需对应版本独立验证，OpenList 脚本实机验收暂缓。详见[历史迁移记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
 
 2026-10-19 补充：专用测试机已完成 CloudDrive2 正式 v1.3.2 → v1.3.3 保留配置升级，用户确认实际转存验收完成。该结论限此 Edition 和此次路径，不扩展到 v1.3.4、首次安装、OpenList 或故障回退。
 

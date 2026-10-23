@@ -1,10 +1,10 @@
 # 开发与贡献
 
-v1.4.4 发布候选的辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b` 已通过[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918850733)、[最低版本四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39918854646)、仓库、网站与文档检查。三个入口 B 固定该公开提交，正式发布仍须从同一 Tag 验证；不改变历史 Tag、不使用自指 pin。普通 Runner 临时配置夹具已限定修复，并补充真实权限拒绝回归，生产 root／权限检查不变。
+v1.4.4 已正式发布：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 普通 Runner 临时配置夹具已限定修复，并补充真实权限拒绝回归；生产 root／权限检查不变，不降低门禁。
 
 v1.4.3 已发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 隔离网络夹具补齐显式子网并保留原断言，不改生产网络。
 
-当前源码 v1.4.4 待发布，开发使用 main 并记录提交；已发布 v1.4.3 的历史验证保留如下。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
+当前正式源码 v1.4.4，使用下方不可变 Tag 复现；开发使用 main 并记录提交。下方 v1.4.3 及更早的验证保留历史范围。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
 
 以下保留 v1.4.2 及更早版本的历史发布证据，不外推为 v1.4.3 真实 VPS 验收。
 
@@ -25,11 +25,11 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.4.4
 git rev-parse HEAD
 ```
 
-本次候选源码使用 main；正式发布后使用不可变 v1.4.4 Tag，下载见[下载页](/download/)。开发使用 main 并记录提交号，不把后续修改当作 Release 行为。
+本次正式源码使用不可变 v1.4.4 Tag，下载见[下载页](/download/)。开发使用 main 并记录提交号，不把后续修改当作 Release 行为。
 
 ## 关键目录与入口
 

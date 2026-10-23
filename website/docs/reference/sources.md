@@ -1,11 +1,12 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 23 日**，源码对应 **v1.4.4**，当前待发布，正式下载仍为 [v1.4.3](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3)。本版增加安装反馈与已确认的管理菜单精简，不改变 Bot 核心或新增数据库迁移；须完成辅助 A／入口 B 与同标签发布门禁，历史用户日志不外推本版。
+本次内容核对日期为 **2026 年 10 月 23 日**，对应已发布 **v1.4.4**。辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 本版补充安装反馈与管理菜单精简，不改变 Bot 核心或新增数据库迁移；须显式升级离线工具。历史用户日志不外推本版实机验收。
 
 ## 主要来源
 
 | 来源 | 用于核对 |
 | --- | --- |
+| [已发布 v1.4.4 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4) | 日志分级、证据型升级摘要与浅层菜单；同标签原生双架构及实际资产核验，不等同真实 VPS 验收 |
 | [v1.4.3 用户在线升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md) | 用户日志中的 CloudDrive2 AMD64 基础升级、healthy、本机 HTTPS 与 WARNING；转存、外网、数据库回退及可选功能尚未确认 |
 | [已发布 v1.4.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3) | 维护、可选分类／通知／配额、脱敏报告、测速及菜单；schema 2 迁移与原生双架构发布核验 |
 | [项目 README](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md) | 部署、命令、路径、状态、常见问题 |
@@ -27,7 +28,7 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码 1.4.4 待发布，正式下载仍为 1.4.3。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
+本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码与正式版本均为 1.4.4。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
 
 ## 文档与软件版本分别维护
 

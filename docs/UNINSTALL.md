@@ -1,6 +1,6 @@
 # TG2Cloud 独立卸载脚本
 
-v1.4.4 发布候选的三个主入口固定已通过五项 CI 的辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`，不改变卸载核心、归属检查或数据保留选项；主菜单卸载编号为 14。入口 B 与同标签发布仍须独立验证，本版没有执行真实卸载。下方旧版 pin 与验收仅作历史记录。
+v1.4.4 已正式发布：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 主菜单卸载编号为 14，不改变卸载核心、归属检查、外部依赖及数据保留选项；本版未执行真实卸载。下方旧版 pin 与验收仅作历史记录。
 
 v1.4.3 已正式发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 单 Edition 归属、数据保留选项、外部 WebDAV 依赖和外部代理保护不变；本版真实卸载未验收。下面的旧 pin 是历史记录，不是本次入口身份。
 
@@ -48,7 +48,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 本地源码运行
 
-在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.4.3 继续支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
+在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.4.4 继续支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
 
 先只读查看范围：
 
