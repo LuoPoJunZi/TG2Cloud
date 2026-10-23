@@ -8,6 +8,8 @@ from __future__ import annotations
 import base64
 import datetime as dt
 import hashlib
+import ipaddress
+import json
 import os
 import shutil
 import subprocess
@@ -16,6 +18,7 @@ import time
 import unittest
 import uuid
 from pathlib import Path
+from unittest.mock import Mock, call
 
 from tg2cloud.deployment.proxy.external_config import render_route
 from tg2cloud.deployment.proxy.manager import NGINX_IMAGE
@@ -28,6 +31,19 @@ class ExternalNginxDockerTests(unittest.TestCase):
         result = subprocess.run(["docker", *arguments], capture_output=True, text=True, timeout=120, check=False)
         self.assertEqual(result.returncode, 0, "isolated Docker command failed: " + " ".join(arguments[:2]) + "\n" + result.stderr[-2000:])
         return result.stdout
+
+    def create_network(self):
+        # Ask this daemon to allocate a free subnet, then explicitly declare it
+        # before attaching any containers. Static IP tests require user-defined
+        # IPAM; a hard-coded CIDR could overlap another test/project network.
+        self.run_docker("network", "create", "--label", "com.tg2cloud.test=true", self.key)
+        self.addCleanup(lambda: self.run_docker("network", "rm", self.key))
+        config = json.loads(self.run_docker("network", "inspect", "--format", "{{json .IPAM.Config}}", self.key))
+        self.assertEqual(len(config), 1, "isolated test network must have one IPv4 subnet")
+        subnet = ipaddress.ip_network(config[0]["Subnet"], strict=True)
+        self.assertEqual(subnet.version, 4)
+        self.run_docker("network", "rm", self.key)
+        self.run_docker("network", "create", "--subnet", str(subnet), "--label", "com.tg2cloud.test=true", self.key)
 
     def setUp(self):
         if os.name != "posix" or not shutil.which("docker"):
@@ -43,8 +59,7 @@ class ExternalNginxDockerTests(unittest.TestCase):
         sites = self.sites = root / "sites"
         sites.mkdir(mode=0o755)
         self.key = "tg2cloud-it-" + uuid.uuid4().hex[:16]
-        self.run_docker("network", "create", "--label", "com.tg2cloud.test=true", self.key)
-        self.addCleanup(lambda: self.run_docker("network", "rm", self.key))
+        self.create_network()
         self.backend = self.key + "-backend"
         self.frontend = self.key + "-edge"
         config = root / "nginx.conf"
@@ -233,6 +248,33 @@ class ExternalNginxDockerTests(unittest.TestCase):
         self.assertEqual((self.sites / "original.conf").read_bytes(), self.original)
         self.assertEqual(self.run_docker("inspect", "--format", "{{.Id}}", self.frontend).strip(), self.before)
         self.assertEqual(self.request("http://original.example.test/"), "original site")
+
+
+class NetworkFixtureTests(unittest.TestCase):
+    def fixture(self, output):
+        test = ExternalNginxDockerTests("test_single_proxy_reload_failure_and_removal_preserve_original")
+        test.key = "tg2cloud-it-synthetic"
+        test.run_docker = Mock(side_effect=["synthetic-id", output, "removed", "synthetic-id"])
+        return test
+
+    def test_static_ip_fixture_reuses_daemon_allocated_subnet_before_containers(self):
+        test = self.fixture('[{"Subnet":"172.30.0.0/16","Gateway":"172.30.0.1"}]')
+        test.create_network()
+        self.assertEqual(test.run_docker.call_args_list, [
+            call("network", "create", "--label", "com.tg2cloud.test=true", test.key),
+            call("network", "inspect", "--format", "{{json .IPAM.Config}}", test.key),
+            call("network", "rm", test.key),
+            call("network", "create", "--subnet", "172.30.0.0/16", "--label", "com.tg2cloud.test=true", test.key),
+        ])
+
+    def test_unknown_subnet_does_not_remove_or_recreate_network(self):
+        for output in ('[]', '[{"Subnet":"::/64"}]', '[{"Subnet":"invalid"}]'):
+            with self.subTest(output=output):
+                test = self.fixture(output)
+                with self.assertRaises((AssertionError, ValueError)):
+                    test.create_network()
+                self.assertEqual(test.run_docker.call_count, 2)
+                self.assertEqual(len(test._cleanups), 1)
 
 
 if __name__ == "__main__":
