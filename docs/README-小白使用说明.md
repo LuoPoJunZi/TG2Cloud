@@ -1,8 +1,10 @@
-# TG2Cloud v1.1.1：小白使用说明
+# TG2Cloud 历史 Windows 部署说明
 
-> 历史 Windows 界面教程，保留当时的操作背景，最后维护的 EXE 为 v1.2.1。当前 Linux 安装请从[仓库文档目录](README.md)开始；网关配置见 [STORAGE](STORAGE.md)，当前 Bot 命令见 [BOT-USAGE](BOT-USAGE.md)。下文按钮和部分旧状态文案不应视为新终端向导界面。
+> 历史存档，不随 Linux 版本更新。Windows 部署器停更于 **v1.2.1**；下文仅保留历史界面和操作背景，具体按钮、默认值与行为以所用历史 EXE 为准，不代表当前版本验收通过。不要用旧 EXE 覆盖已升级实例。
 
-> TG2Cloud v1.1.1；适用电脑：Windows 10 / Windows 11 64 位；适用 VPS：Ubuntu 或 Debian 64 位；推荐 VPS：2 核 CPU、4GB 内存、50GB 硬盘。
+当前 Linux 使用请查阅：[公网安装与升级](VPS-INSTALL.md) · [内网 / NAS 安装](LAN-INSTALL.md) · [网关配置](STORAGE.md) · [Bot 使用](BOT-USAGE.md) · [运行维护](OPERATIONS.md)。完整目录见[仓库文档目录](README.md)。
+
+> 历史环境参考：Windows 10 / Windows 11 64 位；Ubuntu 或 Debian 64 位 VPS；当时推荐 2 核 CPU、4GB 内存、50GB 硬盘。当前平台要求与资源建议以 Linux 安装指南为准。
 
 ---
 
@@ -81,7 +83,7 @@ TG2Cloud-CloudDrive2-Deployer.exe
 TG2Cloud-OpenList-Deployer.exe
 ```
 
-两个程序都使用相同的新版 PySide6 界面，但安装目录、容器、网络和端口彼此隔离。原 Tkinter Classic 版及 CMD 启动器已经从当前项目清理，请直接运行对应的 EXE。
+这两款历史程序使用相同的 PySide6 界面，但安装目录、容器、网络和端口彼此隔离。Tkinter Classic 版及 CMD 启动器不属于本教程范围；当前 main 不再维护或发布 Windows EXE。
 
 Windows 可能显示“未知发布者”，原因是本程序没有购买商业代码签名证书。你可以先在 `SHA256SUMS.txt` 中核对文件校验值。
 
@@ -170,7 +172,7 @@ OpenList 版增加“部署 OpenList”和“配置 WebDAV”两个引导区：
 1. 首次部署前复制界面生成的管理员密码。它只对全新 OpenList 数据目录生效；已有实例不会被自动重置。
 2. 基础容器健康后，按自动打开的对话框为 OpenList 配置独立域名；全部自检通过后点击“打开 OpenList 域名”。5244 仍只监听 VPS 回环地址，不开放公网。
 3. 由本人登录 OpenList，添加 `115 Open` 存储。部署器不会读取或收集 115 Cookie、Token。
-4. 在 OpenList 创建普通用户 `tg2cloud`，复制部署器生成的 28 位 WebDAV 密码。目标子目录默认留空，即使用该用户的 WebDAV 根目录；如需子目录可填写 `Telegram` 等相对路径。为用户授予目录列表、读取、写入和删除权限；当前 OpenList Edition 直接写入最终文件名，不依赖 WebDAV MOVE。
+4. 在 OpenList 创建普通用户 `tg2cloud`，复制部署器生成的 28 位 WebDAV 密码。目标子目录默认留空，即使用该用户的 WebDAV 根目录；如需子目录可填写 `Telegram` 等相对路径。为用户授予目录列表、读取、写入和删除权限；本页记录的 OpenList Edition 直接写入最终文件名，不依赖 WebDAV MOVE。
 5. 返回部署器执行“WebDAV 验收”。基础部署成功和 WebDAV 验收成功是两个阶段；尚未完成 115/WebDAV 配置时，看到“等待用户配置”是正常的。
 
 OpenList 默认安装目录为 `/opt/tg2cloud-openlist`，本地任务预算 `20GB`、磁盘最少保留 `8GB`、时区 `Asia/Shanghai`。密码只保留在当前界面会话中；只有主动点击“重新生成”才会改变。以后重新打开部署器升级已有 TG2Cloud 实例时，默认保留 VPS 当前完整 `.env`。只有明确勾选“使用本页配置覆盖 VPS 当前 .env”才应用本次表单；显式覆盖时还可选择继续保留 VPS 当前 WebDAV 与管理员配置。旧密码只在 VPS 内复用，不会显示或传回电脑。
@@ -261,7 +263,7 @@ Bot 每 30 秒自动重新检查 CloudDrive2，不需要重新部署。
 
 Bot 不再要求或提示逐个执行人工确认。完成传输并通过 WebDAV 远端大小复验后，日常界面统一显示“Bot 完成”，历史兼容状态也会合并到同一个统计中。
 
-你不需要手动分批，也不需要重新转发已经获得任务编号的文件。当前正式支持范围是“你本人和 Bot 的一对一私聊”；群组和频道消息会被拒绝，即使发送者是配置的本人 ID。
+你不需要手动分批，也不需要重新转发已经获得任务编号的文件。本页记录的部署模型仅支持“你本人和 Bot 的一对一私聊”；群组和频道消息会被拒绝，即使发送者是配置的本人 ID。当前家庭授权功能见[家庭共享指南](FAMILY-SHARING.md)，不要将新版功能套用于历史 EXE。
 
 文件直接保存在“WebDAV 根目录 + 可选子目录”中，不再按年份和月份建立子目录。例如 WebDAV 根目录已经是 `115open/Telegram` 且子目录留空时，最终路径为：
 
@@ -418,7 +420,7 @@ CloudDrive2 官方 Docker 挂载方式需要 FUSE。请在 VPS 控制台开启 F
 
 如果提示 `Host key for server ... does not match`，不是密码填错，而是本机保存的旧 SSH 主机密钥与当前服务器不一致。VPS 重装、恢复快照、重新生成 SSH 密钥或 IP 被重新分配后可能出现；如果没有这些变化，先停止操作并通过服务商控制台确认服务器身份。
 
-新版部署器遇到这种情况时，会显示服务器地址、旧／新密钥类型和两组 SHA-256 指纹：
+本页记录的部署器遇到这种情况时，会显示服务器地址、旧／新密钥类型和两组 SHA-256 指纹：
 
 1. 从 VPS 服务商网页控制台执行以下命令，记录当前 `SHA256:...` 指纹：
 
@@ -470,12 +472,12 @@ sudo /opt/tg2cloud-clouddrive2/manage.sh apply-config /absolute/new-config.env
 sudo /opt/tg2cloud-clouddrive2/manage.sh check
 ```
 
-新配置会先备份和预检，再应用到 Bot，并核对运行环境、代码指纹和基础健康。失败时恢复旧配置；如旧容器仍不能恢复，命令会报错，需人工检查。整个流程不自动重启 CloudDrive2，不输出配置值，也不会写远端验收文件。更换目的账号或目标目录前，应先处理完已有队列和失败保留任务。程序升级仍使用新版部署器，或把新版 payload 交给 `remote_install.sh`。安装脚本会先在隔离目录构建和预检，再备份旧程序／配置以及一致性 SQLite 快照；新 Bot 未通过健康核验时自动恢复旧程序、旧配置、旧数据库和旧镜像。下载文件与 CloudDrive2 数据仍不复制进升级备份；`manage.sh update` 不会从 GitHub 拉取代码。
+新配置会先备份和预检，再应用到 Bot，并核对运行环境、代码指纹和基础健康。失败时恢复旧配置；如旧容器仍不能恢复，命令会报错，需人工检查。整个流程不自动重启 CloudDrive2，不输出配置值，也不会写远端验收文件。更换目的账号或目标目录前，应先处理完已有队列和失败保留任务。历史程序通过对应部署器或 `remote_install.sh` 配套 payload 更新；本段不是当前 Linux 的升级入口，当前操作见[公网安装与升级](VPS-INSTALL.md)。历史安装脚本会先在隔离目录构建和预检，再备份旧程序／配置以及一致性 SQLite 快照；新 Bot 未通过健康核验时自动恢复旧程序、旧配置、旧数据库和旧镜像。下载文件与 CloudDrive2 数据仍不复制进升级备份；`manage.sh update` 不会从 GitHub 拉取代码。
 
 ---
 
 ## 十一、当前验证边界
 
-当前发布边界见 [发布说明](../RELEASE_NOTES.md) 和 [更新记录](../CHANGELOG.md)。源码测试不能代替真实 VPS 与目标云存储的生产环境验收。
+本节保留原有标题，供旧链接访问；本页不再维护新版本的验收结论。历史部署与测试记录不能外推当前版本或其他环境。当前发布边界见[发布说明](../RELEASE_NOTES.md)和[更新记录](../CHANGELOG.md)，各版本验收证据及未执行范围见[文档目录](README.md)中的独立记录。
 
-CloudDrive2 与 OpenList 的基础部署、强制 HTTPS 管理入口和 WebDAV 已完成真实 VPS 全流程验收。由于不同 Telegram 账号、云存储和 VPS 环境无法由发布者统一代测，第一次使用时仍应先转发一个 5～20MB 的测试文件，在所用云存储的官方客户端确认文件存在、大小正确且可打开，再开始批量使用。
+源码测试不能代替真实 VPS 与目标云存储的生产环境验收。第一次使用时仍应先转发一个 5～20MB 的测试文件，在所用云存储的官方客户端确认文件存在、大小正确且可打开，再开始批量使用；不将历史界面、测试标记或其他版本的结果当作当前环境已经通过验收。

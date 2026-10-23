@@ -95,7 +95,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |
 | 版本与发布 | [所有版本分别做了什么](CHANGELOG.md) · [当前发布说明](RELEASE_NOTES.md) |
-| 历史 Windows 版 | [v1.2.1 图形部署教程](docs/README-小白使用说明.md) · [脚本优先与桌面版冻结](docs/development/SCRIPT-FIRST.md) |
+| 历史 Windows 版 | [历史 Windows 部署说明](docs/README-小白使用说明.md) · [脚本优先与桌面版冻结](docs/development/SCRIPT-FIRST.md) |
 | 品牌与第三方组件 | [品牌使用规范](docs/development/BRAND-GUIDE.md) · [第三方组件说明](docs/第三方组件说明.md) |
 
 ## 使用边界
@@ -109,19 +109,19 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 <table>
   <tr>
-    <td align="center" width="50%">
+    <td align="center" width="260" valign="top" nowrap>
       <a href="https://github.com/LuoPoJunZi">
-        <img src="https://github.com/LuoPoJunZi.png?size=96" width="72" alt="LuoPoJunZi"><br>
+        <img src="https://github.com/LuoPoJunZi.png?size=96" width="72" height="72" alt="LuoPoJunZi"><br>
         <strong>LuoPoJunZi</strong>
       </a><br>
-      <sub>本项目维护者</sub>
+      <sub>TG2Cloud 项目维护者</sub>
     </td>
-    <td align="center" width="50%">
+    <td align="center" width="260" valign="top" nowrap>
       <a href="https://github.com/whyhhh20">
-        <img src="https://github.com/whyhhh20.png?size=96" width="72" alt="whyhhh20"><br>
+        <img src="https://github.com/whyhhh20.png?size=96" width="72" height="72" alt="whyhhh20"><br>
         <strong>whyhhh20</strong>
       </a><br>
-      <sub>上游 TG115 原作者</sub>
+      <sub>上游 TG115 项目原作者</sub>
     </td>
   </tr>
 </table>

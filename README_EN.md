@@ -95,7 +95,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |
 | Versions and releases | [Complete version history](CHANGELOG.md) · [Current release notes](RELEASE_NOTES.md) |
-| Historical Windows edition | [v1.2.1 GUI deployment guide](docs/README-小白使用说明.md) · [Script-first maintenance and desktop freeze](docs/development/SCRIPT-FIRST.md) |
+| Historical Windows edition | [Historical Windows deployment guide](docs/README-小白使用说明.md) · [Script-first maintenance and desktop freeze](docs/development/SCRIPT-FIRST.md) |
 | Branding and components | [Brand guide](docs/development/BRAND-GUIDE.md) · [Third-party components](docs/第三方组件说明.md) |
 
 ## Boundaries
@@ -109,16 +109,16 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 
 <table>
   <tr>
-    <td align="center" width="50%">
+    <td align="center" width="260" valign="top" nowrap>
       <a href="https://github.com/LuoPoJunZi">
-        <img src="https://github.com/LuoPoJunZi.png?size=96" width="72" alt="LuoPoJunZi"><br>
+        <img src="https://github.com/LuoPoJunZi.png?size=96" width="72" height="72" alt="LuoPoJunZi"><br>
         <strong>LuoPoJunZi</strong>
       </a><br>
       <sub>TG2Cloud maintainer</sub>
     </td>
-    <td align="center" width="50%">
+    <td align="center" width="260" valign="top" nowrap>
       <a href="https://github.com/whyhhh20">
-        <img src="https://github.com/whyhhh20.png?size=96" width="72" alt="whyhhh20"><br>
+        <img src="https://github.com/whyhhh20.png?size=96" width="72" height="72" alt="whyhhh20"><br>
         <strong>whyhhh20</strong>
       </a><br>
       <sub>Original author of upstream TG115</sub>

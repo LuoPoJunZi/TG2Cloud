@@ -295,7 +295,30 @@ test('root READMEs use topic navigation while the documentation index retains ac
   }
 });
 
-test('root READMEs keep repository-first documentation and the original attribution layout',async()=>{
+test('historical Windows guide stays frozen and directs Linux users to maintained guides',async()=>{
+  const path='docs/README-小白使用说明.md';
+  const guide=await readFile(new URL('../../'+path,import.meta.url),'utf8');
+  assert.match(guide,/^# TG2Cloud 历史 Windows 部署说明\r?\n/);
+  for(const text of ['不随 Linux 版本更新','Windows 部署器停更于 **v1.2.1**',
+    '不代表当前版本验收通过','不要用旧 EXE 覆盖已升级实例',
+    'TG2Cloud-CloudDrive2-Deployer.exe','TG2Cloud-OpenList-Deployer.exe',
+    '## 十一、当前验证边界'])assert.ok(guide.includes(text),text);
+  assert.doesNotMatch(guide,/TG2Cloud v1\.1\.1|当前正式支持范围|已完成真实 VPS 全流程验收/);
+  for(const target of ['README.md','VPS-INSTALL.md','LAN-INSTALL.md','STORAGE.md',
+    'BOT-USAGE.md','OPERATIONS.md','FAMILY-SHARING.md','../RELEASE_NOTES.md','../CHANGELOG.md']){
+    assert.ok(guide.includes('('+target+')'),'historical guide: '+target);
+    assert.ok(await readFile(new URL('../../docs/'+target,import.meta.url)),'existing guide: '+target);
+  }
+  const index=await readFile(new URL('../../docs/README.md',import.meta.url),'utf8');
+  assert.ok(index.includes('[历史 Windows 部署说明](README-小白使用说明.md)'));
+  for(const [name,label] of [['README.md','历史 Windows 部署说明'],
+    ['README_EN.md','Historical Windows deployment guide']]){
+    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
+    assert.ok(content.includes('['+label+']('+path+')'),name+': stable historical guide path');
+  }
+});
+
+test('root READMEs keep repository-first documentation and aligned author cards',async()=>{
   const base='https://tg2cloud.pages.dev/';
   for(const name of ['README.md','README_EN.md']){
     const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
@@ -315,9 +338,24 @@ test('root READMEs keep repository-first documentation and the original attribut
     assert.ok(content.includes(attribution),name+': attribution heading');
     assert.ok(content.includes(license),name+': separate license section');
     assert.match(credits,/<table>[\s\S]*<\/table>/,name+': author table');
-    assert.equal([...credits.matchAll(/<td align="center" width="50%">/g)].length,2,name+': two author columns');
+    const cards=[...credits.matchAll(/<td\b([^>]*)>([\s\S]*?)<\/td>/g)];
+    assert.ok(cards.length>=2,name+': retain both authors and allow additional contributors');
+    for(const [,attributes,body] of cards){
+      for(const attribute of ['align="center"','width="260"','valign="top"']){
+        assert.ok(attributes.includes(attribute),name+': consistent author card '+attribute);
+      }
+      assert.match(attributes,/\bnowrap(?:\s|$)/,name+': names and roles stay on one line');
+      assert.match(body,/<img\b[^>]*\bwidth="72"[^>]*\bheight="72"/,name+': equal square avatars');
+      const role=body.match(/<sub>([\s\S]*?)<\/sub>/);
+      assert.ok(role,name+': author role');
+      assert.doesNotMatch(role[1],/<br\b/i,name+': no forced role line breaks');
+    }
+    const roles=name==='README.md'
+      ?['TG2Cloud 项目维护者','上游 TG115 项目原作者']
+      :['TG2Cloud maintainer','Original author of upstream TG115'];
+    for(const role of roles)assert.ok(credits.includes('<sub>'+role+'</sub>'),name+': '+role);
     for(const author of ['LuoPoJunZi','whyhhh20']){
-      assert.ok(credits.includes(`src="https://github.com/${author}.png?size=96" width="72"`),name+': original author avatar');
+      assert.ok(credits.includes(`src="https://github.com/${author}.png?size=96" width="72" height="72"`),name+': original author avatar');
     }
     const links=[...content.matchAll(/\]\(([^)]+)\)|\b(?:href|src)="([^"]+)"/g)]
       .map(match=>match[1]||match[2]);
