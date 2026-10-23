@@ -33,3 +33,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 版本整理后本地完整回归 1041 项：1010 项执行通过，31 项因缺少 Docker／rclone／原生 Linux 等条件跳过，0 失败；Ruff、Bandit、Python 3.10 关键 CLI、两 Edition 载荷及网站构建／19 项测试通过。修正了写死旧版本的就绪测试夹具，并补测版本不匹配仍须拒绝；生产校验保持不变。线上结果以本次 Actions 为准，不将环境跳过写成通过。
 
 本轮不连接真实 VPS、不操作用户网盘。真实 Telegram 转存、生产升级／数据库回退、可选通知与配额的长期使用、ACME／续期和手机播放仍需独立验收；历史 [v1.3.0 人工迁移记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)与 [v1.4.2 升级记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)不外推为 v1.4.3 实机通过。
+
+### 发布后核验（2026-10-23，仅补充仓库文档）
+
+[v1.4.3 同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)已成功，原生 AMD64／ARM64 门禁全部通过；Release 为最新稳定版，仅包含源码包和 SHA256SUMS.txt。实际下载的源码包通过结构／清单校验，两个资产的本地 SHA256 均匹配 GitHub 摘要。源码包 SHA256：`3788bd749dd2f4674eb7dbb858357d5be538a987157fb5a718d474dd2a3dd63b`。本段不改写已发布 Tag、资产或远端 Release 正文；不代表真实 VPS／网盘验收。

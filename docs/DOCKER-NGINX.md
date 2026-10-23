@@ -15,7 +15,7 @@
 
 ## 支持条件
 
-本地待发布的密码轮换、证书加载、后端换 IP 与路由移除集成用例及执行门槛见[生命周期回归](development/MAINTENANCE-IMPROVEMENTS.md#4-nginx-生命周期回归与实机门槛)。本机未运行 Docker／真实 ACME，不把测试代码存在写成实机通过。
+v1.4.3 新增的密码轮换、证书加载、后端换 IP 与路由移除隔离用例已通过原生双架构及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)。换 IP 测试补齐显式子网，不改生产网络。范围见[生命周期回归](development/MAINTENANCE-IMPROVEMENTS.md#4-nginx-生命周期回归与实机门槛)；真实 ACME、生产网关与迁移仍需独立验收。下文旧 A／B 是 v1.4.2 的历史记录。
 
 - Debian / Ubuntu、Python 3.10+、原生 AMD64 / ARM64、本机默认 rootful Docker daemon；不使用 QEMU、远端 daemon、rootless 或用户命名空间重映射。
 - 普通 Nginx，有真实 master 进程和标准 `nginx -T` 输出；需完整配置检查及 `nginx -s reload`。

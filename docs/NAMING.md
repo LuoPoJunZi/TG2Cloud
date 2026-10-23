@@ -4,7 +4,7 @@
 
 ## 版本与生效范围
 
-本地新增[命名预览](development/MAINTENANCE-IMPROVEMENTS.md#5-命名预览与样例回归)，与生产 API 共用选择路径，展示原因但不转存／改名；这是待发布的本地工具，不是现有 v1.4.2 Bot 新命令，也不改变下列命名优先级。
+v1.4.3 新增[命名预览](development/MAINTENANCE-IMPROVEMENTS.md#5-命名预览与样例回归)，与 Bot API 共用选择路径，展示原因但不转存／改名；这是本机工具，不是 Telegram 新命令，不改变下列命名优先级。
 
 | 范围 | 状态 |
 | --- | --- |

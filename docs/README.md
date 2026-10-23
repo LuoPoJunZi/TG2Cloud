@@ -1,6 +1,6 @@
 # TG2Cloud 文档目录
 
-当前正式版本为 **v1.4.2**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。公网 NAT 的 HTTPS 修复及执行条件见[VPS 指南](VPS-INSTALL.md)。
+当前正式版本为 **v1.4.3**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 迁移与回退见[可选功能说明](FEATURE-ENHANCEMENTS.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
 
 v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名指南](NAMING.md)。旧“待发布”章节标题仅保留链接兼容，正文已明确实际版本；升级实例才会启用新代码，更新文档不更新 Bot。
 
@@ -34,7 +34,7 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 ## 运维、故障排查与迁移
 
 - [运行状态与维护](OPERATIONS.md)：管理命令、配置变更、实际版本、日志、HTTPS、备份管理与排查索引。
-- [四项可选增强（待发布）](FEATURE-ENHANCEMENTS.md)：分类、主动通知、成员配额和诊断报告，含默认值、schema2迁移与验收边界。
+- [四项可选增强（v1.4.3）](FEATURE-ENHANCEMENTS.md)：分类、主动通知、成员配额和诊断报告，含默认值、schema2迁移与验收边界。
 - [复用已有 Docker Nginx](DOCKER-NGINX.md)：v1.4.2 显式接入、持久化网络／挂载、证书责任与续期、事务恢复、迁移和卸载保护；原 managed 默认模式不变，真实 VPS 仍需验收。
 - [常见问题](FAQ.md)：安装／升级、账号／目录、状态计数、命名、限流及卸载的快速排查入口。
 - [任务恢复与验证](RECOVERY.md)：重新转存、远端冲突、验证等级、遗留扫描、容量保护及旧链接兼容。
@@ -45,7 +45,7 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 
 ## 开发、品牌与许可
 
-- [待发布维护增强](development/MAINTENANCE-IMPROVEMENTS.md)：受支持旧版基线、实例快照、业务就绪、Nginx 生命周期与命名预览；明确本地实现及发布／实机门槛，不属于现有 v1.4.2 线上入口。
+- [v1.4.3 维护增强](development/MAINTENANCE-IMPROVEMENTS.md)：受支持旧版基线、实例快照、业务就绪、Nginx 生命周期与命名预览；区分开发记录、正式发布和实机验收。
 - [参与贡献](../.github/CONTRIBUTING.md)：本地检查、CI 与正式发布规则。
 - [仓库结构与维护规范](development/REPOSITORY.md)：源码职责、文档同步与本地产物处理。
 - [Linux Python + Bash 重构（v1.3.0）](development/LINUX-REFACTOR.md)：新入口、模块映射、运行兼容、指纹协议和 helper 发布门槛。

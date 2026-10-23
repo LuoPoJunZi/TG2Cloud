@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前正式版本 **v1.4.2**，以 Linux 脚本维护，支持原生 AMD64 / ARM64；源码包与校验清单见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)。更新文档不会替换已有实例，需显式升级。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 v1.3.3 正式升级及用户转存确认见[历史验收记录](docs/development/V133-ACCEPTANCE.md)，不外推当前版本或其他部署与恢复场景。
+当前正式版本 **v1.4.3**，以 Linux 脚本维护，支持原生 AMD64 / ARM64；源码包与校验清单见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3)。更新文档不会替换已有实例，需显式升级。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。CloudDrive2 v1.3.3 正式升级及用户转存确认见[历史验收记录](docs/development/V133-ACCEPTANCE.md)，不外推当前版本或其他部署与恢复场景。
 
 2026-10-21，专用 Debian AMD64 测试机已完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，健康、数据保留、只读 WebDAV 和外部 HTTPS 检查通过；旧 Release 已删除的自动升级限制、实际转存及新代理模式未验收范围见[本次记录](docs/development/V142-ACCEPTANCE.md)。
 
@@ -82,11 +82,11 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 使用文档
 
-**v1.4.3 正在准备发布**：包含以下维护、可选功能与测速／菜单修复。业务数据库将事务迁移至 schema 2，升级前须备份，回退需匹配旧数据库与旧代码；当前正式下载仍以已发布版本为准。详见[本次发布说明](RELEASE_NOTES.md)。
+v1.4.3 包含维护、可选功能与测速／菜单修复。业务数据库事务迁移至 schema 2，升级前须备份；回退需匹配旧数据库与旧代码。详见[本次发布说明](RELEASE_NOTES.md)。本版未进行真实 VPS／网盘验收，不外推历史反馈。
 
-本地待发布的升级兼容、实例快照、业务就绪与命名预览，见[维护增强说明](docs/development/MAINTENANCE-IMPROVEMENTS.md)；现有正式 v1.4.2 在线入口不包含这些新增能力。
+v1.4.3 的升级兼容、实例快照、业务就绪与命名预览，见[维护增强说明](docs/development/MAINTENANCE-IMPROVEMENTS.md)；须显式升级 Bot 与离线管理工具后使用。
 
-另有[可选分类、主动通知、家庭配额与脱敏报告](docs/FEATURE-ENHANCEMENTS.md)的本地增强：分类/通知默认关闭、成员默认不限额，尚未发布，升级前需备份数据库。
+[可选分类、主动通知、家庭配额与脱敏报告](docs/FEATURE-ENHANCEMENTS.md)已纳入 v1.4.3：分类／通知默认关闭，成员默认不限额；升级前需备份数据库。
 
 v1.3.3 起，[家庭共享](docs/FAMILY-SHARING.md)支持安装后授权家人转存、共用保存目录及各自的外部只读账号；安装仍只填一个管理员 ID。v1.3.4 增强网址污染名、图片自身说明及一图一视频同标题；完整规则与边界见[命名指南](docs/NAMING.md)。已有实例与离线工具需显式升级。
 

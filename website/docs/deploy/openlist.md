@@ -1,5 +1,9 @@
 # OpenList Edition 部署
 
+:::info 当前脚本版与历史桌面版
+当前 v1.4.3 使用 Linux 一键脚本，请先按[从零开始部署](/guide/quick-start/)安装。下面的 EXE／右侧管理区描述属于 v1.2.1 历史界面；网关初始化、独立 WebDAV 用户与权限步骤仍可参考。脚本菜单及限定实例快照见[维护](/operations/maintenance/)和[备份](/operations/backup/)，不需要下载 EXE。
+:::
+
 按“基础部署 → 挂载存储 → 创建 WebDAV 用户 → 验收”的顺序操作。OpenList 管理员账号与 Bot 专用 WebDAV 用户是两套用途不同的账号。
 
 ## 一、下载、连接与资源检查

@@ -1,6 +1,6 @@
 # VPS 安装与升级脚本
 
-v1.4.3 发布准备：三个在线入口固定辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`，A 的五项 CI 已通过，包含[原生双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899880815)和[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899900269)。新清单带齐标准库 helper；仍须入口 B 与同标签发布门禁。v1.4.3 增强升级基线、备份、就绪与管理能力，涉及业务 DB schema 2，升级前须备份，不能只降级镜像回退。下面保留 v1.4.2 的历史发布与验收记录。
+v1.4.3 已正式发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 新清单带齐标准库 helper；业务数据库迁移至 schema 2，升级前须备份，不能只降级镜像回退。下面保留 v1.4.2 历史发布与实机记录，不外推本版。
 
 v1.4.2 已正式发布：辅助 A `840472f919409531e99da55c62070ea262ebed6d`、入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际源码包、SHA256 和 GitHub 摘要已核验。三个在线入口固定 A 并带齐递归清单；新增[复用已有 Docker Nginx](DOCKER-NGINX.md)，需显式授权，不改变默认 managed 模式。
 
@@ -16,7 +16,7 @@ TG2Cloud 后续以 Linux 一键脚本为主入口，Windows 部署器停留在 v
 
 家庭内网 / NAS 的无域名安装请参阅独立的 [LAN 安装脚本](LAN-INSTALL.md)，具体 NAS 环境仍需验收。不要在公网 VPS 上用 LAN 脚本跳过 HTTPS，也不要把本页 `install.sh` 的域名输入替换成内网 IP。
 
-> 当前正式版本为 v1.4.2，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录与本页新增的 v1.4.1 ARM64 首装记录分别理解；正式版自动升级与回退仍需对应版本独立验证，OpenList 脚本实机验收暂缓。详见[历史迁移记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
+> 当前正式版本为 v1.4.3，源码包和校验清单已发布。本脚本不依赖 EXE；向导固定到已验证 commit，业务代码只取正式稳定 Release。2026-10-17，CloudDrive2 旧测试候选经授权备份、人工核对后迁移到 v1.3.0，用户确认升级后使用验收通过。该历史记录与本页新增的 v1.4.1 ARM64 首装记录分别理解；正式版自动升级与回退仍需对应版本独立验证，OpenList 脚本实机验收暂缓。详见[历史迁移记录](development/V130-ACCEPTANCE.md)。下载入口或 EXE 不会自动更改已部署实例。
 
 2026-10-19 补充：专用测试机已完成 CloudDrive2 正式 v1.3.2 → v1.3.3 保留配置升级，用户确认实际转存验收完成。该结论限此 Edition 和此次路径，不扩展到 v1.3.4、首次安装、OpenList 或故障回退。
 
@@ -118,7 +118,7 @@ OpenList 使用 `--edition openlist`，其脚本实机验收仍暂缓。不指�
 
 ### 旧版本 Release／Tag 已删除
 
-本地工作树已增加四个受支持旧版的可信目录；这是[待发布增强](development/MAINTENANCE-IMPROVEMENTS.md#1-旧版本可信基线)，尚未进入本页公开入口或现有正式 v1.4.2。下面描述正式版本及当时验收的行为，不要据此下载任意 SHA 绕过保护。
+v1.4.3 已增加四个受支持旧版的[可信目录](development/MAINTENANCE-IMPROVEMENTS.md#1-旧版本可信基线)，旧 Release 删除时仍核对原提交和载荷。未知版本继续要求正式基线。下面保留 v1.4.2 当时的限制与人工验收记录，不要下载任意 SHA 或绕过源码核验。
 
 当前向导需要核验已安装版本的正式源码基线。若该版本的 GitHub Release 或 Tag 已删除，旧版本查询可能返回 404 并在升级前停止；即使版本号、容器和现有服务正常，也不能据此跳过基线检查。先保留原实例，不卸载、不改版本标记、不从未知来源覆盖代码。
 
@@ -130,7 +130,7 @@ OpenList 使用 `--edition openlist`，其脚本实机验收仍暂缓。不指�
 
 终端修复只影响独立向导，不要求重建 EXE 或改写已有 Release。单行入口固定到不可变向导 commit，只有维护者将入口 pin 更新到通过 CI 的修复提交后，重新下载才会使用修复；不要通过删除实例、改为无人值守管道或跳过确认绕过错误。
 
-目标 payload 始终来自 GitHub 最新正式稳定 Release 的源码，不是本地工作树或 `main`。当前 v1.3.0 已包含脚本和模块化源码；未来从本地试用新向导时，也不会把尚未发布的业务代码装到 VPS。
+目标 payload 始终来自 GitHub 最新正式稳定 Release 的源码，不是本地工作树或 `main`。v1.3.0 起已包含脚本和模块化源码；未来从本地试用新向导时，也不会把尚未发布的业务代码装到 VPS。
 
 ### APT 软件源错误
 

@@ -1,5 +1,9 @@
 # CloudDrive2 Edition 部署
 
+:::info 当前脚本版与历史桌面版
+当前 v1.4.3 使用 Linux 一键脚本，请先按[从零开始部署](/guide/quick-start/)安装。下面保留 v1.2.1 Windows 部署器的历史界面步骤；网关账号／目录与 WebDAV 验收仍可参考，不需要下载 EXE。脚本版的管理、备份与 schema 2 迁移以[运维](/operations/maintenance/)和[备份](/operations/backup/)为准。
+:::
+
 适用于使用 CloudDrive2 挂载云存储，并通过其 WebDAV 接口接收文件的用户。115 仅作为路径示例。
 
 ## 一、确认部署方式
@@ -72,5 +76,5 @@ TG2CLOUD_DESTINATION=OK
 按 [第一次文件转存](/usage/first-transfer/) 发送一个小文件，并在云存储官方客户端核实位置、大小和内容。CloudDrive2 WebDAV 接收成功不等于上游云盘最终状态已被 TG2Cloud 证明。
 
 :::warning 已有安装与备份
-重复部署默认保留 VPS 当前 `.env`。CloudDrive2 没有手动业务“创建安全备份”UI，也没有正式自动 Restore；当前 v1.2.0 源码的 HTTPS 维护工具仅备份共享代理，不包含业务数据。升级前先读 [备份边界](/operations/backup/)。
+重复部署默认保留 VPS 当前 `.env`。旧桌面界面不提供手动业务快照；v1.4.3 脚本菜单已支持限定实例快照与隔离预检，仍没有覆盖生产数据的自动 Restore。升级前先读[备份边界](/operations/backup/)。
 :::

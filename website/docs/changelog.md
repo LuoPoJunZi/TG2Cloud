@@ -1,6 +1,6 @@
 # 更新日志
 
-本地另有尚未发布的可选分类、管理员主动通知、家庭成员每日/排队/并发配额和白名单诊断报告。分类/通知默认关闭、成员默认不限额；涉及schema2事务迁移，升级前需备份。当前正式版本仍是v1.4.2。用法见[转存说明](/usage/first-transfer/)、[个人配额](/usage/commands/)、[维护](/operations/maintenance/)和[备份](/operations/backup/)。
+v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊断报告。分类／通知默认关闭，成员默认不限额；涉及业务 schema 2，升级前备份。见[转存](/usage/first-transfer/)、[个人配额](/usage/commands/)、[维护](/operations/maintenance/)和[备份](/operations/backup/)。
 
 这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.3 共 22 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
@@ -35,9 +35,9 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.3
 
-2026-10-23 待发布：新增可选分类、管理员通知、成员配额与脱敏报告，修复上传测速与过期显示，保留简洁 Bot 首页；统一编号菜单、外部 WebDAV 默认网关与账号。业务数据库事务迁移到 schema 2，升级前备份，不能只降级镜像回退。范围见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，原生双架构、同标签发布与资产核验完成前不宣称上线。本版真实 VPS／网盘验收未执行。
+2026-10-23，[v1.4.3 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3)。辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 新增可选分类、管理员通知、成员配额及脱敏报告，修复测速、保留简洁首页，统一编号菜单和外部 WebDAV 默认值。业务数据库迁移到 schema 2，升级前备份；范围见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。本版真实 VPS／网盘验收未执行。
 
-2026-10-22 本地工作树新增：四个受支持旧版的固定基线目录、实例快照／隔离预检、业务就绪观察、Nginx 生命周期回归和独立命名预览。延续原实例身份、数据库／Session 路径、命名优先级及冷却保护；不覆盖生产恢复、不增加 Bot 首页内容。源码清单和最小宿主依赖同步，正式版本／线上 helper pin 暂不改；Docker、真实 ACME 和发布前步骤见[完整开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md)，不把本地改动写成正式 v1.4.2 已提供。
+本版还包括四个旧版可信基线、实例快照／隔离预检、业务就绪观察、Nginx 生命周期回归与命名预览；延续实例身份、历史路径、命名优先级与冷却保护，不增加生产覆盖恢复。开发阶段记录与发布核验见[维护增强](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md)，不回写旧版已发布资产。
 
 ## TG2Cloud v1.4.2
 

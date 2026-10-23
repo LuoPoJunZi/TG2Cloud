@@ -1,6 +1,6 @@
 # TG2Cloud 独立卸载脚本
 
-v1.4.3 发布准备：三个入口固定已通过五项 CI 的辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`；[原生双架构记录](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39899880815)。不改变单 Edition 归属、数据保留选项、外部 WebDAV 依赖或外部代理保护。入口 B 与正式发布仍待验证，不将 CI 当作真实清理验收。下面的 v1.4.2 pin／发布结论是历史记录，不是本次新入口身份。
+v1.4.3 已正式发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 单 Edition 归属、数据保留选项、外部 WebDAV 依赖和外部代理保护不变；本版真实卸载未验收。下面的旧 pin 是历史记录，不是本次入口身份。
 
 v1.4.2 已发布：三个入口固定已通过五项 CI 的辅助 A `840472f919409531e99da55c62070ea262ebed6d`，入口 B 和[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)亦通过，实际资产已核验。新增 external_docker 依赖与事务保护，不删除外部代理／Compose／网络；外部证书、恢复材料及离线工具默认保留。真实卸载仍须独立验收。
 
@@ -10,7 +10,7 @@ v1.4.0 维护入口固定到已通过五项 CI 的辅助提交 A `1480fd60ad94bd
 
 `uninstall.sh` 是标准目录下 CloudDrive2 / OpenList 受管 Docker 部署的兼容卸载入口，包括公网 VPS 的 HTTPS 和内网管理入口。新版安装／管理菜单复用同一卸载核心，不复制另一套删除逻辑，也不改动 Bot 业务流程或恢复桌面部署器。
 
-> 完整清理增强自 v1.2.1 纳入，v1.3.2 增加管理代码收尾；当前入口固定 v1.4.2 辅助源码 `840472f919409531e99da55c62070ea262ebed6d`，A／B 五项 CI、正式双架构发布和资产校验通过。更新卸载助手不等于更新 Bot；原 v1.2.0 Tag 与历史 EXE 行为不变。用户原保留数据卸载反馈不能替代本版完整清理或 external_docker 的实机验收，也不扩大到两 Edition、NAS 或新删除行为。
+> 完整清理增强自 v1.2.1 纳入，v1.3.2 增加管理代码收尾；历史 v1.4.2 入口固定 辅助源码 `840472f919409531e99da55c62070ea262ebed6d`，A／B 五项 CI、正式双架构发布和资产校验通过。更新卸载助手不等于更新 Bot；原 v1.2.0 Tag 与历史 EXE 行为不变。用户原保留数据卸载反馈不能替代本版完整清理或 external_docker 的实机验收，也不扩大到两 Edition、NAS 或新删除行为。
 
 历史 v1.3.3 向导固定提交为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`；不改写旧 Tag，不用旧助手覆盖较新共享代理状态。
 
@@ -44,7 +44,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 ## 本地源码运行
 
-在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.4.2 继续支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
+在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.4.3 继续支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
 
 先只读查看范围：
 

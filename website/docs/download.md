@@ -1,14 +1,14 @@
 # 下载与 SHA-256 校验
 
-源码文档已更新至 **TG2Cloud v1.4.3**（待发布）：维护增强、可选分类／通知／配额、诊断与测速修复。发布门禁尚未完成，下面保留实际可下载的 v1.4.2 资产；main 版本号不表示已上线。升级前备份数据库，schema 2 迁移与回退边界见[备份说明](/operations/backup/)。
 
-当前正式版本为 **TG2Cloud v1.4.2**：新增显式复用已有 Docker Nginx。辅助 A／入口 B、同标签原生双架构和实际源码包／SHA256／GitHub 资产摘要均已核验，external_docker 的真实 VPS 接入、ACME、长期续期与代理迁移仍须独立验收。项目以 Linux 一键脚本维护两个 Edition，Windows 部署器停留在 v1.2.1。改动见[更新日志](/changelog/)，更新文档不会自动升级 Bot。
+
+当前正式版本为 **TG2Cloud v1.4.3**：维护增强、可选分类／通知／配额、脱敏报告与测速／菜单修复。辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 升级前备份业务数据库，schema 2 回退不能只降级镜像，见[备份说明](/operations/backup/)。项目继续维护 Linux 两 Edition，Windows 停留在 v1.2.1；本版真实 VPS／网盘验收未执行。
 
 截至 2026-10-21，GitHub 保留 v1.4.2、v1.4.1、v1.2.1 三个 Release／Tag。其他版本虽已移除发布页和标签，[全版本记录](/changelog/)仍保留每一版的功能和修复，不能把下载列表当作完整开发历史。
 
-## v1.4.2 源码包与脚本
+## v1.4.3 源码包与脚本
 
-本版 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2) 已由 Actions 从不可变 Tag 完成原生双架构验证、打包并发布。源码包实际 SHA256、校验清单、公开资产摘要与源码归档均已核对；直接安装和升级使用下方 VPS／内网单行入口。独立附加入口见[外部 WebDAV](/deploy/external-webdav/)，不会由主安装默认启用。发布不等于本版 Oracle／真实 VPS、Telegram 或网关已验收。
+本版 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3) 已由 Actions 从不可变 Tag 完成原生双架构验证、打包并发布。源码包 SHA256、清单和公开资产摘要已核对；安装和升级仍使用下方单行入口。独立附加入口见[外部 WebDAV](/deploy/external-webdav/)，不由主安装默认启用。发布不等于真实 VPS、Telegram 或网盘验收。
 
 历史 v1.4.1 发布后，用户已确认 CloudDrive2 在 Ubuntu26.04.1／原生ARM64／公网NAT 环境完成首次安装、本机HTTPS与WebDAV验收，见[脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。这是独立于发布检查的用户实机反馈，不扩展到OpenList、已有实例升级／回退、手机外网或长期续期。
 
@@ -16,8 +16,8 @@ v1.4.2 发布后另完成 Debian AMD64 的 CloudDrive2 v1.3.4 → v1.4.2 人工�
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.4.2-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.2/TG2Cloud-v1.4.2-source.tar.gz) | 同标签源码，包含两 Edition 的运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.2/SHA256SUMS.txt) | 本次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.4.3-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.3/TG2Cloud-v1.4.3-source.tar.gz) | 同标签源码，包含两 Edition 的运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.3/SHA256SUMS.txt) | 本次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -38,7 +38,7 @@ sha256sum -c SHA256SUMS.txt
 [查看 v1.2.1 发布页](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) · [查看最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 :::info 固定版本与最新版本
-本页源码包固定到 v1.4.2，历史 Windows 下载固定到 v1.2.1；分别使用对应 Release 的 SHA256SUMS，不混用校验值。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
+本页源码包固定到 v1.4.3，历史 Windows 下载固定到 v1.2.1；分别使用对应 Release 的 SHA256SUMS，不混用校验值。“最新 Release”可能指向更新版本，应使用那个版本自己的校验文件和发布说明。源码 Push 与正式发布是不同操作，不能用 main 版本号证明 Release 已经存在。
 :::
 
 v1.2.1 的两个正式 EXE 由 GitHub Actions 的 Windows Runner 从同一标签构建并自检，Release 复用该次构建产物。校验值来自这次 Actions 实际生成的文件，不要求与本机旧构建一致。
