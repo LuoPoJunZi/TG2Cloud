@@ -26,6 +26,19 @@ class ManagementTests(unittest.TestCase):
     def record(self):
         return {"schema": 1, "admin_id": 123, "revision": "initial", "users": [], "events": []}
 
+    def test_members_and_actions_have_separate_labels_without_logging_private_ids(self):
+        record = self.record()
+        record["users"] = [{"id": 456, "name": "合成成员", "enabled": True}]
+        manager = SimpleNamespace(ui=Mock(), log=Mock(), session=Mock(), product=PRODUCTS["openlist"])
+        manager.ui.ask.return_value = "0"
+        with patch.object(host, "request", return_value=record):
+            host.manage(manager, SimpleNamespace(running=True, version="1.4.4", config={"ALLOWED_USER_ID": "123"}))
+        text = "\n".join(call.args[0] for call in manager.log.call_args_list)
+        for label in ("OpenList · 版本 1.4.4", "成员列表", "管理操作", "0. 返回主菜单"):
+            self.assertIn(label, text)
+        manager.ui.private.assert_any_call("成员 1", "合成成员 · 456 · 启用")
+        self.assertNotIn("456", text)
+
     def test_fixed_exec_request_is_quoted_and_never_executes_member_name(self):
         session = Mock()
         record = self.record()

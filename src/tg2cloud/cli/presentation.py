@@ -129,6 +129,19 @@ def numbered_menu(items) -> str:
     return "\n".join(f"{number:<{width}} {label}" for number, label in rows)
 
 
+def page_heading(title: str, product, version: str = "") -> str:
+    context = product.display_name + (" · 版本 " + version if version else "")
+    return f"\n── {title} ──\n\n{context}\n"
+
+
+def terminal_report(markdown: str) -> str:
+    """Only presentation changes; the saved diagnostic remains Markdown."""
+    lines = markdown.splitlines()
+    if lines and lines[0].startswith("# "):
+        lines = lines[1:]  # The surrounding management page already has a title.
+    return "\n".join(re.sub(r"^#{1,3} (.+)$", r"── \1 ──", line) for line in lines).lstrip("\n")
+
+
 class InstallerLog:
     def __init__(self, log: SafeLog, *, friendly: bool = True) -> None:
         self.log = log

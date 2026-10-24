@@ -15,7 +15,7 @@ import shutil
 import sqlite3
 import tarfile
 import tempfile
-from contextlib import closing
+from contextlib import closing, contextmanager
 from pathlib import Path, PurePosixPath
 
 MAX_BYTES = 2 * 1024**3
@@ -128,7 +128,9 @@ def pack(snapshot: Path, archive: Path, edition: str, source_version: str) -> No
         raise
 
 
-def preflight(archive: Path, scratch: Path, edition: str, target_version: str) -> dict:
+@contextmanager
+def verified_snapshot(archive: Path, scratch: Path, edition: str, target_version: str):
+    """Expose only a fully verified private copy; remove it even on interruption."""
     required(edition)
     target = version(target_version)
     if archive.is_symlink() or scratch.is_symlink() or not scratch.is_dir():
@@ -151,6 +153,11 @@ def preflight(archive: Path, scratch: Path, edition: str, target_version: str) -
         total = 0
         for name, record in records.items():
             validate_name(name)
+            if (name not in {*required(edition), "tg2cloud-release.json"}
+                    and not name.startswith(("config/", gateway))):
+                raise ValueError("entry outside declared snapshot scope")
+            if name.endswith(("-wal", "-shm", "-journal")):
+                raise ValueError("database is not a standalone snapshot")
             if type(record["size"]) is not int or record["size"] < 0:
                 raise ValueError("invalid size")
             total += record["size"]
@@ -180,7 +187,15 @@ def preflight(archive: Path, scratch: Path, edition: str, target_version: str) -
                 seen.add(item.name)
             if seen != set(records):
                 raise ValueError("missing entries")
-    return {"files": len(records), "bytes": total, "scope": "offline-structure-and-database-only"}
+            # Close the archive before a caller inspects its verified copy. No
+            # caller observes partially checked files or controls extraction.
+            tar.close()
+            yield root, {"files": len(records), "bytes": total, "scope": "offline-structure-and-database-only"}
+
+
+def preflight(archive: Path, scratch: Path, edition: str, target_version: str) -> dict:
+    with verified_snapshot(archive, scratch, edition, target_version) as (_, report):
+        return report
 
 
 def main() -> int:

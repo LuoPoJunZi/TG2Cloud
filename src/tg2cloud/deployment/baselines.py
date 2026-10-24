@@ -39,6 +39,20 @@ CATALOG = {
             "openlist": "248e1aa8a273b96d65aa6e8dcb6cd7c312c213371f5ef3e3282973694cb9e1fc",
         },
     },
+    "v1.4.3": {
+        "commit": "5aaf6a9b158d785ffa2fee52750c022fb8654810",
+        "payloads": {
+            "clouddrive2": "368cd7285e4abc9655ea84fdb857dc657b0b2aa4cebeeabca02c028a7ca59532",
+            "openlist": "2f901b9fdcb700dd528d9cf173e5376bafa77847514ee28d11705ac83e1e3b33",
+        },
+    },
+    "v1.4.4": {
+        "commit": "6164a237108786c01a7a958ab56e16023df04d79",
+        "payloads": {
+            "clouddrive2": "e89c739f5c8e16d739a954b2c41b184e4fc8fbcacea4b60047ca50b06291d10b",
+            "openlist": "a53178080a51948df03a795e3779686ec4c88f42b57f98f6d1a46908f4f3e44a",
+        },
+    },
 }
 
 

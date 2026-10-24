@@ -25,6 +25,8 @@ class PreviewTests(unittest.TestCase):
                 result = naming.preview(case["input"])
                 value = case["input"]
                 self.assertEqual(result["file_name"], case["expected"])
+                if "source" in case:
+                    self.assertEqual(result["source"], case["source"])
                 self.assertEqual(result["file_name"], media_file_name(value["file_name"], value["caption"], "telegram-preview.mp4",
                                  media_extension=value.get("media_extension", "")))
                 self.assertFalse(result["writes"])

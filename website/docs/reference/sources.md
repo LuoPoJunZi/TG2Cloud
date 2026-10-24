@@ -1,6 +1,8 @@
 # 文档来源与维护
 
-本次内容核对日期为 **2026 年 10 月 23 日**，对应已发布 **v1.4.4**。辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 本版补充安装反馈与管理菜单精简，不改变 Bot 核心或新增数据库迁移；须显式升级离线工具。历史用户日志不外推本版实机验收。
+本次内容核对日期为 **2026 年 10 月 24 日**，源码 **v1.4.5** 待发布；正式下载仍为 [v1.4.4 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4)。本版须等待新 helper、远端 CI 与资产核验，不借用下面历史记录声明本版已通过实机验收。
+
+历史资料核对（2026-10-23，对应 v1.4.4）：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 本版补充安装反馈与管理菜单精简，不改变 Bot 核心或新增数据库迁移；须显式升级离线工具。历史用户日志不外推本版实机验收。
 
 2026-10-23 已另收到两份 v1.4.4 用户升级日志并确认验收通过，分别覆盖 CloudDrive2／Ubuntu ARM64 和 Debian AMD64。日志证据与用户确认、自动 CI 以及仍未执行的 WebDAV 写入／真实转存／外网／回退分别记录，不因发布成功而推断业务全部通过。
 
@@ -31,11 +33,11 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码与正式版本均为 1.4.4。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
+本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码为 1.4.5，当前正式版本为 1.4.4。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.4；依赖和历史版本不机械替换。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.5；依赖和历史版本不机械替换。
 
 导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 

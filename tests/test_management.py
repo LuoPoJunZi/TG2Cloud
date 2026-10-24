@@ -344,7 +344,7 @@ class ManagementTests(unittest.TestCase):
                     operations.update({key: stack.enter_context(patch(target, return_value="synthetic report"))
                                        for key, target in external.items()})
                     preview = stack.enter_context(patch("tg2cloud.cli.naming.interactive"))
-                    self.ui.ask.side_effect = [number, "0"]
+                    self.ui.ask.side_effect = [number, "0", "0"] if number in {"1", "2", "3", "4", "6", "7", "10", "11", "12", "13"} else [number, "0"]
                     self.ui.confirm.return_value = False
                     self.assertEqual(manager.run(), 0)
                     for key, operation in operations.items():
@@ -404,7 +404,8 @@ class ManagementTests(unittest.TestCase):
                         self.manager.control(self.instance)
                 else:
                     self.manager.control(self.instance)
-        self.session.run.assert_not_called()
+        self.assertEqual(self.session.run.call_count, 4)
+        self.assertTrue(all(call.args[0].startswith("docker inspect ") for call in self.session.run.call_args_list))
 
     def test_each_service_action_targets_only_selected_container_in_one_prompt(self):
         for product in PRODUCTS.values():
@@ -419,14 +420,20 @@ class ManagementTests(unittest.TestCase):
                         manager.control(self.instance)
                     verb = ("start", "stop", "restart")[(number - 1) % 3]
                     name = product.bot_container if number <= 3 else product.storage_container
-                    self.session.run.assert_called_once_with("docker " + verb + " " + name, stream=self.log, timeout=90)
+                    self.assertEqual(self.session.run.call_count, 3)
+                    before = self.session.run.call_args_list[:2]
+                    self.assertTrue(all(call.args[0].startswith("docker inspect ") for call in before))
+                    self.assertTrue(all(call.args[0].endswith((product.bot_container, product.storage_container)) for call in before))
+                    self.assertEqual(self.session.run.call_args.args, ("docker " + verb + " " + name,))
+                    self.assertEqual(self.session.run.call_args.kwargs, {"stream": self.log, "timeout": 90})
                     self.assertEqual(self.ui.ask.call_count, 1)
 
     def test_service_menu_return_does_not_confirm_or_execute(self):
         self.ui.ask.return_value = "0"
         self.manager.control(self.instance)
         self.ui.confirm.assert_not_called()
-        self.session.run.assert_not_called()
+        self.assertEqual(self.session.run.call_count, 2)
+        self.assertTrue(all(call.args[0].startswith("docker inspect ") for call in self.session.run.call_args_list))
 
     def test_revision_recheck_rejects_changes_and_custom_path_mismatch(self):
         changed = instances.Instance(self.product, self.instance.directory, True, "1.3.1", True, "image", {}, b"changed")
@@ -467,7 +474,7 @@ class ManagementTests(unittest.TestCase):
     def test_lan_entry_does_not_issue_certificate(self):
         with patch.object(self.manager, "mode", return_value={"bind_ip": "192.168.1.9"}), patch.object(self.manager, "status") as status, patch.object(self.manager, "proxy") as proxy:
             self.manager.entry(self.instance)
-        status.assert_called_once()
+        status.assert_called_once_with(self.instance, title="HTTPS 与管理")
         proxy.assert_not_called()
 
     def test_https_repair_never_queries_release_or_upgrades_bot_and_keeps_domain(self):
@@ -484,7 +491,7 @@ class ManagementTests(unittest.TestCase):
         client.assert_not_called()
 
     def test_proxy_prune_requires_confirmation_and_forwards_exact_plan(self):
-        self.ui.ask.return_value = "5"
+        self.ui.ask.return_value = "7"
         self.ui.confirm.return_value = True
         proxy = Mock()
         proxy.external_entry.return_value = None
@@ -496,7 +503,7 @@ class ManagementTests(unittest.TestCase):
 
     def test_instance_snapshot_cancel_never_stops_services_or_creates_backup(self):
         from tg2cloud.deployment import backup
-        self.ui.ask.side_effect = ["6", "/opt/tg2cloud-snapshots/clouddrive2"]
+        self.ui.ask.side_effect = ["2", "/opt/tg2cloud-snapshots/clouddrive2"]
         self.ui.confirm.return_value = False
         with patch.object(backup, "output_directory"), patch.object(backup, "create") as create:
             self.manager.backups(self.instance)
@@ -504,7 +511,7 @@ class ManagementTests(unittest.TestCase):
         self.session.run.assert_not_called()
 
     def test_external_proxy_does_not_use_managed_directory_prune(self):
-        self.ui.ask.return_value = "5"
+        self.ui.ask.return_value = "7"
         proxy = Mock()
         proxy.external_entry.return_value = object()
         with patch.object(self.manager, "recheck", return_value=self.instance), patch.object(self.manager, "proxy", return_value=proxy):

@@ -10,5 +10,19 @@
   {"input": {"file_name": "000123.mp4", "caption": "标题：1917"}, "expected": "1917.mp4"},
   {"input": {"file_name": "000123.jpg", "caption": "河边落日与飞鸟", "media_extension": ".jpg"}, "expected": "河边落日与飞鸟.jpg"},
   {"input": {"file_name": "000123.mp4", "caption": "河边旅行.exe", "media_extension": ".mp4"}, "expected": "000123.mp4"},
-  {"input": {"file_name": "000123.mp4", "caption": "更多资源请关注 @example\n标题：One Piece 第1080集"}, "expected": "One Piece 第1080集.mp4"}
+  {"input": {"file_name": "000123.mp4", "caption": "更多资源请关注 @example\n标题：One Piece 第1080集"}, "expected": "One Piece 第1080集.mp4"},
+  {"input": {"file_name": "000123.mp4", "caption": "L'été à Montréal\n1080P"}, "expected": "L'été à Montréal.mp4", "source": "caption"},
+  {"input": {"file_name": "000123.mp4", "caption": "Gödel, Escher, Bach"}, "expected": "Gödel, Escher, Bach.mp4", "source": "caption"},
+  {"input": {"file_name": "000123.mp4", "caption": "Путешествие по Москве"}, "expected": "Путешествие по Москве.mp4", "source": "caption"},
+  {"input": {"file_name": "000123.mp4", "caption": "京都の朝 第2話\nhttps://example.test\n#旅行 @sample_channel"}, "expected": "京都の朝 第2話.mp4", "source": "caption"},
+  {"input": {"file_name": "000123.mp4", "caption": "제목: 서울의 봄\n구독해주세요"}, "expected": "서울의 봄.mp4", "source": "caption"},
+  {"input": {"file_name": "000123.mp4", "caption": "繁體中文教學 第3課\n提取碼：AB12\n更多資源請關注 @example"}, "expected": "繁體中文教學 第3課.mp4", "source": "caption"},
+  {"input": {"file_name": "000123.mp4", "caption": "三体\n第12集\n1080P"}, "expected": "三体 第12集.mp4", "source": "caption"},
+  {"input": {"file_name": "One Piece S01E02.MKV", "caption": "另一个标题\n@sample_channel"}, "expected": "One Piece S01E02.MKV", "source": "original"},
+  {"input": {"file_name": "000123.jpg", "caption": "清晨的湖岸与远山\n#风景 #摄影\nwww.example.test"}, "expected": "清晨的湖岸与远山.jpg", "source": "caption"},
+  {"input": {"file_name": "000123.mp4", "caption": "标题：Password to Paradise"}, "expected": "Password to Paradise.mp4", "source": "caption"},
+  {"input": {"file_name": "000123.mp4", "caption": "标题：密码 abc123\n加入频道 @sample"}, "expected": "000123.mp4", "source": "original"},
+  {"input": {"file_name": "000123.mp4", "caption": "https://example.test\n关注频道 @sample\n#旅行"}, "expected": "000123.mp4", "source": "original"},
+  {"input": {"file_name": "000123.mp4", "caption": "2026年东京旅行 第2集"}, "expected": "2026年东京旅行 第2集.mp4", "source": "caption"},
+  {"input": {"file_name": "000123.mp4", "caption": "894736281936"}, "expected": "000123.mp4", "source": "original"}
 ]

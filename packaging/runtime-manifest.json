@@ -79,6 +79,7 @@
     "src/tg2cloud/persistence/features.py",
     "src/tg2cloud/persistence/migrations.py",
     "src/tg2cloud/persistence/quotas.py",
+    "src/tg2cloud/persistence/rehearsal.py",
     "src/tg2cloud/persistence/sqlite.py",
     "src/tg2cloud/persistence/users.py",
     "src/tg2cloud/storage/__init__.py",

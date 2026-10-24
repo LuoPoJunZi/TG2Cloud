@@ -1,10 +1,12 @@
 # 开发与贡献
 
+v1.4.5 为待发布维护版：管理次级页面、只读诊断、隔离数据库演练与发布预检沿用现有 Linux 架构，不新增依赖或数据库迁移。正式下载仍为 v1.4.4，下面旧版 CI 和实机记录不外推本版。
+
 v1.4.4 已正式发布：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 普通 Runner 临时配置夹具已限定修复，并补充真实权限拒绝回归；生产 root／权限检查不变，不降低门禁。
 
 v1.4.3 已发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 隔离网络夹具补齐显式子网并保留原断言，不改生产网络。
 
-当前正式源码 v1.4.4，使用下方不可变 Tag 复现；开发使用 main 并记录提交。下方 v1.4.3 及更早的验证保留历史范围。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
+复现当前正式 v1.4.4 请使用对应不可变 Tag；下方命令用于获取待发布 main 开发源码。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
 
 以下保留 v1.4.2 及更早版本的历史发布证据，不外推为 v1.4.3 真实 VPS 验收。
 
@@ -25,11 +27,11 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.4.4
+git checkout main
 git rev-parse HEAD
 ```
 
-本次正式源码使用不可变 v1.4.4 Tag，下载见[下载页](/download/)。开发使用 main 并记录提交号，不把后续修改当作 Release 行为。
+本次 v1.4.5 尚未发布，开发使用 main 并记录提交号，不把工作树当作 Release 行为。正式下载见[下载页](/download/)。
 
 ## 关键目录与入口
 

@@ -6,7 +6,7 @@ import re
 import shlex
 from pathlib import Path
 
-from tg2cloud.cli.presentation import numbered_menu
+from tg2cloud.cli.presentation import numbered_menu, page_heading
 from tg2cloud.deployment.host import edition_lock
 
 
@@ -55,12 +55,15 @@ def manage(manager, instance) -> None:
     ui, log = manager.ui, manager.log
     while True:
         record = request(manager.session, manager.product, admin, action="list")
-        log("\n── Bot 用户管理 ──\n安装时的用户是固定管理员；家人共用保存目录，仅管理自己的任务。")
+        log(page_heading("Bot 用户管理", manager.product, getattr(instance, "version", "")))
+        log("安装时的用户是固定管理员；家人共用保存目录，仅管理自己的任务。\n\n成员列表")
         ui.private("管理员 ID", str(admin))
         for index, member in enumerate(record["users"], 1):
-            ui.private(str(index), f"{member['name']} · {member['id']} · {'启用' if member['enabled'] else '停用'}")
-        log(numbered_menu(((1, "添加家人"), (2, "启用家人"), (3, "停用家人"), (4, "移除授权"),
-                           (5, "查看成员配额"), (6, "设置成员配额"), (7, "取消成员限额"), (0, "返回"))))
+            ui.private("成员 " + str(index), f"{member['name']} · {member['id']} · {'启用' if member['enabled'] else '停用'}")
+        if not record["users"]:
+            log("暂无家庭成员。")
+        log("\n管理操作\n" + numbered_menu(((1, "添加家人"), (2, "启用家人"), (3, "停用家人"), (4, "移除授权"),
+                           (5, "查看成员配额"), (6, "设置成员配额"), (7, "取消成员限额"), (0, "返回主菜单"))))
         selected = choose(ui, "选择操作", ("0", "1", "2", "3", "4", "5", "6", "7"), "0")
         if selected == "0":
             return
@@ -77,7 +80,7 @@ def manage(manager, instance) -> None:
             if not record["users"]:
                 log("没有已登记的家人。")
                 continue
-            number = choose(ui, "选择上方成员序号（0 返回）", tuple(str(n) for n in range(len(record["users"]) + 1)))
+            number = choose(ui, "选择上方成员序号（0 返回）", tuple(str(n) for n in range(len(record["users"]) + 1)), "0")
             if number == "0":
                 continue
             member = record["users"][int(number) - 1]

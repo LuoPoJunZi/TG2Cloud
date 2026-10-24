@@ -47,6 +47,7 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 
 ## 开发、品牌与许可
 
+- [下一轮维护完善（待发布）](development/MAINTENANCE-NEXT.md)：诊断建议、隔离数据库恢复演练、可信升级基线与发布预检，以及 OpenList／内网／已有代理／家庭共享的独立实机补测清单。
 - [v1.4.3 维护增强](development/MAINTENANCE-IMPROVEMENTS.md)：受支持旧版基线、实例快照、业务就绪、Nginx 生命周期与命名预览；区分开发记录、正式发布和实机验收。
 - [参与贡献](../.github/CONTRIBUTING.md)：本地检查、CI 与正式发布规则。
 - [仓库结构与维护规范](development/REPOSITORY.md)：源码职责、文档同步与本地产物处理。

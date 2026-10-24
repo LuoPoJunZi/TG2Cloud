@@ -79,3 +79,71 @@ class BaselineTests(unittest.TestCase):
                 self.assertEqual(caught.exception.status, status)
                 self.assertNotIn("PRIVATE_BODY", str(caught.exception))
                 self.assertNotIn("/secret", str(caught.exception))
+
+    def test_recent_reviewed_baselines_do_not_resolve_deleted_releases(self):
+        for tag in ("v1.4.3", "v1.4.4"):
+            with self.subTest(tag=tag):
+                client = Mock()
+                client.resolve.side_effect = AssertionError("Release lookup forbidden")
+                with patch.object(baselines, "verify"):
+                    releases.download_baseline(client, tag, Path("temp"), Mock())
+                self.assertEqual(client.download.call_args.args[0].commit, baselines.CATALOG[tag]["commit"])
+
+
+class MaintenancePreflightTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        spec = importlib.util.spec_from_file_location("maintenance_preflight", ROOT / ".github/scripts/maintenance_preflight.py")
+        cls.tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.tool)
+
+    def test_candidate_worktree_changes_and_manifest_mismatch_block_without_writes(self):
+        tool = self.tool
+        with tempfile.TemporaryDirectory() as private:
+            root = Path(private)
+            name = "src/tg2cloud/version.py"
+            path = root / name
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b'VERSION = "1.4.4"\n')
+            entry = 'installer_commit = "' + "a" * 40 + '"\n' + "<<'PY' &\nfiles = (" + repr(name) + ",)\nPY\n"
+            for shell in ("install.sh", "install-lan.sh", "uninstall.sh"):
+                (root / shell).write_text(entry)
+            with patch.object(tool.prepare_bootstrap, "helper_files", return_value=[name]), \
+                    patch.object(tool.source_release, "git", return_value=path.read_bytes()):
+                tool.check_helpers(root)
+                path.write_bytes(b'VERSION = "1.4.4"\r\n')
+                tool.check_helpers(root)
+                path.write_bytes(b'VERSION = "1.4.4"\n# unpublished\n')
+                with self.assertRaisesRegex(ValueError, "unpublished"):
+                    tool.check_helpers(root)
+                (root / "install.sh").write_text(entry.replace("files = (", "files = ('unknown.py',"))
+                with self.assertRaisesRegex(ValueError, "manifest"):
+                    tool.check_helpers(root)
+            self.assertIn("a" * 40, (root / "uninstall.sh").read_text())
+
+    def test_unknown_previous_baseline_cannot_be_accepted_by_static_check(self):
+        tool = self.tool
+        with patch.object(tool.release_metadata, "release_metadata"), \
+                patch.object(tool.release_metadata, "source_version", return_value="1.4.4"), \
+                patch.object(tool, "check_manifests"), patch.object(tool, "check_helpers"), \
+                patch.object(tool.baseline_metadata, "entry") as entry:
+            report = tool.inspect(previous_tag="v99.0.0")
+        self.assertFalse(report["local_checks_passed"])
+        self.assertEqual(next(item["state"] for item in report["checks"] if item["key"] == "baselines"), "blocked")
+        entry.assert_not_called()
+
+    def test_private_git_errors_are_not_echoed_and_passing_static_checks_are_not_release_acceptance(self):
+        tool = self.tool
+        with patch.object(tool.release_metadata, "release_metadata"), \
+                patch.object(tool.release_metadata, "source_version", return_value="1.4.4"), \
+                patch.object(tool, "check_manifests"), patch.object(tool, "check_helpers", side_effect=ValueError("PRIVATE_URL_TOKEN")), \
+                patch.object(tool.baseline_metadata, "entry", side_effect=lambda tag, commit: baselines.CATALOG[tag]):
+            report = tool.inspect(previous_tag="v1.4.4")
+            self.assertFalse(report["local_checks_passed"])
+            self.assertNotIn("PRIVATE_URL_TOKEN", str(report))
+            tool.check_helpers.side_effect = None
+            report = tool.inspect(previous_tag="v1.4.4")
+            self.assertTrue(report["local_checks_passed"])
+        self.assertEqual(report["scope"], "local-static-preflight-only")
+        self.assertIn("real-vps", report["not_checked"])
+        self.assertIn("remote-ci", report["not_checked"])

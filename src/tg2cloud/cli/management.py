@@ -4,14 +4,22 @@ from __future__ import annotations
 import argparse
 import json
 import shlex
+from datetime import datetime, timezone
 from pathlib import Path
 
 from tg2cloud.cli import terminal
-from tg2cloud.cli.presentation import InstallerLog, edition_menu, numbered_menu
+from tg2cloud.cli.presentation import (
+    InstallerLog,
+    edition_menu,
+    numbered_menu,
+    page_heading,
+    terminal_report,
+)
 from tg2cloud.deployment import architecture, instances, preflight, runtime, uninstall
 from tg2cloud.deployment.host import LocalSession, SafeLog, edition_lock
 from tg2cloud.deployment.profiles import PRODUCTS
 from tg2cloud.deployment.proxy import lan
+from tg2cloud.deployment.proxy.certificates import parse_certificate_enddate
 from tg2cloud.deployment.proxy.manager import (
     DomainProxyManager,
     validate_domain,
@@ -81,12 +89,82 @@ class Management:
             raise RuntimeError("操作未成功，请检查上方脱敏结果；不会自动重复执行")
         return output
 
-    def status(self, instance):
-        for name in (self.product.bot_container, self.product.storage_container):
-            code, output = self.session.run("docker inspect --format " + shlex.quote('{{.Name}}：{{.State.Status}}{{if .State.Health}} / {{.State.Health.Status}}{{end}}') + " " + shlex.quote(name), timeout=15)
-            if code:
-                raise RuntimeError("运行状态读取失败，不标记为正常")
-            self.log(output.strip())
+    def heading(self, title, instance):
+        self.log(page_heading(title, self.product, instance.version))
+
+    def return_to_main(self):
+        self.log("\n" + numbered_menu(((0, "返回主菜单"),)))
+        choose(self.ui, "选择操作", ("0",), "0")
+
+    def read_page(self, instance, operation, refresh):
+        """Refresh stays on the same page and re-discovers the selected instance."""
+        while True:
+            try:
+                operation(instance)
+            except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
+                self.log("检查未完成：" + str(exc) + "；不标记为通过。")
+            self.log("\n" + numbered_menu(((1, refresh), (0, "返回主菜单"))))
+            if choose(self.ui, "选择操作", ("0", "1"), "0") == "0":
+                return
+            instance = self.discover()
+            if not instance.present:
+                self.log("当前实例已不可用，返回主菜单；不会自动安装或重建。")
+                return
+
+    def container_states(self):
+        states = {"running": "运行中", "exited": "已停止", "restarting": "重启中", "created": "尚未启动",
+                  "paused": "已暂停", "dead": "异常退出", "removing": "正在移除"}
+        health = {"healthy": "通过（容器检查）", "unhealthy": "未通过", "starting": "检查中", "none": "未配置容器检查"}
+        result = {}
+        for key, name in (("bot", self.product.bot_container), ("gateway", self.product.storage_container)):
+            try:
+                code, output = self.session.run("docker inspect --format " + shlex.quote(
+                    '{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}')
+                    + " " + shlex.quote(name), timeout=15)
+                fields = output.strip().split()
+                valid = not code and len(fields) == 2 and fields[0] in states and fields[1] in health
+                result[key] = (states[fields[0]], health[fields[1]] if fields[0] == "running"
+                               else "未检查（容器未运行）") if valid else ("未核实", "未核实")
+            except (OSError, RuntimeError, TimeoutError):
+                result[key] = ("未核实", "未核实")
+        return result
+
+    def show_containers(self):
+        states = self.container_states()
+        self.log("Bot 状态：" + states["bot"][0] + "\nBot 健康：" + states["bot"][1]
+                 + "\n网关状态：" + states["gateway"][0])
+
+    def show_proxy_report(self, report):
+        values = {"healthy": "本机通过", "not_configured": "未配置", "running_error": "未通过", "certificate_error": "证书检查未通过"}
+        self.log("访问模式：HTTPS\n管理地址：" + ("https://" + report.domain if isinstance(report.domain, str) and report.domain else "未配置")
+                 + "\n入口检查：" + values.get(report.state, "未核实"))
+        markers = dict(report.markers) if isinstance(report.markers, (tuple, list)) else {}
+        if markers.get("PROXY_CERT_END"):
+            try:
+                expiry, days = parse_certificate_enddate(markers["PROXY_CERT_END"])
+                self.log("证书到期：" + expiry + (f"（剩余 {days} 天）" if days >= 0 else "（已到期）"))
+            except (ValueError, TypeError):
+                self.log("证书到期：未核实")
+        attempt = markers.get("PROXY_RENEW_ATTEMPT", "")
+        try:
+            checked = datetime.fromtimestamp(int(attempt), timezone.utc).strftime("%Y-%m-%d %H:%M:%S UTC") if str(attempt).isdigit() else "尚无记录"
+        except (ValueError, OverflowError, OSError):
+            checked = "记录无法识别"
+        renewal = {"OK": "通过", "FAILED": "未通过"}.get(markers.get("PROXY_RENEW_RESULT"), "未核实")
+        self.log("续期检查：" + checked + "（" + renewal + "）")
+        if isinstance(report.statuses, (tuple, list)):
+            failed = [title for title, value in report.statuses if value != "通过"]
+            if failed:
+                self.log("\n未通过项目：\n" + "\n".join(failed))
+        if isinstance(report.warnings, (tuple, list)):
+            for warning in report.warnings:
+                self.log("提醒：" + warning)
+        self.log("本机检查不代表外网可达；续期检查不代表实际续签。")
+
+    def status(self, instance, *, title="查看运行状态"):
+        self.heading(title, instance)
+        self.log("正在检查容器与管理入口，请稍候……")
+        self.show_containers()
         saved = self.mode(instance)
         if saved:
             inventory = instances.docker_inventory(self.session)
@@ -94,46 +172,70 @@ class Management:
             if not entry or not entry.get("running"):
                 raise RuntimeError("内网管理入口未运行")
             lan.check_entry(self.product, saved["bind_ip"])
-            self.log(f"内网管理页：http://{saved['bind_ip']}:{self.product.management_port}（本机检查通过）")
+            self.log(f"访问模式：内网 HTTP\n管理地址：http://{saved['bind_ip']}:{self.product.management_port}\n入口检查：本机通过")
+            self.log("证书：不适用；局域网访问仍需另一设备验证。")
         else:
-            self.log(self.proxy().status().message)
+            self.show_proxy_report(self.proxy().status())
 
     def logs(self, instance):
-        self.log("最近 30 分钟、每个容器最多 100 行日志（已脱敏）：")
-        for name in (self.product.bot_container, self.product.storage_container):
-            self.checked_run("docker logs --since 30m --tail 100 " + shlex.quote(name), timeout=30)
+        self.heading("查看运行日志", instance)
+        self.log("最近 30 分钟，每个服务最多 100 行；以下为脱敏日志快照，不持续刷新。")
+        for label, name in (("Bot", self.product.bot_container), (self.product.display_name, self.product.storage_container)):
+            self.log("\n── " + label + " 日志 ──\n")
+            try:
+                code, output = self.session.run("docker logs --since 30m --tail 100 " + shlex.quote(name), timeout=30)
+                if code:
+                    self.log(label + " 日志读取失败；其他服务日志继续显示。")
+                else:
+                    self.log(output.rstrip() if output.strip() else "最近 30 分钟暂无日志。")
+            except (OSError, RuntimeError, TimeoutError):
+                self.log(label + " 日志读取失败；其他服务日志继续显示。")
+
+    def readiness(self, instance):
+        from tg2cloud.deployment.readiness import check
+        self.heading("业务就绪检查", instance)
+        self.log("正在读取最近观察，不追加 Telegram／WebDAV 请求……")
+        check(instance, self.session, self.log)
 
     def control(self, instance):
-        self.log("\n── 服务启停管理 ──\n存储网关停止或重启会中断存储访问。\n" + numbered_menu((
+        self.heading("服务启停管理", instance)
+        self.show_containers()
+        self.log("\n存储网关停止或重启会中断存储访问。\n" + numbered_menu((
             (1, "启动 Bot"), (2, "停止 Bot"), (3, "重启 Bot"),
-            (4, "启动存储网关"), (5, "停止存储网关"), (6, "重启存储网关"), (0, "返回"),
+            (4, "启动存储网关"), (5, "停止存储网关"), (6, "重启存储网关"), (0, "返回主菜单"),
         )))
         action = choose(self.ui, "选择操作", ("0", "1", "2", "3", "4", "5", "6"), "0")
         if action == "0":
-            return
+            return False
         number = int(action) - 1
         name = self.product.bot_container if number < 3 else self.product.storage_container
         verb, label = (("start", "启动"), ("stop", "停止"), ("restart", "重启"))[number % 3]
         if not self.ui.confirm(f"确认{label} {name}？进行中的任务或外部访问可能中断"):
-            return
+            return False
         with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
             self.recheck(instance)
             self.checked_run("docker " + verb + " " + shlex.quote(name), timeout=90)
         self.log("容器操作已完成；健康状态请另选“查看运行状态”。")
+        return True
 
     def verify(self, instance):
+        self.heading("WebDAV 验收", instance)
+        self.log("验收将创建并清理随机测试文件；不删除已有文件，大小复验不等于云盘官方最终入库。")
         if not instance.running:
             raise ValueError("Bot 未运行，请先启动后验收")
         if not self.ui.confirm("运行 WebDAV 写入验收？仅创建并清理随机测试文件，请先配置云挂载与专用账号"):
-            return
+            return False
+        self.log("\n── 验收进度 ──\n")
         with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
             self.recheck(instance)
             output = self.checked_run("docker exec " + shlex.quote(self.product.bot_container) + " python -m app.verify_destination", timeout=600)
             if "TG2CLOUD_DESTINATION=OK" not in output.splitlines():
                 raise RuntimeError("验收缺少完整成功标记；不自动重试或修改凭据")
-        self.log("WebDAV 写入与远端大小复验通过；云盘官方端最终完成仍需自行确认。")
+        self.log("\n── 验收结果 ──\nWebDAV 写入与远端大小复验通过；云盘官方端最终完成仍需自行确认。")
+        return True
 
     def upgrade(self, instance):
+        self.heading("安装与升级", instance)
         saved = self.mode(instance)
         if not instance.present:
             if self.mode_hint:
@@ -159,13 +261,18 @@ class Management:
 
     def entry(self, instance):
         if self.mode(instance):
-            self.status(instance)
+            self.status(instance, title="HTTPS 与管理")
             self.log("当前是内网 HTTP 模式，不申请证书或隐式切换为公网模式。")
-            return
-        self.log(numbered_menu(((1, "检查 HTTPS"), (2, "显式修复 HTTPS（保留已有域名）"), (3, "证书续期演练（dry-run）"), (0, "返回"))))
+            return True
+        self.heading("HTTPS 与管理", instance)
+        self.log("只管理入口，不升级或重启 Bot／网关。\n\n" + numbered_menu((
+            (1, "检查 HTTPS"), (2, "修复 HTTPS"), (3, "证书续期演练"), (0, "返回主菜单"))))
         action = choose(self.ui, "选择操作", ("0", "1", "2", "3"), "1")
+        if action == "0":
+            return False
         if action == "1":
-            self.log(self.proxy().status().message)
+            self.log("正在检查 HTTPS，请稍候……")
+            self.show_proxy_report(self.proxy().status())
         elif action == "2":
             manager = self.proxy()
             state = manager.read_state()
@@ -179,7 +286,7 @@ class Management:
                 raise ValueError(detection.message)
             self.log(detection.message)
             if not self.ui.confirm("仅配置/修复 " + domain + " 的 HTTPS？可能短暂中断共享管理入口，不升级或重启 Bot/网关"):
-                return
+                return False
             with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
                 self.recheck(instance)
                 if manager.read_state() != state:
@@ -188,19 +295,27 @@ class Management:
                 self.log(report.message)
                 if report.state != "healthy":
                     raise RuntimeError("HTTPS 修复尚未通过，请核对状态")
-        elif action == "3" and self.ui.confirm("确认执行续期 dry-run？需要外网和 ACME，不替换正式证书"):
+        elif action == "3":
+            self.log("续期演练使用 ACME 测试流程，不代表正式证书已经续签。")
+            if not self.ui.confirm("确认执行续期 dry-run？需要外网和 ACME，不替换正式证书"):
+                return False
             with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
                 self.recheck(instance)
                 self.log(self.proxy().maintenance("renew_dry_run"))
+        return True
 
     def backups(self, instance):
-        self.log(numbered_menu(((1, "查看实例历史备份"), (2, "创建共享代理备份"), (3, "查看共享代理备份"),
-                                (4, "校验/隔离解包最近代理备份"), (5, "清理旧代理备份"),
-                                (6, "创建实例快照／导出"), (7, "实例快照隔离预检"), (0, "返回")))
+        self.heading("数据备份管理", instance)
+        self.log("实例备份\n" + numbered_menu(((1, "查看历史备份"), (2, "创建实例快照"), (3, "校验实例快照")))
+                 + "\n\n共享代理\n" + numbered_menu(((4, "创建代理备份"), (5, "查看代理备份"),
+                    (6, "校验代理备份"), (7, "清理代理备份"), (0, "返回主菜单")))
                  + "\n不提供覆盖运行数据的一键恢复；实例快照不包含下载文件和共享 HTTPS。")
-        action = choose(self.ui, "选择操作", ("0", "1", "2", "3", "4", "5", "6", "7"))
-        if action == "0":
-            return
+        selected = choose(self.ui, "选择操作", ("0", "1", "2", "3", "4", "5", "6", "7"), "0")
+        if selected == "0":
+            return False
+        # Only presentation numbering changes; retain the established execution
+        # branches, locks, identity checks and destructive-operation confirmations.
+        action = {"1": "1", "2": "6", "3": "7", "4": "2", "5": "3", "6": "4", "7": "5"}[selected]
         if action == "1":
             root = Path(self.product.backup_dir)
             pattern = uninstall.backup_targets((self.product.key,), {}, False)[root]
@@ -209,7 +324,7 @@ class Management:
                 self.log(item[0] + f"（{item[3]} 字节，尚未校验内容）")
             if not identity or not identity[-1]:
                 self.log("没有受管实例历史备份。")
-            return
+            return True
         if action in {"6", "7"}:
             from tg2cloud.deployment import backup
             from tg2cloud.persistence import bundle
@@ -218,7 +333,7 @@ class Management:
             if action == "6":
                 self.log("备份配置、业务数据库、Session 和网关配置；不备份云端、downloads、日志、共享代理或附加功能状态。请另存这些资料；导出目录在默认卸载清理范围之外。")
                 if not self.ui.confirm("确认短暂停止所选 Bot 与网关创建快照？会暂时中断该网关的管理和外部 WebDAV 读取；不停止其他 Edition"):
-                    return
+                    return False
                 with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
                     current = self.recheck(instance)
                     archive = backup.create(current, self.session, parent)
@@ -228,16 +343,16 @@ class Management:
                 runtime.safe_path(archive, private=True)
                 runtime.safe_path(parent, private=True)
                 if not self.ui.confirm("确认在上述私密目录隔离解包并检查？不覆盖运行数据，不启动第二个 Bot"):
-                    return
+                    return False
                 result = bundle.preflight(archive, parent, self.product.key, instance.version)
                 self.log(f"实例快照结构／数据库预检通过：{result['files']} 文件；不代表运行恢复或全部网关授权已验收。")
-            return
+            return True
         with edition_lock(Path("/opt/tg2cloud-cli-locks") / (self.product.key + ".lock")):
             self.recheck(instance)
             manager = self.proxy()
             if manager.external_entry() and action in {"3", "5"}:
                 self.log("外部模式备份位于 /opt/tg2cloud-proxy/external-backups，仅含元数据与专属站点；不运行独立代理的整目录清理。可选创建或隔离核验，旧备份需人工保管。")
-                return
+                return True
             if action == "3":
                 for item in manager.manage_backups("list")["items"]:
                     self.log(f"{item['name']}（{item['size_bytes']} 字节，完整性 {item['integrity']}）")
@@ -253,11 +368,15 @@ class Management:
                     self.log("已按复核后的计划清理旧代理备份。")
                 elif not plan["remove"]:
                     self.log("没有需要清理的代理备份。")
+        return True
 
     def remove(self, instance):
+        self.heading("卸载当前实例", instance)
         if instance.directory != Path(self.product.install_dir):
             raise ValueError("现有卸载器只支持标准目录；自定义目录不自动卸载，避免清理错误实例")
-        self.log("仅卸载 " + self.product.display_name + "：默认清理它的配置、数据库和备份；不删除另一 Edition 的容器/数据，云端文件和系统软件不删除。")
+        self.log("── 卸载计划 ──\n仅卸载 " + self.product.display_name
+                 + "\n将清理：当前实例的容器、配置、数据库、下载及受管备份（以最终预检计划为准）。"
+                 + "\n保留：另一 Edition 的容器和数据、云端文件及系统 Docker／Nginx 等软件。")
         self.log("另一 Edition 或入口仍在使用时保留 tg2cloud；最后一套完整清理后，核验归属并移除快捷命令及其代码。")
         if not self.ui.confirm("继续查看 " + self.product.display_name + " 的完整卸载计划？"):
             return False
@@ -281,13 +400,21 @@ class Management:
             try:
                 if action == "1":
                     self.upgrade(instance)
+                    self.return_to_main()
                     continue
                 if not instance.present:
                     raise ValueError("尚无完整实例，请先安装；不会执行维护操作")
-                handlers = {"2": self.status, "3": self.logs, "4": self.control,
+                handlers = {"4": self.control,
                             "7": self.entry, "11": self.verify, "13": self.backups}
-                if action == "6":
+                completed = False
+                if action in {"2", "3", "10"}:
+                    operation, refresh = {"2": (self.status, "重新检查"), "3": (self.logs, "重新读取"),
+                                          "10": (self.readiness, "重新检查")}[action]
+                    self.read_page(instance, operation, refresh)
+                elif action == "6":
+                    self.heading("WebDAV 凭据", instance)
                     terminal.show_credentials(self.ui, self.product, instance.config, self.log)
+                    completed = True
                 elif action == "14":
                     if self.remove(instance):
                         return 0  # The final uninstall may have removed this offline runtime.
@@ -301,22 +428,25 @@ class Management:
                     )
                     operation = manage_classification if action == "8" else manage_notifications
                     operation(self, instance)
-                elif action == "10":
-                    from tg2cloud.deployment.readiness import check
-                    check(instance, self.session, self.log)
                 elif action == "12":
                     from tg2cloud.deployment.diagnostics import collect, save
+                    self.heading("故障诊断报告", instance)
+                    self.log("正在生成只读诊断报告，请稍候……")
                     report = collect(instance, self.session)
-                    self.log(report)
+                    self.log(terminal_report(report))
                     if self.ui.confirm("保存已脱敏报告到本机私密目录？不会自动上传"):
                         parent = Path(self.ui.ask("报告目录（绝对路径）", default="/opt/tg2cloud-reports"))
                         self.log("报告已保存：" + str(save(report, parent)))
+                    completed = True
                 else:
-                    handlers[action](instance)
+                    completed = handlers[action](instance) is not False
+                if completed:
+                    self.return_to_main()
             except (ValueError, RuntimeError, TimeoutError, OSError) as exc:
                 self.log("操作未完成：" + str(exc))
                 if action == "14":
                     return 1  # Do not offer a fresh install after a partial uninstall.
+                self.return_to_main()
 
 
 def main(argv=None, *, mode_hint=None) -> int:

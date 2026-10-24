@@ -129,6 +129,31 @@ class RecoveryTests(unittest.IsolatedAsyncioTestCase):
             self.assertFalse(self.service.rclone.removed)
             self.assertTrue(self.local().exists())
 
+    async def test_reopened_database_recognizes_already_received_final_without_reupload(self):
+        for backend in ("clouddrive2", "openlist"):
+            with self.subTest(backend=backend):
+                self.service.settings = replace(self.settings, storage_backend=backend)
+                local = self.local()
+                task = self.task(state="uploading", local_path=str(local), remote_final_path="example.bin",
+                                 failure_kind=None, verification_method=None, verified_at=None)
+                path = self.db.path
+                self.db.close()
+                self.db = TaskDB(path)
+                self.addCleanup(self.db.close)
+                self.service.db = self.db
+                self.db.recover(self.settings.download_dir)
+                self.service.rclone = FakeRclone()
+                self.service.rclone.files["example.bin"] = b"test"
+                self.service.rclone.upload = AsyncMock(side_effect=AssertionError("must not upload twice"))
+                await self.service._upload_one(task["id"])
+                final = self.db.get(task["id"])
+                self.assertEqual(final["state"], "completed")
+                self.assertEqual(final["verification_method"], "size")
+                self.assertIsNotNone(final["verified_at"])
+                self.service.rclone.upload.assert_not_awaited()
+                self.assertFalse(self.service.rclone.removed)
+                self.assertFalse(local.exists())
+
     async def test_auth_permission_and_rate_limit_stop_and_survive_restart(self):
         for code, kind in ((401, "authentication"), (403, "permission"), (429, "rate_limited")):
             task = self.task(state="waiting_upload", local_path=str(self.local()))

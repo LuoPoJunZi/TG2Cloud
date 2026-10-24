@@ -29,13 +29,21 @@ class TaskDB:
             path, timeout=30, check_same_thread=False, isolation_level=None
         )
         self._conn.row_factory = sqlite3.Row
+        try:
+            self._initialize()
+        except BaseException:
+            # Failed migrations and normal interrupts must not leave a live
+            # connection to a rejected database or an isolated rehearsal copy.
+            self._conn.close()
+            raise
+
+    def _initialize(self) -> None:
         with self._lock:
             self._conn.execute("PRAGMA journal_mode=WAL")
             self._conn.execute("PRAGMA synchronous=FULL")
             self._conn.execute("PRAGMA foreign_keys=ON")
             self._conn.execute("PRAGMA busy_timeout=30000")
             if self._conn.execute("PRAGMA user_version").fetchone()[0] > SCHEMA_VERSION:
-                self._conn.close()
                 raise RuntimeError("数据库版本高于当前程序；请恢复匹配的程序，不能降级打开")
             self._conn.executescript(
                 """

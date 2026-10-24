@@ -1,5 +1,9 @@
 # 备份与恢复边界
 
+待发布源码的备份子菜单已按实例／代理分组：实例快照创建／校验改为 2／3，代理创建／查看／校验／清理改为 4／5／6／7；主菜单仍为 13，确认及操作范围不变。下文旧序号对应正式 v1.4.4，新源码按[新版页面说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#6-本地管理次级页面待发布)选择，不与旧编号混用。
+
+待发布源码增加仅针对临时副本的数据库启动／迁移与重启恢复演练；不加载 Session、不启动网关，不代表完整服务恢复。正式 v1.4.4 仍按下方现有预检执行，新工具与限制见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#2-隔离数据库恢复演练)。
+
 先确认备份包含什么、怎样校验，以及哪些数据需要另存。备份包可能含 Token、Session 和证书私钥，只放在自己的受限目录，不公开上传。
 
 ## 当前入口与数据库兼容

@@ -6,7 +6,7 @@ import re
 import shlex
 from pathlib import Path
 
-from tg2cloud.cli.presentation import numbered_menu
+from tg2cloud.cli.presentation import numbered_menu, page_heading
 from tg2cloud.deployment.host import edition_lock
 
 MODES = {"off": "不分类", "type": "按文件类型", "year": "按年份", "month": "按年月", "type_month": "按文件类型和年月"}
@@ -64,9 +64,10 @@ def manage_classification(manager, instance):
     modes = tuple(MODES)
     while True:
         current = read_settings(manager, instance)
-        log("\n── 文件分类设置 ──\n\n当前规则：" + MODES[current["classification"]]
+        log(page_heading("文件分类设置", manager.product, getattr(instance, "version", ""))
+            + "\n当前规则：" + MODES[current["classification"]]
             + "\n分类目录位于现有 Bot 保存目录下；只影响新任务，不移动历史文件。\n\n"
-            + numbered_menu((*enumerate(MODES.values(), 1), (0, "返回"))))
+            + numbered_menu((*enumerate(MODES.values(), 1), (0, "返回主菜单"))))
         action = choose(ui, "选择规则", ("0", "1", "2", "3", "4", "5"), "0")
         if action == "0":
             return
@@ -79,14 +80,17 @@ def manage_notifications(manager, instance):
     while True:
         current = read_settings(manager, instance)
         threshold = current["disk_threshold_bytes"]
-        log("\n── 异常通知设置 ──\n\n异常通知：" + ("开启" if current["notifications"] else "关闭")
+        log(page_heading("异常通知设置", manager.product, getattr(instance, "version", ""))
+            + "\n异常通知：" + ("开启" if current["notifications"] else "关闭")
             + "\n恢复通知：" + ("开启" if current["recovery_notifications"] else "关闭") + "（异常通知开启后生效）"
             + "\n磁盘提醒：" + (f"{threshold / 1024**3:g} GB（不低于原磁盘安全线）" if threshold else "跟随原磁盘安全线")
-            + f"\n通知冷却：{current['cooldown_seconds']} 秒；持续故障：{current['sustained_seconds']} 秒；资源等待：{current['blocked_seconds']} 秒"
+            + f"\n通知冷却：{current['cooldown_seconds']} 秒"
+            + f"\n持续故障：{current['sustained_seconds']} 秒"
+            + f"\n资源等待：{current['blocked_seconds']} 秒"
             + "\n\n" + numbered_menu((
                 (1, "关闭异常通知" if current["notifications"] else "开启异常通知"),
                 (2, "关闭恢复通知" if current["recovery_notifications"] else "开启恢复通知"),
-                (3, "修改磁盘提醒阈值"), (0, "返回"),
+                (3, "修改磁盘提醒阈值"), (0, "返回主菜单"),
             )))
         action = choose(ui, "选择操作", ("0", "1", "2", "3"), "0")
         if action == "0":
@@ -108,8 +112,8 @@ def member_quota(manager, instance, record, member_id, *, action):
     keys = ("daily_bytes", "max_queued", "max_active")
     if any(type(current.get(key)) is not int or not 0 <= current[key] <= 2**60 for key in keys):
         raise ValueError("配额协议无效")
-    manager.log("每日额度：" + (f"{current['daily_bytes'] / 1024**3:g} GB" if current["daily_bytes"] else "不限")
-                + f"；最大排队：{current['max_queued'] or '不限'}；最大同时传输：{current['max_active'] or '不限'}")
+    manager.log("\n── 成员配额 ──\n每日额度：" + (f"{current['daily_bytes'] / 1024**3:g} GB" if current["daily_bytes"] else "不限")
+                + f"\n最大排队：{current['max_queued'] or '不限'}\n最大同时传输：{current['max_active'] or '不限'}")
     for key, label in (("completed_bytes", "今日已完成"), ("reserved_bytes", "未完成预留")):
         amount = current.get(key)
         if type(amount) is not int or not 0 <= amount <= 2**60:
