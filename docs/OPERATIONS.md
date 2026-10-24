@@ -1,22 +1,12 @@
 # 运行状态、故障排查与 HTTPS 维护
 
-v1.4.5 源码统一管理次级页面，并为诊断报告补充只读入口结果和分项处理建议；不增加主菜单或自动修复。发布进度与边界见[维护说明](development/MAINTENANCE-NEXT.md)，需更新匹配的离线管理工具和 Bot。
+本文以当前 v1.4.5 的 Linux 管理工具为准。状态、日志和检查结果按所选 Edition 展示；业务数据库、网关和外部附加功能仍分别管理。须显式升级离线工具并重新打开 `tg2cloud` 才能加载新页面。
 
-2026-10-23，用户提供两份日志并确认 CloudDrive2 在 Ubuntu ARM64 与 Debian AMD64 的 v1.4.3 → v1.4.4 升级验收通过。新菜单、`[信息]`、升级结果和转存验收摘要已实际展示，Debian 的容量 `[提醒]` 及汇总未阻断升级；最近业务就绪观察通过，但 WebDAV 写入未执行，真实转存、外网及回退等仍须单独验收。证据与范围见[双架构记录](development/V144-ACCEPTANCE.md)。
+当前用户升级与 WebDAV 日志见[v1.4.5 验收记录](development/V145-ACCEPTANCE.md)，自动发布证据见[维护说明](development/MAINTENANCE-NEXT.md)。更早版本的编号与验收在[历史维护记录](development/MAINTENANCE-IMPROVEMENTS.md)及[文档目录](README.md)中保留，不用于推断当前所有场景均通过。
 
-2026-10-23 已收到[CloudDrive2 v1.4.2 → v1.4.3 在线升级日志](development/V143-ACCEPTANCE.md)：基础升级、Bot healthy、代码／配置及本机 HTTPS 检查通过，实际转存尚未确认。构建 WARNING 的判断集中见[FAQ](FAQ.md)，不要为隐藏提示修改运行权限或跳过检查。
+此前的双架构升级反馈单独保留在[v1.4.4 验收记录](development/V144-ACCEPTANCE.md)。
 
-v1.4.3 工具增加菜单 13 脱敏诊断、14 分类／通知设置，用户管理中增加成员配额；需同时更新 Bot，使用与 schema 2 回退边界见[四项增强](FEATURE-ENHANCEMENTS.md)。
-
-本文以 v1.4.5 为当前操作说明，并保留 v1.4.4／v1.4.3 的历史维护边界，下节给出当前新菜单；公网 NAT 的 HTTPS 修复见[VPS 指南](VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)，旧离线工具需显式更新。2026-10-19 已完成 CloudDrive2 正式 v1.3.2 → v1.3.3 保留配置升级，用户确认实际转存完成；不扩展到当前版本、OpenList、NAS、家庭共享或故障回退。更早的人工候选迁移另见[历史记录](development/V130-ACCEPTANCE.md)。
-
-2026-10-21 的[v1.4.1 ARM64 公网NAT首装记录](development/V141-ACCEPTANCE.md)是另一项用户反馈：基础部署、Bot健康、本机HTTPS与WebDAV通过，长期续期仍无执行记录，不据此推断维护菜单、已有实例升级或恢复操作均已通过。APT错误按[VPS专题](VPS-INSTALL.md#apt-软件源错误)处理，不删除已有数据。
-
-同日的[v1.4.2 人工升级记录](development/V142-ACCEPTANCE.md)覆盖 CloudDrive2 v1.3.4 → v1.4.2、配置／任务／Session 保留、Bot 健康、只读 WebDAV 与外部 HTTPS；共享 managed 代理、网关和 OpenList 容器保持不变。旧版 Release 已删除的自动升级路径仍会停止，实际转存、故障回退与新代理模式不能据此记为通过。
-
-本页以当前终端工具为准，旧图形界面操作移至[历史教程](README-小白使用说明.md)。只下载入口或运行状态查询不会自动更新 Bot、管理工具、续期容器或附加功能。
-
-任务取消恢复、远端冲突、扫描与验证记录见[任务恢复指南](RECOVERY.md)，完整配置字段见[配置参考](CONFIGURATION.md)，独立灾备和恢复预检见[备份指南](BACKUP-RESTORE.md)。升级回退点不能代替包含 Session、网关授权和共享入口的完整备份。
+任务恢复见[恢复指南](RECOVERY.md)，配置字段见[配置参考](CONFIGURATION.md)，完整备份与恢复预检见[备份指南](BACKUP-RESTORE.md)。公网 NAT 和 APT 问题见[VPS 指南](VPS-INSTALL.md)；历史图形教程见[旧版教程](README-小白使用说明.md)。
 
 ## 实例管理命令
 
@@ -30,7 +20,7 @@ v1.4.2 的 `external_docker` 使用外部 Nginx、宿主离线续期任务及文
 
 直接移除“命名预览”菜单项及菜单分派，不保留隐藏入口；独立命令 `tg2cloud naming-preview`、命名实现和 Bot 自动命名继续保留。新编号 12 是故障诊断报告，不是原预览功能。
 
-v1.4.3 新增 **11. 业务就绪检查**、**12. 命名预览**、**13. 故障诊断报告**、**14. 分类／异常通知设置**，并在备份子菜单增加 **6. 实例快照／导出**、**7. 隔离预检**。原菜单序号保持不变；范围、维护窗口与用法见[维护增强](development/MAINTENANCE-IMPROVEMENTS.md)和[可选功能](FEATURE-ENHANCEMENTS.md)。
+旧版 v1.4.3 的菜单编号与独立命名预览入口见[历史维护说明](development/MAINTENANCE-IMPROVEMENTS.md)。当前以本节菜单表为准。
 
 v1.3.2 默认安装向导在确认计划后创建离线命令；取消、`--check` 和单独查看凭据不会安装。**已有主机不会自动获得管理命令或更新离线代码**，请重新运行对应安装入口并确认计划；同版本无业务升级时，可确认仅安装本地管理命令，不重启容器。
 

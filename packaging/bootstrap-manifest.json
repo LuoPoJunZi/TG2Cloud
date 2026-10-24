@@ -49,6 +49,7 @@
     "src/tg2cloud/deployment/proxy/lan.py",
     "src/tg2cloud/deployment/proxy/maintenance.py",
     "src/tg2cloud/deployment/proxy/manager.py",
+    "src/tg2cloud/deployment/proxy/rendering.py",
     "src/tg2cloud/deployment/proxy/state.py",
     "src/tg2cloud/deployment/readiness.py",
     "src/tg2cloud/deployment/releases.py",

@@ -29,7 +29,7 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.4.5
+git checkout main
 git rev-parse HEAD
 ```
 
@@ -116,3 +116,7 @@ git checkout v1.2.1
 ## 截图与文档
 
 只提交实际界面的脱敏截图，注明版本与 Edition。本次文档首页展示的是 HTML/CSS 流程示意，不是伪造的部署器运行截图。
+
+## v1.4.6 维护工具与测试分类（待发布）
+
+新增本地 `prepare_release.py` 只生成版本同步计划及候选补丁，不提升当前产品版本、不更改固定 pin、不推送或发布。日常与当前 Tag CI 共用 `linux_validation.py` 的 Shell／完整回归／质量审计步骤，历史布局校验仍保留。四组命名回归集中至 `tests/naming/`，迁移前后核对测试集合；代理纯渲染独立并保留旧接口。实际命令与边界见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。这些工作树改动须另行发布，不能借用 v1.4.5 的验收作为新代码的实机证明。

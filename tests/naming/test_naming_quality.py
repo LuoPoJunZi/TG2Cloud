@@ -1,4 +1,4 @@
-"""Offline regressions for conservative title selection and attachment suffixes."""
+"""Naming regressions for conservative title selection and attachment suffixes."""
 from __future__ import annotations
 
 import unittest

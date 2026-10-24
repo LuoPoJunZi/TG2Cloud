@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 import re
 import shutil
@@ -613,7 +614,11 @@ class DeploymentStructureTests(unittest.TestCase):
             encoding="utf-8"
         )
         linux_job = workflow.split("  linux-products:", 1)[1]
-        self.assertIn(".github/scripts/check_python.py test", linux_job)
+        self.assertIn(".github/scripts/linux_validation.py test", linux_job)
+        spec = importlib.util.spec_from_file_location("deployment_linux_validation", SOURCE / ".github/scripts/linux_validation.py")
+        shared = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(shared)
+        self.assertEqual(shared.commands("test"), [[sys.executable, "-B", ".github/scripts/check_python.py", "test"]])
         self.assertNotIn("requirements-build.txt", linux_job)
 
 

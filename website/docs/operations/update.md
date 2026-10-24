@@ -1,5 +1,7 @@
 # 升级与修改配置
 
+2026-10-24 用户提供 CloudDrive2 在 Ubuntu ARM64 上 v1.4.4 → v1.4.5 的升级及单独 WebDAV 验收日志，并确认本次验收通过。日志覆盖配置保留、数据库快照、Bot 健康、本机 HTTPS 和 WebDAV 写入／大小复验／改名／测试文件清理；详细范围见[用户验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V145-ACCEPTANCE.md)。不扩展到 OpenList、外部只读入口或完整故障恢复。
+
 “重启”“用当前 payload 重建”和“安装新版本”是三个不同操作。
 
 ## v1.4.5 维护更新

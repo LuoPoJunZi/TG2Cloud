@@ -53,6 +53,13 @@ CATALOG = {
             "openlist": "a53178080a51948df03a795e3779686ec4c88f42b57f98f6d1a46908f4f3e44a",
         },
     },
+    "v1.4.5": {
+        "commit": "cd9b13722752b1f1663c5ba4cbb91b7c21c7f882",
+        "payloads": {
+            "clouddrive2": "2937ff6b41c199ae9fa19b5d19f9bf48706426a6e8ec19ff45566c1fc5073ef1",
+            "openlist": "2718576bbc3f38000237c66840b6d80abe3d50d54637f00a1f9e2bb04e2dafb0",
+        },
+    },
 }
 
 

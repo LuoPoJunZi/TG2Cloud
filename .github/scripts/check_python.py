@@ -20,6 +20,8 @@ CLI_TESTS = (
     "test_progress_metrics.py",
     "test_restore_rehearsal.py",
     "test_management_pages.py",
+    "test_release_preparation.py",
+    "test_proxy_rendering.py",
 )
 CLI_PATHS = (
     "src/tg2cloud/cli", "src/tg2cloud/deployment", "src/tg2cloud/addons", "src/tg2cloud/__init__.py",
@@ -28,9 +30,11 @@ CLI_PATHS = (
     ".github/scripts/source_release.py",
     ".github/scripts/baseline_metadata.py", "src/tg2cloud/domain/naming.py",
     ".github/scripts/maintenance_preflight.py", "src/tg2cloud/persistence/rehearsal.py",
+    ".github/scripts/prepare_release.py", ".github/scripts/linux_validation.py",
     "src/tg2cloud/persistence/backup.py", "src/tg2cloud/persistence/bundle.py", "src/tg2cloud/monitoring/readiness.py",
     "src/tg2cloud/monitoring/progress.py",
-    *(f"tests/{name}" for name in CLI_TESTS if name not in {"test_feature.py", "test_http.py", "test_users.py"}),
+    *(f"tests/{name}" for name in CLI_TESTS if name not in {"test_feature.py", "test_http.py", "test_users.py", "test_naming_preview.py"}),
+    "tests/naming/test_naming_preview.py",
     "tests/addons",
     "tests/test_lan_gateway_docker.py",
 )

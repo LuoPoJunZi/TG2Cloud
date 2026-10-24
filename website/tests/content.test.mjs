@@ -243,6 +243,15 @@ test('v1.4.4 dual-architecture acceptance keeps upgrade evidence separate from u
   assert.ok((await read('THIRD_PARTY_NOTICES.md')).includes(`${config.repo}/blob/main/${path}`));
 });
 
+test('v1.4.5 user acceptance is scoped, redacted and linked separately from unpublished work',async()=>{
+  const record=await readFile(new URL('../../docs/development/V145-ACCEPTANCE.md',import.meta.url),'utf8');
+  for(const text of ['2026-10-24','Ubuntu 26.04.1','ARM64','v1.4.4 → v1.4.5','WebDAV',
+    '大小复验','OpenList','外部只读 WebDAV','没有独立的 Telegram 转存任务结果'])assert.ok(record.includes(text),text);
+  assert.doesNotMatch(record,/root@|\b(?:\d{1,3}\.){3}\d{1,3}\b|config-[A-Za-z0-9]{8,}\.tar\.gz/);
+  assert.ok((await read('docs/operations/update.md')).includes('V145-ACCEPTANCE.md'));
+  assert.ok((await read('docs/deploy/external-webdav.md')).includes('LOCAL-MAINTENANCE.md'));
+});
+
 test('current helper identity in installation docs matches every public entry',async()=>{
   const guide=await readFile(new URL('../../docs/VPS-INSTALL.md',import.meta.url),'utf8');
   const removal=await readFile(new URL('../../docs/UNINSTALL.md',import.meta.url),'utf8');

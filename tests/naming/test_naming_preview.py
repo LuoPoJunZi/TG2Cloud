@@ -14,7 +14,7 @@ from unittest.mock import Mock
 from tg2cloud.cli import naming
 from tg2cloud.domain.naming import explain_media_name, media_file_name
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[2]
 
 
 class PreviewTests(unittest.TestCase):

@@ -1,4 +1,4 @@
-"""Offline, additive regressions for caption quality and ingestion fallbacks."""
+"""Naming regressions for caption quality and ingestion fallbacks."""
 from __future__ import annotations
 
 import asyncio

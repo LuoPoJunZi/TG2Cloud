@@ -1,5 +1,7 @@
 # 文档来源与维护
 
+当前源码 **v1.4.6**，待发布；资料核对日期 **2026 年 10 月 24 日**。正式资产仍为下文列出的 v1.4.5；本版维护细节见[源码说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。
+
 本次内容核对日期为 **2026 年 10 月 24 日**，对应正式 [**v1.4.5**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5)。辅助 A、入口 B 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验；完整证据见[维护发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。本版未连接真实 VPS，不借用下面历史记录声明实机验收。
 
 历史资料核对（2026-10-23，对应 v1.4.4）：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 本版补充安装反馈与管理菜单精简，不改变 Bot 核心或新增数据库迁移；须显式升级离线工具。历史用户日志不外推本版实机验收。

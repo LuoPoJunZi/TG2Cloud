@@ -47,12 +47,13 @@ class WebDAVTerminal(Terminal):
         return self.ask(prompt + " [y/N]", validate=lambda value: value.strip().lower()) == "y"
 
 
-def choose(ui, log, title: str, choices: tuple[tuple[str, str], ...], *, default: str = "") -> str:
-    log(title)
+def choose(ui, log, title: str, choices: tuple[tuple[str, str], ...], *, default: str = "", exit_label: str = "退出") -> str:
+    if title:
+        log(title)
     numbers = {}
     for index, (key, label) in enumerate(choices, 1):
         numbers[str(index)] = key
-    log(numbered_menu((*((index, label) for index, (_, label) in enumerate(choices, 1)), (0, "退出"))))
+    log(numbered_menu((*((index, label) for index, (_, label) in enumerate(choices, 1)), (0, exit_label))))
 
     def selected(value: str) -> str:
         value = value.strip()
@@ -93,6 +94,77 @@ def source_identity(root: Path) -> dict:
     return {"source": "local-reviewed-source", "version": VERSION}
 
 
+def perform(service, args) -> None:
+    """One operation; explicit subcommands keep their one-shot behavior."""
+    from tg2cloud.cli.presentation import page_heading
+    from tg2cloud.version import VERSION
+
+    log, ui = service.log, service.ui
+    log(page_heading(ACTION_LABELS[ACTIONS.index(args.action)], service.product, VERSION))
+    if args.action in {"install", "configure"}:
+        changed = service.configure(install_dir=args.install_dir, install=args.action == "install", sample_file=args.sample_file)
+        if changed and service.record() is not None and service.record()["phase"] == "enabled":
+            with service.locked():
+                service.install_runtime(source_root(), source_identity(source_root()))
+    elif args.action == "users":
+        from tg2cloud.addons.external_webdav.users import menu
+        menu(service, sample_file=args.sample_file)
+    elif args.action == "upgrade":
+        item = service.record()
+        if item is None:
+            raise ValueError("尚未安装；请先运行 install。")
+        service.preflight(item["instance_dir"])
+        log("升级仅更换附加功能离线维护代码并重新校验代理；不升级 Bot／网关，不自动更改账号。")
+        if ui.confirm("确认从最新正式稳定 Release 下载并校验候选？"):
+            from tg2cloud.addons.external_webdav.releases import download
+            from tg2cloud.deployment.releases import source_version, version_tuple
+            with tempfile.TemporaryDirectory(prefix="tg2cloud-webdav-upgrade-") as directory:
+                root, identity = download(Path(directory))
+                if version_tuple(source_version(root)) < version_tuple(source_version(source_root())):
+                    raise ValueError("拒绝自动降级附加功能代码。")
+                # Execute the verified candidate, not just the old checker.
+                # No secret is passed in argv/env; candidate asks on /dev/tty.
+                action = "enable" if item["phase"] == "enabled" else "check"
+                result = subprocess.run(  # nosec B603
+                    [sys.executable, "-B", str(root / "scripts/run_source.py"), "webdav", action,
+                     "--edition", args.edition, *(["--sample-file", args.sample_file] if args.sample_file else [])], check=False,
+                )
+                if result.returncode:
+                    raise ValueError("候选检查／配置未通过；离线维护入口未切换，请检查外部入口状态。")
+                with service.locked():
+                    service.preflight(item["instance_dir"])
+                    service.install_runtime(root, identity)
+                log("候选源码已校验并切换；使用 tg2cloud-webdav check 复核。旧运行目录仍保留。")
+    else:
+        service.maintain(args.action, sample_file=args.sample_file)
+
+
+def interactive(service, args) -> None:
+    """Result pages stay visible; refreshing never repeats a mutation."""
+    from tg2cloud.cli.presentation import page_heading
+    from tg2cloud.version import VERSION
+
+    while True:
+        service.log(page_heading("外部 WebDAV 管理", service.product, VERSION))
+        action = choose(service.ui, service.log, "请选择操作：", tuple(zip(ACTIONS, ACTION_LABELS)),
+                        default="2" if service.record() else "1")
+        if not action:
+            return
+        args.action = action
+        while True:
+            perform(service, args)
+            if action in {"users", "uninstall", "upgrade"}:
+                # Uninstall/upgrade can remove or replace the executing runtime.
+                # Do not continue reading old code after either operation.
+                if action != "users":
+                    return
+                break
+            refresh = action in {"status", "check"}
+            choices = (("refresh", "重新检查" if action == "check" else "刷新状态"),) if refresh else ()
+            if not choose(service.ui, service.log, "", choices, default="0", exit_label="返回功能菜单"):
+                break
+
+
 def main(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     os.umask(0o077)
@@ -131,47 +203,9 @@ def main(argv: list[str] | None = None) -> int:
         if ui is not None:
             log("当前网关：" + PRODUCTS[args.edition].display_name)
         if args.action is None:
-            args.action = choose(ui, log, "请选择操作：", tuple(zip(ACTIONS, ACTION_LABELS)), default="2" if service.record() else "1")
-            if not args.action:
-                return 0
-            if args.action not in ACTIONS:
-                raise ValueError("未知操作。")
-        if args.action in {"install", "configure"}:
-            changed = service.configure(install_dir=args.install_dir, install=args.action == "install", sample_file=args.sample_file)
-            if changed and service.record() is not None and service.record()["phase"] == "enabled":
-                with service.locked():
-                    service.install_runtime(source_root(), source_identity(source_root()))
-        elif args.action == "users":
-            from tg2cloud.addons.external_webdav.users import menu
-            menu(service, sample_file=args.sample_file)
-        elif args.action == "upgrade":
-            item = service.record()
-            if item is None:
-                raise ValueError("尚未安装；请先运行 install。")
-            service.preflight(item["instance_dir"])
-            log("升级仅更换附加功能离线维护代码并重新校验代理；不升级 Bot／网关，不自动更改账号。")
-            if ui.confirm("确认从最新正式稳定 Release 下载并校验候选？"):
-                from tg2cloud.addons.external_webdav.releases import download
-                from tg2cloud.deployment.releases import source_version, version_tuple
-                with tempfile.TemporaryDirectory(prefix="tg2cloud-webdav-upgrade-") as directory:
-                    root, identity = download(Path(directory))
-                    if version_tuple(source_version(root)) < version_tuple(source_version(source_root())):
-                        raise ValueError("拒绝自动降级附加功能代码。")
-                    # Execute the verified candidate, not just the old checker.
-                    # No secret is passed in argv/env; candidate asks on /dev/tty.
-                    action = "enable" if item["phase"] == "enabled" else "check"
-                    result = subprocess.run(  # nosec B603
-                        [sys.executable, "-B", str(root / "scripts/run_source.py"), "webdav", action,
-                         "--edition", args.edition, *(["--sample-file", args.sample_file] if args.sample_file else [])], check=False,
-                    )
-                    if result.returncode:
-                        raise ValueError("候选检查／配置未通过；离线维护入口未切换，请检查外部入口状态。")
-                    with service.locked():
-                        service.preflight(item["instance_dir"])
-                        service.install_runtime(root, identity)
-                    log("候选源码已校验并切换；使用 tg2cloud-webdav check 复核。旧运行目录仍保留。")
+            interactive(service, args)
         else:
-            service.maintain(args.action, sample_file=args.sample_file)
+            perform(service, args)
         return 0
     except (KeyboardInterrupt, EOFError):
         log("操作中断；已撤销的入口不会退回匿名或 Bot 凭据，请运行 status／configure 核对。")

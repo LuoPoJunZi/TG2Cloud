@@ -181,8 +181,18 @@ class RepositoryContractTests(unittest.TestCase):
         for workflow in ("tests.yml", "release.yml", "vps-installer.yml"):
             text = (ROOT / ".github/workflows" / workflow).read_text(encoding="utf-8")
             with self.subTest(workflow=workflow):
-                for task in ("test", "lint", "compile"):
-                    self.assertIn(f".github/scripts/check_python.py {task}", text)
+                if workflow in {"tests.yml", "release.yml"}:
+                    for stage in ("shell", "test", "quality"):
+                        self.assertIn(f".github/scripts/linux_validation.py {stage}", text)
+                    spec = importlib.util.spec_from_file_location("linux_validation_contract", ROOT / ".github/scripts/linux_validation.py")
+                    shared = importlib.util.module_from_spec(spec)
+                    spec.loader.exec_module(shared)
+                    commands = shared.commands("test") + shared.commands("quality")
+                    for task in ("test", "lint", "compile"):
+                        self.assertTrue(any(".github/scripts/check_python.py" in command and task in command for command in commands))
+                else:
+                    for task in ("test", "lint", "compile"):
+                        self.assertIn(f".github/scripts/check_python.py {task}", text)
                 self.assertNotIn("ruff check installer.py", text)
 
     def test_certificate_fixtures_have_explicit_non_runtime_dependency(self):

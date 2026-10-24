@@ -150,3 +150,9 @@ python3 -B -m unittest discover -s tests -p test_task_recovery.py -v
 [v1.4.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) 仅有 `TG2Cloud-v1.4.5-source.tar.gz` 与 `SHA256SUMS.txt`，不生成 EXE。源码包 SHA256：`22343b033bd7d0d77ff753111d109965fd7e9f0a64fc4ce27d7f146e4f319ac3`。已比较源码包清单、实际文件与 GitHub 资产摘要；这是完整性校验，不是数字签名。文档后续提交不会改写 Tag 或已发布资产。
 
 兼容性：不新增运行依赖、环境变量或数据库 schema；保留两个 Edition 的配置、任务、Session、下载及历史路径。继续使用 schema 2，旧版升级／回退先备份并匹配代码与数据库。新增演练只检查临时副本，不提供生产覆盖恢复。使用新版页面需要显式更新离线管理工具，真实转存仍需用户独立验收。
+
+## 8. 发布后的用户验收补充
+
+2026-10-24 用户提供 Ubuntu ARM64 的 CloudDrive2 v1.4.4 → v1.4.5 升级与单独 WebDAV 写入验收日志，并确认本次验收通过。配置保留、数据库快照、代码／版本、Bot 健康、本机 HTTPS、近期就绪观察，以及认证、列表、写入、大小复验、改名和测试对象清理通过。证据边界见[用户验收记录](V145-ACCEPTANCE.md)。第 7 节保留发布当时的未执行范围，不把本次反馈扩大到 OpenList、外部只读入口或完整恢复。
+
+后续未发布的界面、测试和发布工具整理见[维护开发说明](LOCAL-MAINTENANCE.md)。在线 helper 固定版本保持不变，新源码尚须单独发布。

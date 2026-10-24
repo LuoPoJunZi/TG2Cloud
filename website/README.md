@@ -1,5 +1,9 @@
 # TG2Cloud Docs
 
+**TG2Cloud v1.4.6 发布准备；资料核对日期：2026-10-24。** 当前正式资产仍为 v1.4.5，新版须等待 A／B 与同标签双架构校验。旧版发布与验收记录保留，不扩展为本版实机通过。
+
+2026-10-24 新增用户提供的 [v1.4.5 CloudDrive2 ARM64 升级与 WebDAV 验收记录](../docs/development/V145-ACCEPTANCE.md)。这是发布后的补充，下面保留发布当时与历史版本的记录。后续本地维护代码见[开发说明](../docs/development/LOCAL-MAINTENANCE.md)，尚未发布；网站样式与构建方式不变。
+
 **源码与正式版本：TG2Cloud v1.4.5；资料核对日期：2026-10-24。** 辅助 A、入口 B 和[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)均通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验。本版统一管理次级页面、完善诊断和隔离数据库恢复演练；范围与证据见[维护说明](../docs/development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。不借用旧版用户反馈宣称本版实机验收。
 
 2026-10-23 用户提供两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过：Ubuntu 26.04.1／ARM64 与 Debian 13／AMD64，配置保留、数据库备份、Bot healthy、运行代码／版本、本机 HTTPS 和最近业务就绪观察均通过。WebDAV 写入未执行，真实转存、外网及回退等未单独确认，详见[双架构升级记录](../docs/development/V144-ACCEPTANCE.md)。这不是维护者重新登录实测；旧版 [v1.4.3 用户日志](../docs/development/V143-ACCEPTANCE.md)单独保留，不公开原始日志或私人部署信息。

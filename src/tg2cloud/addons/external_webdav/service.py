@@ -362,7 +362,7 @@ class Service:
             self.display(item)
             self.management_hint()
             if action == "status":
-                self.log("这是本地登记状态；check 才检查实际网关、代理和认证。")
+                self.log("这是本地登记状态；请选择“检查连接与配置”核对实际网关、代理和认证。")
             return
         instance, state = self.preflight(item["instance_dir"], require_running=action not in {"disable", "uninstall"})
         if action in {"disable", "uninstall"}:

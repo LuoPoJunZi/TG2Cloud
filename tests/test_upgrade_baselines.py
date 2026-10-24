@@ -81,7 +81,7 @@ class BaselineTests(unittest.TestCase):
                 self.assertNotIn("/secret", str(caught.exception))
 
     def test_recent_reviewed_baselines_do_not_resolve_deleted_releases(self):
-        for tag in ("v1.4.3", "v1.4.4"):
+        for tag in ("v1.4.3", "v1.4.4", "v1.4.5"):
             with self.subTest(tag=tag):
                 client = Mock()
                 client.resolve.side_effect = AssertionError("Release lookup forbidden")

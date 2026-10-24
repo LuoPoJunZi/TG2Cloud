@@ -68,3 +68,7 @@ RECOVERY 等旧入口中已被外部链接的标题保留作简短导航，详�
 目录标准化不提升版本、不创建 Tag、不替换已有 Release。在线入口的下载白名单、包结构和不可变 helper pin 必须配套：先在隔离分支提交辅助代码并验证，再把三个入口固定到通过的同一提交。正式业务 payload 仍来自稳定 Release，不改用 main／RC。
 
 Release 继续从同一 Tag 验证并打包源码一次，发布 Job 复用 artifact 和实际 SHA256。历史 Tag 的重试按历史布局验证，不要求本地桌面资料。更多边界见[脚本优先说明](SCRIPT-FIRST.md)。
+
+## 后续渐进整理
+
+四个根目录公开脚本继续保留，包括兼容／救援用的 `uninstall.sh`。四组命名回归集中到 `tests/naming/`，原夹具和混合测试按实际依赖保留；迁移须核对完整测试发现集合。代理纯渲染集中在 `deployment/proxy/rendering.py`，旧 manager 接口继续导出。共享 CI 和只生成候选的发布准备工具见[维护开发说明](LOCAL-MAINTENANCE.md)。不删除历史运行路径、归档或用户数据。

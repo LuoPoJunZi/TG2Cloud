@@ -140,7 +140,9 @@ jobs:
 
       - name: ShellCheck
         run: |
-          if [[ -f src/tg2cloud/version.py ]]; then
+          if [[ -f .github/scripts/linux_validation.py ]]; then
+            python3 -B .github/scripts/linux_validation.py shell
+          elif [[ -f src/tg2cloud/version.py ]]; then
             bash -n install.sh
             bash -n install-lan.sh
             bash -n uninstall.sh
@@ -171,7 +173,13 @@ jobs:
 
       - name: Linux runtime, gateway and real WebDAV regression
         run: |
-          if [[ -f src/tg2cloud/version.py ]]; then
+          if [[ -f .github/scripts/linux_validation.py ]]; then
+            command -v bash shellcheck rclone docker
+            docker info >/dev/null
+            export PYTHONPATH=src
+            python -B .github/scripts/linux_validation.py test
+            python -B .github/scripts/linux_validation.py quality
+          elif [[ -f src/tg2cloud/version.py ]]; then
             command -v bash shellcheck rclone docker
             docker info >/dev/null
             export PYTHONPATH=src

@@ -174,7 +174,10 @@ def menu(service, *, sample_file: str = "") -> None:
         item = service.record()
         if item is None:
             raise ValueError("请先安装外部 WebDAV。")
-        service.log("\n── 外部 WebDAV 用户管理 ──\n共同目录：" + item["target_dir"])
+        from tg2cloud.cli.presentation import page_heading
+        from tg2cloud.version import VERSION
+        service.log(page_heading("外部 WebDAV 用户管理", service.product, VERSION))
+        service.log("共同目录：" + item["target_dir"])
         service.log("主账号：" + item["username"] + "（由入口配置管理）")
         members = item.get("members", [])
         if members:
@@ -183,7 +186,8 @@ def menu(service, *, sample_file: str = "") -> None:
                                       for index, member in enumerate(members, 1)))
         action = choose(service.ui, service.log, "请选择操作：", (
             ("add", "添加只读账号"), ("check", "检查账号"), ("enable", "启用账号"),
-            ("disable", "停用账号"), ("rotate", "更改密码"), ("remove", "移除入口授权")))
+            ("disable", "停用账号"), ("rotate", "更改密码"), ("remove", "移除入口授权")),
+            default="0", exit_label="返回功能菜单")
         if not action:
             return
         if action == "add":
@@ -193,7 +197,7 @@ def menu(service, *, sample_file: str = "") -> None:
             if not choices:
                 service.log("没有新增的家庭账号。")
                 continue
-            user = choose(service.ui, service.log, "请选择账号：", choices)
+            user = choose(service.ui, service.log, "请选择账号：", choices, default="0", exit_label="返回用户管理")
             if not user:
                 continue
         account(service, action, user, sample_file=sample_file)

@@ -1,5 +1,7 @@
 # 外部 WebDAV（独立可选附加功能）
 
+v1.4.6 正在准备发布：次级页面的刷新／返回与用户管理标题已统一；新能力尚未发布，原一键命令仍使用现有正式版本。源码体验与发布门槛见[维护开发说明](development/LOCAL-MAINTENANCE.md)。本章其余安装与权限要求继续适用。
+
 让手机文件管理器或播放器通过独立 HTTPS 域名，只读访问 Bot 已有上传目录。不复制数据、不重装网关、不重复挂载网盘、不新增 FUSE，也不是独立于 CloudDrive2/OpenList 的文件系统；底层网关和共享 Nginx/Certbot 必须继续可用。
 
 本功能自 **v1.3.1** 提供，安装要求包含本功能的正式稳定源码包和 SHA256 清单；实际发布状态以 [GitHub Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) 为准。已通过隔离 Nginx 认证、只读/编码路径、Range 和密码轮换回归；原生两版账号/目录、手机、公网 ACME 和 ARM64 尚未端到端实机验收。

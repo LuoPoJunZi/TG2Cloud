@@ -1,4 +1,4 @@
-"""Offline Telegram boundary regressions for captions and video suffixes."""
+"""Naming regressions at Telegram caption and video suffix boundaries."""
 from __future__ import annotations
 
 import tempfile

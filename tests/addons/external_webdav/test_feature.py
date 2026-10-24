@@ -548,14 +548,16 @@ class EntryAndReleaseTests(unittest.TestCase):
                 service, ui, messages = Mock(), Mock(), []
                 service.record.return_value = {"phase": "enabled"} if installed else None
                 service.configure.return_value = False
-                ui.ask.side_effect = lambda *args, **kwargs: kwargs["validate"](kwargs.get("default", ""))
+                values = iter(("1", "2" if installed else "1", "0", "0"))
+                ui.ask.side_effect = lambda *args, values=values, **kwargs: kwargs["validate"](next(values))
+                service.product, service.ui, service.log = PRODUCTS["clouddrive2"], ui, messages.append
                 with (patch("tg2cloud.addons.external_webdav.discovery.host"),
                       patch("tg2cloud.addons.external_webdav.service.Service", return_value=service) as factory,
                       patch.object(cli, "WebDAVTerminal", return_value=ui), patch.object(cli.signal, "signal"),
                       patch("tg2cloud.deployment.host.SafeLog", return_value=SafeLog(messages.append))):
                     self.assertEqual(cli.main([]), 0)
                 self.assertEqual(factory.call_args.args[0].key, "clouddrive2")
-                gateway, operation = ui.ask.call_args_list
+                gateway, operation = ui.ask.call_args_list[:2]
                 self.assertEqual(gateway.args[0], "输入序号（回车默认为 1）")
                 self.assertEqual(gateway.kwargs["default"], "1")
                 self.assertEqual(operation.kwargs["default"], "2" if installed else "1")
@@ -587,6 +589,7 @@ class EntryAndReleaseTests(unittest.TestCase):
         service = Mock()
         service.configure.return_value = False
         service.record.return_value = {"phase": "enabled"}
+        service.product = PRODUCTS["openlist"]
         with (patch("tg2cloud.addons.external_webdav.discovery.host"),
               patch("tg2cloud.addons.external_webdav.service.Service", return_value=service),
               patch.object(cli, "WebDAVTerminal"), patch.object(cli.signal, "signal"),
@@ -602,10 +605,11 @@ class EntryAndReleaseTests(unittest.TestCase):
                     service, ui = Mock(), Mock()
                     service.record.return_value = {"phase": "enabled", "instance_dir": PRODUCTS[edition].install_dir} if action == "upgrade" else None
                     service.configure.return_value = False
-                    values = iter((number, action_number))
+                    values = iter((number, action_number, "0", "0"))
                     ui.ask.side_effect = lambda *args, values=values, **kwargs: kwargs["validate"](next(values))
                     ui.confirm.return_value = False
                     messages = []
+                    service.product, service.ui, service.log = PRODUCTS[edition], ui, messages.append
                     with (patch("tg2cloud.addons.external_webdav.discovery.host"),
                           patch("tg2cloud.addons.external_webdav.service.Service", return_value=service) as factory,
                           patch.object(cli, "WebDAVTerminal", return_value=ui), patch.object(cli.signal, "signal"),
