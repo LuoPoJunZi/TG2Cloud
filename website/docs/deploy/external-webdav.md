@@ -124,6 +124,6 @@ uninstall 只移除本功能路由、活动哈希和记录，不删云文件、B
 
 实际开放前核对原生权限、外网手机播放、续期 dry-run、所用架构、配置失败/中断、启停/轮换/升级、共享路由保留及备份隔离恢复；这些实机项不因版本发布而写成通过。写操作负面验证仅用模拟后端或明确隔离对象，绝不对真实目录 `DELETE /dav/`。
 
-## v1.4.6 界面维护（待发布）
+## v1.4.6 界面维护
 
-工作树正在统一状态／连接检查页面的停留、刷新和返回，以及用户管理中的 Edition／版本与返回提示。尚未发布，不代表现有在线命令已经更新；主安装和 Bot 流程保持原行为。维护者源码体验和发布门槛见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。外部只读账号、目录隔离、HTTPS 和人工后台权限确认仍须按本文执行。
+v1.4.6 已统一状态／连接检查页面的停留、刷新和返回，以及用户管理中的 Edition／版本与返回提示。需独立升级附加功能并重新打开命令；主安装和 Bot 流程保持原行为。维护者源码体验和发布门槛见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。外部只读账号、目录隔离、HTTPS 和人工后台权限确认仍须按本文执行。

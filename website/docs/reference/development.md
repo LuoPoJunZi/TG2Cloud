@@ -1,6 +1,6 @@
 # 开发与贡献
 
-v1.4.6 发布准备：三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与待发布范围见[本版说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
+v1.4.6 已正式发布：三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与使用范围见[本版说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
 
 v1.4.5 当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`；[双架构完整检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639640)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639644)、仓库与两套文档检查均通过。入口 B／Tag `cd9b13722752b1f1663c5ba4cbb91b7c21c7f882` 的五项 CI 和[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码资产与 SHA256 已核验。下面历史结果不作为本版实机验收。
 
@@ -31,11 +31,11 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.4.6
 git rev-parse HEAD
 ```
 
-正式源码使用不可变 v1.4.5 Tag；开发使用 main 并记录提交号，不把后续文档改动当作 Release 资产变化。正式下载见[下载页](/download/)。
+正式源码使用不可变 v1.4.6 Tag；开发使用 main 并记录提交号，不把后续文档改动当作 Release 资产变化。正式下载见[下载页](/download/)。
 
 ## 关键目录与入口
 
@@ -119,6 +119,6 @@ git checkout v1.2.1
 
 只提交实际界面的脱敏截图，注明版本与 Edition。本次文档首页展示的是 HTML/CSS 流程示意，不是伪造的部署器运行截图。
 
-## v1.4.6 维护工具与测试分类（待发布）
+## v1.4.6 维护工具与测试分类
 
-新增本地 `prepare_release.py` 只生成版本同步计划及候选补丁，不提升当前产品版本、不更改固定 pin、不推送或发布。日常与当前 Tag CI 共用 `linux_validation.py` 的 Shell／完整回归／质量审计步骤，历史布局校验仍保留。四组命名回归集中至 `tests/naming/`，迁移前后核对测试集合；代理纯渲染独立并保留旧接口。实际命令与边界见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。这些工作树改动须另行发布，不能借用 v1.4.5 的验收作为新代码的实机证明。
+新增本地 `prepare_release.py` 只生成版本同步计划及候选补丁，不提升当前产品版本、不更改固定 pin、不推送或发布。日常与当前 Tag CI 共用 `linux_validation.py` 的 Shell／完整回归／质量审计步骤，历史布局校验仍保留。四组命名回归集中至 `tests/naming/`，迁移前后核对测试集合；代理纯渲染独立并保留旧接口。实际命令与边界见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。本版已发布；不能借用 v1.4.5 的验收作为新代码的实机证明。

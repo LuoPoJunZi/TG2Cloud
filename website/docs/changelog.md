@@ -38,7 +38,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.6
 
-2026-10-24，待发布。详情见[仓库完整记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[本版维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。
+2026-10-24，[v1.4.6 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6) 已正式发布。A、B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089991036)和实际源码资产核验通过；本版实机仍需独立验收。详情见[仓库完整记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[本版维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。
 
 - 外部 WebDAV 状态／连接结果可刷新和返回；用户管理统一上下文，卸载／升级后退出旧进程。
 - 生成发布审阅计划与候选补丁，保留正式 A／B 和同标签验证流程。

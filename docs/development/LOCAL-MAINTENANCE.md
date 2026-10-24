@@ -1,6 +1,6 @@
 # v1.4.6 维护与发布准备
 
-本文说明 v1.4.6 的外部 WebDAV 界面与维护改动，当前正在执行正式发布流程。下面的新工具和新界面须等待辅助 A、入口 B 与同标签门禁后才能进入在线命令；不是新增 Windows 支持或运行数据库迁移。
+本文说明 v1.4.6 的外部 WebDAV 界面与维护改动，已于 2026-10-24 正式发布。辅助 A、入口 B 与同标签门禁全部通过；新工具和新界面随对应离线代码升级提供；不是新增 Windows 支持或运行数据库迁移。
 
 ## 外部 WebDAV 界面
 
@@ -79,4 +79,14 @@ python3 -B .github/scripts/linux_validation.py quality
 
 ## 发布准备进度
 
+以下保留辅助 A 阶段的状态；正式发布最终结果见下一节。
+
 辅助 A `56e5115e729356c40a10912bb7d7c000969e40df` 的五项 GitHub 工作流已全部通过，包括[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317744)和[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317676)。入口 B 固定该已公开 A，新增渲染模块纳入下载清单；正式 v1.4.6 仍须等待入口 B 与同标签发布验证，不借用旧 CI 或跳过固定源码校验。
+
+## 正式发布核验（2026-10-24）
+
+v1.4.6 已于 2026-10-24 正式发布。辅助 A `56e5115e729356c40a10912bb7d7c000969e40df` 与入口 B／Tag `2e18eba718df83beec3a9d0784ca8037125bdd20` 各五项工作流全部通过；[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089991036)的准备、AMD64、ARM64 与发布任务成功。实际下载源码包与 SHA256 清单通过正式验证器，并与 GitHub 资产摘要一致。
+
+源码包 SHA256：`d06803e0c00b73086f2d19520230e660958784da373430002b42b618f38f73b4`。Tag 保持指向入口 B，后续文档提交不改写 Tag 或资产；校验和不是数字签名。本版真实 VPS、用户网盘、手机与完整恢复仍需独立验收。
+
+辅助 A：[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317744)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317676)。入口 B：[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089759086)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089759031)。仓库、docs 与 website 工作流亦分别成功，不用旧提交结果代替本版。

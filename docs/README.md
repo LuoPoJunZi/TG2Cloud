@@ -1,6 +1,6 @@
 # TG2Cloud 文档目录
 
-当前正式版本为 **v1.4.5**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 迁移与回退见[可选功能说明](FEATURE-ENHANCEMENTS.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
+当前正式版本为 **v1.4.6**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 迁移与回退见[可选功能说明](FEATURE-ENHANCEMENTS.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
 
 2026-10-23，用户提供 Ubuntu ARM64 与 Debian AMD64 两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过；配置保留、备份、Bot 健康、本机 HTTPS 与最近业务就绪观察通过。WebDAV 写入、真实转存、外网及恢复等未覆盖范围见[双架构升级记录](development/V144-ACCEPTANCE.md)。
 
@@ -33,12 +33,12 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 - [文件命名与媒体组](NAMING.md)：文字来源、多语言评分、原名优先、图片说明、一图一视频同标题、多成员编号及识别限制。
 - [家庭共享（v1.3.3）](FAMILY-SHARING.md)：管理员与家人授权、各自任务、共同目录及独立的外部只读账号；新版可用性以正式 Release 为准。
 
-v1.4.6 正在准备发布：外部 WebDAV 次级页面、测试分类与维护工具见[本版说明](development/LOCAL-MAINTENANCE.md)，不以旧版用户日志代替新代码验收。
+v1.4.6 已正式发布：外部 WebDAV 次级页面、测试分类与维护工具见[本版说明](development/LOCAL-MAINTENANCE.md)，不以旧版用户日志代替新代码验收。
 
 ## 运维、故障排查与迁移
 
 - [v1.4.5 用户验收记录](development/V145-ACCEPTANCE.md)：Ubuntu ARM64 CloudDrive2 升级及单独 WebDAV 写入验收，按实际日志限定结论。
-- [v1.4.6 维护与发布准备](development/LOCAL-MAINTENANCE.md)：本地 WebDAV 页面、发布候选工具、测试分类和共享 CI；尚未发布。
+- [v1.4.6 维护与发布准备](development/LOCAL-MAINTENANCE.md)：本地 WebDAV 页面、发布候选工具、测试分类和共享 CI。
 
 - [运行状态与维护](OPERATIONS.md)：管理命令、配置变更、实际版本、日志、HTTPS、备份管理与排查索引。
 - [四项可选增强（v1.4.3）](FEATURE-ENHANCEMENTS.md)：分类、主动通知、成员配额和诊断报告，含默认值、schema2迁移与验收边界。

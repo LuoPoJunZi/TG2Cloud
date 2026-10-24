@@ -1,6 +1,6 @@
 # VPS 安装与升级脚本
 
-v1.4.6 发布准备：三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与待发布范围见[本版说明](development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
+v1.4.6 已正式发布：三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与使用范围见[本版说明](development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
 
 v1.4.5 已正式发布：三个主入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`，A／入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过；实际源码包、SHA256 清单及 GitHub 资产摘要已核验。新版页面、诊断、隔离演练及未执行范围见[维护记录](development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。业务只取正式稳定 Release，不把向导版本当作部署完成，下方用户实机记录仍属于旧版。
 

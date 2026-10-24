@@ -24,8 +24,6 @@ TG2Cloud is a self-hosted personal file transfer tool. Send or forward files to 
 
 Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your cloud storage
 
-v1.4.6 is being prepared. See the [maintenance notes](docs/development/LOCAL-MAINTENANCE.md).
-
 ## Features
 
 - Two editions share one Bot core while keeping separate configuration, databases and Sessions.
@@ -33,7 +31,7 @@ v1.4.6 is being prepared. See the [maintenance notes](docs/development/LOCAL-MAI
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **v1.4.5**, supporting Linux AMD64 / ARM64. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
+Current stable version: **v1.4.6**, supporting Linux AMD64 / ARM64. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
 
 ## Getting started
 
