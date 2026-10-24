@@ -1,6 +1,6 @@
-# 下一轮稳定性维护完善（待发布）
+# v1.4.5 稳定性维护与本地管理
 
-本页记录 v1.4.4 之后的本地开发工作，不修改正式版本、Tag、Release 或在线 helper pin。公开一键命令仍使用已经发布的代码；修改文档不会自动升级已有实例。
+v1.4.5 已于 2026-10-24 正式发布。本页说明管理页面、诊断、备份／恢复演练及兼容边界；辅助 A、入口 B、同标签双架构发布与实际资产已核验，证据见第 7 节。旧版用户日志按原范围保留，修改文档不会自动升级已有实例。
 
 ## 1. 诊断从状态汇总到处理建议
 
@@ -26,7 +26,7 @@
 PYTHONPATH=src python3 -B -m tg2cloud.persistence.rehearsal /srv/private-backups/instance.tar.gz --scratch /srv/private-restore-check --edition clouddrive2
 ```
 
-OpenList 使用 `--edition openlist`。`--help` 查看参数，`--json` 输出脱敏汇总。工具不加入主菜单，不是正式 v1.4.4 的命令；新模块纳入共享 Bot 运行源码清单，但不要求旧离线管理包具备整个数据库实现。
+OpenList 使用 `--edition openlist`。`--help` 查看参数，`--json` 输出脱敏汇总。工具自 v1.4.5 提供，不加入主菜单；旧 v1.4.4 运行包没有此模块，新模块纳入共享 Bot 运行源码清单，但不要求旧离线管理包具备整个数据库实现。
 
 1. 归档和隔离父目录必须无符号链接并满足私密权限，归档 `0600`、父目录 `0700`；只使用自己控制的可信快照。完整性校验不是来源签名。
 2. 仅打开新临时目录中的副本，不执行归档内程序、Compose 或 `.env`，不加载 Session，不启动网关，不连接 Telegram／WebDAV。
@@ -51,7 +51,7 @@ python3 -B .github/scripts/maintenance_preflight.py --previous-tag v1.4.4
 
 检查版本资料、bootstrap／runtime 清单、所有已审阅旧版摘要，以及三个入口的固定 helper 与**工作树实际文件**是否一致。`--json` 提供机器可读结果；有待处理项退出码为 1。历史 Git 对象缺失会阻断，不联网兜底信任未知资料。
 
-本轮 helper 尚未公开，预期 helper 一致性检查会报告“发布前待处理”。不能通过忽略 pin 或伪造提交消除这个门槛。发布仍需：审阅并选定新版本 → 公开辅助提交 A 并验证 → 入口 B 固定 A 的真实 SHA 和清单 → B 及正式同 Tag 的原生 AMD64／ARM64 CI → 核对源码资产与校验清单。
+发布准备时，未公开 helper 的一致性检查曾按预期阻断；本版随后通过辅助 A → 固定入口 B → 同标签原生 AMD64／ARM64 → 实际资产核验，详见第 7 节。以后版本仍须独立执行这条链，不能忽略 pin、伪造提交或借用旧版 CI 消除门槛。
 
 静态预检通过也不代表远端 CI、实机验收或 Release 完成；原源码发布工具的严格检查不降低。
 
@@ -83,9 +83,9 @@ python3 -B -m unittest discover -s tests -p test_restore_rehearsal.py -v
 python3 -B -m unittest discover -s tests -p test_task_recovery.py -v
 ```
 
-现有原生双架构 CI 继续执行 Docker／WebDAV 集成。缺少条件时如实报告未运行，不把替身写成实机通过。当前未创建提交、推送、Tag 或 Release，不操作 VPS 或真实网盘。
+现有原生双架构 CI 继续执行 Docker／WebDAV 集成。缺少条件时如实报告未运行，不把替身写成实机通过。下面保留发布前的本地验证记录，当时未执行远端 CI 或创建 Tag／Release；随后正式发布结果见第 7 节。本轮未操作 VPS 或真实网盘。
 
-### 本轮本地验证（2026-10-24）
+### 发布前本地验证快照（2026-10-24）
 
 - 全量 unittest：1104 项，1073 执行通过、31 项因现有环境条件跳过，0 失败／错误。恢复演练最终定向 12 项通过；跳过项涉及原生 Linux／POSIX／PTY／flock、Docker／Compose、ShellCheck 和本机 rclone，未新增 skip 来掩盖失败。
 - Python 3.10 定向诊断、恢复演练、历史基线与发布预检、无 Bot 依赖的干净管理包通过；本机主回归 Python 3.13，不等于原生双架构 Linux CI 已执行。
@@ -96,7 +96,7 @@ python3 -B -m unittest discover -s tests -p test_task_recovery.py -v
 
 ## 6. 本地管理次级页面（待发布）
 
-这是随后按用户批准的 UI 方案实施的调整，不改主菜单 1～14、Bot UI、安装入口、权限或数据库。上面的 1104 项结果是此前维护实现的验证快照，不替代本次新增页面回归。
+本节旧标题仅为兼容已有链接，功能已随 v1.4.5 发布。这是随后按用户批准的 UI 方案实施的调整，不改主菜单 1～14、Bot UI、安装入口、权限或数据库。上面的 1104 项结果是此前维护实现的验证快照，不替代本次新增页面回归。
 
 - **2 状态**：显示实际运行版本、中文 Bot 状态／容器健康、网关状态、HTTPS 或 LAN 地址和本机检查；证书与续期按真实记录显示，未知项不判正常，失败项目与维护提醒单列。内网不显示不适用的到期字段。
 - **3 日志**：保留最近 30 分钟、每源最多 100 行，按 Bot／网关分组；空日志明确提示，一个源失败继续读取另一个；是快照，不新增实时跟随。
@@ -124,9 +124,29 @@ python3 -B -m unittest discover -s tests -p test_task_recovery.py -v
 
 页面不清屏、不清空终端历史，默认不显示额外秘密，不自动修复或放宽任何安全检查。真实 VPS 终端、SSH 客户端换行与操作验收仍需另行进行。
 
-### 本次页面回归（2026-10-24）
+### 发布前页面本地回归快照（2026-10-24）
+
+以下记录对应远端发布之前的本地阶段；最后一项的未执行范围不替代第 7 节后来完成的 GitHub 验证。
 
 - 最终全量 unittest：1121 项，1090 通过、31 项按原环境条件跳过，0 失败／错误。新增页面 16 项及成员展示 1 项；原管理回归保留，按新返回动作和备份序号调整交互夹具，不删测试、不放宽权限检查。
 - 新增页面的 16 项在 Python 3.10 和 3.13 分别通过，覆盖两 Edition、刷新重识别、LAN、异常／空日志、脱敏、取消、升级摘要停留和原 Markdown 导出；停止的容器不会沿用旧的健康成功记录。
 - Ruff、compileall、Bandit、338 个公共候选文件／文档索引、清单、版本资料、发布说明格式、四个入口逐个 Bash 语法和差异检查通过。Git Bash 首次被只读沙箱的信号管道限制阻断，改用正常本机权限仅执行 `bash -n` 后通过；没有执行安装脚本。
 - 网站构建与 34 项测试通过；Docker／Compose、真实 Linux PTY／权限／flock、rclone 和实机操作未在本机运行，环境跳过不作为通过。未执行远端 CI、推送、部署或发布，线上固定 helper 与产品版本保持不变。
+
+## 7. v1.4.5 发布核验（2026-10-24）
+
+以下为 GitHub 自动验证和实际发布资产核验，不是 VPS 或用户网盘验收：
+
+| 阶段 | 固定提交 | 实际结果 |
+| --- | --- | --- |
+| 辅助 A | `cff0d37ee0a7840ae8d9babd2edea1ca939c3558` | [原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639640)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639644)、仓库、文档和 website 五项工作流全通过 |
+| 入口 B／Tag | `cd9b13722752b1f1663c5ba4cbb91b7c21c7f882` | [双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064962391)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064962650)、仓库及两套文档五项工作流全通过；正式发布器确认 helper 逐文件一致 |
+| 正式发布 | `v1.4.5`，仍指向上述入口 B | [同标签发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)的 prepare、AMD64、ARM64、release 全部成功；下载实际资产核验通过 |
+
+原生流程覆盖完整单测、真实回环 WebDAV、静态与依赖审计、两 Edition Compose／非 root Bot 镜像、网关 HTTP／FUSE、LAN 和外部 WebDAV、已有 Nginx 隔离测试。按原条件跳过的项目不当成执行通过；生产 ACME、长期续期、手机播放、真实 Telegram／网盘、VPS 升级／卸载和完整灾备未在本轮执行。
+
+发布准备曾被入口版本号不一致、开发依赖 filelock 4.2.0 安全审计先后阻止；已同步版本，并获准用统一 uv 生成器将开发依赖限定更新至修复版 4.2.1。Bot 锁文件逐字节未变，不关闭审计、不忽略 CVE、不降低权限或删除失败测试。旧失败工作流记录保留，新辅助提交重新验证，不移动历史 Tag。
+
+[v1.4.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) 仅有 `TG2Cloud-v1.4.5-source.tar.gz` 与 `SHA256SUMS.txt`，不生成 EXE。源码包 SHA256：`22343b033bd7d0d77ff753111d109965fd7e9f0a64fc4ce27d7f146e4f319ac3`。已比较源码包清单、实际文件与 GitHub 资产摘要；这是完整性校验，不是数字签名。文档后续提交不会改写 Tag 或已发布资产。
+
+兼容性：不新增运行依赖、环境变量或数据库 schema；保留两个 Edition 的配置、任务、Session、下载及历史路径。继续使用 schema 2，旧版升级／回退先备份并匹配代码与数据库。新增演练只检查临时副本，不提供生产覆盖恢复。使用新版页面需要显式更新离线管理工具，真实转存仍需用户独立验收。

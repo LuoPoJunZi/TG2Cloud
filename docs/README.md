@@ -1,6 +1,6 @@
 # TG2Cloud 文档目录
 
-当前正式版本为 **v1.4.4**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 迁移与回退见[可选功能说明](FEATURE-ENHANCEMENTS.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
+当前正式版本为 **v1.4.5**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 迁移与回退见[可选功能说明](FEATURE-ENHANCEMENTS.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
 
 2026-10-23，用户提供 Ubuntu ARM64 与 Debian AMD64 两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过；配置保留、备份、Bot 健康、本机 HTTPS 与最近业务就绪观察通过。WebDAV 写入、真实转存、外网及恢复等未覆盖范围见[双架构升级记录](development/V144-ACCEPTANCE.md)。
 
@@ -47,7 +47,7 @@ v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名
 
 ## 开发、品牌与许可
 
-- [下一轮维护完善（待发布）](development/MAINTENANCE-NEXT.md)：诊断建议、隔离数据库恢复演练、可信升级基线与发布预检，以及 OpenList／内网／已有代理／家庭共享的独立实机补测清单。
+- [v1.4.5 维护、页面与发布核验](development/MAINTENANCE-NEXT.md)：诊断建议、隔离数据库恢复演练、可信升级基线与发布预检，以及 OpenList／内网／已有代理／家庭共享的独立实机补测清单。
 - [v1.4.3 维护增强](development/MAINTENANCE-IMPROVEMENTS.md)：受支持旧版基线、实例快照、业务就绪、Nginx 生命周期与命名预览；区分开发记录、正式发布和实机验收。
 - [参与贡献](../.github/CONTRIBUTING.md)：本地检查、CI 与正式发布规则。
 - [仓库结构与维护规范](development/REPOSITORY.md)：源码职责、文档同步与本地产物处理。

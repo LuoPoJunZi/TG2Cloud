@@ -1,6 +1,6 @@
 # 安装、下载与校验
 
-当前源码为 **TG2Cloud v1.4.5**，待发布；正式下载仍为 v1.4.4。以下入口继续使用已验证的稳定代码，不安装未发布业务源码。历史 Windows EXE 停留在 v1.2.1，不用于升级当前实例。
+当前正式版本为 **TG2Cloud v1.4.5**。以下入口使用已验证的稳定辅助代码和正式业务源码，不安装未发布业务代码。历史 Windows EXE 停留在 v1.2.1，不用于升级当前实例。
 
 ## 公网 VPS 安装与升级
 
@@ -75,8 +75,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.4.4-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.4/TG2Cloud-v1.4.4-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.4/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.4.5-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.5/TG2Cloud-v1.4.5-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.5/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -84,9 +84,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 sha256sum -c SHA256SUMS.txt
 ```
 
-本版源码包 SHA256 为 `521bfbc403a5cf13e0b9102c43909fc15aacfda8cf87033b1bd4772e4f86b152`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
+本版源码包 SHA256 为 `22343b033bd7d0d77ff753111d109965fd7e9f0a64fc4ce27d7f146e4f319ac3`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
 
-[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 ### 在线入口与源码资产的区别
 

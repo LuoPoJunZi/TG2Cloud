@@ -36,6 +36,25 @@ test('task settings and backup instructions use the current management menu',asy
   assert.doesNotMatch(backup,/CloudDrive2 仍没有手动业务|须后续发布并更新/);
 });
 
+test('backup submenu numbering matches source in both maintained guides',async()=>{
+  const source=await readFile(new URL('../../src/tg2cloud/cli/management.py',import.meta.url),'utf8');
+  const block=source.split('    def backups(')[1]?.split('    def remove(')[0];
+  assert.ok(block,'managed backup menu exists');
+  const entries=[...block.matchAll(/\((\d+), "([^"]+)"\)/g)].map(match=>[match[1],match[2]]);
+  assert.deepEqual(entries.map(([number])=>number),['1','2','3','4','5','6','7','0']);
+  const article=await read('docs/operations/backup.md');
+  const guide=await readFile(new URL('../../docs/BACKUP-RESTORE.md',import.meta.url),'utf8');
+  for(const [number,label] of entries.filter(([number])=>number!=='0')){
+    for(const [name,text] of [['website',article],['repository',guide]]){
+      assert.ok(text.includes(`${number}. ${label}`),`${name}: ${number}. ${label}`);
+    }
+  }
+  assert.ok(article.includes('0. 返回主菜单'));
+  assert.doesNotMatch(article,/\*\*(?:6\. 创建实例快照|7\. 实例快照隔离预检)\*\*/);
+  assert.ok(guide.includes('旧 v1.4.4'),'historical mapping remains explicit');
+  assert.doesNotMatch(guide,/正式 v1\.4\.4 尚不包含此工具/,'current recovery documentation must not retain the unpublished notice');
+});
+
 test('article source links identify the actual website article and existing project reference',async()=>{
   for(const page of config.navigation.flatMap(group=>group.items)){
     const article=await read('docs/'+page.slug+'.md');

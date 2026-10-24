@@ -33,3 +33,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 本版尚未连接真实 VPS、Telegram 或用户网盘；真实新装／升级、ACME／长期续期、手机播放和完整生产恢复仍需独立验收。历史 [v1.3.0 人工迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)、[v1.4.3 用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)和 [v1.4.4 双架构用户升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)按原版本与范围保留，不外推本版。
 
 详细说明见[管理与运维](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md)、[备份与恢复](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/BACKUP-RESTORE.md)、[本版维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md)及[完整版本记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+
+### 发布后核验（2026-10-24，仅补充仓库文档）
+
+辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`、入口 B／Tag `cd9b13722752b1f1663c5ba4cbb91b7c21c7f882` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部成功。实际下载的源码包和 SHA256 清单通过正式验证器，并与 GitHub 资产摘要一致。源码包 SHA256 为 `22343b033bd7d0d77ff753111d109965fd7e9f0a64fc4ce27d7f146e4f319ac3`。
+
+Release 仅包含源码包与 `SHA256SUMS.txt`，不生成 EXE；本段不改写已发布 Tag、资产或远端 Release 正文。真实 VPS 升级／卸载、Telegram 转存、用户网盘、ACME／长期续期、手机播放和完整生产恢复尚未执行，不能用 GitHub 隔离测试代替。详细证据见[发布核验](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。

@@ -2,13 +2,13 @@
 
 v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊断报告。分类／通知默认关闭，成员默认不限额；涉及业务 schema 2，升级前备份。见[转存](/usage/first-transfer/)、[个人配额](/usage/commands/)、[维护](/operations/maintenance/)和[备份](/operations/backup/)。
 
-这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.5 共 24 个版本（含当前待发布版），逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.5 共 24 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 可下载版本以 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 实际列表为准，不固定“只保留几版”的数量。部分历史发布页和标签已移除，历史说明仍保留；下面的测试结论按当时版本理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
-| [v1.4.5](#tg2cloud-v1-4-5) | 待发布：统一管理次级页面，增强只读诊断、快照预检与隔离数据库恢复演练。 |
+| [v1.4.5](#tg2cloud-v1-4-5) | 统一管理次级页面，增强只读诊断、快照预检与隔离数据库恢复演练。 |
 | [v1.4.4](#tg2cloud-v1-4-4) | 安装日志分级、升级结果与验收摘要；本地管理菜单精简及设置层级优化。 |
 | [v1.4.3](#tg2cloud-v1-4-3) | 维护与备份增强、可选分类／通知／成员配额及脱敏报告、传输测速与编号菜单修复。 |
 | [v1.4.2](#tg2cloud-v1-4-2) | 显式复用已有 Docker Nginx，单层代理、事务恢复、Webroot 证书与续期、附加路由及卸载保护。 |
@@ -33,11 +33,11 @@ v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊�
 | [v1.0.1](#tg2cloud-v1-0-1) | 修复 CloudDrive2 首装将 Bot 容器误判成额外网关的问题。 |
 | [v1.0.0](#tg2cloud-v1-0-0) | 建立双 Edition 和独立实例身份，提供两个 PySide6 部署器，保留稳定转存核心与旧数据兼容。 |
 
-v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再提供 Release 下载；新安装使用最新稳定版，不用旧 EXE 覆盖新实例。上游 TG115 的版本单独记录，不计入上述 23 个 TG2Cloud 版本。
+v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再提供 Release 下载；新安装使用最新稳定版，不用旧 EXE 覆盖新实例。上游 TG115 的版本单独记录，不计入上述 TG2Cloud 版本。
 
 ## TG2Cloud v1.4.5
 
-待发布维护版，当前正式下载仍为 v1.4.4。详细范围见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)与[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md)。
+[v1.4.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) 已正式发布。辅助 A、入口 B 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验。详细范围见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)与[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md)。
 
 - 状态、日志和业务就绪页面可停留刷新；其他次级页面统一上下文、分组与返回，主菜单编号不变。
 - 备份子菜单按实例 1～3、代理 4～7 分组，保持原确认与数据保护。
@@ -46,7 +46,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 - 扩充合成命名与两网关重启恢复测试；不更改命名规则、传输策略、运行依赖或数据库 schema。
 - 仅开发审计依赖 filelock 4.2.0 → 4.2.1 安全更新，保持 Bot 锁文件不变，不绕过漏洞审计。
 
-远端 CI、正式资产和真实 VPS 尚未执行／核验，不把本地模拟测试写成实机通过。
+GitHub 自动检查和资产核验已完成；本版真实 VPS、Telegram／用户网盘、ACME 与完整生产恢复未执行，不把模拟或隔离测试写成实机通过。
 
 ## TG2Cloud v1.4.4
 

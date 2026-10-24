@@ -1,6 +1,6 @@
 # 任务恢复、验证与离线备份
 
-适用于当前正式 **v1.4.2 Linux Bot**；恢复能力自 v1.2.1 提供，本轮外部 Docker Nginx 接入不改变任务恢复流程。下载入口或重启旧容器不会自动升级 Bot，旧 Windows EXE 停留在 v1.2.1。历史准备与验收清单见[可靠性验收记录](development/RELIABILITY-ACCEPTANCE.md)，不能用历史勾选结果代替当前实机验收。
+适用于当前 Linux Bot；恢复能力自 v1.2.1 提供，v1.4.5 维护版沿用既有任务恢复流程。新增的[隔离数据库演练](development/MAINTENANCE-NEXT.md#2-隔离数据库恢复演练)只使用备份副本，不是生产覆盖恢复。下载入口或重启旧容器不会自动升级 Bot，旧 Windows EXE 停留在 v1.2.1。历史准备与验收清单见[可靠性验收记录](development/RELIABILITY-ACCEPTANCE.md)，不能用历史勾选结果代替当前实机验收。
 
 完整命令表见 [Bot 使用指南](BOT-USAGE.md)，网关配置见 [STORAGE](STORAGE.md)。本页集中说明任务恢复、验证和容量保护；[命名](NAMING.md)、[备份](BACKUP-RESTORE.md)各有独立详细指南，下面保留旧链接入口，不重复维护完整教程。
 

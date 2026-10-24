@@ -1,14 +1,14 @@
 # 开发与贡献
 
-v1.4.5 当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`；[双架构完整检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639640)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639644)、仓库与两套文档检查均通过。入口 B 和正式同 Tag 发布仍待核验，下面历史结果不作为本版实机验收。
+v1.4.5 当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`；[双架构完整检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639640)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639644)、仓库与两套文档检查均通过。入口 B／Tag `cd9b13722752b1f1663c5ba4cbb91b7c21c7f882` 的五项 CI 和[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码资产与 SHA256 已核验。下面历史结果不作为本版实机验收。
 
-v1.4.5 为待发布维护版：管理次级页面、只读诊断、隔离数据库演练与发布预检沿用现有 Linux 架构，不新增运行依赖或数据库迁移；开发审计依赖 filelock 安全更新至 4.2.1。正式下载仍为 v1.4.4，下面旧版 CI 和实机记录不外推本版。
+v1.4.5 为已发布维护版：管理次级页面、只读诊断、隔离数据库演练与发布预检沿用现有 Linux 架构，不新增运行依赖或数据库迁移；开发审计依赖 filelock 安全更新至 4.2.1。正式下载见[下载页](/download/)，下面旧版 CI 和实机记录不外推本版。
 
 v1.4.4 已正式发布：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 普通 Runner 临时配置夹具已限定修复，并补充真实权限拒绝回归；生产 root／权限检查不变，不降低门禁。
 
 v1.4.3 已发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 隔离网络夹具补齐显式子网并保留原断言，不改生产网络。
 
-复现当前正式 v1.4.4 请使用对应不可变 Tag；下方命令用于获取待发布 main 开发源码。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
+复现当前正式 v1.4.5 使用下方不可变 Tag；开发使用 main 并记录提交。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
 
 以下保留 v1.4.2 及更早版本的历史发布证据，不外推为 v1.4.3 真实 VPS 验收。
 
@@ -29,11 +29,11 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.4.5
 git rev-parse HEAD
 ```
 
-本次 v1.4.5 尚未发布，开发使用 main 并记录提交号，不把工作树当作 Release 行为。正式下载见[下载页](/download/)。
+正式源码使用不可变 v1.4.5 Tag；开发使用 main 并记录提交号，不把后续文档改动当作 Release 资产变化。正式下载见[下载页](/download/)。
 
 ## 关键目录与入口
 

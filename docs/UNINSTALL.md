@@ -1,6 +1,6 @@
 # TG2Cloud 独立卸载脚本
 
-v1.4.5 发布准备：当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`，其五项 GitHub 检查通过；正式发布须继续验证入口 B 和同 Tag 产物。菜单仍为 14，只整理展示，不更改卸载核心、依赖保护或数据保留选项；本版没有执行真实卸载。
+v1.4.5 已正式发布：当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`，A／入口 B 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码资产已核验。菜单仍为 14，只整理展示，不更改卸载核心、依赖保护或数据保留选项；本版没有执行真实卸载。详见[发布范围](development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。
 
 v1.4.4 已正式发布：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 主菜单卸载编号为 14，不改变卸载核心、归属检查、外部依赖及数据保留选项；本版未执行真实卸载。下方旧版 pin 与验收仅作历史记录。
 

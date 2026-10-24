@@ -1,4 +1,6 @@
-# Linux AMD64 / ARM64（v1.4.4）
+# Linux AMD64 / ARM64（v1.4.5）
+
+2026-10-24，v1.4.5 的辅助 A、入口 B 以及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)均通过原生 AMD64／ARM64 验证，实际源码资产已核验；证据见[本版记录](development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。不新增架构或运行依赖，不改变固定镜像；仅开发审计依赖 filelock 安全更新。下方用户实机验收按旧版和原范围保留，不推断本版 VPS 或云盘已通过。
 
 2026-10-23 用户提供两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过：Ubuntu 26.04.1／原生 ARM64 与 Debian 13／原生 AMD64。配置保留、数据库备份、Bot 健康、运行代码与版本、本机 HTTPS 及最近业务就绪观察均通过，见[v1.4.4 双架构记录](development/V144-ACCEPTANCE.md)。不是跨 CPU 迁移、维护者重新登录实测或 OpenList／NAS 的验收；WebDAV 写入、真实转存、外网和故障回退等仍待独立检查。日志中的 Ubuntu 宿主 Python 3.14.3 是单机环境事实，不改变现有 CI 矩阵或 Bot Python 3.12。
 
