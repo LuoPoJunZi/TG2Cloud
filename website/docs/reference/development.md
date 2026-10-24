@@ -1,5 +1,7 @@
 # 开发与贡献
 
+v1.4.6 发布准备：三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与待发布范围见[本版说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
+
 v1.4.5 当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`；[双架构完整检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639640)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639644)、仓库与两套文档检查均通过。入口 B／Tag `cd9b13722752b1f1663c5ba4cbb91b7c21c7f882` 的五项 CI 和[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码资产与 SHA256 已核验。下面历史结果不作为本版实机验收。
 
 v1.4.5 为已发布维护版：管理次级页面、只读诊断、隔离数据库演练与发布预检沿用现有 Linux 架构，不新增运行依赖或数据库迁移；开发审计依赖 filelock 安全更新至 4.2.1。正式下载见[下载页](/download/)，下面旧版 CI 和实机记录不外推本版。

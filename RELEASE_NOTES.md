@@ -33,3 +33,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 历史验收按原范围保留：[v1.3.0 人工迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)、[v1.4.3 用户日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)、[v1.4.4 双架构升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)和[v1.4.5 ARM64 升级及 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V145-ACCEPTANCE.md)。
 
 详情见[本版维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)、[外部 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/external-webdav.md)、[运维指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md)与[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+
+## 发布准备进度
+
+辅助 A `56e5115e729356c40a10912bb7d7c000969e40df` 的五项 GitHub 工作流已全部通过，包括[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317744)和[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317676)。入口 B 固定该已公开 A，新增渲染模块纳入下载清单；正式 v1.4.6 仍须等待入口 B 与同标签发布验证，不借用旧 CI 或跳过固定源码校验。

@@ -76,3 +76,7 @@ python3 -B .github/scripts/linux_validation.py quality
 - 版本、显式清单和 7 个旧版基线预检通过。helper 一致性仍按预期阻断：须以后经授权公开 A／更新 B／远端 CI 后才能发布。正式版本仍为 1.4.5，未创建 Git 提交或改动远端。
 
 本轮没有 Docker daemon、Linux PTY／flock／原生 FUSE 或本机 rclone 集成条件，相应已有跳过不计为通过；未执行远端 CI、实际 VPS／网盘、手机播放、公网 ACME 或生产恢复。用户提供的旧代码验收与本地候选测试分别记录。
+
+## 发布准备进度
+
+辅助 A `56e5115e729356c40a10912bb7d7c000969e40df` 的五项 GitHub 工作流已全部通过，包括[原生双架构与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317744)和[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317676)。入口 B 固定该已公开 A，新增渲染模块纳入下载清单；正式 v1.4.6 仍须等待入口 B 与同标签发布验证，不借用旧 CI 或跳过固定源码校验。

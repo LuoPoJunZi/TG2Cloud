@@ -22,7 +22,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this immutable pin only after the new uninstaller passes CI/review.
-installer_commit="cff0d37ee0a7840ae8d9babd2edea1ca939c3558"
+installer_commit="56e5115e729356c40a10912bb7d7c000969e40df"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '卸载向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2
@@ -113,6 +113,7 @@ files = (
     'src/tg2cloud/deployment/proxy/lan.py',
     'src/tg2cloud/deployment/proxy/maintenance.py',
     'src/tg2cloud/deployment/proxy/manager.py',
+    'src/tg2cloud/deployment/proxy/rendering.py',
     'src/tg2cloud/deployment/proxy/state.py',
     'src/tg2cloud/deployment/readiness.py',
     'src/tg2cloud/deployment/releases.py',
