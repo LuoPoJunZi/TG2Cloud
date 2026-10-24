@@ -1,5 +1,7 @@
 # VPS 安装与升级脚本
 
+v1.4.5 发布准备：三个主入口固定已通过五项 GitHub CI 的辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`（[双架构运行时与隔离 Docker](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639640)、[Python 3.10／3.13 四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639644)）。入口 B 和正式同 Tag 发布检查尚待完成；业务仍只取正式稳定 Release，不把向导版本当作部署完成，也不借用下方历史实机记录。
+
 2026-10-23 用户已确认两次 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过：Ubuntu 26.04.1 原生 ARM64、Debian 13 原生 AMD64。两份日志中的配置保留、数据库备份、Bot 健康、代码／版本、本机 HTTPS 与最近业务就绪观察均通过；WebDAV 写入未执行，真实转存、外网、回退及 OpenList 等范围未覆盖。见[双架构升级记录](development/V144-ACCEPTANCE.md)，不是维护者再次登录实测。
 
 v1.4.4 已正式发布：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 新版日志分级、结果／验收摘要及管理菜单须显式升级匹配工具后使用；业务只取正式稳定 Release。下方旧记录保留历史范围，不作为本版实机验收。

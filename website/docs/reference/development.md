@@ -1,5 +1,7 @@
 # 开发与贡献
 
+v1.4.5 当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`；[双架构完整检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639640)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639644)、仓库与两套文档检查均通过。入口 B 和正式同 Tag 发布仍待核验，下面历史结果不作为本版实机验收。
+
 v1.4.5 为待发布维护版：管理次级页面、只读诊断、隔离数据库演练与发布预检沿用现有 Linux 架构，不新增运行依赖或数据库迁移；开发审计依赖 filelock 安全更新至 4.2.1。正式下载仍为 v1.4.4，下面旧版 CI 和实机记录不外推本版。
 
 v1.4.4 已正式发布：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 普通 Runner 临时配置夹具已限定修复，并补充真实权限拒绝回归；生产 root／权限检查不变，不降低门禁。

@@ -26,7 +26,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 发布准备中的本地完整回归 1121 项：1090 执行通过、31 因既有环境条件跳过，0 失败／错误。新页面在 Python 3.10／3.13 各 16 项通过；Ruff、Bandit、语法、清单与仓库检查，以及网站构建和 34 项测试通过。这些不是远端 CI 或实机通过记录。
 
-发布采用先公开并验证辅助 A、后由入口 B 固定真实 A 的流程；同一不可变 Tag 须通过原生 AMD64／ARM64、隔离 Docker／WebDAV、静态与依赖检查后才发布 `TG2Cloud-v1.4.5-source.tar.gz` 和 `SHA256SUMS.txt`。当前处于准备阶段，不借用旧版 CI 宣称本版已经发布，不在失败时回退未校验 main；SHA256 是完整性校验，不是数字签名。
+辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558` 的五项 GitHub CI 已通过，包括[原生双架构完整检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639640)与[Python 3.10／3.13 四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639644)。版本一致性与开发依赖审计的早期失败已修正，不跳过检查；Bot 运行锁逐字节保持。
+
+入口 B 固定上述已验证 A；只有同一不可变 v1.4.5 Tag 再次通过原生 AMD64／ARM64、隔离 Docker／WebDAV、静态与依赖检查，工作流才创建 Release 并上传 `TG2Cloud-v1.4.5-source.tar.gz` 和 `SHA256SUMS.txt`。这些门禁不替代实机验收，不在失败时回退未校验 main；SHA256 是完整性校验，不是数字签名。
 
 本版尚未连接真实 VPS、Telegram 或用户网盘；真实新装／升级、ACME／长期续期、手机播放和完整生产恢复仍需独立验收。历史 [v1.3.0 人工迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)、[v1.4.3 用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)和 [v1.4.4 双架构用户升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)按原版本与范围保留，不外推本版。
 
