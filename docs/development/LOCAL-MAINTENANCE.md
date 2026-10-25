@@ -98,3 +98,8 @@ v1.4.6 已于 2026-10-24 正式发布。辅助 A `56e5115e729356c40a10912bb7d7c0
 源码包 SHA256：`d06803e0c00b73086f2d19520230e660958784da373430002b42b618f38f73b4`。Tag 保持指向入口 B，后续文档提交不改写 Tag 或资产；校验和不是数字签名。本版真实 VPS、用户网盘、手机与完整恢复仍需独立验收。
 
 辅助 A：[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317744)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089317676)。入口 B：[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089759086)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089759031)。仓库、docs 与 website 工作流亦分别成功，不用旧提交结果代替本版。
+
+
+## v1.4.7 辅助提交验证
+
+辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1` 的五项工作流已全部通过：[原生 AMD64／ARM64](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809761)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809820)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809777)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809805)与[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809775)。入口 B 应仅固定该已验证 A，64 个 helper 文件须逐字匹配；还需 B 与同标签验证及实际资产核验，不把本节当成正式发布完成。

@@ -1,5 +1,7 @@
 # 局域网 / NAS 独立安装脚本
 
+v1.4.7 发布准备：两个在线安装入口已固定到已公开且五项 CI 通过的辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`。主菜单 14／15 保留卸载和独立外部 WebDAV 管理；仍须等待入口 B、同标签原生双架构和正式资产核验后宣布发布。业务只使用正式稳定 Release，下方历史记录不改写。
+
 TG2Cloud 后续以 Linux 脚本为主要维护入口，Windows 部署器停留在 v1.2.1。公网 VPS 使用 `install.sh` 和强制 HTTPS。本入口单独使用 `install-lan.sh`：手填运行脚本的 Linux 内网 IPv4，用内网 HTTP 管理网关，不收集域名、不申请证书，也不修改原部署器或 VPS 向导。
 
 > 当前正式版本为 v1.4.5，内网模式仍需按环境验收。此前收到过 CloudDrive2 在内网 Debian 实机首次部署和 WebDAV 验收通过的日志；本版流程、OpenList 实机、不同 NAS 系统、跨版本升级与回退仍需单独验收。公开一行入口固定下载经过 CI 验证的不可变源码 commit，不直接运行 moving main 中的依赖；业务 payload 仍只取最新正式稳定 Release。历史 PySide6 部署器停留在 v1.2.1，公网 VPS 继续使用强制 HTTPS。
