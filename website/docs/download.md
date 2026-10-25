@@ -1,6 +1,6 @@
 # 安装、下载与校验
 
-当前正式版本为 **TG2Cloud v1.4.6**。以下入口使用已验证的稳定辅助代码和正式业务源码，不安装未发布业务代码。历史 Windows EXE 停留在 v1.2.1，不用于升级当前实例。
+当前源码为 **TG2Cloud v1.4.7**，待发布；当前可下载的正式稳定版仍为 v1.4.6。以下入口使用已验证的稳定辅助代码和正式业务源码，不安装未发布业务代码。历史 Windows EXE 停留在 v1.2.1，不用于升级当前实例。
 
 ## 公网 VPS 安装与升级
 
@@ -40,17 +40,17 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 可选的外部 WebDAV
 
-主安装不询问或默认启用此功能。需要手机或播放器只读访问共享目录时，另行运行：
+主安装不询问或默认启用此功能。待发布版本从 `tg2cloud` → 15. 外部 WebDAV 按需安装与维护，无需额外安装命令；当前正式 v1.4.6 尚无该菜单：
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-webdav.sh)
+tg2cloud
 ```
 
 它使用独立域名和独立只读账号，不复用 Bot 或网关管理员凭据。配置与维护见[外部 WebDAV](/deploy/external-webdav/)。
 
 ## 日常管理、凭据与卸载
 
-安装后运行 `tg2cloud`。查看状态、日志、WebDAV 凭据和卸载均在[本地管理菜单](/operations/maintenance/)；外部附加功能使用自己的 `tg2cloud-webdav`。
+安装后运行 `tg2cloud`。查看状态、日志、WebDAV 凭据和卸载均在[本地管理菜单](/operations/maintenance/)；待发布版本也包含外部 WebDAV 子菜单，历史 `tg2cloud-webdav` 仍兼容。
 
 仅查看已有凭据，也可在自己的私有交互终端运行：
 
@@ -61,13 +61,13 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 每项确认后才显示，不安装、升级、改密或重建；已保存的 OpenList 初始化密码可能已在后台修改。不要截图、录屏或公开分享。
 
-卸载不是升级步骤。需要独立救援入口时，先用只读预检：
+卸载不是升级步骤。新版主分支不再提供两个独立 Shell 文件；菜单卸载仅作用于当前 Edition，预检全部实例可用：
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
+tg2cloud uninstall --edition all --check
 ```
 
-实际默认完整卸载会在确认后清理所选实例数据与可识别备份；需要保留时使用 `--keep-data`。不删除云端文件或卸载系统 Docker / Nginx；完整清理不等于把 VPS 恢复到安装前。范围与依赖保护见[卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
+命令损坏时重新运行原公网／内网安装入口，进入已有实例管理菜单，不选择重新安装；部分实例使用核验过的完整源码 CLI。历史脚本保留在原 Tag。实际默认完整卸载会在确认后清理所选实例数据与可识别备份；需要保留时使用 `--keep-data`。不删除云端文件或卸载系统 Docker / Nginx；完整清理不等于把 VPS 恢复到安装前。范围与依赖保护见[卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
 
 历史 v1.2.0 Tag 记录的是早期默认保留数据行为，不可套用为当前完整清理的默认值。
 

@@ -1,21 +1,25 @@
 """Opt-in disposable native gateway smoke; no Telegram, cloud login or real data."""
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import shutil
 import subprocess
+import tempfile
 import time
 import unittest
 import urllib.error
 import urllib.request
 import uuid
 from pathlib import Path
+from unittest.mock import patch
 
-from tg2cloud.deployment import architecture, payload
+from tg2cloud.deployment import architecture, payload, uninstall
 from tg2cloud.deployment.host import LocalSession, SafeLog
 from tg2cloud.deployment.profiles import PRODUCTS
-from tg2cloud.deployment.proxy.manager import CERTBOT_IMAGE, NGINX_IMAGE
+from tg2cloud.deployment.proxy import manager as proxy
+from tg2cloud.deployment.proxy.manager import CERTBOT_IMAGE, NGINX_IMAGE, render_compose
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -26,6 +30,55 @@ class NativeGatewayTests(unittest.TestCase):
         result = subprocess.run(["docker", *args], capture_output=True, text=True, timeout=timeout, check=False)
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result.stdout.strip()
+
+    def test_real_certbot_startup_repairs_only_missing_status_and_reads_back_mounts(self):
+        # No Nginx service is started: no host 80/443, ACME or real certificates.
+        project = "tg2cloud-certbot-test-" + uuid.uuid4().hex
+        name = project + "-certbot"
+        with tempfile.TemporaryDirectory(prefix="tg2cloud-certbot-test-") as temporary:
+            root = Path(temporary).resolve() / project
+            for child in ("www", "letsencrypt", "lib", "log", "status"):
+                (root / "certbot" / child).mkdir(parents=True)
+            compose = root / "docker-compose.yml"
+            content = render_compose().replace("container_name: tg2cloud-proxy-certbot", "container_name: " + name)
+            compose.write_text(content, encoding="utf-8")
+            arguments = ("compose", "--project-name", project, "-f", str(compose))
+            template = ('{"labels":{{json .Config.Labels}},"network":{{json .HostConfig.NetworkMode}},'
+                        '"mounts":{{json .Mounts}}}')
+            try:
+                self.docker(*arguments, "up", "-d", "certbot")
+                with (patch.object(uninstall, "PROXY_ROOT", str(root)),
+                      patch.object(uninstall, "PROXY_PROJECT", project),
+                      patch.object(uninstall, "PROXY_NETWORK", project + "_default"),
+                      patch.object(uninstall, "PROXY_CERTBOT_CONTAINER", name)):
+                    item = json.loads(self.docker("inspect", "--format", template, name))
+                    uninstall.proxy_identity(name, item)
+                    self.assertEqual(len(uninstall.bind_map(item)), 5)
+                    compose.write_text(content.replace("      - ./certbot/status:/status\n", ""), encoding="utf-8")
+                    self.docker(*arguments, "up", "-d", "certbot")
+                    item = json.loads(self.docker("inspect", "--format", template, name))
+                    with self.assertRaisesRegex(uninstall.UninstallError, "缺少续期状态挂载 /status"):
+                        uninstall.proxy_identity(name, item)
+                    # Exercise startup against the real incomplete container.
+                    # Simulate Compose reusing it on the initial up; the guarded
+                    # one-shot recreation and final readback use actual Docker.
+                    compose.write_text(content, encoding="utf-8")
+                    manager = proxy.DomainProxyManager(LocalSession(SafeLog()), PRODUCTS["clouddrive2"], {}, lambda _: None)
+                    manager._expected_compose_sha256 = hashlib.sha256(content.encode()).hexdigest()
+                    original_run = manager._run
+                    def reused_first_up(command, **kwargs):
+                        if command == f"docker compose -f {root}/docker-compose.yml up -d certbot":
+                            return 0, ""
+                        return original_run(command, **kwargs)
+                    manager._run = reused_first_up
+                    with (patch.object(proxy, "PROXY_ROOT", str(root)),
+                          patch.object(proxy, "PROXY_CERTBOT_CONTAINER", name)):
+                        self.assertEqual(manager._compose("up -d certbot")[0], 0)
+                    item = json.loads(self.docker("inspect", "--format", template, name))
+                    uninstall.proxy_identity(name, item)
+                    self.assertEqual(len(uninstall.bind_map(item)), 5)
+            finally:
+                self.docker(*arguments, "down", "--remove-orphans")
 
     def test_native_gateway_http_and_proxy_executables(self):
         self.assertIsNotNone(shutil.which("docker"), "Opted-in native tests require Docker")

@@ -7,7 +7,9 @@ import os
 import secrets
 import shlex
 import shutil
+import tempfile
 import time
+from collections.abc import Callable
 from contextlib import contextmanager
 from pathlib import Path
 
@@ -205,8 +207,12 @@ class Service:
             self.log(f"另有 {len(item['members'])} 个家庭只读账号；请在“用户管理”中逐个检查。")
         self.log("─────────────────────────────")
 
-    def management_hint(self) -> None:
-        self.log("下次管理，请运行：\ntg2cloud-webdav")
+    def management_hint(self, *, check: bool = False) -> None:
+        if os.environ.get("TG2CLOUD_MANAGER_MENU") == "1":
+            self.log("下次管理，请运行：\ntg2cloud\n选择 15. 外部 WebDAV"
+                     + (" → 3. 检查连接与配置，重新核对结果。" if check else ""))
+        else:
+            self.log("请运行 tg2cloud-webdav check 复核。" if check else "下次管理，请运行：\ntg2cloud-webdav")
 
     def assert_binding(self, item: dict, instance) -> None:
         if (item["instance_dir"] != str(instance.directory) or item["binding"] != config.binding(instance.config)
@@ -217,7 +223,8 @@ class Service:
         if self.record() != item:
             raise ValueError("附加功能记录已被另一操作修改；停止，请刷新状态。")
 
-    def configure(self, *, install_dir: str | None, install: bool = False, sample_file: str = "") -> bool:
+    def configure(self, *, install_dir: str | None, install: bool = False, sample_file: str = "",
+                  prepare_runtime: Callable[[], None] | None = None) -> bool:
         previous = self.record()
         if previous and install:
             self.log("外部 WebDAV 已登记；不重复安装或自动启用。请在管理菜单中检查、修改配置或启用访问。")
@@ -282,6 +289,11 @@ class Service:
             if config.binding(current.config) != item["binding"]:
                 raise ValueError("确认期间 Bot 配置已变，停止。")
             self.backup(state)
+            # Keep the existing record/authentication intact if code copying
+            # or launcher installation fails. Success is only printed after
+            # both the offline manager and the public route are ready.
+            if prepare_runtime is not None:
+                prepare_runtime()
             self.save(item)
             self.revoke()
             if self.product.key in state.get("external_webdav", {}):
@@ -466,27 +478,35 @@ class Service:
         revision = checksum.hexdigest()
         destination = self.root / "runtime" / revision
         config.canonical(destination)
-        if not destination.exists():
-            staged = destination.with_name("stage-" + revision)
-            if staged.exists():
-                raise ValueError("存在未完成的运行代码候选；先人工核对，不覆盖。")
-            staged.mkdir(parents=True, mode=0o700)
+
+        def verify(directory: Path) -> None:
+            actual = hashlib.sha256()
             for relative in paths:
-                target = staged / relative
-                target.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
-                shutil.copyfile(source / relative, target)
-                target.chmod(0o600)
-            config.atomic(staged / "installation.json", (json.dumps(dict(identity, code_sha256=revision)) + "\n").encode())
-            os.replace(staged, destination)
-        actual = hashlib.sha256()
-        for relative in paths:
-            path = destination / relative
-            config.canonical(path)
-            if not path.is_file():
-                raise ValueError("已有离线维护代码不完整，拒绝切换。")
-            actual.update(relative.encode() + b"\0" + path.read_bytes())
-        if actual.hexdigest() != revision:
-            raise ValueError("已有离线维护代码摘要不匹配，拒绝覆盖或切换。")
+                path = directory / relative
+                config.canonical(path)
+                if not path.is_file():
+                    raise ValueError("已有离线维护代码不完整，拒绝切换。")
+                actual.update(relative.encode() + b"\0" + path.read_bytes())
+            if actual.hexdigest() != revision:
+                raise ValueError("已有离线维护代码摘要不匹配，拒绝覆盖或切换。")
+
+        if not destination.exists():
+            destination.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
+            # Only this invocation's private candidate is removed on ordinary
+            # failure/interruption. Old stage-* paths (including unknown files)
+            # are preserved and cannot block a fresh, uniquely named attempt.
+            with tempfile.TemporaryDirectory(prefix="stage-" + revision + "-", dir=destination.parent) as temporary:
+                staged = Path(temporary)
+                config.canonical(staged)
+                for relative in paths:
+                    target = staged / relative
+                    target.parent.mkdir(parents=True, mode=0o700, exist_ok=True)
+                    shutil.copyfile(source / relative, target)
+                    target.chmod(0o600)
+                config.atomic(staged / "installation.json", (json.dumps(dict(identity, code_sha256=revision)) + "\n").encode())
+                verify(staged)
+                os.replace(staged, destination)
+        verify(destination)
         config.canonical(launcher)
         if launcher.exists() and not launcher.read_text().startswith("#!/bin/sh\n# TG2Cloud external_webdav managed\n"):
             raise ValueError("已有同名命令不属于 TG2Cloud，拒绝覆盖。")

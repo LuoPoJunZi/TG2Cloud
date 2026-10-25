@@ -92,7 +92,7 @@ Get-FileHash ".\TG2Cloud-OpenList-Deployer.exe" -Algorithm SHA256
 ## 发布维护步骤
 
 1. 更新 Bot/脚本版本源、安装入口版本、网站和 CHANGELOG/RELEASE_NOTES；不再同步 Windows 版本资源到新版本。
-2. 提交辅助源码，经过 CI；再更新 `install.sh`、`install-lan.sh`、`uninstall.sh` 的固定 commit。被 pin 的所有辅助文件必须与最终 Tag 内容一致。
+2. 提交辅助源码，经过 CI；再更新 当前 `install.sh`、`install-lan.sh` 的固定 commit（旧 Tag 仍按其三个入口核验）。被 pin 的所有辅助文件必须与最终 Tag 内容一致。
 3. 执行离线测试、代码检查、两 Edition Docker/本地 WebDAV、网站检查及上述实机验收。未运行的检查明确保留待验收。
 4. 创建新 Tag 后 Actions 打包一次，发布同一源码包及 SHA256。不覆盖已有版本，不上传本机产物。
 

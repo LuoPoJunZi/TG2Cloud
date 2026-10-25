@@ -31,8 +31,8 @@ LEGACY_REQUIRED = {
 ROOT_LEGACY_REQUIRED = (LEGACY_REQUIRED - {path for path in LEGACY_REQUIRED if path.startswith("scripts/lib/")}) | {
     "deployer_products.py", "vps_resources.py", "domain_proxy.py", "proxy_maintenance.py",
 }
-REQUIRED = {
-    "install.sh", "install-lan.sh", "uninstall.sh", "LICENSE", "pyproject.toml",
+MODERN_REQUIRED = {
+    "install.sh", "install-lan.sh", "LICENSE", "pyproject.toml",
     "scripts/run_source.py", "src/tg2cloud/__init__.py", "src/tg2cloud/version.py",
     "src/tg2cloud/app.py", "src/tg2cloud/deployment/profiles.py",
     "src/tg2cloud/deployment/fingerprints.py", "src/tg2cloud/cli/commands.py",
@@ -40,6 +40,23 @@ REQUIRED = {
     "packaging/compose/docker-compose.clouddrive2.yml", "packaging/compose/docker-compose.openlist.yml",
     "packaging/bootstrap-manifest.json", "packaging/runtime-manifest.json", "assets/brand/tg2cloud-logo.svg",
 }
+HISTORICAL_MODERN_REQUIRED = MODERN_REQUIRED | {"uninstall.sh"}
+REQUIRED = MODERN_REQUIRED | {"packaging/external-webdav.json", "src/tg2cloud/deployment/uninstall.py",
+                              "src/tg2cloud/addons/external_webdav/entry.py"}
+
+
+def unified_layout(marker: bytes | None, *, has_addon: bool) -> bool:
+    """Distinguish supported layouts explicitly, never by optional missing inputs."""
+    if marker is None:
+        if has_addon:
+            raise ValueError("incomplete external WebDAV release contract")
+        return False
+    value = json.loads(marker)
+    if (not isinstance(value, dict) or type(value.get("api")) is not int
+            or value not in ({"api": 1, "proxy_schema": 2, "owner": "tg2cloud.external_webdav"},
+                             {"api": 2, "proxy_schema": 2, "owner": "tg2cloud.external_webdav"})):
+        raise ValueError("unsupported external WebDAV release contract")
+    return value["api"] == 2
 
 
 def manifest_files(content: bytes, expected: set[str]) -> list[str]:
@@ -80,10 +97,14 @@ def validate_pins(root: Path, commit: str) -> None:
     """Catch a new release accidentally shipping old online wizard code."""
     layout = git(root, "ls-tree", "--name-only", commit, "src/tg2cloud/version.py")
     current_helpers = None
+    unified = False
     if layout:
         files = set(git(root, "ls-tree", "-r", "--name-only", commit).decode().splitlines())
         current_helpers = manifest_files(git(root, "show", f"{commit}:packaging/bootstrap-manifest.json"), helpers_in_tree(files))
-    for entry in ("install.sh", "install-lan.sh", "uninstall.sh"):
+        marker = "packaging/external-webdav.json"
+        unified = unified_layout(git(root, "show", f"{commit}:{marker}") if marker in files else None,
+                                 has_addon=any(name.startswith("src/tg2cloud/addons/external_webdav/") for name in files))
+    for entry in (("install.sh", "install-lan.sh") if unified else ("install.sh", "install-lan.sh", "uninstall.sh")):
         text = git(root, "show", f"{commit}:{entry}").decode("utf-8")
         pins = re.findall(r'^installer_commit\s*=\s*"([0-9a-f]{40})"$', text, re.MULTILINE)
         if len(pins) != 1:
@@ -144,16 +165,21 @@ def verify(directory: Path, tag: str) -> None:
             files[relative] = bundle.extractfile(member).read()
     modern = "src/tg2cloud/version.py" in files
     legacy_lib = "scripts/lib/deployer_products.py" in files
-    required = REQUIRED if modern else LEGACY_REQUIRED if legacy_lib else ROOT_LEGACY_REQUIRED
+    has_addon = any(path.startswith("src/tg2cloud/addons/external_webdav/") for path in files)
+    unified = modern and unified_layout(files.get("packaging/external-webdav.json"), has_addon=has_addon)
+    required = (REQUIRED if unified else HISTORICAL_MODERN_REQUIRED) if modern else LEGACY_REQUIRED if legacy_lib else ROOT_LEGACY_REQUIRED
     if not required.issubset(files):
         raise ValueError("source archive missing required Linux inputs")
     if modern:
-        if any(path.startswith("src/tg2cloud/addons/external_webdav/") for path in files):
-            needed = {"install-webdav.sh", "packaging/external-webdav.json",
+        if has_addon:
+            needed = {"packaging/external-webdav.json",
                       "src/tg2cloud/addons/external_webdav/cli.py", "src/tg2cloud/addons/external_webdav/service.py"}
-            if not needed <= files.keys() or json.loads(files["packaging/external-webdav.json"]) != {
-                    "api": 1, "proxy_schema": 2, "owner": "tg2cloud.external_webdav"}:
+            if not unified:
+                needed.add("install-webdav.sh")
+            if not needed <= files.keys():
                 raise ValueError("incomplete external WebDAV release contract")
+        if unified and {"uninstall.sh", "install-webdav.sh"} & files.keys():
+            raise ValueError("retired standalone entry in unified source layout")
         runtime = {path for path in files if path.startswith("src/tg2cloud/") and path.endswith(".py")}
         manifest_files(files["packaging/runtime-manifest.json"], runtime)
         manifest_files(files["packaging/bootstrap-manifest.json"], helpers_in_tree(set(files)))

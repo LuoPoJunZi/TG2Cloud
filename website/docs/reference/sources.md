@@ -1,5 +1,7 @@
 # 文档来源与维护
 
+当前源码为 **v1.4.7**，待发布；资料核对日期 **2026 年 10 月 25 日**。当前正式稳定版仍为 [v1.4.6](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6)。须等本版 A／B、同标签原生双架构与实际源码资产核验，不以旧版结果代替。
+
 当前源码与正式版本为 [**v1.4.6**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6)；资料核对日期 **2026 年 10 月 24 日**。A／B、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089991036)及实际源码资产核验通过，下方旧版记录按历史范围保留；本版维护细节见[源码说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。
 
 本次内容核对日期为 **2026 年 10 月 24 日**，对应正式 [**v1.4.5**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5)。辅助 A、入口 B 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验；完整证据见[维护发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。本版未连接真实 VPS，不借用下面历史记录声明实机验收。

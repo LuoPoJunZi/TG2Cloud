@@ -2,12 +2,13 @@
 
 v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊断报告。分类／通知默认关闭，成员默认不限额；涉及业务 schema 2，升级前备份。见[转存](/usage/first-transfer/)、[个人配额](/usage/commands/)、[维护](/operations/maintenance/)和[备份](/operations/backup/)。
 
-这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.6 共 25 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.7 共 26 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 可下载版本以 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 实际列表为准，不固定“只保留几版”的数量。部分历史发布页和标签已移除，历史说明仍保留；下面的测试结论按当时版本理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.4.7](#tg2cloud-v1-4-7) | 外部 WebDAV 统一入口、独立 Shell 退役、Certbot 挂载与中断恢复维护。 |
 | [v1.4.6](#tg2cloud-v1-4-6) | 外部 WebDAV 界面、发布准备工具、共享 CI 与测试及代理模块维护。 |
 | [v1.4.5](#tg2cloud-v1-4-5) | 统一管理次级页面，增强只读诊断、快照预检与隔离数据库恢复演练。 |
 | [v1.4.4](#tg2cloud-v1-4-4) | 安装日志分级、升级结果与验收摘要；本地管理菜单精简及设置层级优化。 |
@@ -35,6 +36,16 @@ v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊�
 | [v1.0.0](#tg2cloud-v1-0-0) | 建立双 Edition 和独立实例身份，提供两个 PySide6 部署器，保留稳定转存核心与旧数据兼容。 |
 
 v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再提供 Release 下载；新安装使用最新稳定版，不用旧 EXE 覆盖新实例。上游 TG115 的版本单独记录，不计入上述 TG2Cloud 版本。
+
+## TG2Cloud v1.4.7
+
+2026-10-25，待发布。源码与测试已准备，正式发布仍须辅助 A、入口 B、同标签双架构及实际源码资产核验；当前可下载的稳定版仍是 v1.4.6。详细范围见[仓库完整记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+
+- `tg2cloud` 新增 15. 外部 WebDAV，按所选 Edition 管理独立只读入口；安装主流程不默认询问或启用。
+- 根目录只保留公网与内网两个入口，独立卸载和外部 WebDAV Shell 文件退役；卸载仍通过菜单 14 或 `tg2cloud uninstall`，原清理及预检参数保留。
+- API 2 明示新源码布局；旧 API 1 工具经确认仅迁移维护代码，不变更账号、路由和文件。
+- Certbot 启动与健康检查复核实际挂载；代码准备在认证／路由变更之前完成，候选失败清理且可安全重试。
+- 不新增运行依赖、环境变量或数据库迁移，补入 v1.4.6 升级基线。真实 VPS、手机、公网 ACME 和恢复验收尚未执行。
 
 ## TG2Cloud v1.4.6
 

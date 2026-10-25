@@ -31,7 +31,7 @@ MENU_ITEMS = (
     (4, "服务启停管理"), (5, "Bot 用户管理"), (6, "WebDAV 凭据"),
     (7, "HTTPS 与管理"), (8, "文件分类设置"), (9, "异常通知设置"),
     (10, "业务就绪检查"), (11, "WebDAV 验收"), (12, "故障诊断报告"),
-    (13, "数据备份管理"), (14, "卸载当前实例"), (0, "退出"),
+    (13, "数据备份管理"), (14, "卸载当前实例"), (15, "外部 WebDAV"), (0, "退出"),
 )
 MENU = numbered_menu(MENU_ITEMS) + "\n"
 MENU_ACTIONS = tuple(str(number) for number, _ in MENU_ITEMS)
@@ -421,6 +421,10 @@ class Management:
                 elif action == "5":
                     from tg2cloud.deployment.users import manage
                     manage(self, instance)
+                elif action == "15":
+                    from tg2cloud.addons.external_webdav.entry import open_menu
+                    self.heading("外部 WebDAV", instance)
+                    open_menu(self.recheck(instance), self.ui, self.log)
                 elif action in {"8", "9"}:
                     from tg2cloud.deployment.feature_settings import (
                         manage_classification,
@@ -450,7 +454,7 @@ class Management:
 
 
 def main(argv=None, *, mode_hint=None) -> int:
-    parser = argparse.ArgumentParser(description="TG2Cloud 离线本地管理；仅安装/升级查询正式稳定 Release")
+    parser = argparse.ArgumentParser(description="TG2Cloud 本地管理；已有工具离线运行，首次获取及升级组件仅使用正式稳定 Release")
     parser.add_argument("--edition", choices=tuple(PRODUCTS))
     parser.add_argument("--install-dir", help="指定已核验的单 Edition 自定义目录")
     args = parser.parse_args(argv)

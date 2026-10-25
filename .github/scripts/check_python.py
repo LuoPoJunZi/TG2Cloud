@@ -22,6 +22,8 @@ CLI_TESTS = (
     "test_management_pages.py",
     "test_release_preparation.py",
     "test_proxy_rendering.py",
+    "test_proxy_certbot_startup.py",
+    "test_webdav_entry.py",
 )
 CLI_PATHS = (
     "src/tg2cloud/cli", "src/tg2cloud/deployment", "src/tg2cloud/addons", "src/tg2cloud/__init__.py",

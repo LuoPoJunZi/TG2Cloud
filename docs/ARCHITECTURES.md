@@ -93,7 +93,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 OpenList 将 edition 换为 `openlist`。`--check` 仅预检，不部署；正式向导完成后，核对实际管理 HTTPS、Bot 健康、存储挂载、专用 WebDAV 写入和小文件转存，再按[恢复与验证](RECOVERY.md)测试大文件、流式、取消和重启。最终在云盘官方客户端确认文件。隔离 HTTP smoke 不覆盖真实网盘挂载传播、账号、ACME、手机或升级回退。
 
-内网仍使用 `install-lan.sh`，填写本机私有 IPv4；外部只读功能仍使用独立 `install-webdav.sh`，不进入主向导。不改变 HTTPS、只读权限和凭据边界。
+内网仍使用 `install-lan.sh`，填写本机私有 IPv4；外部只读功能在待发布版本中通过 `tg2cloud` → 15. 外部 WebDAV 管理，不进入主安装向导。不改变 HTTPS、只读权限和凭据边界。
 
 ## 本地验证与发布门槛
 

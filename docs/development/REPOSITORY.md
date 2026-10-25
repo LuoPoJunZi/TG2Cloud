@@ -6,8 +6,8 @@
 
 | 路径 | 职责与维护边界 |
 | --- | --- |
-| `install.sh`、`install-lan.sh`、`uninstall.sh` | 保留根目录的公开单行命令入口 |
-| `install-webdav.sh`、`src/tg2cloud/addons/external_webdav/` | v1.3.1 独立只读附加功能，不加入主安装或 Bot 菜单 |
+| `install.sh`、`install-lan.sh` | 保留公网、内网安装与管理入口；卸载由 `tg2cloud` 菜单／子命令调用公共核心 |
+| `src/tg2cloud/addons/external_webdav/` | 独立只读附加功能，从 `tg2cloud` 菜单按需管理，不加入主安装或 Bot 菜单 |
 | `src/tg2cloud/` | 共享 Bot、CLI、公共部署、存储、持久化及监测 |
 | `scripts/run_source.py` | 不依赖当前目录或 Bot 依赖的受控源码入口 |
 | `packaging/` | 共用 Dockerfile、两版 Compose、Shell 钩子和 `app.*` 兼容入口 |
@@ -38,7 +38,7 @@ Ruff 配置集中在 `pyproject.toml` 的 `[tool.ruff]`：保留原有隐式默�
 
 `.github/scripts/check_repository.py` 使用 Git 枚举 tracked／未被忽略的新文件，禁止构建产物、缓存、私有配置、内部记录及本地桌面归档进入公共集合。已跟踪文件不能仅通过 ignore 移除，必须取消跟踪。它不读取或显示凭据内容，不是完整 Secret／历史扫描。
 
-输入检查保留三个入口、Linux 共用模块、两 Edition 资源及品牌资源，以 AST 读取 `src/tg2cloud/deployment/profiles.py` 静态清单并检查递归源码，不执行模块。公开 `docs/` Markdown 必须有有效索引链接；它不是动态依赖解析器，也不验证公网。公共检查需要完整 Git checkout；源码 ZIP 可运行测试和语法检查，但不能推断跟踪状态。
+输入检查保留两个安装入口、卸载／附加功能核心、Linux 共用模块、两 Edition 资源及品牌资源，以 AST 读取 `src/tg2cloud/deployment/profiles.py` 静态清单并检查递归源码，不执行模块。公开 `docs/` Markdown 必须有有效索引链接；它不是动态依赖解析器，也不验证公网。公共检查需要完整 Git checkout；源码 ZIP 可运行测试和语法检查，但不能推断跟踪状态。
 
 完整回归还应在不含本地 `legacy/` 的干净副本运行，确保新克隆可独立工作。缺少 Bash、rclone 或显式 Docker 条件时如实记录跳过；不增加 skip 来掩盖失败。
 
@@ -71,4 +71,4 @@ Release 继续从同一 Tag 验证并打包源码一次，发布 Job 复用 arti
 
 ## 后续渐进整理
 
-四个根目录公开脚本继续保留，包括兼容／救援用的 `uninstall.sh`。四组命名回归集中到 `tests/naming/`，原夹具和混合测试按实际依赖保留；迁移须核对完整测试发现集合。代理纯渲染集中在 `deployment/proxy/rendering.py`，旧 manager 接口继续导出。共享 CI 和只生成候选的发布准备工具见[维护开发说明](LOCAL-MAINTENANCE.md)。不删除历史运行路径、归档或用户数据。
+待发布维护仅保留 `install.sh`、`install-lan.sh` 两个根目录 Shell 入口。卸载和外部 WebDAV 在 `tg2cloud` 菜单及公共 Python 核心维护，两个独立 Shell 文件移除；历史版本文件继续存在于原提交／Tag，不改写历史资产。四组命名回归集中到 `tests/naming/`，原夹具和混合测试按实际依赖保留；迁移须核对完整测试发现集合。代理纯渲染集中在 `deployment/proxy/rendering.py`，旧 manager 接口继续导出。共享 CI 和只生成候选的发布准备工具见[维护开发说明](LOCAL-MAINTENANCE.md)。不删除历史运行路径、归档或用户数据。

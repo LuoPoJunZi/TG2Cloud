@@ -17,6 +17,8 @@ from contextlib import ExitStack, nullcontext
 from pathlib import Path
 from unittest.mock import MagicMock, Mock, patch
 
+from test_deployment import BASH, bash_path
+
 import tg2cloud.cli.terminal as tgdep_terminal
 import tg2cloud.deployment.install as tgdep_install
 import tg2cloud.deployment.instances as tgdep_instances
@@ -726,6 +728,28 @@ export -f python3
                     self.assertFalse((fixture / "cli-args").exists())
                 else:
                     self.assertEqual((fixture / "cli-args").read_text().splitlines(), ["-B", "scripts/run_source.py", "lan", "--edition", "clouddrive2", "--lan-ip", IP, "--check"])
+
+    @unittest.skipUnless(BASH, "Bash unavailable")
+    def test_local_lan_entry_from_another_working_directory_forwards_arguments_and_exit(self):
+        for code in (0, 7):
+            with self.subTest(code=code), tempfile.TemporaryDirectory(prefix="tg2cloud lan shell ") as private:
+                directory = Path(private).resolve()
+                tools = directory / "bin"
+                tools.mkdir()
+                python = tools / "python3"
+                python.write_text('#!/usr/bin/env bash\nif [[ "$1" == -c ]]; then exit 0; fi\nprintf "%s\\n" "$@" > "$FIXTURE_ARGS"\nexit "$FIXTURE_EXIT"\n',
+                                  encoding="utf-8", newline="\n")
+                python.chmod(0o700)
+                arguments = ["--edition", "openlist", "--lan-ip", IP, "--check"]
+                command = "PATH=" + shlex.quote(bash_path(tools)) + ':"$PATH" bash ' + shlex.quote(bash_path(ROOT / "install-lan.sh"))
+                command += " " + " ".join(map(shlex.quote, arguments))
+                output = directory / "arguments"
+                result = subprocess.run([BASH, "-c", command], cwd=directory,
+                                        env={**os.environ, "FIXTURE_ARGS": bash_path(output), "FIXTURE_EXIT": str(code)},
+                                        capture_output=True, text=True, timeout=15, check=False)
+                self.assertEqual(result.returncode, code, result.stderr)
+                self.assertEqual(output.read_text(encoding="utf-8").splitlines(),
+                                 ["-B", bash_path(ROOT / "scripts/run_source.py"), "lan", *arguments])
 
     def test_lan_entry_imports_only_public_linux_helpers(self):
         tree = ast.parse((ROOT / "src/tg2cloud/deployment/proxy/lan.py").read_text(encoding="utf-8"))

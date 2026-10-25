@@ -179,7 +179,7 @@ class BootstrapLayoutTests(unittest.TestCase):
             self.assertEqual(manifest, {"format": 1, "files": paths})
 
     def test_candidates_keep_real_pin_and_use_new_controlled_launcher(self):
-        for name, command in (("install.sh", "install"), ("install-lan.sh", "lan"), ("uninstall.sh", "uninstall")):
+        for name, command in (("install.sh", "install"), ("install-lan.sh", "lan")):
             with self.subTest(entry=name):
                 original = (ROOT / name).read_text(encoding="utf-8")
                 candidate = bootstrap.render_entry(ROOT, name)

@@ -20,6 +20,20 @@ PROXY_CERTBOT_CONTAINER = "tg2cloud-proxy-certbot"
 NGINX_IMAGE = "nginx:1.30.5-alpine"
 CERTBOT_IMAGE = "certbot/certbot:v5.8.0"
 
+CERTBOT_BIND_MOUNTS = (
+    ("certbot/www", "/var/www/certbot"),
+    ("certbot/letsencrypt", "/etc/letsencrypt"),
+    ("certbot/lib", "/var/lib/letsencrypt"),
+    ("certbot/log", "/var/log/letsencrypt"),
+    ("certbot/status", "/status"),
+)
+
+
+def certbot_bindings(root: str) -> dict[str, str]:
+    """One mount contract for rendering, startup and ownership validation."""
+    return {destination: root + "/" + relative for relative, destination in CERTBOT_BIND_MOUNTS}
+
+
 def render_certbot_loop() -> str:
     return (
         "umask 077; trap 'exit 0' TERM INT; while :; do "
@@ -44,6 +58,7 @@ def render_compose(active_domains: tuple[str, ...] = (), *, external_auth: bool 
     certificate_names = " ".join(validate_domain(domain) for domain in active_domains)
     certbot_command = render_certbot_loop().replace("$", "$$")
     auth_mount = "      - ./external-auth:/etc/nginx/external-auth:ro\n" if external_auth else ""
+    certbot_mounts = "\n".join(f"      - ./{relative}:{destination}" for relative, destination in CERTBOT_BIND_MOUNTS)
     return f"""services:
   nginx:
     image: {NGINX_IMAGE}
@@ -95,11 +110,7 @@ def render_compose(active_domains: tuple[str, ...] = (), *, external_auth: bool 
     environment:
       TG2CLOUD_CERT_NAMES: {json.dumps(certificate_names)}
     volumes:
-      - ./certbot/www:/var/www/certbot
-      - ./certbot/letsencrypt:/etc/letsencrypt
-      - ./certbot/lib:/var/lib/letsencrypt
-      - ./certbot/log:/var/log/letsencrypt
-      - ./certbot/status:/status
+{certbot_mounts}
     entrypoint: /bin/sh
     command:
       - -c

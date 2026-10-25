@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Independent LAN entry. Does not change install.sh or either Windows EXE.
+# LAN install/management entry. Shared Python services own all operations.
 set -Eeuo pipefail
 umask 077
 

@@ -248,7 +248,7 @@ jobs:
         run: python -m unittest discover -s tests -p test_lan_gateway_docker.py -v
 
       - name: Isolated external WebDAV Nginx, authentication and Range
-        if: hashFiles('install-webdav.sh') != ''
+        if: hashFiles('packaging/external-webdav.json') != ''
         env:
           TG2CLOUD_TEST_EXTERNAL_WEBDAV_DOCKER: "1"
         run: python -B -m unittest discover -s tests -p test_docker.py -v

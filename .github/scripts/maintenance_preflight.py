@@ -32,7 +32,7 @@ def check_helpers(root: Path) -> None:
     """Unlike Tag packaging, compare *working files*, including uncommitted edits."""
     expected = prepare_bootstrap.helper_files(root)
     pins = set()
-    for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
+    for name in release_metadata.linux_entry_names(root):
         text = (root / name).read_text(encoding="utf-8")
         matches = re.findall(r'^installer_commit\s*=\s*"([0-9a-f]{40})"$', text, re.MULTILINE)
         if len(matches) != 1:

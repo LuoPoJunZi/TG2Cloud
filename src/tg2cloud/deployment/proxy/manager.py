@@ -47,6 +47,7 @@ from .state import (
 
 __all__ = ['CERTBOT_IMAGE', 'EDITION_BACKEND_PORTS', 'NGINX_IMAGE', 'PROXY_CERTBOT_CONTAINER', 'PROXY_NGINX_CONTAINER', 'PROXY_ROOT', 'STATE_VERSION', 'SUPPORTED_EDITIONS', '_CERTIFICATE_CHECK_SCRIPT', '_EMAIL_RE', '_FQDN_RE', '_MARKER_RE', 'DomainProxyManager', 'DomainRoute', 'ProxyEnvironment', 'ProxyReport', '_marker_addresses', 'dns_diagnostic', 'dns_matches_environment', 'dry_run_cleanup_script', 'empty_state', 'normalize_state', 'parse_certificate_enddate', 'parse_environment', 'parse_markers', 'render_bootstrap_conf', 'render_certbot_loop', 'render_compose', 'render_config_set', 'render_default_conf', 'render_nginx_conf', 'render_route_conf', 'renewal_dry_run_command', 'renewal_summary', 'renewal_warnings', 'routes_from_state', 'state_with_route', 'state_without_route', 'validate_domain', 'validate_email']
 
+import hashlib
 import json
 import re
 import shlex
@@ -68,6 +69,7 @@ from .rendering import (
     NGINX_IMAGE,
     PROXY_CERTBOT_CONTAINER,
     PROXY_NGINX_CONTAINER,
+    certbot_bindings,
     render_bootstrap_conf,
     render_certbot_loop,
     render_compose,
@@ -252,6 +254,27 @@ printf 'TG2CLOUD_PROXY_DNS_A=%s\\nTG2CLOUD_PROXY_DNS_AAAA=%s\\nTG2CLOUD_PROXY_LO
     )
 
 
+def _certbot_mount_check_command() -> str:
+    # This standard-library reader never prints Docker input or private paths.
+    # Use the same contract as Compose and strict resource ownership checks.
+    program = f"""import json, sys
+try:
+    actual = {{}}
+    for mount in json.load(sys.stdin):
+        if mount.get('Type') == 'tmpfs':
+            continue
+        destination = mount.get('Destination')
+        if mount.get('Type') != 'bind' or destination in actual:
+            sys.exit(1)
+        actual[destination] = mount.get('Source')
+    sys.exit(0 if actual == {certbot_bindings(PROXY_ROOT)!r} else 1)
+except Exception:
+    sys.exit(1)
+"""
+    return ("docker container inspect --format " + shlex.quote("{{json .Mounts}}")
+            + " " + PROXY_CERTBOT_CONTAINER + " | python3 -c " + shlex.quote(program))
+
+
 def status_command(product: ProductProfile, domain: str) -> str:
     domain = validate_domain(domain)
     certificate_path = f"/etc/letsencrypt/live/{domain}/fullchain.pem"
@@ -279,7 +302,8 @@ cert_end=""
 if docker inspect {shlex.quote(product.storage_container)} >/dev/null 2>&1 \
   && curl -fsS --max-time 5 http://127.0.0.1:{product.management_port}/ >/dev/null 2>&1; then core=OK; else core=FAILED; fi
 if [[ "$(docker inspect --format '{{{{.State.Running}}}}' {PROXY_NGINX_CONTAINER} 2>/dev/null || true)" == true ]]; then nginx=OK; else nginx=FAILED; fi
-if [[ "$(docker inspect --format '{{{{.State.Running}}}}' {PROXY_CERTBOT_CONTAINER} 2>/dev/null || true)" == true ]]; then certbot=OK; else certbot=FAILED; fi
+if [[ "$(docker inspect --format '{{{{.State.Running}}}}' {PROXY_CERTBOT_CONTAINER} 2>/dev/null || true)" == true ]] \
+  && ({_certbot_mount_check_command()}) >/dev/null 2>&1; then certbot=OK; else certbot=FAILED; fi
 if [[ -s "$root/certbot/letsencrypt/renewal/{domain}.conf" ]]; then renewal=OK; else renewal=FAILED; fi
 managed_pids=" $(docker top {PROXY_NGINX_CONTAINER} -eo pid 2>/dev/null | awk 'NR > 1 {{print $1}}' | paste -sd' ' -) "
 owns_port() {{
@@ -436,6 +460,7 @@ class DomainProxyManager:
         self._nat_confirmation: tuple[str, str, tuple[str, ...], tuple[str, ...], frozenset[str]] | None = None
         self.external_plan: dict | None = None
         self._entry_state: dict | None = None
+        self._expected_compose_sha256: str | None = None
 
     def external_entry(self, state=None):
         from .external_entry import selected_entry
@@ -554,6 +579,7 @@ fi
         return remote
 
     def _install_config(self, state: dict[str, Any], *, candidate: str = "") -> None:
+        self._expected_compose_sha256 = None
         from tg2cloud.deployment import architecture
         architecture.check_docker(self.session)
         for image in (NGINX_IMAGE, CERTBOT_IMAGE):
@@ -567,6 +593,7 @@ fi
             code, _ = self._run(install_config_command(remote, external_auth=external_auth), timeout=180)
             if code != 0:
                 raise RuntimeError("无法安装共享代理配置。")
+            self._expected_compose_sha256 = hashlib.sha256(files["docker-compose.yml"].encode("utf-8")).hexdigest()
         finally:
             self.session.run(f"rm -rf -- {remote}", timeout=20)
 
@@ -579,9 +606,53 @@ fi
             from tg2cloud.deployment import architecture
             if "certbot" in arguments:
                 architecture.check_container(self.session, PROXY_CERTBOT_CONTAINER, require_running=True)
+                self._ensure_certbot_mounts(timeout=timeout)
             if "nginx" in arguments:
                 architecture.check_container(self.session, PROXY_NGINX_CONTAINER, require_running=True)
         return result
+
+    def _inspect_certbot_mounts(self) -> None:
+        from tg2cloud.deployment.uninstall import proxy_identity
+        template = ('{"labels":{{json .Config.Labels}},"network":{{json .HostConfig.NetworkMode}},'
+                    '"mounts":{{json .Mounts}}}')
+        code, output = self._run(
+            "docker container inspect --format " + shlex.quote(template) + " " + PROXY_CERTBOT_CONTAINER,
+            timeout=20,
+        )
+        if code:
+            raise RuntimeError("无法读回 Certbot 挂载；不确认共享代理部署成功。")
+        try:
+            item = json.loads(output)
+            if not isinstance(item, dict):
+                raise TypeError
+            proxy_identity(PROXY_CERTBOT_CONTAINER, item)
+        except (TypeError, AttributeError, KeyError, json.JSONDecodeError):
+            raise RuntimeError("Certbot 身份或挂载元数据不可验证；不自动重建。") from None
+
+    def _ensure_certbot_mounts(self, *, timeout: float) -> None:
+        from tg2cloud.deployment import architecture
+        from tg2cloud.deployment.uninstall import MissingCertbotStatusMount
+        try:
+            self._inspect_certbot_mounts()
+            return
+        except MissingCertbotStatusMount:
+            expected = self._expected_compose_sha256
+            if not expected:
+                raise
+        # Only an exact, known incomplete layout can reach this branch. The
+        # current generated Compose must still be the file installed by this
+        # transaction; do not recreate against unknown or concurrently edited input.
+        code, output = self._run("sha256sum " + shlex.quote(PROXY_ROOT + "/docker-compose.yml"), timeout=15)
+        if code or not output.split() or output.split()[0] != expected:
+            raise RuntimeError("共享 Compose 已变化或无法核对；不自动重建 Certbot。")
+        self.log("Certbot 缺少续期状态挂载；正在按已校验的受管配置重建该容器。")
+        code, _ = self._run(
+            f"docker compose -f {PROXY_ROOT}/docker-compose.yml up -d --force-recreate certbot", timeout=timeout,
+        )
+        if code:
+            raise RuntimeError("Certbot 受管重建失败；未确认共享代理部署成功。")
+        architecture.check_container(self.session, PROXY_CERTBOT_CONTAINER, require_running=True)
+        self._inspect_certbot_mounts()  # A failed readback propagates; no retry loop.
 
     def _activate(self, state: dict[str, Any], *, candidate: str = "") -> None:
         self._install_config(state, candidate=candidate)

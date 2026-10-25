@@ -45,7 +45,6 @@ uv run --no-project --with ruff==0.17.0 python .github/scripts/check_python.py a
 ```bash
 bash -n install.sh
 bash -n install-lan.sh
-bash -n uninstall.sh
 ```
 
 提交前另外执行 `git diff --check`。缺少 rclone、Docker 或其他集成条件时，应记录跳过原因，不能把跳过写成通过。

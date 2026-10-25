@@ -3,8 +3,10 @@ from __future__ import annotations
 import ast
 import base64
 import copy
+import hashlib
 import io
 import json
+import os
 import re
 import shutil
 import subprocess
@@ -238,6 +240,13 @@ class SharedStateTests(unittest.TestCase):
         with patch.object(uninstall, "docker_snapshot", return_value=({}, {})), patch.object(uninstall, "read_state", return_value=shared()), self.assertRaisesRegex(uninstall.UninstallError, "WebDAV"):
             uninstall.build_plan(("openlist",), Mock())
 
+    def test_core_uninstall_guides_to_selected_addon_menu(self):
+        with (patch.object(uninstall, "docker_snapshot", return_value=({}, {})),
+              patch.object(uninstall, "read_state", return_value=shared()),
+              self.assertRaisesRegex(uninstall.UninstallError, "15. 外部 WebDAV → 7. 卸载外部 WebDAV") as caught):
+            uninstall.build_plan(("openlist",), Mock())
+        self.assertNotIn("tg2cloud-webdav uninstall", str(caught.exception))
+
     def test_schema2_backup_requires_authentication_resources(self):
         with self.assertRaisesRegex(ValueError, "authentication"):
             maintenance.validate_auth_records(shared(), {})
@@ -311,7 +320,9 @@ class LifecycleTests(unittest.TestCase):
         self.assertNotIn(SECRET, "\n".join(self.messages))
 
     def test_install_is_idempotent(self):
-        self.service.configure(install_dir=None, install=True)
+        prepare = Mock()
+        self.service.configure(install_dir=None, install=True, prepare_runtime=prepare)
+        prepare.assert_not_called()
         self.service.preflight.assert_not_called()
         self.service.manager.apply_shared_state_locked.assert_not_called()
 
@@ -374,10 +385,78 @@ class LifecycleTests(unittest.TestCase):
         self.assertIn("安装完成，外部 WebDAV 已启用。", self.messages)
         self.assertIn("状态：已启用", self.messages)
 
+    def test_cli_prepares_runtime_before_authentication_or_route_changes(self):
+        current = self.configure_fixture()
+        events = []
+        self.service.revoke.side_effect = lambda: events.append("revoke")
+        self.service.auth_write.side_effect = lambda content: events.append("auth")
+        self.service.manager.apply_shared_state_locked.side_effect = lambda *args, **kwargs: events.append("route")
+        args = SimpleNamespace(action="install", install_dir=None, sample_file="")
+        with (patch.object(self.service, "install_runtime", side_effect=lambda *args: events.append("runtime")) as prepare,
+              patch.object(cli, "source_identity", return_value={"source": "review-fixture"}),
+              patch.object(verification, "check_backend"),
+              patch.object(config, "password_hash", return_value="synthetic-hash")):
+            cli.perform(self.service, args)
+        self.assertEqual(events, ["runtime", "revoke", "auth", "route"])
+        self.assertEqual(current["value"]["phase"], "enabled")
+        prepare.assert_called_once_with(cli.source_root(), {"source": "review-fixture"})
+        self.assertIn("安装完成，外部 WebDAV 已启用。", self.messages)
+
+    def test_runtime_failure_or_interruption_preserves_previous_access_and_can_retry(self):
+        for action in ("install", "configure"):
+            for failure in (OSError, KeyboardInterrupt):
+                with self.subTest(action=action, failure=failure.__name__):
+                    current = self.configure_fixture()
+                    if action == "configure":
+                        current["value"] = copy.deepcopy(self.item)
+                    previous = copy.deepcopy(current["value"])
+                    self.messages.clear()
+                    for mock in (self.service.save, self.service.revoke, self.service.auth_write,
+                                 self.service.manager, self.ui.show_password):
+                        mock.reset_mock()
+                    args = SimpleNamespace(action=action, install_dir=None, sample_file="")
+                    with (patch.object(self.service, "install_runtime", side_effect=failure("synthetic interruption")),
+                          patch.object(cli, "source_identity", return_value={"source": "review-fixture"}),
+                          self.assertRaises(failure)):
+                        cli.perform(self.service, args)
+                    self.assertEqual(current["value"], previous)
+                    self.service.save.assert_not_called()
+                    self.service.revoke.assert_not_called()
+                    self.service.auth_write.assert_not_called()
+                    self.service.manager.apply_shared_state_locked.assert_not_called()
+                    self.ui.show_password.assert_not_called()
+                    self.assertFalse(any("完成，外部 WebDAV 已启用" in message for message in self.messages))
+                    # No pending record was written: the same install/configure
+                    # operation can proceed after the code-write error is fixed.
+                    self.ui.ask.side_effect = [route()["domain"], "", "/网盘", "phone-reader", SECRET, "/网盘/Telegram"]
+                    with (patch.object(self.service, "install_runtime") as prepare,
+                          patch.object(cli, "source_identity", return_value={"source": "review-fixture"}),
+                          patch.object(verification, "check_backend"),
+                          patch.object(config, "password_hash", return_value="synthetic-hash")):
+                        cli.perform(self.service, args)
+                    prepare.assert_called_once()
+                    self.assertEqual(current["value"]["phase"], "enabled")
+
+    def test_backend_failure_after_runtime_preparation_keeps_entry_closed(self):
+        current = self.configure_fixture()
+        args = SimpleNamespace(action="install", install_dir=None, sample_file="")
+        with (patch.object(self.service, "install_runtime") as prepare,
+              patch.object(cli, "source_identity", return_value={"source": "review-fixture"}),
+              patch.object(verification, "check_backend", side_effect=ValueError("synthetic authentication failure")),
+              self.assertRaisesRegex(ValueError, "synthetic authentication failure")):
+            cli.perform(self.service, args)
+        prepare.assert_called_once()
+        self.assertEqual(current["value"]["phase"], "needs_repair")
+        self.service.auth_write.assert_not_called()
+        self.service.manager.apply_shared_state_locked.assert_not_called()
+        self.assertNotIn("安装完成，外部 WebDAV 已启用。", self.messages)
+
     def test_declining_plan_performs_no_write(self):
         self.configure_fixture()
         self.ui.confirm.return_value = False
-        self.service.configure(install_dir=None, install=True)
+        prepare = Mock()
+        self.service.configure(install_dir=None, install=True, prepare_runtime=prepare)
+        prepare.assert_not_called()
         self.service.save.assert_not_called()
         self.service.revoke.assert_not_called()
         self.service.manager.apply_shared_state_locked.assert_not_called()
@@ -542,6 +621,41 @@ class LifecycleTests(unittest.TestCase):
 
 
 class EntryAndReleaseTests(unittest.TestCase):
+    def test_unified_management_hints_do_not_require_the_compatibility_command(self):
+        messages = []
+        service = SimpleNamespace(log=messages.append)
+        for check in (False, True):
+            with patch.dict(os.environ, {"TG2CLOUD_MANAGER_MENU": "1"}):
+                Service.management_hint(service, check=check)
+            self.assertIn("\ntg2cloud\n选择 15. 外部 WebDAV", messages[-1])
+            self.assertNotIn("tg2cloud-webdav", messages[-1])
+            if check:
+                self.assertIn("3. 检查连接与配置", messages[-1])
+        with patch.dict(os.environ, {"TG2CLOUD_MANAGER_MENU": ""}):
+            Service.management_hint(service)
+            self.assertIn("tg2cloud-webdav", messages[-1])
+            Service.management_hint(service, check=True)
+            self.assertIn("tg2cloud-webdav check", messages[-1])
+
+    def test_main_manager_context_skips_edition_choice_and_returns_without_mutation(self):
+        service, ui, messages = Mock(), Mock(), []
+        service.product, service.ui, service.log = PRODUCTS["openlist"], ui, messages.append
+        service.record.return_value = None
+        ui.ask.side_effect = lambda *args, **kwargs: kwargs["validate"]("0")
+        with (patch.dict(os.environ, {"TG2CLOUD_MANAGER_MENU": "1"}),
+              patch("tg2cloud.addons.external_webdav.discovery.host"),
+              patch("tg2cloud.addons.external_webdav.service.Service", return_value=service) as factory,
+              patch.object(cli, "WebDAVTerminal", return_value=ui), patch.object(cli.signal, "signal"),
+              patch("tg2cloud.deployment.host.SafeLog", return_value=SafeLog(messages.append))):
+            self.assertEqual(cli.main(["--edition", "openlist", "--install-dir", "/srv/family-openlist"]), 0)
+        self.assertEqual(factory.call_args.args[0].key, "openlist")
+        self.assertEqual(ui.ask.call_count, 1)
+        self.assertIn("0.  返回主菜单", "\n".join(messages))
+        self.assertNotIn("请选择存储网关", "\n".join(messages))
+        service.configure.assert_not_called()
+        service.install_runtime.assert_not_called()
+        service.maintain.assert_not_called()
+
     def test_enter_defaults_to_first_edition_and_install_or_status_without_mutation(self):
         for installed in (False, True):
             with self.subTest(installed=installed):
@@ -565,7 +679,11 @@ class EntryAndReleaseTests(unittest.TestCase):
                     service.maintain.assert_called_once_with("status", sample_file="")
                     service.configure.assert_not_called()
                 else:
-                    service.configure.assert_called_once_with(install_dir=None, install=True, sample_file="")
+                    service.configure.assert_called_once()
+                    options = service.configure.call_args.kwargs
+                    self.assertEqual({key: value for key, value in options.items() if key != "prepare_runtime"},
+                                     {"install_dir": None, "install": True, "sample_file": ""})
+                    self.assertTrue(callable(options["prepare_runtime"]))
                 service.install_runtime.assert_not_called()
                 menu = next(text for text in messages if "10. 用户管理" in text)
                 self.assertTrue(menu.startswith("1.  安装外部 WebDAV\n"))
@@ -668,10 +786,25 @@ class EntryAndReleaseTests(unittest.TestCase):
         printed.assert_not_called()
 
     def test_bootstrap_banner_hides_commit_but_retains_identity(self):
-        source = (ROOT / "install-webdav.sh").read_text()
-        self.assertIn('"commit": pinned.commit', source)
-        banner = next(line for line in source.splitlines() if 'print("外部 WebDAV 正式源码已验证：' in line)
-        self.assertNotIn("pinned.commit", banner)
+        release = releases.core.Release("v1.4.6", "a" * 40)
+        prefix = "https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.6/"
+        name = "TG2Cloud-v1.4.6-source.tar.gz"
+        body = b"synthetic verified archive"
+        digest = hashlib.sha256(body).hexdigest()
+        metadata = {"draft": False, "prerelease": False, "tag_name": release.tag,
+                    "assets": [{"name": value, "browser_download_url": prefix + value} for value in (name, "SHA256SUMS.txt")]}
+        client = Mock()
+        client.resolve.return_value = release
+        client.json.return_value = metadata
+        output = io.StringIO()
+        with (tempfile.TemporaryDirectory() as private,
+              patch.object(releases.core, "ReleaseClient", return_value=client),
+              patch.object(releases, "read_asset", side_effect=[(digest + "  " + name + "\n").encode(), body]),
+              patch.object(releases.core, "extract_source"), patch.object(releases.core, "source_version", return_value=release.version),
+              patch.object(releases, "supported"), patch("sys.stdout", output)):
+            _, identity = releases.download(Path(private))
+        self.assertEqual(identity, {"source": "stable-release", "tag": release.tag, "commit": release.commit, "archive_sha256": digest})
+        self.assertNotIn(release.commit, output.getvalue())
 
     def test_help_without_site_packages_or_checkout_working_directory(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -719,6 +852,26 @@ class EntryAndReleaseTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory, self.assertRaisesRegex(ValueError, "尚不包含"):
             releases.supported(Path(directory))
 
+    def test_unified_contract_requires_management_code_and_rejects_old_or_unknown_entry_layout(self):
+        self.assertEqual(releases.contract(ROOT), releases.CONTRACT)
+        files = releases.host_files(ROOT)
+        self.assertIn("src/tg2cloud/deployment/uninstall.py", files)
+        self.assertIn("src/tg2cloud/addons/external_webdav/entry.py", files)
+        self.assertNotIn("install-webdav.sh", files)
+        self.assertFalse((ROOT / "uninstall.sh").exists())
+        self.assertFalse((ROOT / "install-webdav.sh").exists())
+        with tempfile.TemporaryDirectory() as private:
+            root = Path(private).resolve()
+            marker = root / releases.FEATURE
+            marker.parent.mkdir()
+            for api in (True, 2.0, "2", 999):
+                marker.write_text(json.dumps(dict(releases.CONTRACT, api=api)))
+                with self.subTest(api=api), self.assertRaisesRegex(ValueError, "不支持"):
+                    releases.supported(root)
+            marker.write_text(json.dumps(releases.CONTRACT))
+            with self.assertRaisesRegex(ValueError, "缺失"):
+                releases.supported(root)
+
     def test_offline_host_bundle_is_self_contained_and_detects_tampering(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory).resolve()
@@ -754,3 +907,122 @@ class EntryAndReleaseTests(unittest.TestCase):
             config.password_hash(SECRET)
         self.assertNotIn(SECRET, repr(runner.call_args.args))
         self.assertEqual(runner.call_args.kwargs["input"], SECRET.encode() + b"\n")
+
+
+class RuntimeInstallTests(unittest.TestCase):
+    def setUp(self):
+        temporary = tempfile.TemporaryDirectory(prefix="tg2cloud-runtime-test-")
+        self.addCleanup(temporary.cleanup)
+        self.root = Path(temporary.name).resolve()
+        self.source = self.root / "source"
+        files = {name: b"# synthetic host source\n" for name in (
+            "scripts/run_source.py", "src/tg2cloud/__init__.py", "src/tg2cloud/version.py",
+            "src/tg2cloud/config.py", "src/tg2cloud/cli/__init__.py",
+            "src/tg2cloud/cli/commands.py", "src/tg2cloud/cli/management.py", "src/tg2cloud/deployment/uninstall.py",
+            "src/tg2cloud/addons/external_webdav/entry.py", "src/tg2cloud/addons/external_webdav/service.py",
+            "src/tg2cloud/addons/external_webdav/cli.py")}
+        files[releases.FEATURE] = json.dumps(releases.CONTRACT).encode()
+        for name, body in files.items():
+            path = self.source / name
+            path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+            path.write_bytes(body)
+        self.service = Service(PRODUCTS["openlist"], Mock(), Mock(), Mock(), root=self.root / "addon")
+        self.launcher = self.root / "bin/tg2cloud-webdav"
+        self.launcher.parent.mkdir(mode=0o700)
+        self.old_launcher = b'#!/bin/sh\n# TG2Cloud external_webdav managed\n# previous reviewed runtime\n'
+        self.launcher.write_bytes(self.old_launcher)
+        checksum = hashlib.sha256()
+        for name in releases.host_files(self.source):
+            checksum.update(name.encode() + b"\0" + (self.source / name).read_bytes())
+        self.destination = self.service.root / "runtime" / checksum.hexdigest()
+
+    def install(self):
+        self.service.install_runtime(self.source, {"source": "local-reviewed-source"}, launcher=self.launcher)
+
+    def assert_failure_preserved_runtime(self):
+        self.assertEqual(self.launcher.read_bytes(), self.old_launcher)
+        self.assertFalse(self.destination.exists())
+        self.assertEqual(list(self.destination.parent.glob("stage-*")), [])
+
+    def test_copy_failure_and_normal_interruption_clean_only_current_candidate_and_retry(self):
+        for failure in (OSError, KeyboardInterrupt):
+            with self.subTest(failure=failure.__name__):
+                with patch("tg2cloud.addons.external_webdav.service.shutil.copyfile", side_effect=failure("synthetic copy failure")), self.assertRaises(failure):
+                    self.install()
+                self.assert_failure_preserved_runtime()
+        self.install()
+        self.assertTrue(self.destination.is_dir())
+        self.assertNotEqual(self.launcher.read_bytes(), self.old_launcher)
+
+    def test_manifest_failure_does_not_leave_candidate_or_replace_launcher(self):
+        atomic = config.atomic
+
+        def fail_manifest(path, *args, **kwargs):
+            if path.name == "installation.json":
+                raise OSError("synthetic manifest failure")
+            return atomic(path, *args, **kwargs)
+
+        with patch.object(config, "atomic", side_effect=fail_manifest), self.assertRaises(OSError):
+            self.install()
+        self.assert_failure_preserved_runtime()
+        self.install()
+        self.assertTrue(self.destination.is_dir())
+
+    def test_corrupt_copy_is_rejected_before_promotion_and_can_retry(self):
+        original = shutil.copyfile
+
+        def corrupt_copy(source, target):
+            result = original(source, target)
+            target.write_bytes(target.read_bytes() + b"# synthetic corruption\n")
+            return result
+
+        with patch("tg2cloud.addons.external_webdav.service.shutil.copyfile", side_effect=corrupt_copy), self.assertRaisesRegex(ValueError, "摘要不匹配"):
+            self.install()
+        self.assert_failure_preserved_runtime()
+        self.install()
+        self.assertTrue(self.destination.is_dir())
+
+    def test_failed_promotion_cleans_candidate_and_keeps_previous_launcher(self):
+        original = os.replace
+
+        def fail_promotion(source, target):
+            if target == self.destination:
+                raise OSError("synthetic promotion failure")
+            return original(source, target)
+
+        with patch("tg2cloud.addons.external_webdav.service.os.replace", side_effect=fail_promotion), self.assertRaises(OSError):
+            self.install()
+        self.assert_failure_preserved_runtime()
+        self.install()
+        self.assertTrue(self.destination.is_dir())
+
+    def test_failed_launcher_write_keeps_old_command_and_retry_reuses_verified_bundle(self):
+        atomic = config.atomic
+
+        def fail_launcher(path, *args, **kwargs):
+            if path == self.launcher:
+                raise OSError("synthetic launcher failure")
+            return atomic(path, *args, **kwargs)
+
+        with patch.object(config, "atomic", side_effect=fail_launcher), self.assertRaises(OSError):
+            self.install()
+        self.assertTrue(self.destination.is_dir())
+        self.assertEqual(self.launcher.read_bytes(), self.old_launcher)
+        self.assertEqual(list(self.destination.parent.glob("stage-*")), [])
+        with patch("tg2cloud.addons.external_webdav.service.shutil.copyfile") as copyfile:
+            self.install()
+        copyfile.assert_not_called()
+        self.assertNotEqual(self.launcher.read_bytes(), self.old_launcher)
+
+    def test_legacy_and_abandoned_candidates_are_preserved_without_blocking_new_install(self):
+        self.destination.parent.mkdir(mode=0o700, parents=True)
+        legacy = self.destination.with_name("stage-" + self.destination.name)
+        abandoned = self.destination.with_name("stage-" + self.destination.name + "-abandoned")
+        legacy.mkdir(mode=0o700)
+        (legacy / "unknown-file").write_bytes(b"preserve unknown content")
+        abandoned.write_bytes(b"preserve unknown file")
+        self.install()
+        self.assertEqual((legacy / "unknown-file").read_bytes(), b"preserve unknown content")
+        self.assertEqual(abandoned.read_bytes(), b"preserve unknown file")
+        self.assertTrue(self.destination.is_dir())
+        self.assertEqual(set(self.destination.parent.glob("stage-*")), {legacy, abandoned})

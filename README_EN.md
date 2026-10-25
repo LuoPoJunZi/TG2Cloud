@@ -44,7 +44,9 @@ Both editions share transfer capabilities but have different gateway configurati
 
 ## Quick start
 
-The public/LAN entries offer setup for a missing Edition or its maintenance menu for an existing instance. After confirming manager installation, run `tg2cloud` locally. Uninstall stays Edition-scoped; the standalone URL remains available for recovery. Menu, update and cleanup boundaries are in the [operations guide](docs/OPERATIONS.md#本地管理菜单).
+The public/LAN entries offer setup for a missing Edition or its maintenance menu for an existing instance. After confirming manager installation, run `tg2cloud` locally. Uninstall stays Edition-scoped; the v1.4.7 source retires the standalone Shell entries and retains the unified menu and CLI preview. Menu, update and cleanup boundaries are in the [operations guide](docs/OPERATIONS.md#本地管理菜单).
+
+The upcoming v1.4.7 source adds unified management. External WebDAV provides read-only mobile access. The [upcoming unified entry](docs/external-webdav.md#统一管理待发布), `tg2cloud` → **15. 外部 WebDAV**, handles installation and maintenance in its submenu without a separate installation command. This option is not yet in v1.4.6.
 
 Requires Debian / Ubuntu with native 64-bit userspace, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
 
@@ -73,10 +75,10 @@ LAN HTTP is unencrypted: do not expose it through public port forwarding or use 
 ### Uninstall preview
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
+tg2cloud uninstall --edition all --check
 ```
 
-This command only previews; it does not uninstall. Actual complete removal deletes the selected instance's data and recognized backups. To preserve data, use `--keep-data`; save independent backups outside the removal paths first. See the [uninstall guide](docs/UNINSTALL.md).
+The `tg2cloud` menu also provides removal for the selected Edition. This command only previews; it does not uninstall. Actual complete removal deletes the selected instance's data and recognized backups. To preserve data, use `--keep-data`; save independent backups outside the removal paths first. See the [uninstall guide](docs/UNINSTALL.md).
 
 ## Documentation
 
@@ -91,7 +93,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Optional features | [Classification, notifications and quotas](docs/FEATURE-ENHANCEMENTS.md) · [Existing Nginx reuse](docs/DOCKER-NGINX.md) |
 | Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) · [Maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| Current maintenance | [v1.4.6 external WebDAV and maintenance tools](docs/development/LOCAL-MAINTENANCE.md) |
+| Current maintenance | [v1.4.7 unified management and recovery](docs/development/LOCAL-MAINTENANCE.md) |
 | Upgrade acceptance | [v1.4.4 dual-architecture upgrade](docs/development/V144-ACCEPTANCE.md) · [Historical records](docs/README.md) |
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |

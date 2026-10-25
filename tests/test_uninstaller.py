@@ -6,6 +6,7 @@ import copy
 import io
 import json
 import os
+import platform
 import re
 import shlex
 import tempfile
@@ -250,6 +251,43 @@ class PlanTests(unittest.TestCase):
         self.assertIn("network_mode: host", nginx)
         self.assertNotIn("network_mode:", certbot)
         uninstall.proxy_identity(uninstall.PROXY_CERTBOT_CONTAINER, proxy_container(nginx=False))
+
+    def test_certbot_missing_status_bind_is_rejected_with_specific_repair_hint(self):
+        item = proxy_container(nginx=False)
+        item["mounts"] = [mount for mount in item["mounts"] if mount["Destination"] != "/status"]
+        with self.assertRaisesRegex(uninstall.UninstallError, "Certbot.*缺少.* /status.*修复 HTTPS"):
+            uninstall.proxy_identity(uninstall.PROXY_CERTBOT_CONTAINER, item)
+        self.assertEqual(self.docker.commands, [])
+
+    def test_missing_status_hint_does_not_hide_other_foreign_mounts_or_ownership(self):
+        for alteration in ("extra", "wrong_source", "duplicate", "missing_certificate", "foreign_label"):
+            item = proxy_container(nginx=False)
+            item["mounts"] = [mount for mount in item["mounts"] if mount["Destination"] != "/status"]
+            if alteration == "extra":
+                item["mounts"].append({"Type": "bind", "Source": "/private/foreign-secret", "Destination": "/foreign"})
+            elif alteration == "wrong_source":
+                item["mounts"][0]["Source"] = "/private/foreign-secret"
+            elif alteration == "duplicate":
+                item["mounts"].append(copy.deepcopy(item["mounts"][0]))
+            elif alteration == "missing_certificate":
+                item["mounts"] = [mount for mount in item["mounts"] if mount["Destination"] != "/etc/letsencrypt"]
+            else:
+                item["labels"][uninstall.MANAGED] = "false"
+            with self.subTest(case=alteration), self.assertRaises(uninstall.UninstallError) as caught:
+                uninstall.proxy_identity(uninstall.PROXY_CERTBOT_CONTAINER, item)
+            self.assertNotIn("缺少续期状态挂载", str(caught.exception))
+            self.assertNotIn("foreign-secret", str(caught.exception))
+        self.assertEqual(self.docker.commands, [])
+
+    def test_fresh_compose_declares_every_certbot_bind_required_by_identity(self):
+        certbot = render_compose().split("  certbot:\n", 1)[1]
+        declared = re.findall(r"^      - \.(\S+):(/\S+)$", certbot, re.MULTILINE)
+        item = proxy_container(nginx=False)
+        item["mounts"] = [{"Type": "bind", "Source": uninstall.PROXY_ROOT + source, "Destination": destination}
+                          for source, destination in declared]
+        self.assertEqual(len(item["mounts"]), 5)
+        self.assertIn("/status", {mount["Destination"] for mount in item["mounts"]})
+        uninstall.proxy_identity(uninstall.PROXY_CERTBOT_CONTAINER, item)
 
     def test_proxy_network_with_foreign_endpoint_refused_before_route_removal(self):
         self.docker = FakeDocker(proxy=True)
@@ -756,14 +794,18 @@ class EntryTests(unittest.TestCase):
                 execute.assert_called_once()
 
     def test_environment_rejects_remote_daemon_without_system_mutation(self):
+        # Windows platform.machine() reads environment variables and caches its
+        # result. Keep the actual native value while isolating Docker variables;
+        # a cleared fixture environment must not poison later architecture tests.
+        native = platform.machine()
         for key in ("DOCKER_HOST", "DOCKER_CONTEXT", "COMPOSE_FILE", "COMPOSE_PROJECT_NAME"):
             session = Mock()
-            with patch.object(tgdep_preflight, "validate_host"), patch.dict(os.environ, {key: "external"}, clear=True), self.assertRaises(uninstall.UninstallError):
+            with patch.object(tgdep_preflight, "validate_host"), patch("tg2cloud.deployment.architecture.platform.machine", return_value=native), patch.dict(os.environ, {key: "external"}, clear=True), self.assertRaises(uninstall.UninstallError):
                 uninstall.validate_environment(session)
             session.run.assert_not_called()
         session = Mock()
         session.run.return_value = (0, '"tcp://external:2375"')
-        with patch.object(tgdep_preflight, "validate_host"), patch.dict(os.environ, {}, clear=True), self.assertRaises(uninstall.UninstallError):
+        with patch.object(tgdep_preflight, "validate_host"), patch("tg2cloud.deployment.architecture.platform.machine", return_value=native), patch.dict(os.environ, {}, clear=True), self.assertRaises(uninstall.UninstallError):
             uninstall.validate_environment(session)
 
     def test_inventory_filters_env_and_reports_daemon_failure(self):
@@ -783,15 +825,22 @@ class EntryTests(unittest.TestCase):
         for forbidden in ("apt-get", "apt remove", "apt purge", "systemctl", "docker system prune", "docker volume prune", "docker network prune", "docker image rm", "rm -rf", "SSHSession", "requests", "paramiko"):
             self.assertNotIn(forbidden, source)
         self.assertNotIn("PySide6", source)
-        bootstrap = (ROOT / "uninstall.sh").read_text(encoding="utf-8")
-        pin = re.search(r'^installer_commit="([^"]*)"$', bootstrap, re.MULTILINE)
-        self.assertIsNotNone(pin)
-        self.assertTrue(pin[1] == "" or re.fullmatch(r"[0-9a-f]{40}", pin[1]))
-        self.assertIn("src/tg2cloud/deployment/uninstall.py", bootstrap)
-        self.assertIn("python3 -B scripts/run_source.py uninstall", bootstrap)
-        self.assertIn("tg2cloud-uninstall-bootstrap", bootstrap)
-        self.assertNotIn("packaging/hooks/openlist/remote_install.sh", bootstrap)
-        self.assertTrue(re.search(r"installer_commit=", bootstrap))
+        self.assertFalse((ROOT / "uninstall.sh").exists())
+        for name in ("install.sh", "install-lan.sh"):
+            bootstrap = (ROOT / name).read_text(encoding="utf-8")
+            self.assertRegex(bootstrap, r'(?m)^installer_commit\s*=\s*"[0-9a-f]{40}"$')
+            self.assertIn("src/tg2cloud/deployment/uninstall.py", bootstrap)
+            self.assertNotIn("packaging/hooks/openlist/remote_install.sh", bootstrap)
+
+    def test_unified_dispatch_retains_all_edition_cleanup_and_preview_flags(self):
+        from tg2cloud.cli import commands
+
+        for edition in (*PRODUCTS, "all"):
+            for mode in ("--keep-data", "--purge-data", "--purge-all"):
+                options = ["--edition", edition, mode, "--check"]
+                with self.subTest(edition=edition, mode=mode), patch.object(uninstall, "main", return_value=0) as operation:
+                    self.assertEqual(commands.main(["uninstall", *options]), 0)
+                operation.assert_called_once_with(options)
 
 
 if __name__ == "__main__":

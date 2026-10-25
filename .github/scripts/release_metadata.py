@@ -25,9 +25,25 @@ def source_version(root: Path) -> str:
     return values[0]
 
 
+def linux_entry_names(root: Path) -> tuple[str, ...]:
+    """An explicit API marker selects two current or three historical entries."""
+    marker = root / "packaging/external-webdav.json"
+    unified = False
+    if marker.is_file():
+        value = json.loads(marker.read_text(encoding="utf-8"))
+        if (not isinstance(value, dict) or type(value.get("api")) is not int
+                or value not in ({"api": 1, "proxy_schema": 2, "owner": "tg2cloud.external_webdav"},
+                                 {"api": 2, "proxy_schema": 2, "owner": "tg2cloud.external_webdav"})):
+            raise ValueError("unsupported Linux entry layout")
+        unified = value["api"] == 2
+    if unified and any((root / name).exists() or (root / name).is_symlink() for name in ("uninstall.sh", "install-webdav.sh")):
+        raise ValueError("retired standalone entry in unified Linux layout")
+    return ("install.sh", "install-lan.sh") if unified else ("install.sh", "install-lan.sh", "uninstall.sh")
+
+
 def linux_entries(root: Path, version: str) -> None:
     """Release entry pins must be enabled; VPS helper identity must agree."""
-    for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
+    for name in linux_entry_names(root):
         text = (root / name).read_text(encoding="utf-8")
         if len(re.findall(r'^installer_commit\s*=\s*"[0-9a-f]{40}"$', text, re.MULTILINE)) != 1:
             raise ValueError(f"invalid immutable Linux entry pin: {name}")

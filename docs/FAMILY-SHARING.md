@@ -46,7 +46,7 @@ Bot 成员和外部 WebDAV 是两套独立授权：前者提交文件，后者�
 
 ## 外部 WebDAV 家庭只读账号
 
-先按[外部 WebDAV 指南](external-webdav.md)安装并验收主入口。在已升级至 v1.3.3 的 `tg2cloud-webdav` 菜单选择 **10. 用户管理**，或运行：
+先按[外部 WebDAV 指南](external-webdav.md)安装并验收主入口。统一菜单发布并更新本地工具后，使用 `tg2cloud` → 当前 Edition → **15. 外部 WebDAV → 10. 用户管理**；当前正式 v1.4.6 尚无主菜单 15。家人账号功能自 v1.3.3 提供，既有 `tg2cloud-webdav` 菜单及以下显式命令继续兼容，不要求为使用新版统一菜单额外运行安装命令：
 
 ```bash
 tg2cloud-webdav users --edition clouddrive2

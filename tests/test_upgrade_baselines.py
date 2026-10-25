@@ -101,12 +101,15 @@ class MaintenancePreflightTests(unittest.TestCase):
         tool = self.tool
         with tempfile.TemporaryDirectory() as private:
             root = Path(private)
+            marker = root / "packaging/external-webdav.json"
+            marker.parent.mkdir()
+            marker.write_text('{"api":2,"proxy_schema":2,"owner":"tg2cloud.external_webdav"}')
             name = "src/tg2cloud/version.py"
             path = root / name
             path.parent.mkdir(parents=True)
             path.write_bytes(b'VERSION = "1.4.4"\n')
             entry = 'installer_commit = "' + "a" * 40 + '"\n' + "<<'PY' &\nfiles = (" + repr(name) + ",)\nPY\n"
-            for shell in ("install.sh", "install-lan.sh", "uninstall.sh"):
+            for shell in ("install.sh", "install-lan.sh"):
                 (root / shell).write_text(entry)
             with patch.object(tool.prepare_bootstrap, "helper_files", return_value=[name]), \
                     patch.object(tool.source_release, "git", return_value=path.read_bytes()):
@@ -119,7 +122,28 @@ class MaintenancePreflightTests(unittest.TestCase):
                 (root / "install.sh").write_text(entry.replace("files = (", "files = ('unknown.py',"))
                 with self.assertRaisesRegex(ValueError, "manifest"):
                     tool.check_helpers(root)
-            self.assertIn("a" * 40, (root / "uninstall.sh").read_text())
+            self.assertIn("a" * 40, (root / "install-lan.sh").read_text())
+
+    def test_historical_helper_preflight_still_checks_the_old_third_entry(self):
+        tool = self.tool
+        with tempfile.TemporaryDirectory() as private:
+            root = Path(private)
+            marker = root / "packaging/external-webdav.json"
+            marker.parent.mkdir()
+            marker.write_text('{"api":1,"proxy_schema":2,"owner":"tg2cloud.external_webdav"}')
+            name = "src/tg2cloud/version.py"
+            path = root / name
+            path.parent.mkdir(parents=True)
+            path.write_bytes(b'VERSION = "1.4.4"\n')
+            entry = 'installer_commit = "' + "a" * 40 + '"\n' + "<<'PY' &\nfiles = (" + repr(name) + ",)\nPY\n"
+            for shell in ("install.sh", "install-lan.sh", "uninstall.sh"):
+                (root / shell).write_text(entry)
+            with (patch.object(tool.prepare_bootstrap, "helper_files", return_value=[name]),
+                  patch.object(tool.source_release, "git", return_value=path.read_bytes())):
+                tool.check_helpers(root)
+                (root / "uninstall.sh").write_text(entry.replace("a" * 40, "b" * 40))
+                with self.assertRaisesRegex(ValueError, "pins disagree"):
+                    tool.check_helpers(root)
 
     def test_unknown_previous_baseline_cannot_be_accepted_by_static_check(self):
         tool = self.tool

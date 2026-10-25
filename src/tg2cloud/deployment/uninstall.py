@@ -30,6 +30,7 @@ from tg2cloud.deployment.proxy.manager import (
     normalize_state,
     proxy_lock_command,
 )
+from tg2cloud.deployment.proxy.rendering import certbot_bindings
 
 LAN_ROOT = Path("/opt/tg2cloud-lan")
 LOCK_ROOT = Path("/opt/tg2cloud-cli-locks")
@@ -44,6 +45,10 @@ PROXY_CHILDREN = frozenset({"state", "nginx", "certbot", "docker-compose.yml", "
 
 class UninstallError(ValueError):
     """Only static, credential-free diagnostics created by this module."""
+
+
+class MissingCertbotStatusMount(UninstallError):
+    """Ownership is verified and precisely the renewal-status bind is absent."""
 
 
 def checked_path(path: Path) -> None:
@@ -203,9 +208,19 @@ def proxy_identity(name: str, item: dict, *, state: dict | None = None) -> None:
         paths.update({"/etc/nginx/nginx.conf": "/nginx/nginx.conf", "/etc/nginx/conf.d": "/nginx/conf.d"})
         if state and state.get("version") == 2:
             paths["/etc/nginx/external-auth"] = "/external-auth"
-    else:
-        paths.update({"/var/lib/letsencrypt": "/certbot/lib", "/var/log/letsencrypt": "/certbot/log", "/status": "/certbot/status"})
-    if bind_map(item) != {destination: PROXY_ROOT + suffix for destination, suffix in paths.items()}:
+    expected = (certbot_bindings(PROXY_ROOT) if expected_service == "certbot"
+                else {destination: PROXY_ROOT + suffix for destination, suffix in paths.items()})
+    actual = bind_map(item)
+    if actual != expected:
+        # A missing renewal-status bind is configuration drift, not an unknown
+        # user directory. Still refuse admission; only the confirmed HTTPS
+        # repair flow may regenerate Compose and recreate the owned service.
+        if expected_service == "certbot" and actual == {key: value for key, value in expected.items() if key != "/status"}:
+            raise MissingCertbotStatusMount(
+                "共享代理 Certbot 缺少续期状态挂载 /status；"
+                "请先在 tg2cloud → HTTPS 与管理 → 修复 HTTPS 中修复共享代理，再重试。"
+                "仍需通过完整挂载校验，不自动修改容器。"
+            )
         raise UninstallError("共享代理挂载含未知路径；停止")
 
 
@@ -269,7 +284,7 @@ def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: 
     if journal.exists() or journal.is_symlink():
         raise UninstallError("外部入口事务尚未恢复；先用 tg2cloud proxy recover 核对，不删除配置或恢复材料。")
     if any(key in state.get("external_webdav", {}) or (Path("/opt/tg2cloud-webdav") / key / "config.json").exists() for key in editions):
-        raise UninstallError("所选网关仍被外部 WebDAV 依赖；请先运行 tg2cloud-webdav uninstall，不静默中断外部入口。")
+        raise UninstallError("所选网关仍被外部 WebDAV 依赖；请先在 tg2cloud → 15. 外部 WebDAV → 7. 卸载外部 WebDAV 中处理，不静默中断外部入口。")
     selected = {}
     selected_networks = {}
     for key in editions:

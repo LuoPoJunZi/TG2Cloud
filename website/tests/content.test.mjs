@@ -92,7 +92,11 @@ test('management menu matches source labels and keeps old-version boundaries',as
   const items=source.match(/MENU_ITEMS = \(([\s\S]*?)\r?\n\)/)?.[1];
   assert.ok(items);
   const entries=[...items.matchAll(/\((\d+), "([^"]+)"\)/g)].map(match=>[match[1],match[2]]);
-  assert.deepEqual(entries.map(([number])=>number),[...Array.from({length:14},(_,index)=>String(index+1)),'0']);
+  assert.deepEqual(entries.map(([number])=>number),[...Array.from({length:15},(_,index)=>String(index+1)),'0']);
+  assert.deepEqual(entries.slice(0,14).map(([,label])=>label),[
+    '安装与升级','查看运行状态','查看运行日志','服务启停管理','Bot 用户管理','WebDAV 凭据','HTTPS 与管理',
+    '文件分类设置','异常通知设置','业务就绪检查','WebDAV 验收','故障诊断报告','数据备份管理','卸载当前实例']);
+  assert.deepEqual(entries[14],['15','外部 WebDAV']);
   const article=await read('docs/operations/maintenance.md');
   const guide=await readFile(new URL('../../docs/OPERATIONS.md',import.meta.url),'utf8');
   for(const [number,label] of entries){
@@ -103,6 +107,27 @@ test('management menu matches source labels and keeps old-version boundaries',as
     assert.ok(article.includes(text),text);
   }
   assert.ok(!entries.some(([,label])=>label.includes('命名预览')));
+  for(const text of ['v1.4.7','历史正式 v1.4.6 尚无此选项','无需额外安装命令','当前 Edition','不重启 Bot／网关']){
+    assert.ok(article.includes(text),text);
+  }
+});
+
+test('external WebDAV unified entry retains optional lifecycle and published-version boundaries',async()=>{
+  const article=await read('docs/deploy/external-webdav.md');
+  const guide=await readFile(new URL('../../docs/external-webdav.md',import.meta.url),'utf8');
+  for(const text of ['v1.4.7','15. 外部 WebDAV','历史正式 v1.4.6 尚无','10. 用户管理','返回主菜单','不重启 Bot']){
+    assert.ok(article.includes(text),text);
+    assert.ok(guide.includes(text),text);
+  }
+  assert.ok(article.includes('## 独立安装'),'preserve the website legacy section anchor');
+  assert.ok(guide.includes('## 独立入口'),'preserve the repository guide legacy section anchor');
+  for(const content of [article,guide]){
+    assert.ok(!content.includes('bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-webdav.sh)'),
+      'the unified menu does not require a separate installation command');
+    assert.ok(content.includes('install-webdav.sh')&&content.includes('历史')&&content.includes('Tag'));
+    assert.ok(content.includes('API 2'),'describe the explicit new layout and legacy migration');
+    assert.ok(content.includes('/status'));
+  }
 });
 
 test('installation feedback distinguishes evidence from manual acceptance',async()=>{
@@ -149,11 +174,11 @@ test('VPS one-line entry is consistent with the root user guide',async()=>{
   assert.ok(download.includes('OpenList 脚本实机验收暂缓'));
 });
 
-test('independent LAN and uninstall entries agree with root guides',async()=>{
+test('LAN installation and unified uninstall agree with root guides',async()=>{
   const download=await read('docs/download.md');
   const readme=await readFile(new URL('../../README.md',import.meta.url),'utf8');
   const english=await readFile(new URL('../../README_EN.md',import.meta.url),'utf8');
-  for(const [script,guide] of [['install-lan.sh','LAN-INSTALL.md'],['uninstall.sh','UNINSTALL.md']]){
+  for(const [script,guide] of [['install-lan.sh','LAN-INSTALL.md']]){
     const command=`bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/${script})`;
     const source=await readFile(new URL(`../../docs/${guide}`,import.meta.url),'utf8');
     for(const content of [download,readme,english,source])assert.ok(content.includes(command),script);
@@ -163,9 +188,14 @@ test('independent LAN and uninstall entries agree with root guides',async()=>{
   assert.ok(download.includes('v1.2.0 Tag'));
   assert.ok(download.includes('--keep-data'));
   assert.ok(download.includes('不等于把 VPS 恢复到安装前'));
-  const uninstallCommands=download.match(/^bash .*\/uninstall\.sh\).*$/gm)||[];
-  assert.ok(uninstallCommands.length>0);
-  assert.ok(uninstallCommands.every(command=>command.includes('--check')));
+  const guide=await readFile(new URL('../../docs/UNINSTALL.md',import.meta.url),'utf8');
+  const command='tg2cloud uninstall --edition all --check';
+  for(const content of [download,readme,english,guide])assert.ok(content.includes(command));
+  for(const content of [download,readme,english,guide]){
+    assert.ok(!content.includes('https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh'));
+    assert.ok(!content.includes('https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install-webdav.sh'));
+  }
+  assert.ok(download.includes('15. 外部 WebDAV'));
 });
 
 test('website brand copies match the canonical repository assets byte for byte',async()=>{
@@ -259,7 +289,7 @@ test('current helper identity in installation docs matches every public entry',a
   const chinese=await readFile(new URL('../../README.md',import.meta.url),'utf8');
   const development=await read('docs/reference/development.md');
   const pins=[];
-  for(const name of ['install.sh','install-lan.sh','uninstall.sh']){
+  for(const name of ['install.sh','install-lan.sh']){
     const entry=await readFile(new URL('../../'+name,import.meta.url),'utf8');
     const matches=[...entry.matchAll(/^installer_commit\s*=\s*"([0-9a-f]{40})"\r?$/gm)];
     assert.equal(matches.length,1,name);
@@ -376,7 +406,7 @@ test('root READMEs keep repository-first documentation and aligned author cards'
         assert.ok(await readFile(new URL('../../'+href,import.meta.url)),name+': missing local link '+href);
       }
     }
-    const removal=content.match(/^bash .*\/uninstall\.sh\).*$/gm)||[];
+    const removal=content.match(/^tg2cloud uninstall .*$/gm)||[];
     assert.ok(removal.length>0,name+': removal preview');
     assert.ok(removal.every(command=>command.includes('--check')),name+': no immediate removal in the landing page');
     assert.ok(content.includes('--keep-data'),name+': data-preservation option');

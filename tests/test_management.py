@@ -214,7 +214,8 @@ class RuntimeTests(unittest.TestCase):
         entry = bundle / "src/tg2cloud/deployment/runtime.py"
         result = subprocess.run([sys.executable, "-I", "-S", "-B", "-X", "utf8", str(entry), "manage", "--help"], cwd=self.private, capture_output=True, text=True, encoding="utf-8", timeout=15, check=False)
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("离线本地管理", result.stdout)
+        self.assertIn("TG2Cloud 本地管理；已有工具离线运行", result.stdout)
+        self.assertIn("首次获取及升级组件仅使用正式稳定 Release", result.stdout)
         if os.name == "posix":
             self.assertEqual(self.command.stat().st_mode & 0o777, 0o700)
             self.assertTrue(all(p.stat().st_mode & 0o777 == 0o600 for p in bundle.rglob("*") if p.is_file()))
@@ -305,8 +306,8 @@ class ManagementTests(unittest.TestCase):
     def test_confirmed_menu_labels_order_and_alignment_without_naming_preview(self):
         labels = ("安装与升级", "查看运行状态", "查看运行日志", "服务启停管理", "Bot 用户管理",
                   "WebDAV 凭据", "HTTPS 与管理", "文件分类设置", "异常通知设置", "业务就绪检查",
-                  "WebDAV 验收", "故障诊断报告", "数据备份管理", "卸载当前实例", "退出")
-        expected = [str(number) for number in (*range(1, 15), 0)]
+                  "WebDAV 验收", "故障诊断报告", "数据备份管理", "卸载当前实例", "外部 WebDAV", "退出")
+        expected = [str(number) for number in (*range(1, 16), 0)]
         self.assertEqual(list(management.MENU_ACTIONS), expected)
         self.assertEqual(management.MENU, numbered_menu(zip(expected, labels)) + "\n")
         self.assertTrue(all(line.index(label) == 4 for line, label in zip(management.MENU.splitlines(), labels)))
@@ -316,7 +317,7 @@ class ManagementTests(unittest.TestCase):
     def test_unknown_number_is_rejected_before_any_operation(self):
         def ask(prompt, *, default, validate):
             self.assertEqual(default, "0")
-            return validate("15")
+            return validate("16")
 
         self.ui.ask.side_effect = ask
         with patch.object(self.manager, "discover", return_value=self.instance), patch(
@@ -332,7 +333,8 @@ class ManagementTests(unittest.TestCase):
         external = {"5": "tg2cloud.deployment.users.manage", "6": "tg2cloud.cli.terminal.show_credentials",
                     "8": "tg2cloud.deployment.feature_settings.manage_classification",
                     "9": "tg2cloud.deployment.feature_settings.manage_notifications",
-                    "10": "tg2cloud.deployment.readiness.check", "12": "tg2cloud.deployment.diagnostics.collect"}
+                    "10": "tg2cloud.deployment.readiness.check", "12": "tg2cloud.deployment.diagnostics.collect",
+                    "15": "tg2cloud.addons.external_webdav.entry.open_menu"}
         for product in PRODUCTS.values():
             instance = replace(self.instance, product=product, directory=Path(product.install_dir))
             manager = management.Management(product, self.session, self.log, self.ui)
@@ -358,6 +360,8 @@ class ManagementTests(unittest.TestCase):
                             operation.assert_called_once_with(instance, self.session, self.log)
                         elif key == "12":
                             operation.assert_called_once_with(instance, self.session)
+                        elif key == "15":
+                            operation.assert_called_once_with(instance, self.ui, self.log)
                         else:
                             operation.assert_called_once_with(manager, instance)
                     preview.assert_not_called()

@@ -31,11 +31,11 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.4.6
+git checkout main
 git rev-parse HEAD
 ```
 
-正式源码使用不可变 v1.4.6 Tag；开发使用 main 并记录提交号，不把后续文档改动当作 Release 资产变化。正式下载见[下载页](/download/)。
+v1.4.7 源码待发布，当前开发使用 main 并记录提交号；正式源码仍使用已发布的不可变 Tag，不把分支或后续文档改动当作已发布资产。正式下载见[下载页](/download/)。
 
 ## 关键目录与入口
 
@@ -49,7 +49,7 @@ v1.3.1 沿用该结构，独立附加功能在 `src/tg2cloud/addons/external_web
 | `src/tg2cloud/version.py` | Bot、包和脚本唯一版本源；Windows 冻结在 v1.2.1 |
 | `src/tg2cloud/deployment/proxy/` | HTTPS、证书、状态、私密备份与 LAN 网关 |
 | `src/tg2cloud/deployment/resources.py` | 资源探测、磁盘推荐与容量校验 |
-| `scripts/run_source.py`、`src/tg2cloud/cli/` | 标准库宿主 CLI、终端、参数与三个公开 Shell 入口 |
+| `scripts/run_source.py`、`src/tg2cloud/cli/` | 标准库宿主 CLI、终端、参数与两个公开安装入口 |
 | `src/tg2cloud/transfer/`、`storage/`、`persistence/` | 共享任务核心、两后端提交策略、SQLite 与备份 |
 | `packaging/Dockerfile`、`packaging/compose/` | 共享 Bot 镜像与两 Edition 编排 |
 | `packaging/hooks/`、`packaging/compat/app/` | 安装/管理钩子和旧运行命令的薄兼容入口 |
@@ -122,3 +122,8 @@ git checkout v1.2.1
 ## v1.4.6 维护工具与测试分类
 
 新增本地 `prepare_release.py` 只生成版本同步计划及候选补丁，不提升当前产品版本、不更改固定 pin、不推送或发布。日常与当前 Tag CI 共用 `linux_validation.py` 的 Shell／完整回归／质量审计步骤，历史布局校验仍保留。四组命名回归集中至 `tests/naming/`，迁移前后核对测试集合；代理纯渲染独立并保留旧接口。实际命令与边界见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。本版已发布；不能借用 v1.4.5 的验收作为新代码的实机证明。
+
+
+## 待发布的统一入口布局
+
+根目录仅保留 `install.sh` 与 `install-lan.sh`。卸载核心仍在 `deployment/uninstall.py`，外部 WebDAV 模块仍在 `addons/external_webdav/`；通过 `tg2cloud` 的 14／15 项管理。两个独立 Shell 文件仅保留在历史 Tag，不从新源码包分发。API 2 标记明确新布局，历史 API 1 与旧源码仍按原清单核验，不通过缺失文件猜测布局。旧附加工具从新版统一菜单确认后迁移维护代码，账号、路由和云端文件不变；拒绝或失败保留旧代码。发布仍须辅助提交 A、入口 B 和正式稳定源码验证，不执行 moving main 业务代码。

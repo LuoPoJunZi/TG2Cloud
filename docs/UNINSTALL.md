@@ -1,4 +1,6 @@
-# TG2Cloud 独立卸载脚本
+# TG2Cloud 卸载指南
+
+待发布版本将卸载统一到 `tg2cloud`，从主分支移除 `uninstall.sh` 和 `install-webdav.sh`；卸载核心、只读预检、全 Edition 和数据保留参数均保留。当前正式 v1.4.6 的历史文件仍在原 Tag，以下历史版本记录不代表新入口已发布。
 
 v1.4.6 已正式发布：三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与使用范围见[本版说明](development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
 
@@ -10,7 +12,7 @@ v1.4.2 已发布：三个入口固定已通过五项 CI 的辅助 A `840472f9194
 
 v1.4.0 维护入口固定到已通过五项 CI 的辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414`，使用统一原生平台检查；卸载范围、资源归属、外部 WebDAV 依赖与保留数据规则不变。Oracle／真实 VPS 卸载仍须独立验收，不把 CI 作为生产清理授权。
 
-`uninstall.sh` 是标准目录下 CloudDrive2 / OpenList 受管 Docker 部署的兼容卸载入口，包括公网 VPS 的 HTTPS 和内网管理入口。新版安装／管理菜单复用同一卸载核心，不复制另一套删除逻辑，也不改动 Bot 业务流程或恢复桌面部署器。
+CloudDrive2 / OpenList、公网 HTTPS 与内网入口共用 `src/tg2cloud/deployment/uninstall.py`。`tg2cloud` 的 14. 卸载当前实例只选择当前 Edition；`tg2cloud uninstall` 支持显式选择 Edition 或 all、只读预检及原数据保留参数，调用同一核心，不复制删除逻辑。
 
 > 完整清理增强自 v1.2.1 纳入，v1.3.2 增加管理代码收尾；历史 v1.4.2 入口固定 辅助源码 `840472f919409531e99da55c62070ea262ebed6d`，A／B 五项 CI、正式双架构发布和资产校验通过。更新卸载助手不等于更新 Bot；原 v1.2.0 Tag 与历史 EXE 行为不变。用户原保留数据卸载反馈不能替代本版完整清理或 external_docker 的实机验收，也不扩大到两 Edition、NAS 或新删除行为。
 
@@ -26,24 +28,24 @@ v1.4.2 的[外部 Docker Nginx 模式](DOCKER-NGINX.md)有额外保护：未恢�
 
 最后一套默认完整清理后，重新核对 Docker、两个 Edition（包括停止/部分状态）、保留数据/备份、LAN 与附加路由、挂载和管理代码归属；无依赖时删除受管 `/usr/local/bin/tg2cloud` 及 `/opt/tg2cloud-cli` 中全部已核验代码，随后退出菜单。`--keep-data`、保留备份或其他实例仍在用时保留工具；未知同名命令/文件、忙碌或清理异常时不强删，返回 `TG2CLOUD_UNINSTALL_RESULT=PARTIAL` 和非零退出码，明确业务资源可能已移除而管理代码尚未确认清完，不自动重新安装。仅删除核验过的代码文件及空目录，不递归清空推算出的父路径。锁元数据保留以避免替换正在锁定的 inode，系统应用、镜像缓存和云端文件仍不删除。
 
-普通使用不再需要单独卸载命令，但 `uninstall.sh` 继续作为兼容／救援入口，URL 和参数不删除。旧主机须显式更新向导及管理代码，不会自动变成新版；本轮没有真实卸载验收。详情见[运维说明](OPERATIONS.md#本地管理菜单)。
+待发布版本不再保留主分支的独立卸载脚本。命令缺失或损坏时，重新运行原 `install.sh`／`install-lan.sh`，选择已安装 Edition 后进入“卸载当前实例”，不要选择重新安装；若实例不完整而不能进入菜单，使用核验过的完整源码及下方 CLI 预检。历史 v1.4.6 脚本可在原 Tag 查看，不建议用旧工具覆盖新状态。旧主机须显式更新管理代码；本轮没有真实卸载验收。
 
 ## 在线一键入口
 
-v1.3.1 外部 WebDAV 安装后，先用 `tg2cloud-webdav uninstall --edition openlist`（或 `clouddrive2`）解除对应网关依赖，再主卸载；仅 disable 不解除依赖。附加卸载不删除云端数据或人工原生账号，见[独立功能指南](external-webdav.md)。
+外部 WebDAV 安装后，先在外部管理菜单卸载附加入口，解除对应网关依赖，再主卸载；仅停用不解除依赖。待发布统一入口为 `tg2cloud` → 当前 Edition → **15. 外部 WebDAV → 7. 卸载外部 WebDAV**，正式 v1.4.6 尚无主菜单 15；既有 `tg2cloud-webdav uninstall --edition openlist`（或 `clouddrive2`）仍兼容。附加卸载不删除云端数据或人工原生账号，见[独立功能指南](external-webdav.md)。
 
 源码的本地帮助入口为 `python3 scripts/run_source.py uninstall --help`，业务位于公共 `deployment/uninstall.py`。在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交；确认、归属检查、保留数据和共享资源保护不因目录整理改变。本轮未执行真实卸载。详见[Linux 重构说明](development/LINUX-REFACTOR.md)。
 
-先以只读方式检查；要求信任本仓库，可以先下载检查脚本：
+安装后运行统一管理命令，或先以显式子命令只读查看所有实例的清理范围：
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
+tg2cloud uninstall --edition all --check
 ```
 
-实际卸载命令会询问 Edition 并展示完整清理范围，再等待默认 N 的确认及 `DELETE ALL …` 删除口令：
+在菜单中选择 Edition → 14. 卸载当前实例；实际执行先展示范围，再等待默认 N 的确认及 `DELETE ALL …` 删除口令：
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh)
+tg2cloud
 ```
 
 ## 本地源码运行
@@ -53,20 +55,20 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 先只读查看范围：
 
 ```bash
-bash ./uninstall.sh --edition all --check
+python3 scripts/run_source.py uninstall --edition all --check
 ```
 
 当前主分支及在线向导默认完整清理所选 TG2Cloud 实例及可识别备份。先核对范围，执行时还需输入删除口令：
 
 ```bash
-bash ./uninstall.sh --edition all
+python3 scripts/run_source.py uninstall --edition all
 ```
 
 只卸载一个 Edition：
 
 ```bash
-bash ./uninstall.sh --edition clouddrive2
-bash ./uninstall.sh --edition openlist
+python3 scripts/run_source.py uninstall --edition clouddrive2
+python3 scripts/run_source.py uninstall --edition openlist
 ```
 
 不指定 `--edition` 时，向导询问卸载 `clouddrive2`、`openlist` 或 `all`。只读 `--check` 必须明确指定 Edition。实际执行前列出容器、网络、数据目录、备份目录和共享代理处理方式，先等待默认 **N** 的确认，再要求输入 `DELETE ALL all`；单 Edition 对应 `DELETE ALL clouddrive2` 或 `DELETE ALL openlist`。任一取消或不匹配均不执行卸载。没有 `--yes` 或无人值守强制删除。
@@ -76,22 +78,22 @@ bash ./uninstall.sh --edition openlist
 默认模式等同 `--purge-all`，包括配置、Session、SQLite、下载、日志、云网关授权配置以及所选 Edition 可识别的历史备份。没有其他 HTTPS 路由、另一 Edition 容器或保留实例目录时，也删除共享代理配置、证书和可识别的共享代理备份。**先把需要保留的备份复制到这些清理目录之外；这不是恢复操作，删除后不能靠原目录中的备份回退。**
 
 ```bash
-bash ./uninstall.sh --edition all --purge-all --check
-bash ./uninstall.sh --edition all --purge-all
+python3 scripts/run_source.py uninstall --edition all --purge-all --check
+python3 scripts/run_source.py uninstall --edition all --purge-all
 ```
 
 只移除运行资源、保留配置和数据时，必须明确选择 `--keep-data`：
 
 ```bash
-bash ./uninstall.sh --edition all --keep-data --check
-bash ./uninstall.sh --edition all --keep-data
+python3 scripts/run_source.py uninstall --edition all --keep-data --check
+python3 scripts/run_source.py uninstall --edition all --keep-data
 ```
 
 兼容原 `--purge-data`：删除实例数据，但保留历史备份：
 
 ```bash
-bash ./uninstall.sh --edition all --purge-data --check
-bash ./uninstall.sh --edition all --purge-data
+python3 scripts/run_source.py uninstall --edition all --purge-data --check
+python3 scripts/run_source.py uninstall --edition all --purge-data
 ```
 
 `--purge-data` 仍使用 `DELETE all` / `DELETE clouddrive2` / `DELETE openlist`，与会删除备份的 `DELETE ALL …` 区分。三个模式互斥。
@@ -134,7 +136,7 @@ bash ./uninstall.sh --edition all --purge-data
 
 1. **只是升级？**不要卸载，用对应安装入口保留配置升级。
 2. **只是暂时不转存？**用 Bot `/pause` 停止后续调度，或管理菜单明确停止 Bot；它们不是数据清理。
-3. **暂时停止外部播放？**用 `tg2cloud-webdav disable`；若要主卸载则必须独立 uninstall 附加功能，disable 不解除依赖。
+3. **暂时停止外部播放？**在外部 WebDAV 菜单选择“停用访问”（兼容 `tg2cloud-webdav disable`）；若要主卸载则必须先选择“卸载外部 WebDAV”，仅停用不解除依赖。
 4. **想保留重装所需资料？**先另存完整私密备份，明确 `--keep-data` 的范围，不依赖即将删除的备份目录。
 5. **确实完整清理？**逐项核对 Edition、目录、所有将删备份、挂载和删除口令，再确认默认完整模式。
 

@@ -7,8 +7,6 @@ on:
     paths:
       - "install.sh"
       - "install-lan.sh"
-      - "uninstall.sh"
-      - "install-webdav.sh"
       - "tests/addons/**"
       - "scripts/**"
       - "src/**"
@@ -28,6 +26,8 @@ on:
       - ".github/scripts/linux_validation.py"
       - "tests/test_release_preparation.py"
       - "tests/test_proxy_rendering.py"
+      - "tests/test_proxy_certbot_startup.py"
+      - "tests/test_webdav_entry.py"
       - "tests/test_instance_backup.py"
       - "tests/test_readiness.py"
       - "tests/naming/test_naming_preview.py"
@@ -55,8 +55,6 @@ on:
     paths:
       - "install.sh"
       - "install-lan.sh"
-      - "uninstall.sh"
-      - "install-webdav.sh"
       - "tests/addons/**"
       - "scripts/**"
       - "src/**"
@@ -76,6 +74,8 @@ on:
       - ".github/scripts/linux_validation.py"
       - "tests/test_release_preparation.py"
       - "tests/test_proxy_rendering.py"
+      - "tests/test_proxy_certbot_startup.py"
+      - "tests/test_webdav_entry.py"
       - "tests/test_instance_backup.py"
       - "tests/test_readiness.py"
       - "tests/naming/test_naming_preview.py"
@@ -134,9 +134,7 @@ jobs:
         run: |
           bash -n install.sh
           bash -n install-lan.sh
-          bash -n uninstall.sh
-          bash -n install-webdav.sh
-          shellcheck install.sh install-lan.sh uninstall.sh install-webdav.sh
+          shellcheck install.sh install-lan.sh
       - name: Offline tests (no VPS or Docker calls)
         run: |
           python .github/scripts/check_python.py test --scope cli

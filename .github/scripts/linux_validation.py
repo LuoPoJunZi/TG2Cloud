@@ -12,7 +12,7 @@ ROOT = Path(__file__).resolve().parents[2]
 def commands(stage: str, root: Path = ROOT) -> list[list[str]]:
     python = sys.executable
     if stage == "shell":
-        entries = ["install.sh", "install-lan.sh", "uninstall.sh", "install-webdav.sh"]
+        entries = ["install.sh", "install-lan.sh"]
         hooks = [path.relative_to(root).as_posix() for path in sorted((root / "packaging/hooks").glob("*/*.sh"))]
         if not hooks:
             raise ValueError("managed Shell hooks missing")

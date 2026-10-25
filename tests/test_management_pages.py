@@ -154,6 +154,27 @@ class ManagementPagesTests(unittest.TestCase):
         second = self.text().index("── TG2Cloud 本地管理 ──", first + 1)
         self.assertLess(self.text().index("0. 返回主菜单"), second)
 
+    def test_external_webdav_returns_directly_and_uses_rechecked_custom_instance(self):
+        custom = replace(self.instance, directory=Path("/srv/family-clouddrive2"))
+        self.manager.recheck.side_effect = lambda _: custom
+        self.ui.ask.side_effect = ["15", "0"]
+        with patch("tg2cloud.addons.external_webdav.entry.open_menu") as webdav:
+            self.assertEqual(self.manager.run(), 0)
+        webdav.assert_called_once_with(custom, self.ui, self.log)
+        self.manager.recheck.assert_called_once_with(self.instance)
+        self.assertEqual(self.ui.ask.call_count, 2)
+        self.assertEqual(self.text().count("── TG2Cloud 本地管理 ──"), 2)
+        self.assertIn("── 外部 WebDAV ──", self.text())
+        self.assertNotIn("0. 返回主菜单", self.text())
+
+    def test_external_webdav_changed_instance_does_not_start_child(self):
+        self.manager.recheck.side_effect = ValueError("确认之后实例发生变化")
+        self.ui.ask.side_effect = ["15", "0", "0"]
+        with patch("tg2cloud.addons.external_webdav.entry.open_menu") as webdav:
+            self.assertEqual(self.manager.run(), 0)
+        webdav.assert_not_called()
+        self.assertIn("操作未完成", self.text())
+
     def test_diagnostic_terminal_is_plain_but_export_keeps_original_markdown(self):
         from tg2cloud.deployment import diagnostics
         original = "# TG2Cloud 故障诊断报告\n\n## 建议处理顺序\n1. synthetic advice\n"

@@ -30,11 +30,11 @@ class SourceReleaseTests(unittest.TestCase):
     def setUpClass(cls):
         # Validate public release inputs in a disposable two-commit A/B history.
         # Copy only explicit public runtime/build inputs, never private archives.
-        names = set(package.REQUIRED) | {"install-webdav.sh", "packaging/external-webdav.json"}
+        names = set(package.REQUIRED)
         for product in PRODUCTS.values():
             names.update(path.relative_to(ROOT).as_posix() for path in payload_sources(ROOT, product).values())
         cls.snapshot = {name: (ROOT / name).read_bytes() for name in names}
-        for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
+        for name in ("install.sh", "install-lan.sh"):
             cls.snapshot[name] = bootstrap.render_entry(ROOT, name).encode()
 
     def setUp(self):
@@ -61,7 +61,7 @@ class SourceReleaseTests(unittest.TestCase):
         package.git(self.root, "config", "maintenance.auto", "false")
         self.commit()
         pin = package.git(self.root, "rev-parse", "HEAD").decode().strip()
-        for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
+        for name in ("install.sh", "install-lan.sh"):
             path = self.root / name
             text = re.sub(r'^(installer_commit\s*=\s*)"[0-9a-f]{40}"$', lambda match: match[1] + f'"{pin}"', path.read_text(encoding="utf-8"), flags=re.MULTILINE)
             path.write_text(text, encoding="utf-8", newline="\n")
@@ -147,6 +147,31 @@ class SourceReleaseTests(unittest.TestCase):
                 with self.assertRaisesRegex(ValueError, "unsafe|source manifest|build output"):
                     package.verify(self.output, self.tag)
 
+    def test_unified_source_rejects_retired_entry_or_missing_management_core(self):
+        self.build()
+        path = self.output / package.artifact_name(self.tag)
+        original = path.read_bytes()
+        for case in ("uninstall.sh", "install-webdav.sh", "missing-core", "unknown-api"):
+            with self.subTest(case=case):
+                result = io.BytesIO()
+                with tarfile.open(fileobj=io.BytesIO(original), mode="r:gz") as source, tarfile.open(fileobj=result, mode="w:gz") as dest:
+                    for member in source:
+                        if case == "missing-core" and member.name.endswith("/src/tg2cloud/deployment/uninstall.py"):
+                            continue
+                        if case == "unknown-api" and member.name.endswith("/packaging/external-webdav.json"):
+                            body = b'{"api":999,"proxy_schema":2,"owner":"tg2cloud.external_webdav"}'
+                            member.size = len(body)
+                            dest.addfile(member, io.BytesIO(body))
+                        else:
+                            dest.addfile(member, source.extractfile(member) if member.isfile() else None)
+                    if case.endswith(".sh"):
+                        member = tarfile.TarInfo(f"TG2Cloud-{self.tag}/" + case)
+                        dest.addfile(member, io.BytesIO())
+                path.write_bytes(result.getvalue())
+                (self.output / "SHA256SUMS.txt").write_text(hashlib.sha256(result.getvalue()).hexdigest() + "  " + path.name + "\n", encoding="ascii")
+                with self.assertRaisesRegex(ValueError, "retired|missing required|unsupported"):
+                    package.verify(self.output, self.tag)
+
     def test_helper_manifest_cannot_omit_nested_code_or_escape_root(self):
         path = self.root / "packaging/bootstrap-manifest.json"
         original = path.read_bytes()
@@ -164,7 +189,7 @@ class SourceReleaseTests(unittest.TestCase):
         # Local unreleased additions must not manufacture a remote SHA or make
         # historical bootstrap tests compare against an unpublished manifest.
         # validate_pins still rejects these old lists for the NEW release below.
-        for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
+        for name in ("install.sh", "install-lan.sh"):
             text = (ROOT / name).read_text(encoding="utf-8")
             pin = re.search(r'^installer_commit\s*=\s*"([0-9a-f]{40})"$', text, re.MULTILINE)[1]
             block = text.split("<<'PY' &\n", 1)[1].split("\nPY\n", 1)[0]
@@ -191,6 +216,28 @@ class SourceReleaseTests(unittest.TestCase):
 
 
 class HistoricalSourceReleaseTests(unittest.TestCase):
+    def test_previous_api1_source_still_requires_and_accepts_its_historical_entries(self):
+        tag = "v1.4.6"
+        commit = "2e18eba718df83beec3a9d0784ca8037125bdd20"
+        with tempfile.TemporaryDirectory() as private:
+            archive = gzip.compress(package.git(ROOT, "archive", "--format=tar", f"--prefix=TG2Cloud-{tag}/", commit), mtime=0)
+            root = Path(private)
+            name = package.artifact_name(tag)
+            (root / name).write_bytes(archive)
+            (root / "SHA256SUMS.txt").write_text(hashlib.sha256(archive).hexdigest() + "  " + name + "\n", encoding="ascii")
+            package.verify(root, tag)
+            for omitted in ("uninstall.sh", "install-webdav.sh"):
+                output = io.BytesIO()
+                with tarfile.open(fileobj=io.BytesIO(archive), mode="r:gz") as source, tarfile.open(fileobj=output, mode="w:gz") as target:
+                    for member in source:
+                        if member.name == f"TG2Cloud-{tag}/" + omitted:
+                            continue
+                        target.addfile(member, source.extractfile(member) if member.isfile() else None)
+                (root / name).write_bytes(output.getvalue())
+                (root / "SHA256SUMS.txt").write_text(hashlib.sha256(output.getvalue()).hexdigest() + "  " + name + "\n", encoding="ascii")
+                with self.subTest(omitted=omitted), self.assertRaisesRegex(ValueError, "missing required|incomplete external"):
+                    package.verify(root, tag)
+
     def test_immutable_previous_layout_still_verifies(self):
         tag = "v1.3.0"
         # Both hashes are public main ancestors. The root-layout fixture must

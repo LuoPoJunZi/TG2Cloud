@@ -11,12 +11,35 @@ from urllib.parse import urlsplit
 from tg2cloud.deployment import releases as core
 
 FEATURE = "packaging/external-webdav.json"
-CONTRACT = {"api": 1, "proxy_schema": 2, "owner": "tg2cloud.external_webdav"}
+CONTRACT = {"api": 2, "proxy_schema": 2, "owner": "tg2cloud.external_webdav"}
+LEGACY_CONTRACT = dict(CONTRACT, api=1)
+
+
+def contract(root: Path) -> dict:
+    """Read a static capability marker; never infer a layout from missing files."""
+    path = root / FEATURE
+    try:
+        if path.is_symlink() or path.resolve() != path.absolute():
+            raise ValueError
+        value = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        raise ValueError("此稳定 Release 尚不包含受支持的外部 WebDAV；不会回退执行 main 或旧辅助代码。") from exc
+    if not isinstance(value, dict) or type(value.get("api")) is not int or value not in (CONTRACT, LEGACY_CONTRACT):
+        raise ValueError("不支持的外部 WebDAV 发布协议。")
+    return value
 
 
 def host_files(root: Path) -> list[str]:
     files = ["scripts/run_source.py", "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/config.py",
-             FEATURE, "install-webdav.sh"]
+             FEATURE]
+    if contract(root) == LEGACY_CONTRACT:
+        files.append("install-webdav.sh")
+    else:
+        files.extend(("src/tg2cloud/cli/commands.py", "src/tg2cloud/cli/management.py",
+                      "src/tg2cloud/deployment/uninstall.py", "src/tg2cloud/addons/external_webdav/entry.py",
+                      "src/tg2cloud/addons/external_webdav/cli.py", "src/tg2cloud/addons/external_webdav/service.py"))
+        if any((root / name).exists() or (root / name).is_symlink() for name in ("uninstall.sh", "install-webdav.sh")):
+            raise ValueError("统一管理源码仍包含已退役的独立 Shell 入口。")
     for directory in ("cli", "deployment", "addons"):
         files.extend(path.relative_to(root).as_posix() for path in (root / "src/tg2cloud" / directory).rglob("*.py"))
     for relative in files:
@@ -27,12 +50,6 @@ def host_files(root: Path) -> list[str]:
 
 
 def supported(root: Path) -> None:
-    try:
-        value = json.loads((root / FEATURE).read_text(encoding="utf-8"))
-    except (OSError, ValueError) as exc:
-        raise ValueError("此稳定 Release 尚不包含外部 WebDAV；不会回退执行 main 或旧辅助代码。") from exc
-    if value != CONTRACT or not (root / "install-webdav.sh").is_file():
-        raise ValueError("不支持的外部 WebDAV 发布协议。")
     host_files(root)
 
 

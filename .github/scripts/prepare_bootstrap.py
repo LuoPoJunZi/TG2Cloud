@@ -52,8 +52,8 @@ def render_entry(root: Path, name: str) -> str:
     lines[node.lineno-1:node.end_lineno] = replacement.splitlines()
     block = "\n".join(lines).replace("payload_clouddrive2/app/version.py", "src/tg2cloud/version.py")
     result = text[:start] + block + text[end:]
-    command = {"install.sh": "install", "install-lan.sh": "lan", "uninstall.sh": "uninstall"}[name]
-    module = {"install.sh": "scripts.vps_installer", "install-lan.sh": "scripts.lan_installer", "uninstall.sh": "scripts.uninstaller"}[name]
+    command = {"install.sh": "install", "install-lan.sh": "lan"}[name]
+    module = {"install.sh": "scripts.vps_installer", "install-lan.sh": "scripts.lan_installer"}[name]
     # Only the post-download launch changes. Legacy local-source compatibility
     # branches and the existing real immutable pin remain untouched.
     return result.replace(f'python3 -B -m {module} "$@" &', f'python3 -B scripts/run_source.py {command} "$@" &')
@@ -73,7 +73,7 @@ def main() -> int:
             raise ValueError(f"{name} manifest stale; regenerate after reviewing added source files")
     if args.directory:
         args.directory.mkdir(mode=0o700, parents=True, exist_ok=False)
-        for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
+        for name in ("install.sh", "install-lan.sh"):
             (args.directory / name).write_text(render_entry(ROOT, name), encoding="utf-8", newline="\n")
         print("CANDIDATE_ONLY: existing pins retained; publish/review helper commit A before setting pins in B")
     print("BOOTSTRAP_MANIFEST=OK")

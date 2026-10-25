@@ -331,7 +331,7 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_rc_requires_exact_notes_identity(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for path in ("src/tg2cloud/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
+            for path in ("src/tg2cloud/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "packaging/external-webdav.json"):
                 target = root / path
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / path).read_bytes())
@@ -346,7 +346,7 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_future_linux_version_does_not_require_any_desktop_files(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for name in ("src/tg2cloud/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "uninstall.sh"):
+            for name in ("src/tg2cloud/version.py", "CHANGELOG.md", "RELEASE_NOTES.md", "install.sh", "install-lan.sh", "packaging/external-webdav.json"):
                 target = root / name
                 target.parent.mkdir(parents=True, exist_ok=True)
                 target.write_bytes((ROOT / name).read_bytes())
@@ -362,12 +362,14 @@ class ReleaseMetadataTests(unittest.TestCase):
     def test_release_rejects_stale_wizard_version_or_disabled_source_pin(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
-            for name in ("install.sh", "install-lan.sh", "uninstall.sh"):
-                (root / name).write_bytes((ROOT / name).read_bytes())
+            for name in ("install.sh", "install-lan.sh", "packaging/external-webdav.json"):
+                target = root / name
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((ROOT / name).read_bytes())
             release.linux_entries(root, RELEASE_VERSION)
             with self.assertRaisesRegex(ValueError, "helper version"):
                 release.linux_entries(root, "0.0.0")
-            (root / "uninstall.sh").write_text('installer_commit=""\n', encoding="utf-8")
+            (root / "install-lan.sh").write_text('installer_commit=""\n', encoding="utf-8")
             with self.assertRaisesRegex(ValueError, "immutable Linux entry pin"):
                 release.linux_entries(root, RELEASE_VERSION)
 

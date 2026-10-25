@@ -8,6 +8,7 @@
     "src/tg2cloud/addons/external_webdav/cli.py",
     "src/tg2cloud/addons/external_webdav/config.py",
     "src/tg2cloud/addons/external_webdav/discovery.py",
+    "src/tg2cloud/addons/external_webdav/entry.py",
     "src/tg2cloud/addons/external_webdav/nginx.py",
     "src/tg2cloud/addons/external_webdav/releases.py",
     "src/tg2cloud/addons/external_webdav/service.py",

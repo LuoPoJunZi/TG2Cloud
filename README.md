@@ -42,7 +42,9 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 两个 Edition 共用转存能力，但网关配置不同；各自的实例数据互相独立。已有实例升级使用对应入口并保留配置，不需要先卸载。
 
-公网／内网入口选择 Edition 后，新装进入向导，已有实例进入管理菜单；确认安装管理工具后，可直接运行 `tg2cloud`。卸载仅作用于所选 Edition，旧卸载 URL 保留救援。菜单、更新与清理边界见[运维指南](docs/OPERATIONS.md#本地管理菜单)。
+公网／内网入口选择 Edition 后，新装进入向导，已有实例进入管理菜单；确认安装管理工具后，可直接运行 `tg2cloud`。卸载仅作用于所选 Edition；v1.4.7 源码退役独立 Shell 入口，保留统一菜单与子命令预检。菜单、更新与清理边界见[运维指南](docs/OPERATIONS.md#本地管理菜单)。
+
+外部 WebDAV 提供手机只读访问；[统一管理说明](docs/external-webdav.md#统一管理待发布)介绍 v1.4.7 待发布的 `tg2cloud` → **15. 外部 WebDAV**，安装与维护均在子菜单完成，无需另跑安装命令。当前 v1.4.6 尚无此选项。
 
 ## 快速安装
 
@@ -73,10 +75,10 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 ### 卸载预检
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uninstall.sh) --edition all --check
+tg2cloud uninstall --edition all --check
 ```
 
-这条命令只预览，不卸载。实际完整卸载会删除所选实例的数据和可识别备份；需保留数据时使用 `--keep-data`，先保存清理范围之外的独立备份。详见[卸载指南](docs/UNINSTALL.md)。
+也可运行 `tg2cloud`，选择对应 Edition → 14. 卸载当前实例。上面的子命令只预览，不卸载。实际完整卸载会删除所选实例的数据和可识别备份；需保留数据时使用 `--keep-data`，先保存清理范围之外的独立备份。详见[卸载指南](docs/UNINSTALL.md)。
 
 ## 使用文档
 
@@ -91,7 +93,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/uni
 | 家庭与手机读取 | [Bot 家人授权](docs/FAMILY-SHARING.md) · [外部 WebDAV 只读入口](docs/external-webdav.md) |
 | 可选功能 | [文件分类、通知与配额](docs/FEATURE-ENHANCEMENTS.md) · [复用已有 Nginx](docs/DOCKER-NGINX.md) |
 | 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) · [维护增强](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| 本版维护 | [v1.4.6 外部 WebDAV 与维护工具](docs/development/LOCAL-MAINTENANCE.md) |
+| 本版维护 | [v1.4.7 统一管理与恢复维护](docs/development/LOCAL-MAINTENANCE.md) |
 | 升级验收 | [v1.4.4 双架构升级记录](docs/development/V144-ACCEPTANCE.md) · [历史验收目录](docs/README.md) |
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |

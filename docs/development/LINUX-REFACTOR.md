@@ -15,7 +15,7 @@ v1.3.1 沿用此布局，在 `addons/external_webdav/` 提供独立只读附加�
 ## 源码与职责
 
 ```text
-install.sh / install-lan.sh / uninstall.sh / install-webdav.sh
+install.sh / install-lan.sh（卸载与附加功能由 tg2cloud 管理）
 scripts/run_source.py
 src/tg2cloud/
   addons/          独立附加功能，external_webdav 不加入主安装或 Bot 菜单
@@ -117,7 +117,7 @@ v1.3.0 的三个在线入口使用新布局清单和 `scripts/run_source.py`，�
 
 v1.3.2 的中文安装 UI 和离线管理入口新增 `cli/management.py`、`cli/presentation.py`、`deployment/runtime.py`，均为宿主标准库模块。递归清单已涵盖它们；本地 `manage --help` 不加载 Bot 或访问 Docker。离线运行代码从正在执行的已审阅向导（在线入口为固定 helper A）复制，而不是把业务 Release 或移动 main 当成助手来源；业务 payload 的稳定发布规则不变。不能使用不存在的 SHA，也不能把新文件清单指向不含这些文件的旧提交。
 
-默认公网／内网分发现在复用管理入口：缺失 Edition 确认进入原安装器，已有实例进入菜单；显式参数仍交给原解析器。完整卸载复用原核心后，只有无依赖才清理受管命令和代码。新增 lifecycle 锁协调确认安装与最后清理，清理按 Edition 排序锁、代理锁和代码发布锁复核；代码锁移到保留的锁目录，不能因删除运行包替换正在锁定的 inode。部分清理返回 PARTIAL/非零，不冒充成功或重新提示安装。独立 uninstall.sh 保留救援能力；不能为了“统一入口”删除已公开 URL 或放宽归属校验。
+默认公网／内网分发现在复用管理入口：缺失 Edition 确认进入原安装器，已有实例进入菜单；显式参数仍交给原解析器。完整卸载复用原核心后，只有无依赖才清理受管命令和代码。新增 lifecycle 锁协调确认安装与最后清理，清理按 Edition 排序锁、代理锁和代码发布锁复核；代码锁移到保留的锁目录，不能因删除运行包替换正在锁定的 inode。部分清理返回 PARTIAL/非零，不冒充成功或重新提示安装。后续用户明确授权在下一维护版移除独立 uninstall.sh/install-webdav.sh；统一菜单保留全部业务核心和安全保护。历史提交／Tag 的文件与资产不改写，救援改用原安装入口的已有实例菜单或核验过的完整源码 CLI，不放宽归属校验。
 
 v1.3.2 辅助提交 A 为 `1879a8e1c498fbabaf7ba26ba4b9810f1cfd44e6`，已通过五个公开 CI（Linux／Docker／WebDAV、宿主 Python 3.10／3.13、仓库、文档与网站），入口 B 同时更新三个下载清单和 pin。严格发布校验逐文件确认辅助源码与 A 一致，不放宽检查。本轮不连接真实 VPS 或用户网盘；真实新装／升级／卸载、原生账号、手机及公网 ACME 仍需独立验收，不能用隔离 CI 代替。
 

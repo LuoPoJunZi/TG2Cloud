@@ -102,10 +102,12 @@ def perform(service, args) -> None:
     log, ui = service.log, service.ui
     log(page_heading(ACTION_LABELS[ACTIONS.index(args.action)], service.product, VERSION))
     if args.action in {"install", "configure"}:
-        changed = service.configure(install_dir=args.install_dir, install=args.action == "install", sample_file=args.sample_file)
-        if changed and service.record() is not None and service.record()["phase"] == "enabled":
-            with service.locked():
-                service.install_runtime(source_root(), source_identity(source_root()))
+        def prepare_runtime():
+            source = source_root()
+            service.install_runtime(source, source_identity(source))
+
+        service.configure(install_dir=args.install_dir, install=args.action == "install",
+                          sample_file=args.sample_file, prepare_runtime=prepare_runtime)
     elif args.action == "users":
         from tg2cloud.addons.external_webdav.users import menu
         menu(service, sample_file=args.sample_file)
@@ -134,7 +136,8 @@ def perform(service, args) -> None:
                 with service.locked():
                     service.preflight(item["instance_dir"])
                     service.install_runtime(root, identity)
-                log("候选源码已校验并切换；使用 tg2cloud-webdav check 复核。旧运行目录仍保留。")
+                log("候选源码已校验并切换；旧运行目录仍保留。")
+                service.management_hint(check=True)
     else:
         service.maintain(args.action, sample_file=args.sample_file)
 
@@ -147,7 +150,8 @@ def interactive(service, args) -> None:
     while True:
         service.log(page_heading("外部 WebDAV 管理", service.product, VERSION))
         action = choose(service.ui, service.log, "请选择操作：", tuple(zip(ACTIONS, ACTION_LABELS)),
-                        default="2" if service.record() else "1")
+                        default="2" if service.record() else "1",
+                        exit_label="返回主菜单" if os.environ.get("TG2CLOUD_MANAGER_MENU") == "1" else "退出")
         if not action:
             return
         args.action = action

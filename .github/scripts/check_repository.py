@@ -12,11 +12,14 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_FILES = (
-    "install.sh", "install-lan.sh", "uninstall.sh", "install-webdav.sh", "packaging/external-webdav.json", ".github/scripts/release_metadata.py",
+    "install.sh", "install-lan.sh", "packaging/external-webdav.json", ".github/scripts/release_metadata.py",
     "scripts/run_source.py", "pyproject.toml", "requirements/bot.lock.txt", "requirements/dev.lock.txt",
     "src/tg2cloud/__init__.py", "src/tg2cloud/version.py", "src/tg2cloud/app.py",
     "src/tg2cloud/deployment/profiles.py", "src/tg2cloud/deployment/fingerprints.py",
     "src/tg2cloud/cli/commands.py", "packaging/Dockerfile",
+    "src/tg2cloud/cli/management.py", "src/tg2cloud/deployment/uninstall.py",
+    "src/tg2cloud/addons/external_webdav/entry.py", "src/tg2cloud/addons/external_webdav/cli.py",
+    "src/tg2cloud/addons/external_webdav/service.py",
     "packaging/bootstrap-manifest.json", "packaging/runtime-manifest.json",
     ".github/scripts/build_payload.py", ".github/scripts/prepare_bootstrap.py", ".github/scripts/lock_dependencies.py",
     "LICENSE", ".github/CONTRIBUTING.md", ".github/SECURITY.md",
