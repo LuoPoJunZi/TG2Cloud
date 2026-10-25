@@ -17,6 +17,17 @@ ROOT = Path("/opt/tg2cloud-webdav")
 HASH = re.compile(r"\$6\$rounds=200000\$[A-Za-z0-9./]{16}\$[A-Za-z0-9./]{86}")
 MAX_MEMBERS = 32
 INPUT_ERROR = "密码不能为空；仅支持不含空白的可打印 ASCII 字符，最多 128 位。"
+PUBLIC_INPUT_ERRORS = frozenset({
+    "请填写外部 WebDAV 域名。", "域名不能包含空格或换行。",
+    "只填写域名，不要包含协议、端口、路径、通配符或命令字符。",
+    "必须使用域名，不能填写 IPv4 或 IPv6 地址。",
+    "请输入域名的 ASCII/Punycode 形式（例如 xn-- 开头的域名）。",
+    "域名格式不正确；请填写完整的 ASCII/Punycode FQDN。",
+    "Let's Encrypt 邮箱格式不正确。", "请选择菜单中的序号。",
+    "请填写规范的网关逻辑绝对目录，不是 URL 或 VPS 目录。",
+    "第一版拒绝暴露整个网关根目录 /。",
+    "使用新的专用用户名（3～48 位字母、数字、._-），不能是 Bot 或管理员。",
+})
 
 
 def logical_path(value: str, *, allow_root: bool = False) -> str:

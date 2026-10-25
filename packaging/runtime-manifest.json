@@ -11,6 +11,7 @@
     "src/tg2cloud/addons/external_webdav/entry.py",
     "src/tg2cloud/addons/external_webdav/nginx.py",
     "src/tg2cloud/addons/external_webdav/releases.py",
+    "src/tg2cloud/addons/external_webdav/scope.py",
     "src/tg2cloud/addons/external_webdav/service.py",
     "src/tg2cloud/addons/external_webdav/users.py",
     "src/tg2cloud/addons/external_webdav/verification.py",

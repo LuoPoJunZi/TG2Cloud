@@ -18,7 +18,14 @@ from pathlib import Path, PurePosixPath
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from tg2cloud.addons.external_webdav import cli, config, nginx, releases, verification
+from tg2cloud.addons.external_webdav import (
+    cli,
+    config,
+    nginx,
+    releases,
+    scope,
+    verification,
+)
 from tg2cloud.addons.external_webdav.service import Service
 from tg2cloud.deployment import uninstall
 from tg2cloud.deployment.host import SafeLog
@@ -312,6 +319,13 @@ class LifecycleTests(unittest.TestCase):
         self.service.save = Mock()
         self.ui.confirm.return_value = True
         self.ui.ask.return_value = SECRET
+        self.real_scope_resolve = scope.resolve
+        resolver = patch.object(scope, "resolve", return_value=scope.Root(reason="需首次补充目录"))
+        self.scope_resolve = resolver.start()
+        self.addCleanup(resolver.stop)
+        address = patch.object(scope, "management_address", return_value="https://manage.example.test")
+        address.start()
+        self.addCleanup(address.stop)
 
     def test_status_does_not_download_probe_or_ask(self):
         self.service.maintain("status")
@@ -362,7 +376,7 @@ class LifecycleTests(unittest.TestCase):
         self.service.record.side_effect = lambda: copy.deepcopy(current["value"])
         self.service.save.side_effect = lambda item: current.update(value=copy.deepcopy(item))
         self.service.preflight.return_value = (self.service.preflight.return_value[0], empty_state())
-        self.ui.ask.side_effect = [route()["domain"], "", "/网盘", "phone-reader", SECRET, "/网盘/Telegram"]
+        self.ui.ask.side_effect = [route()["domain"], "", "/网盘", "phone-reader", SECRET]
         self.service.auth_write = Mock()
         self.service.verify_mounted_hash = Mock()
         return current
@@ -428,7 +442,7 @@ class LifecycleTests(unittest.TestCase):
                     self.assertFalse(any("完成，外部 WebDAV 已启用" in message for message in self.messages))
                     # No pending record was written: the same install/configure
                     # operation can proceed after the code-write error is fixed.
-                    self.ui.ask.side_effect = [route()["domain"], "", "/网盘", "phone-reader", SECRET, "/网盘/Telegram"]
+                    self.ui.ask.side_effect = [route()["domain"], "", "/网盘", "phone-reader", SECRET]
                     with (patch.object(self.service, "install_runtime") as prepare,
                           patch.object(cli, "source_identity", return_value={"source": "review-fixture"}),
                           patch.object(verification, "check_backend"),
@@ -482,14 +496,14 @@ class LifecycleTests(unittest.TestCase):
                 instance = self.service.preflight.return_value[0]
                 instance.config = env(relative)
                 user = "new-reader-" + edition
-                self.ui.ask.side_effect = [route(edition)["domain"], "", bot_root, user, SECRET, target]
+                self.ui.ask.side_effect = [route(edition)["domain"], "", bot_root, user, SECRET]
                 with patch.object(verification, "check_backend"), patch.object(config, "password_hash", return_value="synthetic-hash"):
                     self.service.configure(install_dir=None, install=True)
                 self.assertEqual(current["value"]["bot_root"], bot_root)
                 self.assertEqual(current["value"]["target_dir"], target)
                 self.assertEqual(current["value"]["username"], user)
-                self.assertIn("Bot 保存子目录：" + (relative or "使用账号根目录"), self.messages)
-                self.assertIn("本次共享目录：" + target, self.messages)
+                self.assertIn("Bot 保存目录：" + target, self.messages)
+                self.assertIn("管理页：https://manage.example.test", self.messages)
                 self.assertIn(("base path：" if edition == "openlist" else "根目录：") + target, self.messages)
                 self.assertIn("目标目录：" + target, self.messages)
                 self.assertIn("用户名：" + user, self.messages)
@@ -508,7 +522,7 @@ class LifecycleTests(unittest.TestCase):
                         saved.update(edition=edition, instance_dir=str(instance.directory), username="saved-reader")
                         current["value"] = saved
                     self.ui.ask.reset_mock()
-                    answers = iter((route(edition)["domain"], "", "/网盘", "", SECRET, "/网盘/Telegram"))
+                    answers = iter((route(edition)["domain"], "", "/网盘", "", SECRET))
                     self.ui.ask.side_effect = lambda *args, answers=answers, **kwargs: kwargs["validate"](next(answers) or kwargs.get("default", ""))
                     with patch.object(verification, "check_backend"), patch.object(config, "password_hash", return_value="synthetic-hash"):
                         self.service.configure(install_dir=None, install=not existing)
@@ -528,7 +542,7 @@ class LifecycleTests(unittest.TestCase):
         for entered in ("", "short"):
             with self.subTest(generated=not entered):
                 current = self.configure_fixture()
-                answers = iter((route()["domain"], "", "/网盘", "phone-reader", entered, "/网盘/Telegram"))
+                answers = iter((route()["domain"], "", "/网盘", "phone-reader", entered))
 
                 def answer(*args, answers=answers, **kwargs):
                     value = next(answers) or kwargs.get("default", "")
@@ -546,7 +560,8 @@ class LifecycleTests(unittest.TestCase):
                 self.assertEqual([call.args[0] for call in self.ui.show_password.call_args_list], [used, used])
                 self.assertNotIn(used, json.dumps(current["value"]))
 
-    def test_confirmed_root_is_only_suggested_for_unchanged_instance_binding(self):
+    def test_confirmed_root_is_only_reused_for_unchanged_instance_binding(self):
+        self.scope_resolve.side_effect = self.real_scope_resolve
         for changed in ("none", "directory", "username", "backend", "instance"):
             with self.subTest(changed=changed):
                 instance = SimpleNamespace(directory=PurePosixPath(self.item["instance_dir"]), config=env(), gateway_image="pinned-test-image")
@@ -562,13 +577,30 @@ class LifecycleTests(unittest.TestCase):
                 self.service.record.return_value = copy.deepcopy(self.item)
                 self.service.preflight.return_value = (instance, shared())
                 self.ui.ask.reset_mock()
-                self.ui.ask.side_effect = [route()["domain"], "", "/confirmed", "phone-reader", SECRET]
+                self.ui.ask.side_effect = ([route()["domain"], "", "phone-reader", SECRET] if changed == "none"
+                                           else [route()["domain"], "", "/confirmed", "phone-reader", SECRET])
                 self.ui.confirm.return_value = False
-                self.service.configure(install_dir=None)
-                root_prompt = self.ui.ask.call_args_list[2]
-                self.assertEqual(root_prompt.args[0], "Bot WebDAV 账号根目录（后台核对）")
-                self.assertEqual(root_prompt.kwargs["default"], self.item["bot_root"] if changed == "none" else "")
+                with patch.object(scope, "openlist_root", side_effect=ValueError("unsupported")):
+                    self.service.configure(install_dir=None)
+                prompts = [call.args[0] for call in self.ui.ask.call_args_list]
+                self.assertEqual(any("仅首次补充" in prompt for prompt in prompts), changed != "none")
+                self.assertFalse(any("完整路径以确认" in prompt for prompt in prompts))
                 self.service.save.assert_not_called()
+
+    def test_automatically_resolved_root_needs_no_path_input_and_is_confirmed_in_plan(self):
+        current = self.configure_fixture()
+        self.scope_resolve.return_value = scope.Root("/媒体/家庭", "网关账号配置")
+        self.ui.ask.side_effect = [route()["domain"], "", "phone-reader", SECRET]
+        with patch.object(verification, "check_backend"), patch.object(config, "password_hash", return_value="synthetic-hash"):
+            self.service.configure(install_dir=None, install=True)
+        self.assertEqual(self.ui.ask.call_count, 4)
+        self.assertEqual(current["value"]["target_dir"], "/媒体/家庭/Telegram")
+        self.assertIn("Bot 保存目录：/媒体/家庭/Telegram", self.messages)
+        self.assertIn("根目录：/媒体/家庭/Telegram" if not self.service.product.is_openlist
+                      else "base path：/媒体/家庭/Telegram", self.messages)
+        prompts = [call.args[0] for call in self.ui.confirm.call_args_list]
+        self.assertIn("确认继续？", prompts)
+        self.assertIn("已完成以上账号和权限设置？", prompts)
 
     def test_unsafe_bot_subdirectory_is_rejected_before_write_or_secret_display(self):
         for relative in ("../outside", "a//b", "a\\b", "a\nb"):
@@ -598,11 +630,12 @@ class LifecycleTests(unittest.TestCase):
         self.service.auth_write.assert_not_called()
         self.service.manager.apply_shared_state_locked.assert_not_called()
 
-    def test_manual_scope_mismatch_never_publishes(self):
+    def test_declining_native_scope_confirmation_never_publishes(self):
         current = self.configure_fixture()
-        self.ui.ask.side_effect = [route()["domain"], "", "/网盘", "phone-reader", SECRET, "/网盘/Other"]
-        with self.assertRaisesRegex(ValueError, "未完成"):
+        self.ui.confirm.side_effect = [True, False]
+        with patch.object(verification, "check_backend") as verify, self.assertRaisesRegex(ValueError, "未完成"):
             self.service.configure(install_dir=None, install=True)
+        verify.assert_not_called()
         self.assertEqual(current["value"]["phase"], "needs_repair")
         self.service.auth_write.assert_not_called()
 
@@ -652,6 +685,8 @@ class EntryAndReleaseTests(unittest.TestCase):
         self.assertEqual(ui.ask.call_count, 1)
         self.assertIn("0.  返回主菜单", "\n".join(messages))
         self.assertNotIn("请选择存储网关", "\n".join(messages))
+        self.assertNotIn("TG2Cloud 外部 WebDAV v", "\n".join(messages))
+        self.assertNotIn("当前网关：", "\n".join(messages))
         service.configure.assert_not_called()
         service.install_runtime.assert_not_called()
         service.maintain.assert_not_called()
@@ -691,9 +726,11 @@ class EntryAndReleaseTests(unittest.TestCase):
 
     def test_real_terminal_enter_uses_default_once_and_label_columns_are_aligned(self):
         ui = cli.WebDAVTerminal.__new__(cli.WebDAVTerminal)
-        ui.tty, ui.output = io.StringIO("\n"), io.StringIO()
+        ui.tty, ui.output = Mock(), io.StringIO()
+        ui.read_line = Mock(return_value="\n")
+        modes = SimpleNamespace(ECHO=8, TCSANOW=0, tcgetattr=Mock(return_value=[0, 0, 0, 8]), tcsetattr=Mock())
         messages = []
-        with patch.dict(sys.modules, {"termios": Mock()}):
+        with patch.dict(sys.modules, {"termios": modes}):
             result = cli.choose(ui, messages.append, "操作", tuple(zip(cli.ACTIONS, cli.ACTION_LABELS)), default="1")
         self.assertEqual(result, "install")
         self.assertEqual(ui.output.getvalue(), "输入序号（回车默认为 1）: ")

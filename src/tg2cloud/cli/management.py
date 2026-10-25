@@ -423,7 +423,6 @@ class Management:
                     manage(self, instance)
                 elif action == "15":
                     from tg2cloud.addons.external_webdav.entry import open_menu
-                    self.heading("外部 WebDAV", instance)
                     open_menu(self.recheck(instance), self.ui, self.log)
                 elif action in {"8", "9"}:
                     from tg2cloud.deployment.feature_settings import (
@@ -460,7 +459,7 @@ def main(argv=None, *, mode_hint=None) -> int:
     args = parser.parse_args(argv)
     log, ui = InstallerLog(SafeLog()), None
     try:
-        preflight.validate_host(log=log)
+        preflight.validate_host()
         if mode_hint not in {None, "public", "lan"}:
             raise ValueError("不支持的安装模式")
         source = Path(__file__).resolve().parents[3]

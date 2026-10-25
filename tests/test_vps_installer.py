@@ -166,16 +166,42 @@ class TerminalTests(unittest.TestCase):
         self.assertEqual(ui.reveal.call_args.args, ("WebDAV 密码", VALUES["webdav_password"]))
 
     def test_prompt_is_flushed_before_read_and_does_not_use_stdin(self):
-        _, streams, output, _ = self.fixture("answer\n")
+        _, _, output, _ = self.fixture("answer\n")
         ui = tgdep_terminal.Terminal()
-        reader = streams[0].readline
+        reader = ui.read_line
 
         def read_after_prompt():
             self.assertIn(b"PROMPT: ", output.getvalue())
             return reader()
 
-        with patch.object(streams[0], "readline", side_effect=read_after_prompt), patch("sys.stdin", Mock(readline=Mock(side_effect=AssertionError("must not read stdin")))):
+        with patch.object(ui, "read_line", side_effect=read_after_prompt), patch("sys.stdin", Mock(readline=Mock(side_effect=AssertionError("must not read stdin")))):
             self.assertEqual(ui.ask("PROMPT"), "answer")
+        ui.close()
+
+    def test_parent_menu_leaves_pasted_child_answers_and_empty_email_in_tty(self):
+        _, _, _, _ = self.fixture("15\ndav.example.test\n\n")
+        parent = tgdep_terminal.Terminal()
+        child = tgdep_terminal.Terminal()
+        self.assertEqual(parent.ask("MENU"), "15")
+        self.assertEqual(child.ask("DOMAIN"), "dav.example.test")
+        self.assertEqual(child.ask("EMAIL", validate=lambda value: value), "")
+        child.close()
+        parent.close()
+
+    def test_normal_input_recovers_echo_off_and_restores_callers_flags(self):
+        _, _, _, termios = self.fixture("visible\n")
+        termios.tcgetattr.return_value = [0, 0, 0, 0]
+        ui = tgdep_terminal.Terminal()
+        self.assertEqual(ui.ask("DOMAIN"), "visible")
+        self.assertEqual(termios.tcsetattr.call_args_list[0].args[2][3] & termios.ECHO, termios.ECHO)
+        self.assertEqual(termios.tcsetattr.call_args_list[-1].args[2][3], 0)
+        ui.close()
+
+    def test_complete_bracketed_paste_envelope_and_unicode_are_read_as_one_field(self):
+        self.fixture("\x1b[200~dav.example.test\x1b[201~\n资料/电影\n")
+        ui = tgdep_terminal.Terminal()
+        self.assertEqual(ui.ask("DOMAIN"), "dav.example.test")
+        self.assertEqual(ui.ask("PATH"), "资料/电影")
         ui.close()
 
     def test_secret_input_never_written_and_echo_restored(self):
@@ -197,9 +223,9 @@ class TerminalTests(unittest.TestCase):
         ui.close()
 
     def test_interrupted_secret_input_restores_echo(self):
-        _, streams, output, termios = self.fixture()
+        _, _, output, termios = self.fixture()
         ui = tgdep_terminal.Terminal()
-        with patch.object(streams[0], "readline", side_effect=KeyboardInterrupt), self.assertRaises(KeyboardInterrupt):
+        with patch.object(ui, "read_line", side_effect=KeyboardInterrupt), self.assertRaises(KeyboardInterrupt):
             ui.ask("PASSWORD", secret=True)
         self.assertEqual(termios.tcsetattr.call_args_list[-1].args[2][3] & termios.ECHO, termios.ECHO)
         self.assertIn(b"PASSWORD: \n", output.getvalue().replace(b"\r\n", b"\n"))
@@ -265,7 +291,7 @@ class TerminalTests(unittest.TestCase):
         import select
 
         code = r'''
-import fcntl, os, termios
+import fcntl, os, termios, subprocess, sys
 os.setsid()
 fcntl.ioctl(0, termios.TIOCSCTTY, 0)
 from tg2cloud.cli.terminal import Terminal
@@ -273,6 +299,19 @@ ui = Terminal()
 try:
     assert not ui.confirm("CONFIRM_DEFAULT")
     assert ui.confirm("CONFIRM_YES")
+    assert ui.ask("HANDOFF") == "15"
+    child = r"""
+from tg2cloud.addons.external_webdav.cli import WebDAVTerminal
+from tg2cloud.deployment.proxy.state import validate_domain, validate_email
+ui = WebDAVTerminal()
+try:
+    assert ui.ask("CHILD_DOMAIN", validate=validate_domain) == "dav.example.test"
+    assert ui.ask("CHILD_EMAIL", validate=validate_email) == ""
+    print("CHILD_OK", flush=True)
+finally:
+    ui.close()
+"""
+    subprocess.run([sys.executable, "-B", "-c", child], check=True)
     before = termios.tcgetattr(0)
     assert ui.ask("PASSWORD", secret=True) == "FAKE_PTY_SECRET"
     assert termios.tcgetattr(0) == before
@@ -307,6 +346,9 @@ finally:
             os.write(master, b"\n")
             read_until(b"CONFIRM_YES [y/N] [n]: ")
             os.write(master, b"y\n")
+            read_until(b"HANDOFF: ")
+            os.write(master, b"15\ndav.example.test\n\n")
+            read_until(b"CHILD_OK")
             read_until(b"PASSWORD: ")
             os.write(master, b"FAKE_PTY_SECRET\n")
             read_until(b"INTERRUPT: ")

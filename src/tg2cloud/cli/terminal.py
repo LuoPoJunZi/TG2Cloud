@@ -33,32 +33,59 @@ class Terminal:
     def close(self) -> None:
         self._streams.close()
 
+    def read_line(self) -> str:
+        # TextIOWrapper.readline() can prefetch later answers. A parent menu
+        # must leave those bytes for the independent child manager's /dev/tty.
+        raw = self.tty.buffer.raw
+        line = bytearray()
+        while len(line) <= 16384:
+            part = raw.read(1)
+            if not part:
+                break
+            line.extend(part)
+            if part == b"\n":
+                break
+        if len(line) > 16384:
+            raise ValueError("输入过长，请分项填写。")
+        return line.decode("utf-8", errors="replace")
+
     def ask(self, prompt: str, *, default: str = "", secret: bool = False, validate=configuration.plain) -> str:
         import termios
 
         while True:
-            previous = None
+            previous = termios.tcgetattr(self.tty.fileno())
+            active = previous.copy()
+            # Recover normal-field echo even if the caller inherited echo-off.
+            # Keep password newlines private too; restore all flags on failure.
+            active[0] &= ~(getattr(termios, "IGNCR", 0) | getattr(termios, "INLCR", 0))
+            active[0] |= getattr(termios, "ICRNL", 0)
+            active[3] |= getattr(termios, "ICANON", 0)
+            active[3] = (active[3] & ~(termios.ECHO | getattr(termios, "ECHONL", 0))
+                         if secret else active[3] | termios.ECHO)
             try:
-                if secret:
-                    previous = termios.tcgetattr(self.tty.fileno())
-                    hidden = previous.copy()
-                    hidden[3] &= ~termios.ECHO
-                    termios.tcsetattr(self.tty.fileno(), termios.TCSANOW, hidden)
+                termios.tcsetattr(self.tty.fileno(), termios.TCSANOW, active)
                 suffix = (f"（回车默认 {default}）" if self.friendly is True else f" [{default}]") if default and not secret and "回车默认" not in prompt else ""
                 self.output.write(prompt + suffix + ": ")
                 self.output.flush()
-                line = self.tty.readline()
+                line = self.read_line()
             finally:
-                if previous is not None:
-                    termios.tcsetattr(self.tty.fileno(), termios.TCSANOW, previous)
+                termios.tcsetattr(self.tty.fileno(), termios.TCSANOW, previous)
+                if secret:
                     self.output.write("\n")
+                    self.output.flush()
             if not line:
                 raise EOFError("输入已中断")
-            value = line.rstrip("\r\n") or default
+            value = line.rstrip("\r\n")
+            # Some SSH/web terminals retain bracketed-paste delimiters. Only
+            # strip one complete envelope, never arbitrary embedded controls.
+            if value.startswith("\x1b[200~") and value.endswith("\x1b[201~"):
+                value = value[6:-6]
+            value = value or default
             try:
                 return validate(value)
             except (ValueError, ZoneInfoNotFoundError):
                 self.output.write("输入格式不正确，请重新填写（不显示输入值）。\n")
+                self.output.flush()
 
     def confirm(self, prompt: str) -> bool:
         if self.friendly is True:

@@ -158,13 +158,15 @@ class ManagementPagesTests(unittest.TestCase):
         custom = replace(self.instance, directory=Path("/srv/family-clouddrive2"))
         self.manager.recheck.side_effect = lambda _: custom
         self.ui.ask.side_effect = ["15", "0"]
-        with patch("tg2cloud.addons.external_webdav.entry.open_menu") as webdav:
+        with patch("tg2cloud.addons.external_webdav.entry.open_menu",
+                   side_effect=lambda *_: self.log("\n── 外部 WebDAV 管理 ──\n")) as webdav:
             self.assertEqual(self.manager.run(), 0)
         webdav.assert_called_once_with(custom, self.ui, self.log)
         self.manager.recheck.assert_called_once_with(self.instance)
         self.assertEqual(self.ui.ask.call_count, 2)
         self.assertEqual(self.text().count("── TG2Cloud 本地管理 ──"), 2)
-        self.assertIn("── 外部 WebDAV ──", self.text())
+        self.assertNotIn("── 外部 WebDAV ──", self.text())
+        self.assertEqual(self.text().count("── 外部 WebDAV 管理 ──"), 1)
         self.assertNotIn("0. 返回主菜单", self.text())
 
     def test_external_webdav_changed_instance_does_not_start_child(self):

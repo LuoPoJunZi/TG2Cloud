@@ -1,16 +1,13 @@
-## TG2Cloud v1.4.7 · 统一管理与可靠性维护
+## TG2Cloud v1.4.8 · 外部 WebDAV 交互与输入维护
 
-继续维护 Linux Python + Bash、CloudDrive2 / OpenList 和原生 AMD64 / ARM64，不生成 Windows EXE。
+## 本次改动
 
-## 本次更新
-
-- `tg2cloud` 主菜单新增 **15. 外部 WebDAV**，按当前 Edition 和已核验目录进入安装、检查、配置、启停、用户、升级及卸载子菜单。主安装不默认启用，不改变 Bot 上传配置。
-- 根目录仅保留 `install.sh` 与 `install-lan.sh`，移除独立 `uninstall.sh`、`install-webdav.sh`。卸载仍使用菜单 **14. 卸载当前实例** 或 `tg2cloud uninstall`，保留 all、只读预检和各清理模式。
-- 外部 WebDAV 以 API 2 明示新发布布局；旧 API 1 继续按原清单验证。旧工具在统一菜单确认后，仅迁移维护代码，保留账号、路由、文件及旧代码；拒绝可继续旧版离线访问。
-- 修复运行代码准备晚于外部入口启用的问题：确认后先准备维护代码，再修改认证和路由；代码准备失败保留原状态，成功检查全部完成后才报告安装完成。
-- 私密代码候选校验后发布，普通异常／中断清理本次候选，历史未知残留保留且不阻止新尝试；命令写入失败保留旧命令，重试复用已校验代码。
-- 共享代理启动及健康检查复核 Certbot 实际挂载。仅对已核验归属、恰缺续期状态挂载且本次 Compose 摘要一致的情况单次重建 Certbot，再完整复验；其他异常继续停止。
-- 补齐 v1.4.6 原正式提交升级基线，同步载荷、发布工具、CI 与文档；保留历史 Tag／Release 校验，不放宽权限或安全检查。
+- 本地管理和外部 WebDAV 不再重复展示环境检测表、启动横幅和多层相同标题；全部平台、实例和 Docker 归属检查保留，异常继续停止并说明原因。
+- 控制终端逐字节读取当前行，避免父菜单缓存子进程后续答案；普通字段恢复回显，密码输入隐藏，并在异常／中断后恢复原终端状态。支持完整的括号粘贴封装。
+- 域名、邮箱和目录正常显示输入；邮箱回车可跳过，普通字段提示固定具体原因，密码及未知校验异常不复述秘密。
+- 已核验实例优先读取 Bot 账号目录：CloudDrive2 仅接受可精确匹配的已识别用户配置，OpenList 使用本机当前用户接口；无法读取时自动复用绑定未变的历史确认值，否则仅首次补录。未知／加密结构不猜测、不解密。
+- 安装计划、后台建号及手机配置使用同一实际目录；显示当前 Edition 的管理页地址，取消第二次手打路径，保留计划确认、独立账号及原生只读权限确认。
+- 新模块纳入运行与引导清单，补入 v1.4.7 固定升级基线，并扩充终端、目录、权限、错误脱敏及最低 Python 回归。
 
 ## 安装与升级
 
@@ -18,28 +15,14 @@
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
 ```
 
-内网实例使用 `install-lan.sh`。已有主机按原模式升级并保留配置；重新打开 `tg2cloud` 后使用新菜单。外部 WebDAV 维护代码与 Bot 独立：旧布局迁移需确认，不自动启用账号或修改路由。
+内网使用 `install-lan.sh`。已有实例按原公网／内网模式升级并保留配置，随后重新打开 `tg2cloud`。外部 WebDAV 位于 **15. 外部 WebDAV**，其离线工具需单独选择 **8. 升级附加功能** 才能加载新向导；主项目升级不自动替换这套工具。首次打开仅经确认下载正式稳定管理组件，不默认启用访问。
 
-卸载先预览清理范围：
+## 验证与兼容
 
-```bash
-tg2cloud uninstall --edition all --check
-```
+版本同步后本地完整回归 1,216 项：1,183 通过、33 项因平台或工具条件跳过；最低 Python 3.10 标准库环境 121 项：119 通过、2 跳过。Ruff、语法、Bandit、ShellCheck、清单、仓库、网站 37 项及链接检查通过。正式发布仍须本版远端 A／B、同标签原生双架构和实际资产核验，不将本地跳过写成已通过。
 
-实际卸载仍要求确认；完整清理会删除所选实例数据和可识别备份，需保留时使用 `--keep-data`。两个历史 Shell 文件只保留在原 Tag／提交，不再从 main 分发。
+不新增运行依赖、必填配置或数据库迁移；不更改 Bot 账号、rclone、数据库、Session、网关监听和转存流程。目录读取不等于原生权限自动审计，仍须创建独立只读账号。**升级前备份。** 更早业务 schema 的原有迁移和匹配代码／数据库回退规则继续适用。
 
-## 验证与兼容边界
+本版未连接真实 VPS、Telegram 或用户网盘；真实 SSH／Web 终端、原生两网关账号目录、手机播放／Range、公网 ACME、长期续期及完整恢复仍需独立验收。源码校验和不是数字签名，不使用旧版实机结论代替本版。
 
-发布准备前本地完整回归 1,198 项：1,166 通过、32 项按环境条件跳过；Python 3.10 最小宿主环境 146 项，143 通过、3 跳过，LAN help 和发布元数据不需要 Bot 依赖。Bash 语法、ShellCheck、Ruff、编译、定向 Bandit、历史布局与网站 37 项检查通过。版本同步后已通过辅助 A、入口 B 各五项 CI 与[同标签原生 AMD64／ARM64 发布验证](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)，实际下载源码包、SHA256 清单及 GitHub 资产摘要已核验一致。
-
-**升级前备份。** 不新增运行依赖、必填环境变量或数据库迁移；保留两 Edition 配置、数据库、Session、下载及网关数据。源码 API 2 不是数据库迁移；更旧业务 schema 的既有迁移及匹配代码／数据库回退规则继续适用。
-
-本版未连接真实 VPS 或用户网盘；原生网关账号、手机播放／Range、公网 ACME、长期续期及完整灾难恢复仍需独立实机验收，不使用旧版本结果替代。SHA256 是完整性校验，不是数字签名。
-
-详情见[外部 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/external-webdav.md)、[卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)、[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)与[更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
-
-历史验收按原版本范围保留：[v1.3.0 人工迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)、[v1.4.3 用户日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)、[v1.4.4 双架构升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)、[v1.4.5 ARM64 升级与 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V145-ACCEPTANCE.md)。这些结果不替代 v1.4.7 实机验收。
-
-## 发布核验
-
-正式 Tag 固定入口 B `322ae065d6cb6a7330f78b8cc0ee60c4c3c53cdb`，两个入口固定已验证辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`。源码包 SHA256：`3032914d0060137eaf543c8c11a3f884abaef2d0d037dffb765aa5771c4c1106`。后续文档提交不移动 Tag、不替换发布资产；真实 VPS 与手机验收范围保持上述限制。
+详情见[外部 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/external-webdav.md)、[维护记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)和[更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。历史验收保留原范围：[v1.3.0](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)、[v1.4.3](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)、[v1.4.4](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)、[v1.4.5](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V145-ACCEPTANCE.md)。

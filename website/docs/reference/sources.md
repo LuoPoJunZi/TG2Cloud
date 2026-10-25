@@ -1,6 +1,8 @@
 # 文档来源与维护
 
-当前源码与正式稳定版本为 [**v1.4.7**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7)；资料核对日期 **2026 年 10 月 25 日**。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验通过；本版未执行真实 VPS、手机、公网 ACME 或灾难恢复验收。
+当前源码为 **v1.4.8**，待发布；资料核对日期 **2026 年 10 月 25 日**。当前正式稳定版为 [v1.4.7](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7)。本版须等待 A／B、同标签原生双架构及实际资产核验。
+
+历史资料（2026-10-25）：当时正式稳定版本为 [**v1.4.7**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7)；资料核对日期 **2026 年 10 月 25 日**。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验通过；本版未执行真实 VPS、手机、公网 ACME 或灾难恢复验收。
 
 历史资料（2026-10-24）：当时源码与正式版本为 [**v1.4.6**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6)；资料核对日期 **2026 年 10 月 24 日**。A／B、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089991036)及实际源码资产核验通过，下方旧版记录按历史范围保留；本版维护细节见[源码说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。
 
@@ -39,11 +41,11 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码与正式版本均为 1.4.7。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
+本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，本轮源码为 1.4.8，正式稳定版仍为 1.4.7。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.7；依赖和历史版本不机械替换。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.8；依赖和历史版本不机械替换。
 
 导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 

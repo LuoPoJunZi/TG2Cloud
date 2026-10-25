@@ -23,16 +23,23 @@ class WebDAVTerminal(Terminal):
     """Add-on-only password hints/display; leave main installer prompts intact."""
 
     def ask(self, prompt: str, *, default: str = "", secret: bool = False, validate=plain) -> str:
-        if not secret:
-            return super().ask(prompt, default=default, validate=validate)
-        from tg2cloud.addons.external_webdav.config import INPUT_ERROR
+        from tg2cloud.addons.external_webdav.config import (
+            INPUT_ERROR,
+            PUBLIC_INPUT_ERRORS,
+        )
         while True:
-            value = super().ask(prompt, default=default, secret=True, validate=lambda text: text)
+            value = super().ask(prompt, default=default, secret=secret, validate=lambda text: text)
             try:
                 return validate(value)
-            except ValueError:
-                # Never include the rejected value or raw validator exception.
-                self.output.write(INPUT_ERROR + "\n")
+            except ValueError as exc:
+                # Reasons are fixed, reviewed strings; arbitrary validator
+                # messages and rejected values never reach the terminal/log.
+                reason = str(exc)
+                if not secret and reason == "请填写要用于管理页的域名。":
+                    reason = "请填写外部 WebDAV 域名。"
+                hint = INPUT_ERROR if secret else (reason if reason in PUBLIC_INPUT_ERRORS
+                        else "输入格式不正确，请按提示重新填写。")
+                self.output.write(hint + "\n")
                 self.output.flush()
 
     def show_password(self, value: str) -> None:
@@ -193,8 +200,9 @@ def main(argv: list[str] | None = None) -> int:
         if args.edition is None or args.action is None or args.action not in {"status", "print-config"}:
             ui = WebDAVTerminal()
             from tg2cloud.version import VERSION
-            log("TG2Cloud 外部 WebDAV v" + VERSION)
-            log("独立只读文件访问，不改变 Bot 的上传配置。")
+            if os.environ.get("TG2CLOUD_MANAGER_MENU") != "1":
+                log("TG2Cloud 外部 WebDAV v" + VERSION)
+                log("独立只读文件访问，不改变 Bot 的上传配置。")
         if args.edition is None:
             # Never silently choose when two Editions exist. Selection is cheap
             # and explicit even before probing a custom instance directory.
@@ -204,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
             if args.edition not in PRODUCTS:
                 raise ValueError("必须明确选择 Edition。")
         service = Service(PRODUCTS[args.edition], session, log, ui)
-        if ui is not None:
+        if ui is not None and os.environ.get("TG2CLOUD_MANAGER_MENU") != "1":
             log("当前网关：" + PRODUCTS[args.edition].display_name)
         if args.action is None:
             interactive(service, args)

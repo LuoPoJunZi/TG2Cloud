@@ -9,7 +9,7 @@ from tg2cloud.deployment import architecture, instances, preflight
 
 
 def host(session, *, log=None) -> None:
-    preflight.validate_host(log=log)
+    preflight.validate_host()
     architecture.check_environment()
     for tool in ("docker", "bash", "openssl", "curl", "ss", "ip", "getent", "flock", "timeout"):
         if not shutil.which(tool):

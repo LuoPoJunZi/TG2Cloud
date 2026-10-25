@@ -1,4 +1,12 @@
-# v1.4.7 维护与发布核验（2026-10-25）
+# 维护与发布记录
+
+## v1.4.8 发布准备（2026-10-25）
+
+本轮简化外部 WebDAV 安装与普通输入，增加真实目录读取／有效历史值复用、管理页地址及绑定变化保护。当前正式稳定版仍为 v1.4.7；须完成新 A／B、同标签原生双架构与实际资产核验。账号原生只读仍须人工确认，未知／加密配置首次补录，不改 Bot 配置、Session、数据库或网关。下方历史记录按原版本理解。
+
+版本同步后完整本地回归 1216 项：1183 通过、33 项平台／工具条件跳过；Python 3.10 标准库回归 121 项：119 通过、2 跳过。Ruff、语法、Bandit、ShellCheck、网站 37 项和4096以上本地链接检查通过。已静态核实 v1.4.7 原 Tag 提交并补入两版载荷摘要；未访问真实 VPS 或用户网盘。
+
+## v1.4.7 维护与发布核验（2026-10-25）
 
 本轮源码为 v1.4.7：统一外部 WebDAV、退役两个独立 Shell 入口，完善 Certbot 挂载复验和维护代码失败恢复。v1.4.7 已完成辅助 A、入口 B、同标签双架构及实际资产核验，正式发布完成。下方 v1.4.6 记录按当时范围保留。
 
@@ -26,11 +34,11 @@ python3 -B scripts/run_source.py webdav
 
 ## 发布准备工具
 
-完整源码 checkout 中执行；`--version` 是计划目标，必须高于当前版本。以下 1.4.8 只是演示，不表示已确定下个版本号：
+完整源码 checkout 中执行；`--version` 是计划目标，必须高于当前版本。以下 1.4.9 只是演示，不表示已确定下个版本号：
 
 ```bash
-python3 -B .github/scripts/prepare_release.py --version 1.4.8
-python3 -B .github/scripts/prepare_release.py --version 1.4.8 --directory build/review-release-148
+python3 -B .github/scripts/prepare_release.py --version 1.4.9
+python3 -B .github/scripts/prepare_release.py --version 1.4.9 --directory build/review-release-149
 ```
 
 第一条只输出计划；第二条只向 `build/` 下全新的目录写入 `plan.json` 和 `version.patch`。不修改工作树版本、依赖、CHANGELOG、Release Notes 或 pin，不执行 Git、网络、部署或发布操作。拒绝已有候选目录、链接路径、同版／降版和异常元数据。

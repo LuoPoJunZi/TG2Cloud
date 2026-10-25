@@ -5,7 +5,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
-from tg2cloud.addons.external_webdav import cli
+from tg2cloud.addons.external_webdav import cli, discovery
 from tg2cloud.deployment.profiles import PRODUCTS
 
 
@@ -16,6 +16,18 @@ class PageTests(unittest.TestCase):
         service.record.return_value = {"phase": "enabled"}
         service.ui.ask.side_effect = lambda *a, **kw: kw["validate"](next(values))
         return service, messages
+
+    def test_host_validation_is_silent_but_all_platform_and_daemon_checks_run(self):
+        with (patch.object(discovery.preflight, "validate_host") as host,
+              patch.object(discovery.architecture, "check_environment") as environment,
+              patch.object(discovery.architecture, "check_docker") as docker,
+              patch.object(discovery.shutil, "which", return_value="fixture-tool")):
+            session, log = Mock(), Mock()
+            discovery.host(session, log=log)
+        host.assert_called_once_with()
+        environment.assert_called_once_with()
+        docker.assert_called_once_with(session)
+        log.assert_not_called()
 
     def args(self):
         return SimpleNamespace(action=None, edition="openlist", install_dir=None, sample_file="")

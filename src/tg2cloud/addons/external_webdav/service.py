@@ -13,7 +13,7 @@ from collections.abc import Callable
 from contextlib import contextmanager
 from pathlib import Path
 
-from tg2cloud.addons.external_webdav import config, discovery, verification
+from tg2cloud.addons.external_webdav import config, discovery, scope, verification
 from tg2cloud.cli.terminal import confirm_nat_public_ipv4
 from tg2cloud.deployment import uninstall
 from tg2cloud.deployment.host import edition_lock
@@ -237,29 +237,28 @@ class Service:
         config.canonical(launcher)
         if launcher.exists() and not launcher.read_text().startswith("#!/bin/sh\n# TG2Cloud external_webdav managed\n"):
             raise ValueError("同名维护命令不是本功能拥有，停止，不覆盖。")
-        self.log("──────── " + ("安装" if install else "配置") + "外部 WebDAV ────────")
-        self.log("正在检查实例、存储网关和共享代理……")
-        instance, _ = self.preflight(install_dir or (previous or {}).get("instance_dir"))
-        self.log("所属实例：" + str(instance.directory))
-        self.log("基础检查通过。")
+        self.log("正在检查安装环境……")
+        instance, state = self.preflight(install_dir or (previous or {}).get("instance_dir"))
+        self.log("检查通过。")
+        management_url = scope.management_address(instance, self.product, state)
         from tg2cloud.deployment.proxy.state import validate_domain, validate_email
         domain = self.ui.ask("外部 HTTPS 域名（不能复用管理域名）", default=(previous or {}).get("domain", ""), validate=validate_domain)
         email = self.ui.ask("Let's Encrypt 邮箱（可留空）", validate=validate_email)
         relative = config.decode(instance.config, "TARGET_PATH").strip("/")
         if relative:
             config.logical_path("/" + relative)
-        self.log("Bot 保存子目录：" + (relative or "使用账号根目录"))
-        # A TARGET_PATH is relative to the native account. Only a still-matching
-        # instance binding may suggest its previously user-confirmed root.
-        default_root = ""
-        if (previous and previous["instance_dir"] == str(instance.directory)
-                and previous["binding"] == config.binding(instance.config)
-                and previous["backend_image"] == instance.gateway_image):
-            default_root = previous["bot_root"]
-        bot_root = self.ui.ask("Bot WebDAV 账号根目录（后台核对）", default=default_root,
-                               validate=lambda v: config.logical_path(v, allow_root=True))
+        self.log("正在读取 Bot 保存目录……")
+        resolved = scope.resolve(instance, self.product, previous)
+        if resolved.path:
+            bot_root = resolved.path
+            self.log("目录来源：" + resolved.source)
+        else:
+            self.log(resolved.reason)
+            self.log("管理页：" + management_url)
+            bot_root = self.ui.ask("Bot 账号根目录（仅首次补充）",
+                                   validate=lambda v: config.logical_path(v, allow_root=True))
         target = config.logical_path(bot_root.rstrip("/") + "/" + relative if relative else bot_root)
-        self.log("本次共享目录：" + target)
+        self.log("Bot 保存目录：" + target)
         user = self.ui.ask("新的外部专用用户名（回车默认 tg2-webdav）" if not previous else "新的外部专用用户名",
                            default=(previous or {}).get("username", "tg2-webdav"),
                            validate=lambda v: config.username(v, config.decode(instance.config, "USERNAME")))
@@ -302,6 +301,7 @@ class Service:
         try:
             self.log("──────── 后台创建账号 ────────")
             self.log("请登录 " + self.product.display_name + " 后台，创建独立" + ("普通用户：" if self.product.is_openlist else " WebDAV 用户："))
+            self.log("管理页：" + management_url)
             self.log("用户名：" + user)
             self.ui.show_password(secret)
             self.log(("base path：" if self.product.is_openlist else "根目录：") + target)
@@ -310,8 +310,7 @@ class Service:
             self.log("请勿使用管理员账号或 Bot 正在使用的账号。")
             if not self.product.is_openlist:
                 self.log("若当前版本或会员权限不支持独立只读用户，请取消安装。")
-            confirmed = self.ui.ask("完成后输入外部账号根目录的完整路径以确认（不能为 /）", validate=config.logical_path)
-            if confirmed != target or not self.ui.confirm("已在后台确认这是独立账号、根目录隔离且原生只读，无上传／删除／改名／管理权限？"):
+            if not self.ui.confirm("已完成以上账号和权限设置？"):
                 raise ValueError("未完成人工目录／权限确认；入口保持关闭。")
             route = dict(self.route(item, True), username=user)
             self.log("──────── 检查与启用 ────────")
