@@ -1,6 +1,6 @@
 # 安装、下载与校验
 
-当前源码为 **TG2Cloud v1.4.7**，待发布；当前可下载的正式稳定版仍为 v1.4.6。以下入口使用已验证的稳定辅助代码和正式业务源码，不安装未发布业务代码。历史 Windows EXE 停留在 v1.2.1，不用于升级当前实例。
+当前正式稳定版为 **TG2Cloud v1.4.7**。以下入口使用已验证的固定辅助代码和正式业务源码，不安装未发布业务代码。历史 Windows EXE 停留在 v1.2.1，不用于升级当前实例。
 
 ## 公网 VPS 安装与升级
 
@@ -40,7 +40,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 可选的外部 WebDAV
 
-主安装不询问或默认启用此功能。待发布版本从 `tg2cloud` → 15. 外部 WebDAV 按需安装与维护，无需额外安装命令；当前正式 v1.4.6 尚无该菜单：
+主安装不询问或默认启用此功能。v1.4.7 从 `tg2cloud` → 15. 外部 WebDAV 按需安装与维护，无需额外安装命令；历史 v1.4.6 尚无该菜单：
 
 ```bash
 tg2cloud
@@ -50,7 +50,7 @@ tg2cloud
 
 ## 日常管理、凭据与卸载
 
-安装后运行 `tg2cloud`。查看状态、日志、WebDAV 凭据和卸载均在[本地管理菜单](/operations/maintenance/)；待发布版本也包含外部 WebDAV 子菜单，历史 `tg2cloud-webdav` 仍兼容。
+安装后运行 `tg2cloud`。查看状态、日志、WebDAV 凭据和卸载均在[本地管理菜单](/operations/maintenance/)；v1.4.7 也包含外部 WebDAV 子菜单，历史 `tg2cloud-webdav` 仍兼容。
 
 仅查看已有凭据，也可在自己的私有交互终端运行：
 
@@ -75,8 +75,8 @@ tg2cloud uninstall --edition all --check
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.4.6-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.6/TG2Cloud-v1.4.6-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.6/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.4.7-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.7/TG2Cloud-v1.4.7-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.7/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -84,15 +84,15 @@ tg2cloud uninstall --edition all --check
 sha256sum -c SHA256SUMS.txt
 ```
 
-本版源码包 SHA256 为 `d06803e0c00b73086f2d19520230e660958784da373430002b42b618f38f73b4`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
+本版源码包 SHA256 为 `3032914d0060137eaf543c8c11a3f884abaef2d0d037dffb765aa5771c4c1106`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
 
-[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 ### 在线入口与源码资产的区别
 
-三个主安装 / 内网 / 卸载轻量入口固定向导 commit；业务部署资源解析正式稳定 Release 的不可变 commit。它们与手动下载源码资产、执行 SHA-256 清单检查不是同一条路径。
+公网 / 内网两个轻量入口固定向导 commit，卸载通过 `tg2cloud` 菜单或子命令进入；业务部署资源解析正式稳定 Release 的不可变 commit。它们与手动下载源码资产、执行 SHA-256 清单检查不是同一条路径。
 
-外部 WebDAV 的独立引导会验证正式源码资产及同版校验清单。任一路径下载失败都不回退未校验的 main / RC 业务代码；不会因为更新网站就自动更新已运行实例。
+外部 WebDAV 从 `tg2cloud` → 15. 外部 WebDAV 按需进入，并验证正式源码资产及同版校验清单。任一路径下载失败都不回退未校验的 main / RC 业务代码；不会因为更新网站就自动更新已运行实例。
 
 ## 历史 Windows 部署器
 

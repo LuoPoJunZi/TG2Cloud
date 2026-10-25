@@ -1,8 +1,8 @@
 # 开发与贡献
 
-v1.4.7 发布准备：两个在线安装入口已固定到已公开且五项 CI 通过的辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`。主菜单 14／15 保留卸载和独立外部 WebDAV 管理；仍须等待入口 B、同标签原生双架构和正式资产核验后宣布发布。业务只使用正式稳定 Release，下方历史记录不改写。
+v1.4.7 已正式发布：两个在线安装入口固定辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`，入口 B／Tag 为 `322ae065d6cb6a7330f78b8cc0ee60c4c3c53cdb`。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验全部通过。业务只使用正式稳定 Release；主菜单 14／15 保留卸载与外部 WebDAV 管理，下方历史记录按原版本理解。
 
-v1.4.6 已正式发布：三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与使用范围见[本版说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
+历史 v1.4.6 已正式发布：当时的三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与使用范围见[本版说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
 
 v1.4.5 当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`；[双架构完整检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639640)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40064639644)、仓库与两套文档检查均通过。入口 B／Tag `cd9b13722752b1f1663c5ba4cbb91b7c21c7f882` 的五项 CI 和[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码资产与 SHA256 已核验。下面历史结果不作为本版实机验收。
 
@@ -33,17 +33,17 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.4.7
 git rev-parse HEAD
 ```
 
-v1.4.7 源码待发布，当前开发使用 main 并记录提交号；正式源码仍使用已发布的不可变 Tag，不把分支或后续文档改动当作已发布资产。正式下载见[下载页](/download/)。
+v1.4.7 已正式发布，复现本版使用不可变 Tag；开发使用 main 并记录提交号，不把分支或后续文档改动当作已发布资产。正式下载见[下载页](/download/)。
 
 ## 关键目录与入口
 
-下表为 v1.4.2 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
+下表为 v1.4.7 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
-v1.3.1 沿用该结构，独立附加功能在 `src/tg2cloud/addons/external_webdav/`，专用入口为 `install-webdav.sh`。源码包已正式发布；下载、构建或发布成功都不等于实机安装通过。
+外部 WebDAV 位于 `src/tg2cloud/addons/external_webdav/`，从 `tg2cloud` → 15 按需管理。历史 v1.3.1 的 `install-webdav.sh` 已于 v1.4.7 从 main 退役，仅保留在原 Tag；下载、构建或发布成功都不等于实机安装通过。
 
 | 路径 | 用途 |
 | --- | --- |
@@ -126,6 +126,6 @@ git checkout v1.2.1
 新增本地 `prepare_release.py` 只生成版本同步计划及候选补丁，不提升当前产品版本、不更改固定 pin、不推送或发布。日常与当前 Tag CI 共用 `linux_validation.py` 的 Shell／完整回归／质量审计步骤，历史布局校验仍保留。四组命名回归集中至 `tests/naming/`，迁移前后核对测试集合；代理纯渲染独立并保留旧接口。实际命令与边界见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。本版已发布；不能借用 v1.4.5 的验收作为新代码的实机证明。
 
 
-## 待发布的统一入口布局
+## v1.4.7 统一入口布局
 
 根目录仅保留 `install.sh` 与 `install-lan.sh`。卸载核心仍在 `deployment/uninstall.py`，外部 WebDAV 模块仍在 `addons/external_webdav/`；通过 `tg2cloud` 的 14／15 项管理。两个独立 Shell 文件仅保留在历史 Tag，不从新源码包分发。API 2 标记明确新布局，历史 API 1 与旧源码仍按原清单核验，不通过缺失文件猜测布局。旧附加工具从新版统一菜单确认后迁移维护代码，账号、路由和云端文件不变；拒绝或失败保留旧代码。发布仍须辅助提交 A、入口 B 和正式稳定源码验证，不执行 moving main 业务代码。

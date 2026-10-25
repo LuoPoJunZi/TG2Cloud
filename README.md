@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前稳定版 **v1.4.6**，支持 Linux AMD64 / ARM64；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
+当前稳定版 **v1.4.7**，支持 Linux AMD64 / ARM64；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
 
 ## 开始使用
 
@@ -44,7 +44,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 公网／内网入口选择 Edition 后，新装进入向导，已有实例进入管理菜单；确认安装管理工具后，可直接运行 `tg2cloud`。卸载仅作用于所选 Edition；v1.4.7 源码退役独立 Shell 入口，保留统一菜单与子命令预检。菜单、更新与清理边界见[运维指南](docs/OPERATIONS.md#本地管理菜单)。
 
-外部 WebDAV 提供手机只读访问；[统一管理说明](docs/external-webdav.md#统一管理待发布)介绍 v1.4.7 待发布的 `tg2cloud` → **15. 外部 WebDAV**，安装与维护均在子菜单完成，无需另跑安装命令。当前 v1.4.6 尚无此选项。
+外部 WebDAV 提供手机只读访问；[统一管理说明](docs/external-webdav.md#统一管理)介绍 v1.4.7 的 `tg2cloud` → **15. 外部 WebDAV**，安装与维护均在子菜单完成，无需另跑安装命令。旧版管理工具需显式更新。
 
 ## 快速安装
 

@@ -1,10 +1,10 @@
 # TG2Cloud 卸载指南
 
-v1.4.7 发布准备：两个在线安装入口已固定到已公开且五项 CI 通过的辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`。主菜单 14／15 保留卸载和独立外部 WebDAV 管理；仍须等待入口 B、同标签原生双架构和正式资产核验后宣布发布。业务只使用正式稳定 Release，下方历史记录不改写。
+v1.4.7 已正式发布：两个在线安装入口固定辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`，入口 B／Tag 为 `322ae065d6cb6a7330f78b8cc0ee60c4c3c53cdb`。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验全部通过。业务只使用正式稳定 Release；主菜单 14／15 保留卸载与外部 WebDAV 管理，下方历史记录按原版本理解。
 
-待发布版本将卸载统一到 `tg2cloud`，从主分支移除 `uninstall.sh` 和 `install-webdav.sh`；卸载核心、只读预检、全 Edition 和数据保留参数均保留。当前正式 v1.4.6 的历史文件仍在原 Tag，以下历史版本记录不代表新入口已发布。
+v1.4.7 将卸载统一到 `tg2cloud`，从主分支移除 `uninstall.sh` 和 `install-webdav.sh`；卸载核心、只读预检、全 Edition 和数据保留参数均保留。v1.4.6 的历史文件仍在原 Tag，以下历史版本记录不外推为本版实机验收。
 
-v1.4.6 已正式发布：三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与使用范围见[本版说明](development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
+历史 v1.4.6 已正式发布：当时的三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与使用范围见[本版说明](development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
 
 v1.4.5 已正式发布：当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`，A／入口 B 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码资产已核验。菜单仍为 14，只整理展示，不更改卸载核心、依赖保护或数据保留选项；本版没有执行真实卸载。详见[发布范围](development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。
 
@@ -30,13 +30,13 @@ v1.4.2 的[外部 Docker Nginx 模式](DOCKER-NGINX.md)有额外保护：未恢�
 
 最后一套默认完整清理后，重新核对 Docker、两个 Edition（包括停止/部分状态）、保留数据/备份、LAN 与附加路由、挂载和管理代码归属；无依赖时删除受管 `/usr/local/bin/tg2cloud` 及 `/opt/tg2cloud-cli` 中全部已核验代码，随后退出菜单。`--keep-data`、保留备份或其他实例仍在用时保留工具；未知同名命令/文件、忙碌或清理异常时不强删，返回 `TG2CLOUD_UNINSTALL_RESULT=PARTIAL` 和非零退出码，明确业务资源可能已移除而管理代码尚未确认清完，不自动重新安装。仅删除核验过的代码文件及空目录，不递归清空推算出的父路径。锁元数据保留以避免替换正在锁定的 inode，系统应用、镜像缓存和云端文件仍不删除。
 
-待发布版本不再保留主分支的独立卸载脚本。命令缺失或损坏时，重新运行原 `install.sh`／`install-lan.sh`，选择已安装 Edition 后进入“卸载当前实例”，不要选择重新安装；若实例不完整而不能进入菜单，使用核验过的完整源码及下方 CLI 预检。历史 v1.4.6 脚本可在原 Tag 查看，不建议用旧工具覆盖新状态。旧主机须显式更新管理代码；本轮没有真实卸载验收。
+v1.4.7 不再保留主分支的独立卸载脚本。命令缺失或损坏时，重新运行原 `install.sh`／`install-lan.sh`，选择已安装 Edition 后进入“卸载当前实例”，不要选择重新安装；若实例不完整而不能进入菜单，使用核验过的完整源码及下方 CLI 预检。历史 v1.4.6 脚本可在原 Tag 查看，不建议用旧工具覆盖新状态。旧主机须显式更新管理代码；本轮没有真实卸载验收。
 
 ## 在线一键入口
 
-外部 WebDAV 安装后，先在外部管理菜单卸载附加入口，解除对应网关依赖，再主卸载；仅停用不解除依赖。待发布统一入口为 `tg2cloud` → 当前 Edition → **15. 外部 WebDAV → 7. 卸载外部 WebDAV**，正式 v1.4.6 尚无主菜单 15；既有 `tg2cloud-webdav uninstall --edition openlist`（或 `clouddrive2`）仍兼容。附加卸载不删除云端数据或人工原生账号，见[独立功能指南](external-webdav.md)。
+外部 WebDAV 安装后，先在外部管理菜单卸载附加入口，解除对应网关依赖，再主卸载；仅停用不解除依赖。v1.4.7 统一入口为 `tg2cloud` → 当前 Edition → **15. 外部 WebDAV → 7. 卸载外部 WebDAV**，历史 v1.4.6 尚无主菜单 15；既有 `tg2cloud-webdav uninstall --edition openlist`（或 `clouddrive2`）仍兼容。附加卸载不删除云端数据或人工原生账号，见[独立功能指南](external-webdav.md)。
 
-源码的本地帮助入口为 `python3 scripts/run_source.py uninstall --help`，业务位于公共 `deployment/uninstall.py`。在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交；确认、归属检查、保留数据和共享资源保护不因目录整理改变。本轮未执行真实卸载。详见[Linux 重构说明](development/LINUX-REFACTOR.md)。
+源码的本地帮助入口为 `python3 scripts/run_source.py uninstall --help`，业务位于公共 `deployment/uninstall.py`。公网／内网在线 URL 不变，两个退役脚本的旧 main URL 不再提供；helper pin 已更新到 CI 验证的新布局提交；确认、归属检查、保留数据和共享资源保护不因目录整理改变。本轮未执行真实卸载。详见[Linux 重构说明](development/LINUX-REFACTOR.md)。
 
 安装后运行统一管理命令，或先以显式子命令只读查看所有实例的清理范围：
 

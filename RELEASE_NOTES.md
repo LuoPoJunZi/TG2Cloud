@@ -30,7 +30,7 @@ tg2cloud uninstall --edition all --check
 
 ## 验证与兼容边界
 
-发布准备前本地完整回归 1,198 项：1,166 通过、32 项按环境条件跳过；Python 3.10 最小宿主环境 146 项，143 通过、3 跳过，LAN help 和发布元数据不需要 Bot 依赖。Bash 语法、ShellCheck、Ruff、编译、定向 Bandit、历史布局与网站 37 项检查通过。版本同步后继续执行适用检查，正式发布必须等待辅助 A、入口 B 和同标签原生双架构 GitHub CI，再核验实际资产。
+发布准备前本地完整回归 1,198 项：1,166 通过、32 项按环境条件跳过；Python 3.10 最小宿主环境 146 项，143 通过、3 跳过，LAN help 和发布元数据不需要 Bot 依赖。Bash 语法、ShellCheck、Ruff、编译、定向 Bandit、历史布局与网站 37 项检查通过。版本同步后已通过辅助 A、入口 B 各五项 CI 与[同标签原生 AMD64／ARM64 发布验证](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)，实际下载源码包、SHA256 清单及 GitHub 资产摘要已核验一致。
 
 **升级前备份。** 不新增运行依赖、必填环境变量或数据库迁移；保留两 Edition 配置、数据库、Session、下载及网关数据。源码 API 2 不是数据库迁移；更旧业务 schema 的既有迁移及匹配代码／数据库回退规则继续适用。
 
@@ -39,3 +39,7 @@ tg2cloud uninstall --edition all --check
 详情见[外部 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/external-webdav.md)、[卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)、[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)与[更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 历史验收按原版本范围保留：[v1.3.0 人工迁移](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)、[v1.4.3 用户日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)、[v1.4.4 双架构升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)、[v1.4.5 ARM64 升级与 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V145-ACCEPTANCE.md)。这些结果不替代 v1.4.7 实机验收。
+
+## 发布核验
+
+正式 Tag 固定入口 B `322ae065d6cb6a7330f78b8cc0ee60c4c3c53cdb`，两个入口固定已验证辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`。源码包 SHA256：`3032914d0060137eaf543c8c11a3f884abaef2d0d037dffb765aa5771c4c1106`。后续文档提交不移动 Tag、不替换发布资产；真实 VPS 与手机验收范围保持上述限制。

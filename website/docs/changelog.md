@@ -39,7 +39,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.7
 
-2026-10-25，待发布。源码与测试已准备，正式发布仍须辅助 A、入口 B、同标签双架构及实际源码资产核验；当前可下载的稳定版仍是 v1.4.6。详细范围见[仓库完整记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+2026-10-25，[v1.4.7 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7) 已正式发布。A／B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)和实际源码资产核验通过；本版实机仍需独立验收。详细范围见[仓库完整记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 - `tg2cloud` 新增 15. 外部 WebDAV，按所选 Edition 管理独立只读入口；安装主流程不默认询问或启用。
 - 根目录只保留公网与内网两个入口，独立卸载和外部 WebDAV Shell 文件退役；卸载仍通过菜单 14 或 `tg2cloud uninstall`，原清理及预检参数保留。

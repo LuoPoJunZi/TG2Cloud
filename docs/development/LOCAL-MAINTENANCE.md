@@ -1,8 +1,8 @@
-# v1.4.7 发布准备（2026-10-25）
+# v1.4.7 维护与发布核验（2026-10-25）
 
-本轮源码为 v1.4.7：统一外部 WebDAV、退役两个独立 Shell 入口，完善 Certbot 挂载复验和维护代码失败恢复。当前正式稳定版仍为 v1.4.6；须完成辅助 A、入口 B、同标签双架构及实际资产核验后，才能宣布新版本发布。下方 v1.4.6 记录按当时范围保留。
+本轮源码为 v1.4.7：统一外部 WebDAV、退役两个独立 Shell 入口，完善 Certbot 挂载复验和维护代码失败恢复。v1.4.7 已完成辅助 A、入口 B、同标签双架构及实际资产核验，正式发布完成。下方 v1.4.6 记录按当时范围保留。
 
-本地完整回归 1198 项（1166 通过、32 跳过）；3.10 最小宿主环境 146 项（143 通过、3 跳过）；静态检查、ShellCheck、网站 37 测试和历史资产正负校验通过。正式发布仍须本版远端结果，不以本地或旧版实机数据替代。已核实 v1.4.6 原 Tag 对应提交并补入升级基线。
+本地完整回归 1198 项（1166 通过、32 跳过）；3.10 最小宿主环境 146 项（143 通过、3 跳过）；静态检查、ShellCheck、网站 37 测试和历史资产正负校验通过。本版远端 CI 与资产结果见文末，不以本地或旧版实机数据替代。已核实 v1.4.6 原 Tag 对应提交并补入升级基线。
 
 新布局由 external WebDAV API 2 明示；API 1 和旧 Tag 按原清单验证。当前 shell 阶段逐项检查两个保留入口，继续检查全部维护 hooks。版本示例下方按历史上下文理解，制定后续版本计划应高于当前源码版本。
 
@@ -26,11 +26,11 @@ python3 -B scripts/run_source.py webdav
 
 ## 发布准备工具
 
-完整源码 checkout 中执行；`--version` 是计划目标，必须高于当前版本。以下 1.4.7 只是演示，不表示已确定下个版本号：
+完整源码 checkout 中执行；`--version` 是计划目标，必须高于当前版本。以下 1.4.8 只是演示，不表示已确定下个版本号：
 
 ```bash
-python3 -B .github/scripts/prepare_release.py --version 1.4.7
-python3 -B .github/scripts/prepare_release.py --version 1.4.7 --directory build/review-release-147
+python3 -B .github/scripts/prepare_release.py --version 1.4.8
+python3 -B .github/scripts/prepare_release.py --version 1.4.8 --directory build/review-release-148
 ```
 
 第一条只输出计划；第二条只向 `build/` 下全新的目录写入 `plan.json` 和 `version.patch`。不修改工作树版本、依赖、CHANGELOG、Release Notes 或 pin，不执行 Git、网络、部署或发布操作。拒绝已有候选目录、链接路径、同版／降版和异常元数据。
@@ -102,4 +102,12 @@ v1.4.6 已于 2026-10-24 正式发布。辅助 A `56e5115e729356c40a10912bb7d7c0
 
 ## v1.4.7 辅助提交验证
 
-辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1` 的五项工作流已全部通过：[原生 AMD64／ARM64](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809761)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809820)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809777)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809805)与[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809775)。入口 B 应仅固定该已验证 A，64 个 helper 文件须逐字匹配；还需 B 与同标签验证及实际资产核验，不把本节当成正式发布完成。
+辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1` 的五项工作流已全部通过：[原生 AMD64／ARM64](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809761)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809820)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809777)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809805)与[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40159809775)。入口 B 已仅固定该已验证 A，64 个 helper 文件逐项匹配；最终发布与实际资产证据如下。
+
+## v1.4.7 正式发布核验
+
+入口 B／不可变 Tag 为 `322ae065d6cb6a7330f78b8cc0ee60c4c3c53cdb`，辅助 A 为 `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`。A、B 各五项工作流及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)全部成功；B 的[原生 AMD64／ARM64](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160484530)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160484571)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160484496)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160484494)和[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160484521)分别核对到该提交。
+
+[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7) 为非草稿、非预发布的最新稳定版，仅含 `TG2Cloud-v1.4.7-source.tar.gz`（3,723,941 字节）与 `SHA256SUMS.txt`。实际下载经正式源码验证器校验，两资产 SHA256 均与 GitHub 摘要一致；源码包 SHA256 为 `3032914d0060137eaf543c8c11a3f884abaef2d0d037dffb765aa5771c4c1106`，校验清单 SHA256 为 `0759fb10c3e2feadf5ac6990431f1e9e98f55b69a4a5226ef770bfcb23c2ef7e`。校验和不是数字签名。
+
+源码包采用 API 2，含两个安装入口、共享 Bot 与附加功能；不含两个退役 Shell 文件、EXE 或本地私有归档。后续文档提交不改写 Tag 或替换资产。本版未连接真实 VPS、Telegram 或用户网盘；真实升级、原生只读账号、手机播放／Range、公网 ACME、长期续期与完整恢复仍需人工验收。

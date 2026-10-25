@@ -31,7 +31,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your clou
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **v1.4.6**, supporting Linux AMD64 / ARM64. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
+Current stable version: **v1.4.7**, supporting Linux AMD64 / ARM64. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
 
 ## Getting started
 
@@ -46,7 +46,7 @@ Both editions share transfer capabilities but have different gateway configurati
 
 The public/LAN entries offer setup for a missing Edition or its maintenance menu for an existing instance. After confirming manager installation, run `tg2cloud` locally. Uninstall stays Edition-scoped; the v1.4.7 source retires the standalone Shell entries and retains the unified menu and CLI preview. Menu, update and cleanup boundaries are in the [operations guide](docs/OPERATIONS.md#本地管理菜单).
 
-The upcoming v1.4.7 source adds unified management. External WebDAV provides read-only mobile access. The [upcoming unified entry](docs/external-webdav.md#统一管理待发布), `tg2cloud` → **15. 外部 WebDAV**, handles installation and maintenance in its submenu without a separate installation command. This option is not yet in v1.4.6.
+v1.4.7 provides unified management. External WebDAV provides read-only mobile access. The [unified entry](docs/external-webdav.md#统一管理), `tg2cloud` → **15. 外部 WebDAV**, handles installation and maintenance in its submenu without a separate installation command. Older local managers must be explicitly updated.
 
 Requires Debian / Ubuntu with native 64-bit userspace, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
 

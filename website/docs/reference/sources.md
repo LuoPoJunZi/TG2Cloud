@@ -1,10 +1,10 @@
 # 文档来源与维护
 
-当前源码为 **v1.4.7**，待发布；资料核对日期 **2026 年 10 月 25 日**。当前正式稳定版仍为 [v1.4.6](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6)。须等本版 A／B、同标签原生双架构与实际源码资产核验，不以旧版结果代替。
+当前源码与正式稳定版本为 [**v1.4.7**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7)；资料核对日期 **2026 年 10 月 25 日**。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验通过；本版未执行真实 VPS、手机、公网 ACME 或灾难恢复验收。
 
-当前源码与正式版本为 [**v1.4.6**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6)；资料核对日期 **2026 年 10 月 24 日**。A／B、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089991036)及实际源码资产核验通过，下方旧版记录按历史范围保留；本版维护细节见[源码说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。
+历史资料（2026-10-24）：当时源码与正式版本为 [**v1.4.6**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6)；资料核对日期 **2026 年 10 月 24 日**。A／B、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089991036)及实际源码资产核验通过，下方旧版记录按历史范围保留；本版维护细节见[源码说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。
 
-本次内容核对日期为 **2026 年 10 月 24 日**，对应正式 [**v1.4.5**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5)。辅助 A、入口 B 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验；完整证据见[维护发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。本版未连接真实 VPS，不借用下面历史记录声明实机验收。
+历史资料核对日期为 **2026 年 10 月 24 日**，对应正式 [**v1.4.5**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5)。辅助 A、入口 B 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验；完整证据见[维护发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。本版未连接真实 VPS，不借用下面历史记录声明实机验收。
 
 历史资料核对（2026-10-23，对应 v1.4.4）：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 本版补充安装反馈与管理菜单精简，不改变 Bot 核心或新增数据库迁移；须显式升级离线工具。历史用户日志不外推本版实机验收。
 
@@ -14,6 +14,7 @@
 
 | 来源 | 用于核对 |
 | --- | --- |
+| [v1.4.7 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7) | 外部 WebDAV 统一管理、独立脚本退役、Certbot 挂载与失败恢复；A／B、同标签双架构和实际资产核验 |
 | [v1.4.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) | 管理页面、诊断、隔离数据库演练与开发依赖安全补丁；A／B、同标签双架构和实际资产核验 |
 | [v1.4.4 双架构用户升级验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md) | 用户确认两台 CloudDrive2 的 v1.4.3 → v1.4.4 升级；配置／备份／healthy／本机 HTTPS／最近业务就绪观察，以及写入未执行和其他未覆盖范围 |
 | [已发布 v1.4.4 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4) | 日志分级、证据型升级摘要与浅层菜单；同标签原生双架构及实际资产核验，不等同真实 VPS 验收 |
@@ -38,11 +39,11 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码与正式版本均为 1.4.5。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
+本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码与正式版本均为 1.4.7。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.5；依赖和历史版本不机械替换。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.7；依赖和历史版本不机械替换。
 
 导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 
