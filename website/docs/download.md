@@ -1,6 +1,6 @@
 # 安装、下载与校验
 
-当前源码为 **TG2Cloud v1.4.8**，待发布；当前可下载的正式稳定版仍为 v1.4.7。业务部署仍只使用正式稳定源码，历史 Windows EXE 停留在 v1.2.1。
+当前正式稳定版为 **TG2Cloud v1.4.8**。业务部署只使用正式稳定源码，历史 Windows EXE 停留在 v1.2.1。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
 
 ## 公网 VPS 安装与升级
 
@@ -75,8 +75,8 @@ tg2cloud uninstall --edition all --check
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.4.7-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.7/TG2Cloud-v1.4.7-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.7/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.4.8-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.8/TG2Cloud-v1.4.8-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.8/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -84,9 +84,9 @@ tg2cloud uninstall --edition all --check
 sha256sum -c SHA256SUMS.txt
 ```
 
-本版源码包 SHA256 为 `3032914d0060137eaf543c8c11a3f884abaef2d0d037dffb765aa5771c4c1106`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
+本版源码包 SHA256 为 `6282058970c09e05e0b74cab1df7d775373464b8c3b40bbfc90e3ae4cd57ee69`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
 
-[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 ### 在线入口与源码资产的区别
 

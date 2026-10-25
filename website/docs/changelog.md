@@ -40,7 +40,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.8
 
-2026-10-25，待发布。正式发布须本版 A／B、同标签原生双架构及实际源码资产核验；当前可下载稳定版仍为 v1.4.7。详细记录见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+2026-10-25，[v1.4.8 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8) 已正式发布。A／B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)及实际源码资产核验通过；真实终端、原生账号目录及手机仍须人工验收。详细记录见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 - 减少外部 WebDAV 重复标题和环境表，保留实际平台与实例检查。
 - 修复父子菜单预读输入，普通字段回显、空邮箱跳过，错误按字段解释，密码隐藏。

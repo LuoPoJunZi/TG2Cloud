@@ -19,10 +19,14 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 ## 验证与兼容
 
-版本同步后本地完整回归 1,216 项：1,183 通过、33 项因平台或工具条件跳过；最低 Python 3.10 标准库环境 121 项：119 通过、2 跳过。Ruff、语法、Bandit、ShellCheck、清单、仓库、网站 37 项及链接检查通过。正式发布仍须本版远端 A／B、同标签原生双架构和实际资产核验，不将本地跳过写成已通过。
+版本同步后本地完整回归 1,216 项：1,183 通过、33 项因平台或工具条件跳过；最低 Python 3.10 标准库环境 121 项：119 通过、2 跳过。Ruff、语法、Bandit、ShellCheck、清单、仓库、网站 37 项及链接检查通过。已完成本版 A／B 各五项 CI、[同标签原生 AMD64／ARM64 发布验证](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)及实际源码资产核验。原生 Linux PTY、权限与隔离集成由对应 CI 执行；不将本地跳过写成已通过。
 
 不新增运行依赖、必填配置或数据库迁移；不更改 Bot 账号、rclone、数据库、Session、网关监听和转存流程。目录读取不等于原生权限自动审计，仍须创建独立只读账号。**升级前备份。** 更早业务 schema 的原有迁移和匹配代码／数据库回退规则继续适用。
 
 本版未连接真实 VPS、Telegram 或用户网盘；真实 SSH／Web 终端、原生两网关账号目录、手机播放／Range、公网 ACME、长期续期及完整恢复仍需独立验收。源码校验和不是数字签名，不使用旧版实机结论代替本版。
 
 详情见[外部 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/external-webdav.md)、[维护记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)和[更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。历史验收保留原范围：[v1.3.0](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)、[v1.4.3](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)、[v1.4.4](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)、[v1.4.5](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V145-ACCEPTANCE.md)。
+
+## 发布核验
+
+Tag 固定入口 B `e24cddfa77fe76b90ea63ee9e7d88008066cb0a3`，两个入口固定已验证辅助 A `f2c089aeccc1de1c17c43654dad35249236e6e14`。源码包 SHA256：`6282058970c09e05e0b74cab1df7d775373464b8c3b40bbfc90e3ae4cd57ee69`。后续文档提交不移动 Tag、不替换资产。

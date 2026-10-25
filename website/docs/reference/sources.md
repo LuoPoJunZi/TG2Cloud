@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-当前源码为 **v1.4.8**，待发布；资料核对日期 **2026 年 10 月 25 日**。当前正式稳定版为 [v1.4.7](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7)。本版须等待 A／B、同标签原生双架构及实际资产核验。
+当前源码与正式稳定版本为 [**v1.4.8**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8)；资料核对日期 **2026 年 10 月 25 日**。A／B、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)和实际源码资产核验通过，原生 Linux PTY 与隔离网关由 CI 验证，真实 VPS 及账号目录仍须人工验收。
 
 历史资料（2026-10-25）：当时正式稳定版本为 [**v1.4.7**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7)；资料核对日期 **2026 年 10 月 25 日**。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验通过；本版未执行真实 VPS、手机、公网 ACME 或灾难恢复验收。
 
@@ -16,6 +16,7 @@
 
 | 来源 | 用于核对 |
 | --- | --- |
+| [v1.4.8 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8) | 外部 WebDAV 安装、终端输入、实际目录和管理地址；A／B、同标签双架构及实际资产核验 |
 | [v1.4.7 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7) | 外部 WebDAV 统一管理、独立脚本退役、Certbot 挂载与失败恢复；A／B、同标签双架构和实际资产核验 |
 | [v1.4.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) | 管理页面、诊断、隔离数据库演练与开发依赖安全补丁；A／B、同标签双架构和实际资产核验 |
 | [v1.4.4 双架构用户升级验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md) | 用户确认两台 CloudDrive2 的 v1.4.3 → v1.4.4 升级；配置／备份／healthy／本机 HTTPS／最近业务就绪观察，以及写入未执行和其他未覆盖范围 |
@@ -41,7 +42,7 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，本轮源码为 1.4.8，正式稳定版仍为 1.4.7。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
+本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码与正式版本均为 1.4.8。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
 
 ## 文档与软件版本分别维护
 
