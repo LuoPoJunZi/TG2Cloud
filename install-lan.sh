@@ -22,7 +22,7 @@ fi
 
 # A remote entry must not import moving main or a revision not yet validated.
 # Set this reviewed immutable pin only after the LAN module passes CI/review.
-installer_commit="f2c089aeccc1de1c17c43654dad35249236e6e14"
+installer_commit="80258deec5fc8979329cb1dbaa2c6d6c0b391e15"
 if [[ ! "$installer_commit" =~ ^[0-9a-f]{40}$ ]]; then
   printf '内网向导固定版本配置无效；已停止，未修改系统。\n' >&2
   exit 2
@@ -103,6 +103,7 @@ files = (
     'src/tg2cloud/deployment/host.py',
     'src/tg2cloud/deployment/install.py',
     'src/tg2cloud/deployment/instances.py',
+    'src/tg2cloud/deployment/listening.py',
     'src/tg2cloud/deployment/payload.py',
     'src/tg2cloud/deployment/preflight.py',
     'src/tg2cloud/deployment/profiles.py',
