@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import tempfile
 import time
 import unittest
@@ -31,8 +32,12 @@ class ReadinessTests(unittest.TestCase):
                                        _destination_ready=lambda: True, _destination_next_probe_at=0,
                                        db=SimpleNamespace(is_paused=lambda: False, used_local_bytes=lambda: 10),
                                        download_tasks={}, upload_tasks={})
+        # A known past instant avoids filesystem/clock rounding at now == mtime.
+        observed = time.time() - 1
         for name in ("heartbeat", "resource-heartbeat"):
-            (self.root / name).touch()
+            path = self.root / name
+            path.touch()
+            os.utime(path, (observed, observed))
 
     def report(self):
         readiness.publish(self.service, {"queued": 2})
@@ -44,6 +49,13 @@ class ReadinessTests(unittest.TestCase):
         self.assertEqual(report["queued"], 2)
         self.assertNotIn("SYNTHETIC_NEVER_EXPORT", (self.root / "readiness.json").read_text())
         self.assertEqual(set(report["checks"]), set(readiness.CHECKS))
+
+    def test_future_heartbeat_is_not_ready(self):
+        future = time.time() + 10
+        os.utime(self.root / "heartbeat", (future, future))
+        report = self.report()
+        self.assertFalse(report["ready"])
+        self.assertEqual(report["checks"]["heartbeat"], "failed")
 
     def test_disconnected_pause_target_fallback_and_disk_pressure_are_distinguished(self):
         self.service.client.is_connected = lambda: False

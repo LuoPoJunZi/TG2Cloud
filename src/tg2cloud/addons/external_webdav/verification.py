@@ -107,7 +107,8 @@ def check_backend(route: dict, secret: str) -> None:
     status, body, _ = request(route["domain"], route["backend_port"], "PROPFIND", "/dav/",
                               credentials=(route["username"], secret))
     if status != 207:
-        raise ValueError(f"外部专用账号本地认证／列目录未通过（HTTP {status}）；不重置任何后端账号。")
+        hint = "请核对后台是否已创建并启用独立只读账号、用户名和密码是否一致，然后选择继续完成配置。" if status == 401 else "请核对外部专用账号的目录与读取权限。"
+        raise ValueError(f"外部专用账号本地认证／列目录未通过（HTTP {status}）；" + hint + "不重置任何后端账号。")
     propfind(body, route["domain"])
     status, _, _ = request(route["domain"], route["backend_port"], "PROPFIND", "/dav/")
     if status not in {401, 403}:

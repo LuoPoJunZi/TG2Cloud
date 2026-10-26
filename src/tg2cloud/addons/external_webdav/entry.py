@@ -148,13 +148,16 @@ def open_menu(instance, ui, log) -> None:
         if record is None or record["edition"] != instance.product.key or record["instance_dir"] != str(instance.directory):
             raise ValueError("外部 WebDAV 记录与当前实例目录不一致；请先核对附加功能配置，不自动切换实例。")
     previous = installed()
+    from tg2cloud.deployment.releases import source_version, version_tuple
+    from tg2cloud.version import VERSION
+    outdated = previous is not None and version_tuple(source_version(previous)) < version_tuple(VERSION)
     legacy = previous is not None and releases.contract(previous) == releases.LEGACY_CONTRACT
-    if previous is not None and not legacy:
+    if previous is not None and not legacy and not outdated:
         _run(previous, instance, log)
         return
-    if legacy:
-        log("现有外部 WebDAV 工具使用旧入口布局；可更新管理代码后统一管理，账号、路由与文件保持原状。")
-        if not ui.confirm("是否下载正式稳定版并迁移管理代码？拒绝则进入旧版离线菜单"):
+    if legacy or outdated:
+        log("当前外部 WebDAV 维护工具较旧；可先更新代码，再继续账号配置。更新不启用访问，不要求后台账号认证。")
+        if not ui.confirm("是否下载正式稳定版并更新维护代码？拒绝则进入旧版离线菜单"):
             _run(previous, instance, log)
             return
     else:
@@ -165,9 +168,11 @@ def open_menu(instance, ui, log) -> None:
         directory = Path(temporary)
         directory.chmod(0o700)
         source, identity = releases.download(directory)
+        if previous is not None and version_tuple(source_version(source)) < version_tuple(source_version(previous)):
+            raise ValueError("拒绝将外部 WebDAV 维护工具降级。")
         if releases.contract(source) != releases.CONTRACT:
             raise ValueError("当前正式稳定版尚未包含统一入口布局；请等待新版发布，已有工具仍可离线使用。")
-        if legacy:
+        if legacy or outdated:
             from tg2cloud.addons.external_webdav.service import Service
             from tg2cloud.deployment.host import LocalSession
 
@@ -178,6 +183,7 @@ def open_menu(instance, ui, log) -> None:
                 current = service.record()
                 if current is not None and current["instance_dir"] != str(instance.directory):
                     raise ValueError("外部 WebDAV 记录与当前实例目录不一致；停止迁移。")
+                service.preflight(str(instance.directory), require_running=False)
                 service.install_runtime(source, identity)
             source = installed()
             if source is None:

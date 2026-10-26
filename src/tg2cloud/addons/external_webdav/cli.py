@@ -82,6 +82,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--edition", choices=("clouddrive2", "openlist"))
     result.add_argument("--install-dir", help="已有受管实例的实际安装目录（须通过容器身份校验）")
     result.add_argument("--sample-file", default="", help="读取验收可选：现有文件的未编码相对名称；仅 HEAD/OPTIONS/单字节 Range")
+    result.add_argument("--runtime-check", action="store_true", help=argparse.SUPPRESS)
     return result
 
 
@@ -108,6 +109,18 @@ def perform(service, args) -> None:
 
     log, ui = service.log, service.ui
     log(page_heading(ACTION_LABELS[ACTIONS.index(args.action)], service.product, VERSION))
+    if getattr(args, "runtime_check", False):
+        if args.action != "status":
+            raise ValueError("维护代码校验仅支持只读状态操作。")
+        item = service.record()
+        if item is None:
+            raise ValueError("外部 WebDAV 尚未登记。")
+        _, state = service.preflight(item["instance_dir"], require_running=False)
+        route = state.get("external_webdav", {}).get(service.product.key)
+        if item["phase"] != "enabled" and route and route.get("enabled"):
+            raise ValueError("外部登记状态与活动路由不一致，请先停用入口并核对。")
+        log("维护代码与实例检查通过；未执行账号认证或启用访问。")
+        return
     if args.action in {"install", "configure"}:
         def prepare_runtime():
             source = source_root()
@@ -122,8 +135,8 @@ def perform(service, args) -> None:
         item = service.record()
         if item is None:
             raise ValueError("尚未安装；请先运行 install。")
-        service.preflight(item["instance_dir"])
-        log("升级仅更换附加功能离线维护代码并重新校验代理；不升级 Bot／网关，不自动更改账号。")
+        service.preflight(item["instance_dir"], require_running=False)
+        log("升级仅更新离线维护代码，不要求输入外部密码；访问状态和后台账号保持原状。")
         if ui.confirm("确认从最新正式稳定 Release 下载并校验候选？"):
             from tg2cloud.addons.external_webdav.releases import download
             from tg2cloud.deployment.releases import source_version, version_tuple
@@ -132,18 +145,21 @@ def perform(service, args) -> None:
                 if version_tuple(source_version(root)) < version_tuple(source_version(source_root())):
                     raise ValueError("拒绝自动降级附加功能代码。")
                 # Execute the verified candidate, not just the old checker.
-                # No secret is passed in argv/env; candidate asks on /dev/tty.
-                action = "enable" if item["phase"] == "enabled" else "check"
+                # Candidate checks source/instance compatibility without account authentication.
+                action = "status"
                 result = subprocess.run(  # nosec B603
                     [sys.executable, "-B", str(root / "scripts/run_source.py"), "webdav", action,
-                     "--edition", args.edition, *(["--sample-file", args.sample_file] if args.sample_file else [])], check=False,
+                     "--edition", args.edition, "--install-dir", item["instance_dir"], "--runtime-check"], check=False,
                 )
                 if result.returncode:
-                    raise ValueError("候选检查／配置未通过；离线维护入口未切换，请检查外部入口状态。")
+                    raise ValueError("维护代码候选检查未通过；原离线工具保留，请核对实例和配置。")
                 with service.locked():
-                    service.preflight(item["instance_dir"])
+                    service.assert_record(item)
+                    service.preflight(item["instance_dir"], require_running=False)
                     service.install_runtime(root, identity)
-                log("候选源码已校验并切换；旧运行目录仍保留。")
+                log("维护代码已更新，旧运行目录保留；外部账号认证及访问启用未重新验收。")
+                if item["phase"] in {"pending", "needs_repair"}:
+                    log("入口仍待配置，请选择“继续完成配置”。")
                 service.management_hint(check=True)
     else:
         service.maintain(args.action, sample_file=args.sample_file)
@@ -156,8 +172,11 @@ def interactive(service, args) -> None:
 
     while True:
         service.log(page_heading("外部 WebDAV 管理", service.product, VERSION))
-        action = choose(service.ui, service.log, "请选择操作：", tuple(zip(ACTIONS, ACTION_LABELS)),
-                        default="2" if service.record() else "1",
+        record = service.record()
+        repair = bool(record and record["phase"] in {"pending", "needs_repair"})
+        labels = tuple("继续完成配置" if repair and key == "configure" else label for key, label in zip(ACTIONS, ACTION_LABELS))
+        action = choose(service.ui, service.log, "请选择操作：", tuple(zip(ACTIONS, labels)),
+                        default="6" if repair else "2" if record else "1",
                         exit_label="返回主菜单" if os.environ.get("TG2CLOUD_MANAGER_MENU") == "1" else "退出")
         if not action:
             return
@@ -193,7 +212,7 @@ def main(argv: list[str] | None = None) -> int:
         session = LocalSession(log)
         # Help has already exited above. Offline status still needs local Linux
         # root/private records, but never contacts GitHub, Docker or the gateway.
-        if args.action not in {"status", "print-config"}:
+        if args.action not in {"status", "print-config"} or getattr(args, "runtime_check", False):
             discovery.host(session, log=log)
         elif os.name != "posix" or os.geteuid() != 0:
             raise ValueError("本地状态仅允许 Linux root 读取。")

@@ -19,6 +19,7 @@ from tg2cloud.addons.external_webdav import entry, releases
 from tg2cloud.deployment import configuration, runtime
 from tg2cloud.deployment.instances import Instance
 from tg2cloud.deployment.profiles import PRODUCTS
+from tg2cloud.version import VERSION
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -58,7 +59,7 @@ class EntryTests(unittest.TestCase):
         files = {
             "scripts/run_source.py": b"# entry\n",
             "src/tg2cloud/__init__.py": b"",
-            "src/tg2cloud/version.py": b'VERSION = "1.4.6"\n',
+            "src/tg2cloud/version.py": ('VERSION = "' + ("1.4.6" if legacy else VERSION) + '"\n').encode(),
             "src/tg2cloud/config.py": b"# stdlib\n",
             "src/tg2cloud/cli/__init__.py": b"",
             "src/tg2cloud/cli/commands.py": b"# lazy dispatch\n",
@@ -260,12 +261,36 @@ class EntryTests(unittest.TestCase):
     def test_uninstall_or_upgrade_child_exit_returns_without_reopening(self):
         process = Mock()
         process.wait.return_value = 0
-        with patch.object(entry, "installed", return_value=self.directory), \
+        with patch.object(entry, "installed", return_value=self.source(legacy=False)), \
                 patch.object(entry.releases, "contract", return_value=releases.CONTRACT), \
                 patch.object(entry.subprocess, "Popen", return_value=process) as execute:
             self.assertIsNone(entry.open_menu(self.instance, self.ui, self.messages.append))
         execute.assert_called_once()
         process.wait.assert_called_once_with()
+
+    def test_old_current_contract_can_update_without_gateway_authentication(self):
+        from tg2cloud.addons.external_webdav.service import Service
+        with patch(__name__ + ".VERSION", "1.4.7"):
+            previous = self.bundle(legacy=False)
+        installed = entry.installed
+        service = Service(self.instance.product, Mock(), self.messages.append, self.ui, root=self.root)
+        service.locked = lambda: nullcontext()
+        service.record = Mock(return_value=None)
+        service.preflight = Mock()
+        service.configure = Mock()
+        original = service.install_runtime
+        service.install_runtime = lambda source, identity: original(source, identity, launcher=self.command)
+        with (patch.object(entry, "installed", side_effect=lambda: installed(launcher=self.command, root=self.root)),
+              patch.object(entry.releases, "download", side_effect=lambda directory: (self.source(directory / "new"), {"version": VERSION})),
+              patch("tg2cloud.addons.external_webdav.service.Service", return_value=service),
+              patch.object(entry.config, "canonical"), patch.object(entry, "_run") as run):
+            entry.open_menu(self.instance, self.ui, self.messages.append)
+        self.assertNotEqual(self.verify(), previous)
+        self.assertTrue(previous.exists())
+        service.preflight.assert_called_once_with(str(self.instance.directory), require_running=False)
+        service.configure.assert_not_called()
+        run.assert_called_once()
+        self.assertIn("更新", self.ui.confirm.call_args.args[0])
 
     def test_legacy_migration_can_be_declined_for_offline_access(self):
         previous = self.bundle()
@@ -301,7 +326,7 @@ class EntryTests(unittest.TestCase):
         self.assertFalse((migrated / "install-webdav.sh").exists())
         self.assertEqual(json.loads((migrated / "installation.json").read_text())["commit"], identity["commit"])
         execute.assert_called_once_with(migrated, self.instance, self.messages.append)
-        service.preflight.assert_not_called()
+        service.preflight.assert_called_once_with(str(self.instance.directory), require_running=False)
         service.configure.assert_not_called()
         service.session.run.assert_not_called()
         self.assertFalse((self.root / self.instance.product.key / "config.json").exists())

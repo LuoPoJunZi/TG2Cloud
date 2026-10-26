@@ -101,6 +101,7 @@
     "src/tg2cloud/telegram/__init__.py",
     "src/tg2cloud/telegram/client.py",
     "src/tg2cloud/telegram/commands.py",
+    "src/tg2cloud/telegram/editor.py",
     "src/tg2cloud/telegram/handlers.py",
     "src/tg2cloud/telegram/planning.py",
     "src/tg2cloud/telegram/quota.py",

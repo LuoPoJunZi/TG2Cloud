@@ -306,8 +306,8 @@ class ManagementTests(unittest.TestCase):
     def test_confirmed_menu_labels_order_and_alignment_without_naming_preview(self):
         labels = ("安装与升级", "查看运行状态", "查看运行日志", "服务启停管理", "Bot 用户管理",
                   "WebDAV 凭据", "HTTPS 与管理", "文件分类设置", "异常通知设置", "业务就绪检查",
-                  "WebDAV 验收", "故障诊断报告", "数据备份管理", "卸载当前实例", "外部 WebDAV", "退出")
-        expected = [str(number) for number in (*range(1, 16), 0)]
+                  "WebDAV 验收", "故障诊断报告", "数据备份管理", "卸载当前实例", "外部 WebDAV", "监听管理", "退出")
+        expected = [str(number) for number in (*range(1, 17), 0)]
         self.assertEqual(list(management.MENU_ACTIONS), expected)
         self.assertEqual(management.MENU, numbered_menu(zip(expected, labels)) + "\n")
         self.assertTrue(all(line.index(label) == 4 for line, label in zip(management.MENU.splitlines(), labels)))
@@ -317,7 +317,7 @@ class ManagementTests(unittest.TestCase):
     def test_unknown_number_is_rejected_before_any_operation(self):
         def ask(prompt, *, default, validate):
             self.assertEqual(default, "0")
-            return validate("16")
+            return validate("17")
 
         self.ui.ask.side_effect = ask
         with patch.object(self.manager, "discover", return_value=self.instance), patch(
@@ -334,7 +334,8 @@ class ManagementTests(unittest.TestCase):
                     "8": "tg2cloud.deployment.feature_settings.manage_classification",
                     "9": "tg2cloud.deployment.feature_settings.manage_notifications",
                     "10": "tg2cloud.deployment.readiness.check", "12": "tg2cloud.deployment.diagnostics.collect",
-                    "15": "tg2cloud.addons.external_webdav.entry.open_menu"}
+                    "15": "tg2cloud.addons.external_webdav.entry.open_menu",
+                    "16": "tg2cloud.deployment.listening.manage"}
         for product in PRODUCTS.values():
             instance = replace(self.instance, product=product, directory=Path(product.install_dir))
             manager = management.Management(product, self.session, self.log, self.ui)

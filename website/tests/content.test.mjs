@@ -92,11 +92,12 @@ test('management menu matches source labels and keeps old-version boundaries',as
   const items=source.match(/MENU_ITEMS = \(([\s\S]*?)\r?\n\)/)?.[1];
   assert.ok(items);
   const entries=[...items.matchAll(/\((\d+), "([^"]+)"\)/g)].map(match=>[match[1],match[2]]);
-  assert.deepEqual(entries.map(([number])=>number),[...Array.from({length:15},(_,index)=>String(index+1)),'0']);
+  assert.deepEqual(entries.map(([number])=>number),[...Array.from({length:16},(_,index)=>String(index+1)),'0']);
   assert.deepEqual(entries.slice(0,14).map(([,label])=>label),[
     '安装与升级','查看运行状态','查看运行日志','服务启停管理','Bot 用户管理','WebDAV 凭据','HTTPS 与管理',
     '文件分类设置','异常通知设置','业务就绪检查','WebDAV 验收','故障诊断报告','数据备份管理','卸载当前实例']);
   assert.deepEqual(entries[14],['15','外部 WebDAV']);
+  assert.deepEqual(entries[15],['16','监听管理']);
   const article=await read('docs/operations/maintenance.md');
   const guide=await readFile(new URL('../../docs/OPERATIONS.md',import.meta.url),'utf8');
   for(const [number,label] of entries){

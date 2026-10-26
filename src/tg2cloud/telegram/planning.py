@@ -66,9 +66,9 @@ async def output(event, text, buttons=None):
 async def ask(owner, event, action, prompt):
     actor = current_user(owner.settings.allowed_user_id)
     interactions(owner)[actor] = (time.monotonic() + 300, action)
-    await output(
-        event, prompt + "\n5 分钟内回复文本；/cancelinput 取消。发送附件仍正常转存。"
-    )
+    back = ("listen",) if action[0] == "add" else ("view", action[1]) if action[0] == "rename" else ("settings",)
+    await output(event, prompt + "\n5 分钟内回复文本。发送附件仍正常转存。",
+                 [[token_button(owner, actor, "取消填写", ("cancelinput", back))]])
 
 
 async def plan_card(owner, event, plan):
@@ -88,14 +88,18 @@ async def plan_card(owner, event, plan):
             ],
             [token_button(owner, actor, "批次操作", ("batch", *key))],
         ]
+    status = {"pending": "待确认", "submitted": "已入队", "ignored": "已忽略", "expired": "已过期"}.get(plan["status"], "状态待核对")
+    directory = value["directory_override"]
+    directory = "现有分类与默认目录" if directory is None else directory or "Bot 保存目录（无附加子目录）"
     text = (
-        f"📦 转存计划 #{plan['id']}\n状态：{plan['status']}\n原名：{value['original_file_name'] or '无原名'}"
-        f"\n候选：{value['file_name']}\n目录：{value['directory_override'] if value['directory_override'] is not None else '现有分类与默认目录'}"
+        f"📦 转存计划 #{plan['id']}\n状态：{status}\n原名：{value['original_file_name'] or '无原名'}"
+        f"\n候选：{value['file_name']}\n目录：{directory}"
         f"\n大小：{format_bytes(value['file_size'])}\n依据：{value['basis']}"
     )
     if plan["source"] is not None:
         source = store(owner).source(actor, plan["source"])
         text += f"\n监听来源：{source['title']}\n规则快照：版本 {value['source_revision']}；按接收时的规则匹配"
+    rows.append([token_button(owner, actor, "返回待确认列表", ("pending", 0))])
     await output(event, text, rows)
 
 
@@ -141,6 +145,7 @@ async def pending(owner, event, after=0):
         buttons.append(
             [token_button(owner, actor, "下一页", ("pending", plans[-1]["id"]))]
         )
+    buttons.append([token_button(owner, actor, "返回监听管理" if actor == owner.settings.allowed_user_id else "返回转存设置", ("listen",) if actor == owner.settings.allowed_user_id else ("settings",))])
     await output(
         event,
         "待确认转存\n\n"
@@ -156,6 +161,8 @@ async def pending(owner, event, after=0):
 async def settings(owner, event):
     actor = current_user(owner.settings.allowed_user_id)
     prefs = store(owner).preferences(actor)
+    from tg2cloud.telegram.editor import MODES
+
     rows = [
         [
             token_button(
@@ -178,7 +185,7 @@ async def settings(owner, event):
         "转存设置\n确认模式："
         + ("开启" if prefs["confirmation"] else "关闭（默认自动转存）")
         + "\n命名模式："
-        + prefs["profile"]["mode"]
+        + MODES[prefs["profile"]["mode"]]
         + "\n仅影响新计划；已入队任务保持原名称和目录。",
         rows,
     )
@@ -214,7 +221,7 @@ async def listening(owner, event):
         event,
         "监听管理（仅管理员）\n\n账号："
         + value["status"]
-        + "\n首次登录：在 VPS 交互终端运行 tg2cloud listen login --edition <当前 Edition>\n默认关闭；仅接收已加入来源的新附件，不读取评论、不自动重处理消息编辑。",
+        + "\n首次登录：在 VPS 运行 tg2cloud，选择“监听管理”→“登录监听账号”。\n默认关闭；仅接收已加入来源的新附件，不读取评论、不自动重处理消息编辑。",
         rows,
     )
 
@@ -249,6 +256,8 @@ async def source_card(owner, event, source_id):
         ],
     ]
     buttons.append([token_button(owner, actor, "命名规则历史与撤销", ("history", sid))])
+    from tg2cloud.telegram.editor import MODES, rule_summary
+
     stats = {
         r[0]: r[1]
         for r in owner.db._conn.execute(
@@ -268,7 +277,9 @@ async def source_card(owner, event, source_id):
     await output(
         event,
         f"来源 #{sid}：{s['title']}\n启用从当前时点开始，暂停期间不补抓；重启补拉最多 6 小时。\n状态：{s['status']}\n规则版本：{rev}\n模式：{'确认后转存' if s['config']['confirmation'] else '自动转存'}"
-        f"\n目录别名：{s['config']['directory'] or '命名方案、分类或默认目录'}\n规则：{json.dumps(s['config']['rules'], ensure_ascii=False)[:1200]}\n{summary}\n最近接收结果（有界保留）：{json.dumps(stats, ensure_ascii=False)}",
+        f"\n目录：{s['config']['directory'] or s['config']['profile']['directory'] or '沿用分类或默认目录'}\n"
+        + rule_summary(s['config']['rules'], compact=True) + "\n命名：" + MODES[s['config']['profile']['mode']]
+        + f"\n{summary}\n最近接收：" + ("；".join(f"{key} {value}" for key, value in stats.items()) or "暂无记录"),
         buttons,
     )
 
@@ -337,10 +348,24 @@ async def callback(owner, event):
             "delete",
             "history",
             "restore-rule",
+            "restore-offer",
             "save-feedback",
         }:
             owner.listener.require_admin(actor)
-        if action == "listen":
+        if action == "editor":
+            from tg2cloud.telegram import editor
+            await editor.callback(owner, event, args)
+        elif action == "settings":
+            await settings(owner, event)
+        elif action == "cancelinput":
+            interactions(owner).pop(actor, None)
+            await output(event, "已取消填写，配置和任务未改变。", [[token_button(owner, actor, "返回", args[0])]])
+        elif action in {"rules", "profile", "source-directory", "source-confirm", "preferences", "aliases"}:
+            from tg2cloud.telegram import editor
+            kind = {"rules": "rules", "profile": "profile", "source-directory": "directory",
+                    "source-confirm": "mode", "preferences": "personal", "aliases": "aliases"}[action]
+            await editor.start(owner, event, kind, *args)
+        elif action == "listen":
             await listening(owner, event)
         elif action == "account":
             if args[0] and not account.state(owner.db)["account"]:
@@ -392,7 +417,8 @@ async def callback(owner, event):
             await output(
                 event,
                 "确认删除此监听来源？停止新接收，保留任务和云端文件。",
-                [[token_button(owner, actor, "确认删除", ("delete", *args))]],
+                [[token_button(owner, actor, "确认删除", ("delete", *args))],
+                 [token_button(owner, actor, "取消返回来源", ("source", args[0]))]],
             )
         elif action == "test":
             results = await owner.listener.test(actor, args[0])
@@ -409,17 +435,8 @@ async def callback(owner, event):
                     f"#{mid} {'匹配' if matched else '跳过'}：{reason}\n{name['file_name']} → {directory}"
                     for mid, matched, reason, name in results
                 ),
+                [[token_button(owner, actor, "返回来源", ("source", args[0]))]],
             )
-        elif action in {"rules", "profile", "source-directory"}:
-            if action == "rules":
-                prompt = '发送 JSON（大小单位为字节）：{"groups":[{"types":["视频"],"extensions":["mp4","mkv"],"keywords":["物理","数学"]}],"exclude":["广告","试看"],"max_bytes":2147483648}'
-            elif action == "profile":
-                prompt = '发送命名 JSON，例如 {"mode":"template","template":"{title} {episode}"}；compatible 保留有效原名，caption 说明优先。prefixes/suffixes 为显式清理列表；完整替换，发送 {} 撤销新增规则。'
-            else:
-                prompt = "发送目录别名；输入 默认 取消来源目录覆盖。可选：" + "、".join(
-                    repo.directories(actor)
-                )
-            await ask(owner, event, (action, *args), prompt)
         elif action == "pending":
             await pending(owner, event, args[0])
         elif action == "view":
@@ -433,6 +450,7 @@ async def callback(owner, event):
                 await output(
                     event,
                     f"已持久化到现有队列：任务 #{task['id']}\n最终重名后缀以任务详情为准。",
+                    [[token_button(owner, actor, "返回待确认列表", ("pending", 0))]],
                 )
             elif action == "ignore":
                 await plan_card(owner, event, repo.edit(actor, *args, ignore=True))
@@ -453,7 +471,8 @@ async def callback(owner, event):
                     for alias in repo.directories(actor)
                 ]
                 await output(
-                    event, "选择已授权目录（替换分类子目录，不重复追加）：", rows
+                    event, "选择已授权目录（替换分类子目录，不重复追加）：",
+                    rows + [[token_button(owner, actor, "返回计划详情", ("view", plan["id"]))]],
                 )
             else:
                 await output(
@@ -475,6 +494,7 @@ async def callback(owner, event):
                                 owner, actor, "批次修改共同主题", ("batch-name", *args)
                             )
                         ],
+                        [token_button(owner, actor, "返回计划详情", ("view", plan["id"]))],
                     ],
                 )
         elif action == "choose-directory":
@@ -507,34 +527,25 @@ async def callback(owner, event):
                 await output(
                     event,
                     f"本批次已入队 {good}/{len(ids)} 项；其余保留待确认，请核对额度、有效期和权限。",
+                    [[token_button(owner, actor, "返回待确认列表", ("pending", 0))]],
                 )
             else:
-                await ask(
-                    owner,
-                    event,
-                    (action, ids),
-                    "发送新的共同主题（各成员集数、章节和扩展名保留）。"
-                    if action == "batch-name"
-                    else "发送已授权目录别名：" + "、".join(repo.directories(actor)),
-                )
+                if action == "batch-directory":
+                    await output(event, "选择本批次已授权目录：", [[token_button(owner, actor, alias, ("batch-set-directory", ids, alias))] for alias in repo.directories(actor)] + [[token_button(owner, actor, "返回计划详情", ("view", p["id"]))]])
+                else:
+                    await ask(owner, event, (action, ids), "发送新的共同主题（各成员集数、章节和扩展名保留）。")
+        elif action == "batch-set-directory":
+            ids, alias = args
+            if not ids or len(ids) > 20:
+                raise PlanningError("批次数量无效。")
+            with repo.transaction(actor):
+                repo.directory(actor, alias)
+                for pid, rev in ids:
+                    repo.edit(actor, pid, rev, directory_alias=alias)
+            await pending(owner, event)
         elif action == "confirmation":
-            repo.preferences(actor, {"confirmation": args[0]})
-            await settings(owner, event)
-        elif action == "preferences":
-            await ask(
-                owner,
-                event,
-                ("preferences",),
-                '发送个人命名 JSON，例如 {"mode":"caption"}；默认 {"mode":"compatible"}。',
-            )
-        elif action == "aliases":
-            repo.authorize(actor, admin=True)
-            await ask(
-                owner,
-                event,
-                ("aliases",),
-                '发送目录别名 JSON，例如 {"alias":"课程","path":"课程/光学","owners":[123]}；仅管理员，path 是 Bot 上传根目录内的相对目录。授权列表为空表示只给管理员。',
-            )
+            from tg2cloud.telegram import editor
+            await editor.start(owner, event, "personal", page="mode")
         elif action == "history":
             source = repo.source(actor, args[0])
             history = repo.source_history(actor, args[0])
@@ -547,12 +558,26 @@ async def callback(owner, event):
                             owner,
                             actor,
                             f"恢复版本 {r['revision']}",
-                            ("restore-rule", source["id"], source["revision"], r["id"]),
+                            ("restore-offer", source["id"], source["revision"], r["id"]),
                         )
                     ]
                     for r in history
-                ],
+                ] + [[token_button(owner, actor, "返回来源", ("source", source["id"]))]],
             )
+        elif action == "restore-offer":
+            from tg2cloud.telegram.editor import profile_summary, rule_summary
+            source = repo.source(actor, args[0])
+            if source["revision"] != args[1]:
+                raise PlanningError("来源配置已变化，请刷新历史列表。")
+            old = next((r for r in repo.source_history(actor, args[0]) if r["id"] == args[2]), None)
+            if old is None:
+                raise PlanningError("历史版本已失效。")
+            candidate = repo.source_config(actor, json.loads(old["config"]))
+            def describe(c):
+                return rule_summary(c["rules"]) + "\n" + profile_summary(c["profile"]) + "\n目录：" + (c["directory"] or c["profile"]["directory"] or "沿用默认") + "\n模式：" + ("确认后转存" if c["confirmation"] else "自动转存")
+            await output(event, "恢复范围：筛选、命名、目录和转存模式；仅作用于新计划。\n\n当前配置：\n" + describe(source["config"]) + "\n\n拟恢复版本 " + str(old["revision"]) + "：\n" + describe(candidate),
+                         [[token_button(owner, actor, "确认恢复此版本", ("restore-rule", *args))],
+                          [token_button(owner, actor, "取消返回来源", ("source", source["id"]))]])
         elif action == "restore-rule":
             history = repo.source_history(actor, args[0])
             old = next((r for r in history if r["id"] == args[2]), None)
@@ -603,8 +628,8 @@ async def callback(owner, event):
                 + "\n".join(
                     f"#{r['id']} {r['before_name']} → {r['after_name']}" for r in items
                 )
-                + "\n明确保存为来源规则：在监听来源的命名方案中填写 prefixes/suffixes；发送 {} 撤销。",
-                buttons,
+                + "\n需要保存为来源规则时，打开“命名方案”逐项设置清理前缀／后缀；历史中可预览并恢复。",
+                buttons + [[token_button(owner, actor, "返回转存设置", ("settings",))]],
             )
     except (ValueError, PermissionError, RuntimeError) as exc:
         from tg2cloud.listening.service import ListenerReadError
@@ -630,6 +655,9 @@ async def text(owner, event, value):
     if not pending_action:
         return False
     action, *args = pending_action[1]
+    if action == "editor-input":
+        from tg2cloud.telegram import editor
+        return await editor.text(owner, event, args, value)
     repo = store(owner)
     try:
         repo.authorize(

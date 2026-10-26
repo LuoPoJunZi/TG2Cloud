@@ -31,7 +31,7 @@ MENU_ITEMS = (
     (4, "服务启停管理"), (5, "Bot 用户管理"), (6, "WebDAV 凭据"),
     (7, "HTTPS 与管理"), (8, "文件分类设置"), (9, "异常通知设置"),
     (10, "业务就绪检查"), (11, "WebDAV 验收"), (12, "故障诊断报告"),
-    (13, "数据备份管理"), (14, "卸载当前实例"), (15, "外部 WebDAV"), (0, "退出"),
+    (13, "数据备份管理"), (14, "卸载当前实例"), (15, "外部 WebDAV"), (16, "监听管理"), (0, "退出"),
 )
 MENU = numbered_menu(MENU_ITEMS) + "\n"
 MENU_ACTIONS = tuple(str(number) for number, _ in MENU_ITEMS)
@@ -424,6 +424,9 @@ class Management:
                 elif action == "15":
                     from tg2cloud.addons.external_webdav.entry import open_menu
                     open_menu(self.recheck(instance), self.ui, self.log)
+                elif action == "16":
+                    from tg2cloud.deployment.listening import manage
+                    manage(self, self.recheck(instance))
                 elif action in {"8", "9"}:
                     from tg2cloud.deployment.feature_settings import (
                         manage_classification,

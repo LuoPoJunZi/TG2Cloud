@@ -70,5 +70,28 @@ def main(argv=None):
         return 1
 
 
+def manage(manager, instance):
+    """The selected Edition's terminal menu reuses the verified CLI operations."""
+    from tg2cloud.cli.management import choose
+    from tg2cloud.cli.presentation import numbered_menu
+
+    actions = {"1": "login", "2": "status", "3": "disable"}
+    while True:
+        instance = manager.recheck(instance)
+        manager.heading("监听管理", instance)
+        manager.log("登录只保存个人账号授权；在 Bot 监听管理中启用。停用保留来源、任务和 Session。")
+        manager.log(numbered_menu(((1, "登录监听账号"), (2, "查看监听状态"),
+                                   (3, "停用监听功能"), (0, "返回主菜单"))))
+        selected = choose(manager.ui, "选择操作", ("0", *actions), "0")
+        if selected == "0":
+            return
+        result = main([actions[selected], "--edition", instance.product.key,
+                       "--install-dir", str(instance.directory)])
+        if result:
+            manager.log("监听操作未完成，请核对上方结果。")
+        manager.log(numbered_menu(((0, "返回监听管理"),)))
+        choose(manager.ui, "选择操作", ("0",), "0")
+
+
 if __name__ == "__main__":
     raise SystemExit(main())

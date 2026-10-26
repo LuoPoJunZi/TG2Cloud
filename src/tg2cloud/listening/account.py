@@ -126,14 +126,14 @@ async def login(settings, db):
             personal = client(settings, path)
 
             def phone():
-                value = getpass.getpass("个人账号手机号（隐藏输入）: ").strip()
+                value = input("个人账号手机号: ").strip()
                 if not re.fullmatch(r"\+?[0-9]{5,18}", value):
                     raise ValueError("请使用个人手机号；不接受 Bot Token")
                 return value
 
             await personal.start(
                 phone=phone,
-                code_callback=lambda: getpass.getpass("Telegram 验证码（隐藏输入）: "),
+                code_callback=lambda: input("Telegram 验证码: ").strip(),
                 password=lambda: getpass.getpass("两步验证密码（隐藏输入）: "),
             )
             me = await personal.get_me()

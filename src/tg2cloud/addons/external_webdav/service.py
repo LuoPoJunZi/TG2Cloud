@@ -227,7 +227,7 @@ class Service:
                   prepare_runtime: Callable[[], None] | None = None) -> bool:
         previous = self.record()
         if previous and install:
-            self.log("外部 WebDAV 已登记；不重复安装或自动启用。请在管理菜单中检查、修改配置或启用访问。")
+            self.log("外部 WebDAV 已登记；未完成或中断的配置请选择“继续完成配置”，已配置的入口可检查或修改。不会重复安装或自动启用。")
             self.display(previous)
             self.management_hint()
             return False

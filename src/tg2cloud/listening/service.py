@@ -264,9 +264,11 @@ class Listener:
         )
         return item, matched, reason, naming
 
-    async def test(self, actor, source_id):
+    async def test(self, actor, source_id, *, config=None):
         self.require_admin(actor)
         source = self.plans.source(actor, source_id)
+        if config is not None:
+            source = source | {"config": self.plans.source_config(actor, config)}
         if not self.client:
             raise PlanningError("监听账号未连接")
         await verified_chat(self.client, source["chat"])

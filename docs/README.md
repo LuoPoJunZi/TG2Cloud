@@ -6,7 +6,7 @@
 
 v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名指南](NAMING.md)。旧“待发布”章节标题仅保留链接兼容，正文已明确实际版本；升级实例才会启用新代码，更新文档不更新 Bot。
 
-v1.4.9 已正式发布：[监听指南](LISTENING.md)与[发布后验收清单](development/V149-ACCEPTANCE.md)。自动化与下载资产已核验，实机仍待用户验收；schema 2 → 3 升级前保护匹配快照。
+v1.4.10 的监听交互与维护恢复正在发布准备，见[本版记录](development/V1410-ACCEPTANCE.md)；当前稳定 v1.4.9 已正式发布：[监听指南](LISTENING.md)与[发布后验收清单](development/V149-ACCEPTANCE.md)。自动化与下载资产已核验，实机仍待用户验收；schema 2 → 3 升级前保护匹配快照。
 
 ## 按你的情况开始
 
@@ -71,6 +71,7 @@ v1.4.6 已正式发布：外部 WebDAV 次级页面、测试分类与维护工�
 - [v1.4.1 CloudDrive2 ARM64 首次安装验收](development/V141-ACCEPTANCE.md)：Ubuntu 26.04.1 公网 NAT、原生构建、Bot 健康、本机 HTTPS 与 WebDAV 操作；APT 问题及未验证范围单列。
 - [v1.4.2 CloudDrive2 人工升级验收](development/V142-ACCEPTANCE.md)：Debian AMD64、核验原 v1.3.4 提交后保留配置升级；备份、数据保留、只读 WebDAV、外部 HTTPS，以及旧 Release 缺失的自动升级限制。
 - [v1.4.3 CloudDrive2 在线升级日志核验](development/V143-ACCEPTANCE.md)：用户日志确认 v1.4.2 → v1.4.3、Bot healthy 和本机 HTTPS；解释构建 WARNING，真实转存／公网访问及回退尚未确认。
+- [v1.4.10 交互维护发布与验收](development/V1410-ACCEPTANCE.md)：监听表单、终端菜单、外部维护恢复、升级与发布后检查。
 - [v1.4.4 CloudDrive2 双架构升级验收](development/V144-ACCEPTANCE.md)：用户确认 Ubuntu ARM64 与 Debian AMD64 的 v1.4.3 → v1.4.4 升级通过，记录新摘要、最近业务观察和容量提醒，明确 WebDAV 写入／真实转存／外网／回退等边界。
 - [第三方组件说明](第三方组件说明.md)
 - [安全政策](../.github/SECURITY.md)
