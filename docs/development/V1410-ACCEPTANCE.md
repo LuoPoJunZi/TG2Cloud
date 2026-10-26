@@ -47,3 +47,9 @@ v1.4.9 → v1.4.10 沿用 schema 3，无新增迁移；v1.4.8 及更早仍经过
 ## 自动验证与发布证据
 
 本地及远端结果在实际执行后追加；未执行的 Linux／Docker、Telegram、VPS、真实网关或生产恢复不得记为通过。
+
+### 本地验证与辅助 A
+
+最终干净公共副本 369 文件与工作树逐字节一致。`check_python.py test`：1317 项，1283 通过、34 环境跳过、0 失败；Python 3.10 无 Bot 依赖的 `all --scope cli`：734 项，722 通过、12 跳过、0 失败。网站 37 项通过，34 HTML／4306 本地引用／285 搜索条目；Ruff、编译、Bandit、ShellCheck、两 Edition 组装与两份依赖审计通过。Windows 跳过 Linux UID／flock／PTY、rclone 或 opt-in Docker，后者由远端原生 CI 单独验证。
+
+辅助 A：`cff370d597f1fd78dc7b081ae95300beb27cd974` 已公开，五项检查全部通过：[原生 AMD64／ARM64 与两 Edition 隔离运行](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284157038)、[Python 3.10／3.13 四组合](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284153686)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284149685)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284145808)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284142319)。入口 B 固定该真实提交，不自指，不改写旧 Tag。A 的成功不代表 B、正式资产或真实 Telegram／VPS 已通过。
