@@ -49,3 +49,9 @@ OpenList 改为 `--edition openlist`；内网使用同标签 `install-lan.sh`，
 ## 远端与资产证据
 
 等待实际辅助 A、入口 B、main 和同标签双架构 CI；资产须下载后验证 SHA256 与标签内文件。未执行项不记为通过，不改写已有 Tag／Release。
+
+### 辅助 A 已核验
+
+辅助 A `7b115e1eef244ee2db7c7c08bb51d0ed3eaf045a` 的五项 CI 全部成功：[原生 AMD64／ARM64 与两 Edition](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40316758592)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40316753038)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40316748717)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40316744775)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40316740700)。66 个实际公开辅助文件与不可变 A 逐字节一致。入口 B 固定 A，不自指；本段不代表 B、Tag、资产或实机已通过。
+
+版本同步时发现完整版本总表遗漏新行；只补齐 v1.4.11 行和“30 个版本”计数，索引与相关监听／基线回归 163 项中 162 通过、1 条件跳过，不修改检查规则。ShellCheck、Bandit 与两份依赖审计通过；本机 pip-audit 跨磁盘缓存警告不改变审计结果，远端 Linux 另行执行。
