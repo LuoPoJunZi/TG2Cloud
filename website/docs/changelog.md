@@ -2,12 +2,13 @@
 
 v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊断报告。分类／通知默认关闭，成员默认不限额；涉及业务 schema 2，升级前备份。见[转存](/usage/first-transfer/)、[个人配额](/usage/commands/)、[维护](/operations/maintenance/)和[备份](/operations/backup/)。
 
-这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.10 共 29 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.4.11 共 30 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 可下载版本以 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 实际列表为准，不固定“只保留几版”的数量。部分历史发布页和标签已移除，历史说明仍保留；下面的测试结论按当时版本理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.4.11](#tg2cloud-v1-4-11) | 监听来源独立目录、类型归档、名称清理、创建失败恢复与返回导航。 |
 | [v1.4.10](#tg2cloud-v1-4-10) | 监听交互表单、终端监听菜单、中文计划与导航、外部 WebDAV 升级恢复。 |
 | [v1.4.9](#tg2cloud-v1-4-9) | 管理员监听、持久化审批与命名／目录方案，schema 3 和独立 Session 备份。 |
 | [v1.4.8](#tg2cloud-v1-4-8) | 外部 WebDAV 安装、终端输入、实际目录与管理地址维护。 |
@@ -39,6 +40,10 @@ v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊�
 | [v1.0.0](#tg2cloud-v1-0-0) | 建立双 Edition 和独立实例身份，提供两个 PySide6 部署器，保留稳定转存核心与旧数据兼容。 |
 
 v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再提供 Release 下载；新安装使用最新稳定版，不用旧 EXE 覆盖新实例。上游 TG115 的版本单独记录，不计入上述 TG2Cloud 版本。
+
+## TG2Cloud v1.4.11
+
+2026-10-26，待发布。新监听来源按来源名称／媒体类型归档，去表情并限制名称长度，重名保留独立绑定；已有来源与手动转存不自动改目录。创建失败保留暂停记录并可重试，实际 Telegram 读取拒绝仍安全停止。补齐返回状态按钮、细分添加失败提示和 v1.4.10 升级基线；schema 3 无新 DDL、依赖或必填配置。详见[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[发布验收说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS 验收安排在发布后。
 
 ## TG2Cloud v1.4.10
 

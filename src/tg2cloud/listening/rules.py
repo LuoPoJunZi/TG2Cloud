@@ -155,8 +155,8 @@ def facts(message, caption: str | None = None) -> dict:
 
 def evaluate(config: dict, item: dict, *, source_allowed: bool) -> tuple[bool, str]:
     config = validate(config)
-    if not source_allowed or item.get("protected", True):
-        return False, "来源权限或内容保护未通过"
+    if not source_allowed:
+        return False, "来源读取权限未通过"
     if not item.get("attachment"):
         return False, "无附件"
     size = item.get("size")

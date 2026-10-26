@@ -24,7 +24,7 @@ TG2Cloud 是一个自托管的个人文件转存工具：把文件发送或转�
 
 Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云存储
 
-[管理员监听与转存计划](docs/LISTENING.md)默认关闭；v1.4.10 已提供按钮交互与维护恢复，升级后使用。真实环境仍需按指南验收。
+[管理员监听与转存计划](docs/LISTENING.md)默认关闭；v1.4.11 正在准备来源独立归档与恢复维护；正式资产就绪后升级使用，真实环境仍需按指南验收。
 
 ## 主要能力
 
@@ -95,7 +95,7 @@ tg2cloud uninstall --edition all --check
 | 家庭与手机读取 | [Bot 家人授权](docs/FAMILY-SHARING.md) · [外部 WebDAV 只读入口](docs/external-webdav.md) |
 | 可选功能 | [文件分类、通知与配额](docs/FEATURE-ENHANCEMENTS.md) · [复用已有 Nginx](docs/DOCKER-NGINX.md) |
 | 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) · [维护增强](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| 本版维护 | [v1.4.10 发布与验收](docs/development/V1410-ACCEPTANCE.md) |
+| 本版维护 | [v1.4.11 发布与验收](docs/development/V1411-ACCEPTANCE.md) |
 | 升级验收 | [v1.4.4 双架构升级记录](docs/development/V144-ACCEPTANCE.md) · [历史验收目录](docs/README.md) |
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |

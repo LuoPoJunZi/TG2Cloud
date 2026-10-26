@@ -10,6 +10,7 @@ from telethon import Button
 
 from tg2cloud.domain.actors import current_user
 from tg2cloud.domain.planning import PlanningError, name_plan, profile
+from tg2cloud.domain.source_directories import description
 from tg2cloud.listening import account, rules
 from tg2cloud.persistence.plans import Plans
 from tg2cloud.telegram.views import format_bytes
@@ -178,8 +179,11 @@ async def settings(owner, event):
             token_button(owner, actor, "修正记录", ("feedback",)),
         ],
     ]
+    navigation = []
     if actor == owner.settings.allowed_user_id:
-        rows.append([token_button(owner, actor, "目录别名管理", ("aliases",))])
+        navigation.append(token_button(owner, actor, "目录别名管理", ("aliases",)))
+    navigation.append(Button.inline("返回系统状态", data=b"menu:home"))
+    rows.append(navigation)
     await output(
         event,
         "转存设置\n确认模式："
@@ -205,6 +209,7 @@ async def listening(owner, event):
             token_button(owner, actor, "待确认列表", ("pending", 0)),
         ],
     ]
+    rows.append([Button.inline("返回系统状态", data=b"menu:home")])
     for source in store(owner).sources(actor):
         rows.append(
             [
@@ -255,6 +260,8 @@ async def source_card(owner, event, source_id):
             token_button(owner, actor, "返回监听管理", ("listen",)),
         ],
     ]
+    if "目录创建未完成" in s["status"]:
+        buttons.append([token_button(owner, actor, "重试创建目录", ("source-directory-retry", sid, rev))])
     buttons.append([token_button(owner, actor, "命名规则历史与撤销", ("history", sid))])
     from tg2cloud.telegram.editor import MODES, rule_summary
 
@@ -277,7 +284,7 @@ async def source_card(owner, event, source_id):
     await output(
         event,
         f"来源 #{sid}：{s['title']}\n启用从当前时点开始，暂停期间不补抓；重启补拉最多 6 小时。\n状态：{s['status']}\n规则版本：{rev}\n模式：{'确认后转存' if s['config']['confirmation'] else '自动转存'}"
-        f"\n目录：{s['config']['directory'] or s['config']['profile']['directory'] or '沿用分类或默认目录'}\n"
+        f"\n目录：{description(s['config'])}\n"
         + rule_summary(s['config']['rules'], compact=True) + "\n命名：" + MODES[s['config']['profile']['mode']]
         + f"\n{summary}\n最近接收：" + ("；".join(f"{key} {value}" for key, value in stats.items()) or "暂无记录"),
         buttons,
@@ -342,7 +349,7 @@ async def callback(owner, event):
             "test",
             "rules",
             "profile",
-            "source-directory",
+            "source-directory", "source-directory-retry",
             "source-confirm",
             "delete-offer",
             "delete",
@@ -379,9 +386,15 @@ async def callback(owner, event):
                 owner,
                 event,
                 ("add",),
-                "发送已加入来源的 @用户名、聊天 ID 或链接；添加后默认为暂停，规则默认仅视频、确认后转存。",
+                "发送已加入来源的 @用户名、聊天 ID 或链接；自动创建来源目录，按类型归档。添加后暂停，默认仅视频、确认后转存。",
             )
         elif action == "source":
+            await source_card(owner, event, args[0])
+        elif action == "source-directory-retry":
+            source = repo.source(actor, args[0])
+            if source["revision"] != args[1]:
+                raise PlanningError("来源已变化，请刷新")
+            await owner.listener.prepare_directory(actor, source)
             await source_card(owner, event, args[0])
         elif action in {"source-enable", "delete", "source-confirm"}:
             sid, rev = args[:2]
@@ -392,6 +405,7 @@ async def callback(owner, event):
                 if not owner.listener.client:
                     raise ValueError("监听账号未连接")
                 await verified_chat(owner.listener.client, s["chat"])
+                await owner.listener.prepare_directory(actor, s)
             cursor = None
             if action == "source-enable" and args[2]:
                 latest = await owner.listener.client.get_messages(s["chat"], limit=1)
@@ -432,7 +446,7 @@ async def callback(owner, event):
                 event,
                 "规则测试（只读，无任务、额度和进度副作用）\n"
                 + "\n".join(
-                    f"#{mid} {'匹配' if matched else '跳过'}：{reason}\n{name['file_name']} → {directory}"
+                    f"#{mid} {'匹配' if matched else '跳过'}：{reason}\n{name['file_name']} → {name.get('directory_preview') or directory}"
                     for mid, matched, reason, name in results
                 ),
                 [[token_button(owner, actor, "返回来源", ("source", args[0]))]],
@@ -572,9 +586,11 @@ async def callback(owner, event):
             old = next((r for r in repo.source_history(actor, args[0]) if r["id"] == args[2]), None)
             if old is None:
                 raise PlanningError("历史版本已失效。")
-            candidate = repo.source_config(actor, json.loads(old["config"]))
+            binding = {key: source["config"].get(key, default) for key, default in
+                       (("source_folder", ""), ("source_base", None))}
+            candidate = repo.source_config(actor, json.loads(old["config"]) | binding)
             def describe(c):
-                return rule_summary(c["rules"]) + "\n" + profile_summary(c["profile"]) + "\n目录：" + (c["directory"] or c["profile"]["directory"] or "沿用默认") + "\n模式：" + ("确认后转存" if c["confirmation"] else "自动转存")
+                return rule_summary(c["rules"]) + "\n" + profile_summary(c["profile"]) + "\n目录：" + description(c) + "\n模式：" + ("确认后转存" if c["confirmation"] else "自动转存")
             await output(event, "恢复范围：筛选、命名、目录和转存模式；仅作用于新计划。\n\n当前配置：\n" + describe(source["config"]) + "\n\n拟恢复版本 " + str(old["revision"]) + "：\n" + describe(candidate),
                          [[token_button(owner, actor, "确认恢复此版本", ("restore-rule", *args))],
                           [token_button(owner, actor, "取消返回来源", ("source", source["id"]))]])
@@ -583,9 +599,16 @@ async def callback(owner, event):
             old = next((r for r in history if r["id"] == args[2]), None)
             if not old:
                 raise ValueError("历史版本已失效")
+            current = repo.source(actor, args[0])
+            binding = {key: current["config"].get(key, default) for key, default in
+                       (("source_folder", ""), ("source_base", None))}
             repo.change_source(
-                actor, args[0], args[1], config=json.loads(old["config"])
+                actor, args[0], args[1], config=json.loads(old["config"]) | binding,
+                target_base=owner.settings.cd2_target,
             )
+            restored = repo.source(actor, args[0])
+            if restored["config"].get("directory_mode") == "source_type":
+                await owner.listener.prepare_directory(actor, restored)
             await source_card(owner, event, args[0])
         elif action == "save-feedback":
             repo.apply_feedback(actor, *args)
@@ -726,16 +749,25 @@ async def text(owner, event, value):
             repo.set_directory(actor, **data)
             await output(event, "目录别名已保存；只作用于新选择，不更改已入队任务。")
         interactions(owner).pop(actor, None)
+    except PlanningError as exc:
+        await output(event, "设置未保存：" + str(exc),
+                     [[token_button(owner, actor, "返回监听管理" if action == "add" else "返回转存设置",
+                                    ("listen",) if action == "add" else ("settings",))]])
     except (ValueError, PermissionError, TypeError):
         await output(
             event,
             "设置未保存：请检查格式、字段、目录授权或记录版本；可重新输入或 /cancelinput。",
         )
-    except Exception:  # noqa: BLE001 - private boundary must not expose credentials
-        await output(
-            event,
-            "设置未完成：来源权限、网络或账号状态暂不可确认。可重试或 /cancelinput。",
-        )
+    except Exception as exc:  # noqa: BLE001 - private boundary must not expose credentials
+        import sqlite3
+
+        from tg2cloud.listening.service import source_error
+
+        reason = ("来源记录未能保存；请检查数据库所在磁盘空间和写入权限后重试"
+                  if isinstance(exc, sqlite3.Error) else source_error(exc))
+        await output(event, "设置未完成：" + reason + "。可重新输入，或点击取消。",
+                     [[token_button(owner, actor, "取消填写", ("cancelinput", ("listen",)))]]
+                     if action == "add" else None)
     return True
 
 

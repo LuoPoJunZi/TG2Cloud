@@ -17,6 +17,7 @@ from pathlib import Path
 from tg2cloud.domain.actors import current_user
 from tg2cloud.domain.classification import safe_directory
 from tg2cloud.domain.planning import FIELDS, PlanningError, name_plan, profile
+from tg2cloud.domain.source_directories import description, media_directory
 from tg2cloud.listening import rules
 
 MODES = {
@@ -507,7 +508,7 @@ async def show(owner, event, d, page, notice=""):
             title
             + "选择已授权目录\n当前："
             + (
-                current or "沿用命名方案、分类或默认设置"
+                description(d.config)
                 if page == "directory"
                 else current or "沿用默认"
             )
@@ -516,6 +517,11 @@ async def show(owner, event, d, page, notice=""):
             [b(alias, "directory", page, alias)] for alias in repo.directories(actor)
         ]
         rows += [[b("沿用默认设置", "directory", page, "")]]
+        if page == "directory":
+            text += "\n来源目录分类独立于手动转存；只改变新计划，不移动已有文件。"
+            rows.insert(0, [b("来源名称下按类型保存", "source-layout")])
+            if d.config.get("directory_mode") == "source_type":
+                text += "\n命名方案中的目录覆盖在此模式下不生效。"
         if page == "profile-directory":
             rows += [[b("返回命名", "page", "naming")]]
             footer = []
@@ -655,7 +661,25 @@ async def save(owner, event, d):
     actor, repo, d = require(owner, d.id, d.version)
     if d.source is not None:
         config = repo.source_config(actor, d.config)
-        repo.change_source(actor, d.source, d.revision, config=config)
+        if config.get("directory_mode") == "source_type" and config.get("source_folder"):
+            try:
+                media_directory(config, base=owner.settings.cd2_target)
+            except ValueError:
+                raise PlanningError("Bot 保存根目录已变化，请先核对并恢复配置；草稿尚未保存。") from None
+        old = repo.source(actor, d.source)
+        changed_layout = config.get("directory_mode", "legacy") != old["config"].get("directory_mode", "legacy")
+        repo.change_source(actor, d.source, d.revision, config=config,
+                           enabled=False if changed_layout else None,
+                           target_base=owner.settings.cd2_target)
+        if changed_layout and config.get("directory_mode") == "source_type":
+            from tg2cloud.listening.service import ListenerReadError
+            try:
+                await owner.listener.prepare_directory(actor, repo.source(actor, d.source))
+            except ListenerReadError:
+                drafts(owner).pop(actor, None)
+                ui().interactions(owner).pop(actor, None)
+                await ui().source_card(owner, event, d.source)
+                return
     elif d.kind == "personal":
         with repo.transaction(actor):
             if repo.preferences(actor) != d.original:
@@ -678,7 +702,9 @@ async def save(owner, event, d):
     ui().interactions(owner).pop(actor, None)
     await ui().output(
         event,
-        "设置已保存，仅作用于新计划；已入队任务保持原名称和目录。",
+        "设置已保存，仅作用于新计划；已入队任务保持原名称和目录。"
+        + ("\n目录模式已切换，来源已暂停；核对后点击启用。"
+           if d.source is not None and changed_layout else ""),
         [
             [
                 ui().token_button(
@@ -815,6 +841,12 @@ async def callback(owner, event, args):
         elif operation == "reset-profile":
             d.config["profile"] = profile()
             page = "naming"
+        elif operation == "source-layout":
+            if d.source is None:
+                raise PlanningError("来源目录仅适用于监听来源")
+            d.config["directory_mode"] = "source_type"
+            d.config["directory"] = ""
+            page = "directory"
         elif operation == "directory":
             target, alias = values
             path = repo.directory(actor, alias) or ""
@@ -823,6 +855,7 @@ async def callback(owner, event, args):
                 page = "naming"
             elif target == "directory":
                 d.config["directory"] = alias
+                d.config["directory_mode"] = "legacy"
             else:
                 raise PlanningError("目录选项无效。")
         elif operation == "alias":

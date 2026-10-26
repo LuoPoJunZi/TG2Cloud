@@ -68,6 +68,7 @@
     "src/tg2cloud/domain/models.py",
     "src/tg2cloud/domain/naming.py",
     "src/tg2cloud/domain/planning.py",
+    "src/tg2cloud/domain/source_directories.py",
     "src/tg2cloud/domain/states.py",
     "src/tg2cloud/listening/__init__.py",
     "src/tg2cloud/listening/account.py",

@@ -8,6 +8,14 @@ from contextlib import contextmanager
 
 from tg2cloud.domain.classification import safe_directory
 from tg2cloud.domain.planning import PlanningError, corrected_name, profile
+from tg2cloud.domain.source_directories import (
+    CATEGORIES,
+    MAX_BYTES,
+    MAX_COLUMNS,
+    columns,
+    folder_name,
+    media_directory,
+)
 from tg2cloud.listening.rules import validate
 
 TTL = 7 * 86400
@@ -151,7 +159,7 @@ class Plans:
             raise PlanningError("来源不存在")
         return dict(row) | {"config": json.loads(row["config"])}
 
-    def save_source(self, actor, *, account, chat, title, cursor, config):
+    def save_source(self, actor, *, account, chat, title, cursor, config, target_base=None):
         config = self.source_config(actor, config)
         with self.transaction(actor, admin=True):
             if len(self.sources(actor)) >= 32:
@@ -164,6 +172,12 @@ class Plans:
                 previous = self.source(actor, old["id"])
                 if not previous["deleted"]:
                     raise PlanningError("来源已经登记；请在原来源中修改或恢复")
+                # Re-adding the same source keeps its established folder and base.
+                if target_base is not None:
+                    config.update({key: previous["config"].get(key, default) for key, default in
+                                   (("source_folder", ""), ("source_base", None))})
+                    config["directory_mode"] = "source_type"
+                    config = self._bind_source_folder(config, old["id"], title, chat, target_base)
                 self.c.execute(
                     "UPDATE listener_sources SET config=?,cursor=?,title=?,deleted=0,enabled=0,revision=revision+1,status='暂停',gap=0,polled_at=? WHERE id=?",
                     (json.dumps(config), cursor, title[:100], time.time(), old["id"]),
@@ -173,7 +187,28 @@ class Plans:
                 "INSERT INTO listener_sources(account,chat,title,config,cursor,polled_at) VALUES(?,?,?,?,?,?)",
                 (account, chat, title[:100], json.dumps(config), cursor, time.time()),
             )
+            if target_base is not None:
+                config = self._bind_source_folder(config | {"directory_mode": "source_type"},
+                                                  result.lastrowid, title, chat, target_base)
+                self.c.execute("UPDATE listener_sources SET config=? WHERE id=?",
+                               (json.dumps(config), result.lastrowid))
             return self.source(actor, result.lastrowid)
+
+    def _bind_source_folder(self, config, source_id, title, chat, base):
+        if not config.get("source_folder"):
+            # Transactional reservations include deleted sources: old data never changes owners.
+            used = {json.loads(row[0]).get("source_folder", "").casefold() for row in
+                    self.c.execute("SELECT config FROM listener_sources WHERE id!=?", (source_id,))}
+            used.update(x.casefold() for x in CATEGORIES)
+            used.update(row[0].split("/", 1)[0].casefold() for row in
+                        self.c.execute("SELECT path FROM transfer_directories"))
+            candidate = folder_name(title, chat)
+            counter = 0
+            while candidate.casefold() in used:
+                counter += 1
+                candidate = folder_name(title, chat, f"-来源{source_id}" + (f"-{counter}" if counter > 1 else ""))
+            config = config | {"source_folder": candidate, "source_base": base}
+        return self.source_config(self.admin, config)
 
     def source_config(self, actor, config):
         self.authorize(actor, admin=True)
@@ -181,10 +216,21 @@ class Plans:
             "rules",
             "profile",
             "directory",
-            "confirmation",
+            "confirmation", "directory_mode", "source_folder", "source_base",
         }:
             raise PlanningError("未知来源配置")
-        result = {"profile": profile(), "directory": "", "confirmation": True, **config}
+        result = {"profile": profile(), "directory": "", "confirmation": True,
+                  "directory_mode": "legacy", "source_folder": "", "source_base": None, **config}
+        if result["directory_mode"] not in {"legacy", "source_type"}:
+            raise PlanningError("未知来源目录模式")
+        folder = safe_directory(result["source_folder"])
+        if "/" in folder or columns(folder) > MAX_COLUMNS or len(folder.encode("utf-8")) > MAX_BYTES:
+            raise PlanningError("来源目录名称过长或不是单级目录")
+        if result["source_base"] is not None and (not isinstance(result["source_base"], str)
+                                                   or "\0" in result["source_base"]):
+            raise PlanningError("来源保存根目录无效")
+        if bool(folder) != (result["source_base"] is not None):
+            raise PlanningError("来源目录绑定不完整")
         result["rules"] = validate(result.get("rules", {}))
         result["profile"] = profile(result["profile"])
         self.directory(actor, result["directory"])
@@ -207,16 +253,33 @@ class Plans:
         enabled=None,
         delete=False,
         cursor=None,
+        target_base=None,
     ):
         with self.transaction(actor, admin=True):
             old = self.source(actor, source_id)
             if old["revision"] != revision or old["deleted"]:
                 raise PlanningError("来源已变化，请刷新")
+            if config is not None:
+                # Historical revisions before folder support have no binding fields.
+                config = {key: old["config"].get(key, default) for key, default in
+                          (("source_folder", ""), ("source_base", None))} | config
             value = (
                 self.source_config(actor, config)
                 if config is not None
                 else old["config"]
             )
+            if config is not None:
+                for key, default in (("source_folder", ""), ("source_base", None)):
+                    if value.get(key, default) != old["config"].get(key, default):
+                        raise PlanningError("已绑定的来源目录不可改名或改换根目录")
+                if value["directory_mode"] == "source_type" and not value["source_folder"]:
+                    if target_base is None:
+                        raise PlanningError("切换来源目录需要核对当前 Bot 保存根目录")
+                    value = self._bind_source_folder(value, source_id, old["title"], old["chat"], target_base)
+            if target_base is not None and value.get("directory_mode") == "source_type":
+                media_directory(value, base=target_base)
+            if value.get("directory_mode", "legacy") != old["config"].get("directory_mode", "legacy"):
+                enabled = False  # A changed destination always needs explicit review and re-enabling.
             self.c.execute(
                 "INSERT INTO listener_revisions(source,revision,config,operator,created) VALUES(?,?,?,?,?)",
                 (
@@ -314,6 +377,8 @@ class Plans:
                 >= 200
             ):
                 raise PlanningError("待确认已达 200 项；请先处理")
+            source_directory = media_directory(saved["config"], kind=item["kind"], mime=item["mime"],
+                                               extension=item["extension"], base=target_base) if source is not None else None
             directory = self.directory(actor, directory_alias)
             directory = (
                 directory
@@ -332,6 +397,8 @@ class Plans:
                 classification_options or self.db.feature_settings()
             )
             origin = "alias" if directory is not None else "classification"
+            if source_directory is not None:
+                directory, origin = source_directory, "source"
             if directory is None:
                 directory = classified_directory(
                     classification_options,
@@ -460,6 +527,15 @@ class Plans:
                 if self.source(actor, p["source"])["deleted"]:
                     raise PlanningError("来源已删除，不再提交待确认计划")
             data = p["payload"].copy()
+            if data["directory_origin"] == "source":
+                if p["source"] is None:
+                    raise PermissionError("来源目录缺少监听身份")
+                source = self.source(actor, p["source"])
+                expected = media_directory(source["config"] | {"directory_mode": "source_type"},
+                                           kind=data["media_kind"], mime=data["mime_type"],
+                                           extension=data["media_extension"], base=data["target_base"])
+                if data["directory_override"] != expected:
+                    raise PermissionError("计划的来源目录绑定不匹配")
             if (
                 data["directory_origin"] == "alias"
                 and data["directory_override"] not in self.directories(actor).values()

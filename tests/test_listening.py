@@ -116,7 +116,6 @@ class RuleTests(unittest.TestCase):
             {"caption": "物理 广告"},
             {"caption": "物理", "size": 2048},
             {"caption": "物理", "size": None},
-            {"caption": "数学", "protected": True},
             {"caption": "旅行"},
         ):
             self.assertFalse(self.match(cfg, **changes)[0])
@@ -163,11 +162,10 @@ class RuleTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             rules.validate({"groups": [{"names": ["[ab]*"], "name_mode": "glob"}]})
 
-    def test_unknown_permission_or_protection_and_missing_size_fail_closed(self):
+    def test_protection_metadata_does_not_replace_permissions_or_size_checks(self):
         item = rules.facts(message(protected=None))
-        self.assertFalse(
-            rules.evaluate({"all_attachments": True}, item, source_allowed=True)[0]
-        )
+        for flag in (None, True, False):
+            self.assertTrue(rules.evaluate({"all_attachments": True}, item | {"protected": flag}, source_allowed=True)[0])
         self.assertFalse(
             rules.evaluate(
                 {"all_attachments": True},
@@ -547,13 +545,14 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("重复", result[0][2])
         self.listener.client.download_media.assert_not_awaited()
 
-    async def test_protected_and_nonattachment_skip_without_plan(self):
+    async def test_protection_flag_is_accepted_but_nonattachment_still_skips(self):
         await self.listener.receive(self.source, message(protected=True))
         m = message(2)
         m.media = None
         m.file = None
         await self.listener.receive(self.source, m)
-        self.assertFalse(self.repo.pending(self.admin))
+        self.assertEqual(len(self.repo.pending(self.admin)), 1)
+        self.assertEqual(self.repo.pending(self.admin)[0]["message"], 1)
         self.assertEqual(
             self.db._conn.execute("SELECT count(*) FROM listener_events").fetchone()[0],
             2,
@@ -620,7 +619,9 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         p = self.repo.pending(self.admin)[0]
         task, _ = self.repo.submit(self.admin, p["id"], p["revision"])
         reader = CheckedSource(self.listener, task)
-        for msg in (None, message(2), message(protected=True)):
+        no_media = message()
+        no_media.media = None
+        for msg in (None, message(2), no_media):
             self.listener.client.get_messages.return_value = msg
             with self.assertRaises(ListenerReadError):
                 await reader.get_messages(-1001, ids=1)
@@ -821,14 +822,6 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
                 date=datetime.now(timezone.utc),
                 left=True,
             ),
-            types.Channel(
-                id=1,
-                title="fixture",
-                photo=types.ChatPhotoEmpty(),
-                date=datetime.now(timezone.utc),
-                left=False,
-                noforwards=True,
-            ),
         ):
             c.get_entity.return_value = e
             with self.assertRaises(ListenerReadError):
@@ -847,8 +840,10 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
             types.ChannelParticipant(user_id=42, date=datetime.now(timezone.utc)),
             chat=False,
         )
-        await verified_chat(c, "@fixture")
-        c.get_permissions.assert_awaited_once()
+        for flag in (False, True, None):
+            c.get_entity.return_value.noforwards = flag
+            await verified_chat(c, "@fixture")
+        self.assertEqual(c.get_permissions.await_count, 3)
         for left, denied in ((True, False), (False, True), (False, None)):
             member = types.ChannelParticipantBanned(
                 peer=types.PeerUser(42),

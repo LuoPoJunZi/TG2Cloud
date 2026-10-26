@@ -8,6 +8,7 @@ from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 
 from tg2cloud.domain.planning import PlanningError, name_plan
+from tg2cloud.domain.source_directories import media_directory
 from tg2cloud.listening import account, rules
 from tg2cloud.persistence.plans import Plans
 
@@ -23,6 +24,33 @@ class ListenerReadError(RuntimeError):
     """Authorization/content failures require review, not automatic identity fallback."""
 
 
+AUTH_ERRORS = {"AuthKeyUnregisteredError", "SessionRevokedError", "SessionExpiredError",
+               "UserDeactivatedError", "UserDeactivatedBanError", "AuthKeyDuplicatedError"}
+
+
+def source_error(exc):
+    from telethon.errors import FloodWaitError
+
+    if isinstance(exc, FloodWaitError):
+        return f"Telegram 限流，请等待 {max(5, exc.seconds)} 秒后重试；账号冷却期间不会接收新任务"
+    name = type(exc).__name__
+    if name in AUTH_ERRORS:
+        return "个人监听账号授权失效；请在 tg2cloud 的监听管理中重新登录"
+    if name in {"UsernameInvalidError", "UsernameNotOccupiedError", "InviteHashInvalidError", "InviteHashExpiredError", "PeerIdInvalidError"}:
+        return "来源用户名、聊天 ID 或邀请链接无效或已失效；请核对后重新填写"
+    if name in {"ChatForwardsRestrictedError", "MediaEmptyError"}:
+        return "Telegram 拒绝读取此附件；请核对来源权限，本程序不会绕过服务端拒绝"
+    if name in {"ChannelPrivateError", "UserNotParticipantError", "ChatAdminRequiredError"}:
+        return "监听账号尚未加入来源，或没有读取权限；请先在该个人账号中加入并核对权限"
+    if isinstance(exc, ListenerReadError):
+        return str(exc)  # Only fixed, locally produced messages use this type.
+    if isinstance(exc, (OSError, asyncio.TimeoutError)):
+        return "连接 Telegram 失败或超时；请检查 VPS 网络后重试，来源尚未添加"
+    if isinstance(exc, ValueError):
+        return "无法解析来源；请填写当前个人账号已加入的 @用户名、聊天 ID 或有效链接"
+    return "来源核验未完成；请检查监听账号与来源后重试，未显示内部错误或凭据"
+
+
 async def verified_chat(client, reference):
     from telethon.tl import types
 
@@ -33,8 +61,6 @@ async def verified_chat(client, reference):
         or getattr(entity, "deactivated", False)
     ):
         raise ListenerReadError("来源不是已加入且可访问的频道或群组")
-    if getattr(entity, "noforwards", None) is not False:
-        raise ListenerReadError("来源限制保存或保护状态无法确认")
     from telethon.tl.custom.participantpermissions import ParticipantPermissions
 
     permissions = await client.get_permissions(entity, "me")
@@ -95,9 +121,8 @@ class CheckedSource:
         if (
             not message
             or not rules.facts(message)["attachment"]
-            or rules.facts(message)["protected"]
         ):
-            raise ListenerReadError("消息已删除、无附件或限制保存；停止下载")
+            raise ListenerReadError("消息已删除或无可读取的附件；停止下载")
         if rules.facts(message)["media_key"] != task["media_key"]:
             raise ListenerReadError("来源附件已变化；停止原任务，避免下载错误文件")
         self.message = message
@@ -126,19 +151,14 @@ class CheckedSource:
             raise ListenerReadError(
                 "Telegram 限流，已记录冷却；结束冷却后可手动重试本任务"
             ) from None
-        if type(exc).__name__ in {
-            "AuthKeyUnregisteredError",
-            "SessionRevokedError",
-            "SessionExpiredError",
-            "UserDeactivatedError",
-            "UserDeactivatedBanError",
+        if type(exc).__name__ in AUTH_ERRORS | {
             "ChannelPrivateError",
             "UserNotParticipantError",
-            "ChatAdminRequiredError",
+            "ChatAdminRequiredError", "ChatForwardsRestrictedError", "MediaEmptyError",
         }:
             await self.listener.source_failure(source, exc)
             raise ListenerReadError(
-                "监听授权或来源权限失效，停止自动重试；请核对后恢复"
+                source_error(exc)
             ) from None
 
 
@@ -217,6 +237,63 @@ class Listener:
         self.plans.source_config(actor, config)
         if not self.client:
             raise PlanningError("请先在终端登录并启用监听账号")
+        try:
+            entity, latest = await self._resolve(reference)
+        except Exception as exc:  # noqa: BLE001 - map private Telegram exceptions to fixed safe messages
+            from telethon.errors import FloodWaitError
+            if isinstance(exc, FloodWaitError) or type(exc).__name__ in AUTH_ERRORS:
+                await self.source_failure(None, exc)
+            raise ListenerReadError(source_error(exc)) from None
+        from telethon.utils import get_peer_id
+
+        source = self.plans.save_source(
+            actor, account=account.state(self.db)["account"], chat=get_peer_id(entity),
+            title=entity.title, cursor=latest[0].id if latest else 0, config=config,
+            target_base=self.owner.settings.cd2_target,
+        )
+        try:
+            return await self.prepare_directory(actor, source)
+        except ListenerReadError:
+            # Registration is durable and paused; show the source and a repair button, not a duplicate-add trap.
+            return self.plans.source(actor, source["id"])
+
+    async def prepare_directory(self, actor, source):
+        self.require_admin(actor)
+        source = self.plans.source(actor, source["id"])
+        if source["deleted"]:
+            raise PlanningError("来源已删除")
+        if source["config"].get("directory_mode", "legacy") != "source_type":
+            return source
+        try:
+            media_directory(source["config"], base=self.owner.settings.cd2_target)
+        except ValueError:
+            self._directory_failed(actor, source, "保存根目录已变化；请恢复原配置后重试")
+            raise ListenerReadError("来源保存根目录已变化；来源已暂停，请核对并恢复原 Bot 保存配置") from None
+        try:
+            await self.owner.rclone.ensure_directory(source["config"]["source_folder"])
+        except BaseException as exc:
+            self._directory_failed(actor, source, "请检查网关后点击重试创建目录")
+            if not isinstance(exc, Exception):
+                raise
+            raise ListenerReadError("来源已登记并暂停；目录创建未完成，请检查网关连接、权限和保存目录后重试") from None
+        current = self.plans.source(actor, source["id"])
+        if current["revision"] != source["revision"] or current["deleted"]:
+            raise PlanningError("来源配置已变化，请刷新；已创建的空目录保留")
+        with self.plans.transaction(actor, admin=True):
+            self.db._conn.execute(
+                "UPDATE listener_sources SET status=? WHERE id=? AND revision=? AND deleted=0",
+                ("等待检查" if current["enabled"] else "暂停；来源目录已就绪", source["id"], source["revision"]),
+            )
+        return self.plans.source(actor, source["id"])
+
+    def _directory_failed(self, actor, source, reason):
+        with self.plans.transaction(actor, admin=True):
+            self.db._conn.execute(
+                "UPDATE listener_sources SET enabled=0,status=? WHERE id=? AND revision=? AND deleted=0",
+                ("目录创建未完成；" + reason, source["id"], source["revision"]),
+            )
+
+    async def _resolve(self, reference):
         reference = reference.strip()
         if reference.lstrip("-").isdigit():
             reference = int(reference)
@@ -229,20 +306,11 @@ class Listener:
                 CheckChatInviteRequest(reference.rsplit("/", 1)[1].lstrip("+"))
             )
             if not isinstance(invite, ChatInviteAlready):
-                raise PlanningError("尚未加入该来源；请先在个人 Telegram 中申请加入")
+                raise ListenerReadError("尚未加入该来源；请先在个人 Telegram 中申请加入")
             reference = invite.chat
         entity = await verified_chat(self.client, reference)
         latest = await self.client.get_messages(entity, limit=1)
-        from telethon.utils import get_peer_id
-
-        return self.plans.save_source(
-            actor,
-            account=account.state(self.db)["account"],
-            chat=get_peer_id(entity),
-            title=entity.title,
-            cursor=latest[0].id if latest else 0,
-            config=config,
-        )
+        return entity, latest
 
     def preview(self, source, message, caption=None):
         item = rules.facts(message, caption)
@@ -275,7 +343,10 @@ class Listener:
         messages = await self.client.get_messages(source["chat"], limit=10)
         result = []
         for m in messages:
-            _, matched, reason, naming = self.preview(source, m)
+            item, matched, reason, naming = self.preview(source, m)
+            naming["directory_preview"] = media_directory(source["config"], kind=item["kind"],
+                                                         mime=item["mime"], extension=item["extension"],
+                                                         base=self.owner.settings.cd2_target)
             if self.db._conn.execute(
                 "SELECT 1 FROM tasks WHERE sender_id=? AND media_key=?",
                 (actor, rules.facts(m)["media_key"]),
@@ -462,13 +533,7 @@ class Listener:
                 cooldown_until=time.time() + max(5, exc.seconds),
             )
             return False
-        if type(exc).__name__ in {
-            "AuthKeyUnregisteredError",
-            "SessionRevokedError",
-            "SessionExpiredError",
-            "UserDeactivatedError",
-            "UserDeactivatedBanError",
-        }:
+        if type(exc).__name__ in AUTH_ERRORS:
             account.write_state(
                 self.db, enabled=False, status="授权失效，请在终端重新登录"
             )
@@ -481,9 +546,9 @@ class Listener:
         if isinstance(exc, ListenerReadError) or type(exc).__name__ in {
             "ChannelPrivateError",
             "UserNotParticipantError",
-            "ChatAdminRequiredError",
+            "ChatAdminRequiredError", "ChatForwardsRestrictedError", "MediaEmptyError",
         }:
-            status, paused = "来源不可访问或限制保存，已暂停；核对后手动启用", True
+            status, paused = "来源或附件读取被拒绝，已暂停；核对权限后手动启用", True
         elif (
             isinstance(exc, ReceiveLimited)
             or isinstance(exc, ValueError)

@@ -518,6 +518,55 @@ class EditorTests(unittest.IsolatedAsyncioTestCase):
         self.find("返回待确认列表")
 
 
+    async def test_source_directory_layout_is_explicit_draft_and_pauses_on_save(self):
+        self.owner.rclone = NS(ensure_directory=AsyncMock())
+        await self.open("directory")
+        await self.click("来源名称下按类型保存")
+        self.assertIn("按来源名称创建/文件类型", self.text)
+        self.assertEqual(self.config().get("directory_mode"), "legacy")
+        await self.click("保存修改")
+        self.assertEqual(self.config()["source_folder"], "测试来源")
+        self.assertEqual(self.config()["directory_mode"], "source_type")
+        self.assertIn("已暂停", self.text)
+        self.owner.rclone.ensure_directory.assert_awaited_once_with("测试来源")
+        await self.open("directory")
+        await self.click("沿用默认设置")
+        await self.click("取消返回")
+        self.assertEqual(self.config()["directory_mode"], "source_type")
+
+    async def test_source_directory_failure_after_save_returns_repairable_source(self):
+        self.owner.rclone = NS(ensure_directory=AsyncMock(side_effect=OSError("private-token")))
+        await self.open("directory")
+        await self.click("来源名称下按类型保存")
+        await self.click("保存修改")
+        self.assertIn("目录创建未完成", self.text)
+        self.assertNotIn("private-token", self.text)
+        self.find("重试创建目录")
+        self.owner.rclone.ensure_directory.side_effect = None
+        await self.click("重试创建目录")
+        self.assertIn("已就绪", self.text)
+        self.assertNotIn(self.admin, editor.drafts(self.owner))
+
+
+    async def test_history_restores_pre_folder_config_but_keeps_folder_binding(self):
+        self.owner.rclone = NS(ensure_directory=AsyncMock())
+        await self.open("directory")
+        await self.click("来源名称下按类型保存")
+        await self.click("保存修改")
+        s = self.repo.source(self.admin, self.source["id"])
+        folder = s["config"]["source_folder"]
+        e = self.e()
+        await planning.source_card(self.owner, e, s["id"])
+        self.capture(e)
+        await self.click("命名规则历史与撤销")
+        await self.click("恢复版本 1")
+        self.assertIn("沿用分类或默认目录", self.text)
+        await self.click("确认恢复此版本")
+        self.assertEqual(self.config()["directory_mode"], "legacy")
+        self.assertEqual(self.config()["source_folder"], folder)
+        self.assertFalse(self.repo.source(self.admin, s["id"])["enabled"])
+
+
 class FieldParsingTests(unittest.TestCase):
     def test_sizes_are_exact_bounded_and_do_not_accept_expressions(self):
         for text, wanted in [
