@@ -1,6 +1,6 @@
 # 文档来源与维护
 
-当前源码 **v1.4.11** 待发布；核对日期 **2026 年 10 月 26 日**。下方正式版本与资产证据仍对应 v1.4.10，本版结果见[发布验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V1411-ACCEPTANCE.md)。
+当前源码与正式版本 **v1.4.11**；核对日期 **2026 年 10 月 26 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11)、[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)与实际源码资产已核验，本版结果见[发布验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V1411-ACCEPTANCE.md)。
 
 上一正式版本 **v1.4.10**；核对日期 **2026 年 10 月 26 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.10)、[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)与实际资产已核验，真实环境验收单独记录。
 

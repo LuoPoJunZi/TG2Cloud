@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.4.11
 
-版本日期：2026-10-26。正在准备正式发布；本地验证已完成，GitHub CI、A／B、同标签双架构和实际资产核验结果见[本版发布与验收](docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS／用户网关验收仍安排在发布后。
+版本日期：2026-10-26。[v1.4.11 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11) 已正式发布；A／B、main、[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)和实际源码资产核验通过，证据见[本版发布与验收](docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS／用户网关验收仍安排在发布后。
 
 - 新监听来源在 Bot 保存目录下按频道／群组名称建目录，并按附件类型归档；去 Emoji、按 30 个全宽汉字等价限长和重名编号处理，事务保留绑定。已有来源不自动改目录，可通过保存目录草稿主动切换；创建失败暂停并可重试，已登记计划和手动转存保留原目录。
 - 监听来源、筛选和下载不再仅凭内容保护标记拦截；保留成员读取权限、管理员身份和附件复核，Telegram 实际拒绝时停止自动重试。添加来源细分无权限、无效链接、授权、限流、网络及持久化错误，不输出敏感异常。

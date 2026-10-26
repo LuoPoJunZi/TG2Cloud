@@ -10,7 +10,7 @@
 
 ## 安装与升级
 
-正式资产就绪后，可使用固定版本入口。升级前先备份并运行只读预检：
+[v1.4.11 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11) 已发布；[同标签 AMD64／ARM64 工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)及实际源码资产核验通过。可使用固定版本入口。升级前先备份并运行只读预检：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.4.11/install.sh) --edition clouddrive2 --release v1.4.11 --check

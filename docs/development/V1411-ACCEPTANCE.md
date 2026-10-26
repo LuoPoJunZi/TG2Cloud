@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-2026-10-26：用户授权提交推送并正式发布 v1.4.11。目前处于本地发布准备，GitHub CI、辅助 A／入口 B、同标签原生双架构和实际资产结果完成后逐项追加。真实 VPS、Telegram、用户网关及生产恢复尚未执行，不自动连接用户主机。
+2026-10-26：用户授权提交推送并正式发布 v1.4.11。[v1.4.11 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11) 已发布；辅助 A／入口 B、最终 main 五项检查、[同标签原生双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)和实际源码资产核验通过。真实 VPS、Telegram、用户网关及生产恢复尚未执行，不自动连接用户主机。
 
 ## 本版范围与兼容
 
@@ -57,3 +57,12 @@ OpenList 改为 `--edition openlist`；内网使用同标签 `install-lan.sh`，
 版本同步时发现完整版本总表遗漏新行；只补齐 v1.4.11 行和“30 个版本”计数，索引与相关监听／基线回归 163 项中 162 通过、1 条件跳过，不修改检查规则。ShellCheck、Bandit 与两份依赖审计通过；本机 pip-audit 跨磁盘缓存警告不改变审计结果，远端 Linux 另行执行。
 
 入口 B 初次 main 网站检查发现安装／卸载和网站开发指南缺少新的真实 helper pin；仅补充发布文档中的 A 身份，保留旧版本历史与现有断言，业务、权限和 helper 均未改动。修正后结果另行追加。
+
+### 正式发布与资产核验
+
+- 已验证辅助 A：`7b115e1eef244ee2db7c7c08bb51d0ed3eaf045a`；最终 B／Tag：`715999fd1fa64077172df6e43b78c3ab8bd2f7c2`，不自指、不改写历史标签。
+- 最终 main 五项全部成功：[原生两架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40317744212)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40317810235)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40317742696)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40317742769)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40317742642)。[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)的 prepare、AMD64、ARM64 和 release 均成功。
+- 实际源码包 `TG2Cloud-v1.4.11-source.tar.gz`：3841184 字节；SHA256 `da8d9027fbd1391e29ff537a1ee733767ad559280731c565b0e78557b083ed6d`。`SHA256SUMS.txt` SHA256 为 `d58a17b72ac0251244c2def2cac10a2ebb2435fd44c93c0d03aade9372f85d72`。
+- 正式验证器、GitHub digest 和下载字节一致；按 Linux LF 归档规则对比不可变 Tag 的 372 个文件，逐文件相同。未用本机重打包替代正式资产。
+- 发布版本同步后本地完整检查 1340 项：1306 通过、34 工具／平台条件跳过、0 失败；Ruff、compileall、网站 37 项和构建、ShellCheck、Bandit、两份依赖审计通过。最低 Python 与原生 Docker／网关由上述远端矩阵另行验证。
+- 真实 VPS 升级、监听下载、用户云端转存、手机播放和生产恢复尚未执行。发布成功不等于实机验收通过；按本页清单由用户在发布后验收。

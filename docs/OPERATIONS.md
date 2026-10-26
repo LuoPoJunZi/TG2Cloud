@@ -4,7 +4,7 @@ v1.4.8 已发布安装交互与输入维护，检测保留但不重复展示环�
 
 v1.4.7 已正式发布统一外部 WebDAV 管理。历史正式 v1.4.6 尚无此选项；须显式更新离线工具后才生效，更新文档不会更新 VPS。
 
-本文说明 v1.4.11 发布准备源码 的 Linux 管理行为与外部 WebDAV 统一入口。状态、日志和检查结果按所选 Edition 展示；业务数据库、网关和外部附加功能仍分别管理。须显式升级离线工具并重新打开 `tg2cloud` 才能加载新页面。
+本文说明正式 v1.4.11 的 Linux 管理行为与外部 WebDAV 统一入口。状态、日志和检查结果按所选 Edition 展示；业务数据库、网关和外部附加功能仍分别管理。须显式升级离线工具并重新打开 `tg2cloud` 才能加载新页面。
 
 当前用户升级与 WebDAV 日志见[v1.4.5 验收记录](development/V145-ACCEPTANCE.md)，自动发布证据见[维护说明](development/MAINTENANCE-NEXT.md)。更早版本的编号与验收在[历史维护记录](development/MAINTENANCE-IMPROVEMENTS.md)及[文档目录](README.md)中保留，不用于推断当前所有场景均通过。
 

@@ -43,7 +43,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.11
 
-2026-10-26，待发布。新监听来源按来源名称／媒体类型归档，去表情并限制名称长度，重名保留独立绑定；已有来源与手动转存不自动改目录。创建失败保留暂停记录并可重试，实际 Telegram 读取拒绝仍安全停止。补齐返回状态按钮、细分添加失败提示和 v1.4.10 升级基线；schema 3 无新 DDL、依赖或必填配置。详见[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[发布验收说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS 验收安排在发布后。
+2026-10-26，[v1.4.11 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11) 已正式发布；[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)、main 与实际源码资产已核验。新监听来源按来源名称／媒体类型归档，去表情并限制名称长度，重名保留独立绑定；已有来源与手动转存不自动改目录。创建失败保留暂停记录并可重试，实际 Telegram 读取拒绝仍安全停止。补齐返回状态按钮、细分添加失败提示和 v1.4.10 升级基线；schema 3 无新 DDL、依赖或必填配置。详见[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[发布验收说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS 验收安排在发布后。
 
 ## TG2Cloud v1.4.10
 

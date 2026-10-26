@@ -24,7 +24,7 @@ TG2Cloud 是一个自托管的个人文件转存工具：把文件发送或转�
 
 Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云存储
 
-[管理员监听与转存计划](docs/LISTENING.md)默认关闭；v1.4.11 正在准备来源独立归档与恢复维护；正式资产就绪后升级使用，真实环境仍需按指南验收。
+[管理员监听与转存计划](docs/LISTENING.md)默认关闭；v1.4.11 已发布来源独立归档与恢复维护，升级后使用；真实环境仍需按指南验收。
 
 ## 主要能力
 
@@ -33,7 +33,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前稳定版 **v1.4.10**，支持 Linux AMD64 / ARM64；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.10)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
+当前稳定版 **v1.4.11**，支持 Linux AMD64 / ARM64；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
 
 ## 开始使用
 
