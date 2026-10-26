@@ -1,5 +1,7 @@
 # 开发与贡献
 
+v1.4.11 发布入口固定已通过五项 CI 的辅助 A `7b115e1eef244ee2db7c7c08bb51d0ed3eaf045a`；入口 B 不自指。当前正在完成 main／Tag 与资产核验，正式发布结果见[本版验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V1411-ACCEPTANCE.md)。下方旧版本 pin 仅保留历史上下文。
+
 v1.4.10 已正式发布：在线入口固定辅助 A `cff370d597f1fd78dc7b081ae95300beb27cd974`，入口 B／Tag 为 `39386ce8c4901727362e7d22ff4676922ad25052`；A／B、main 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)及实际资产核验通过。以下旧版结果保持历史范围，真实 VPS／Telegram 和两网关转存仍须用户验收。
 
 v1.4.9 已正式发布。两个在线入口固定辅助 A `80258deec5fc8979329cb1dbaa2c6d6c0b391e15`，入口 B／Tag 为 `8a2f7a1be42c1f229530cde16f5fa63650a0c17a`；A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)及实际下载资产核验通过。真实 Telegram 登录、VPS 与两种网关转存尚待用户验收；下方历史记录保留原范围。
