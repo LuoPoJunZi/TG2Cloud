@@ -1,12 +1,12 @@
 # TG2Cloud 文档目录
 
-当前正式版本为 **v1.4.9**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 → 3 迁移与回退见[监听指南](LISTENING.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
+当前正式版本为 **v1.4.10**，以 Linux Python + Bash 一键脚本维护，原生支持 AMD64／ARM64；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 → 3 迁移与回退见[监听指南](LISTENING.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
 
 2026-10-23，用户提供 Ubuntu ARM64 与 Debian AMD64 两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过；配置保留、备份、Bot 健康、本机 HTTPS 与最近业务就绪观察通过。WebDAV 写入、真实转存、外网及恢复等未覆盖范围见[双架构升级记录](development/V144-ACCEPTANCE.md)。
 
 v1.3.4 已发布说明命名与图片／媒体组增强，完整规则见[命名指南](NAMING.md)。旧“待发布”章节标题仅保留链接兼容，正文已明确实际版本；升级实例才会启用新代码，更新文档不更新 Bot。
 
-v1.4.10 的监听交互与维护恢复正在发布准备，见[本版记录](development/V1410-ACCEPTANCE.md)；当前稳定 v1.4.9 已正式发布：[监听指南](LISTENING.md)与[发布后验收清单](development/V149-ACCEPTANCE.md)。自动化与下载资产已核验，实机仍待用户验收；schema 2 → 3 升级前保护匹配快照。
+v1.4.10 的监听交互与维护恢复已正式发布，见[本版核验与验收](development/V1410-ACCEPTANCE.md)；v1.4.9 的历史监听发布记录继续保留：[监听指南](LISTENING.md)与[发布后验收清单](development/V149-ACCEPTANCE.md)。自动化与下载资产已核验，实机仍待用户验收；schema 2 → 3 升级前保护匹配快照。
 
 ## 按你的情况开始
 

@@ -1,8 +1,8 @@
 # 文档来源与维护
 
-当前源码 **v1.4.10** 待发布；核对日期 **2026 年 10 月 26 日**。正式下载暂为 [v1.4.9](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.9)，发布和实际验收分别记录。
+当前源码与正式版本 **v1.4.10**；核对日期 **2026 年 10 月 26 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.10)、[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)与实际资产已核验，真实环境验收单独记录。
 
-源码与正式版本 **v1.4.9**；资料核对日期 **2026 年 10 月 26 日**。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)及实际源码资产、SHA256 清单和 GitHub 摘要已核验。真实 VPS、Telegram 与两网关转存尚待用户验收。
+历史资料：当时源码与正式版本 **v1.4.9**；资料核对日期 **2026 年 10 月 26 日**。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)及实际源码资产、SHA256 清单和 GitHub 摘要已核验。真实 VPS、Telegram 与两网关转存尚待用户验收。
 
 历史版本为 [**v1.4.8**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8)；资料核对日期 **2026 年 10 月 25 日**。A／B、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)和实际源码资产核验通过，原生 Linux PTY 与隔离网关由 CI 验证，真实 VPS 及账号目录仍须人工验收。
 

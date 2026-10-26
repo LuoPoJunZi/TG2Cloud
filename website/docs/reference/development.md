@@ -1,6 +1,6 @@
 # 开发与贡献
 
-v1.4.10 发布准备：在线入口固定已公开并通过五项 CI 的辅助 A `cff370d597f1fd78dc7b081ae95300beb27cd974`；待入口 B、同标签双架构与实际资产核验后发布，以下旧版结果保持历史范围，不代表本版实机验收。
+v1.4.10 已正式发布：在线入口固定辅助 A `cff370d597f1fd78dc7b081ae95300beb27cd974`，入口 B／Tag 为 `39386ce8c4901727362e7d22ff4676922ad25052`；A／B、main 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)及实际资产核验通过。以下旧版结果保持历史范围，真实 VPS／Telegram 和两网关转存仍须用户验收。
 
 v1.4.9 已正式发布。两个在线入口固定辅助 A `80258deec5fc8979329cb1dbaa2c6d6c0b391e15`，入口 B／Tag 为 `8a2f7a1be42c1f229530cde16f5fa63650a0c17a`；A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)及实际下载资产核验通过。真实 Telegram 登录、VPS 与两种网关转存尚待用户验收；下方历史记录保留原范围。
 
@@ -18,7 +18,7 @@ v1.4.4 已正式发布：辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、�
 
 v1.4.3 已发布：辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 隔离网络夹具补齐显式子网并保留原断言，不改生产网络。
 
-复现当前正式 v1.4.5 使用下方不可变 Tag；开发使用 main 并记录提交。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
+复现当前正式 v1.4.10 使用下方不可变 Tag；开发使用 main 并记录提交。业务数据库 schema 2 升级前须备份；后文的旧版 CI 和实机记录保留为历史事实。
 
 以下保留 v1.4.2 及更早版本的历史发布证据，不外推为 v1.4.3 真实 VPS 验收。
 
@@ -39,15 +39,15 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.4.10
 git rev-parse HEAD
 ```
 
-v1.4.9 已正式发布，复现本版使用不可变 Tag；开发使用 main 并记录提交号，不把分支或后续文档改动当作已发布资产。正式下载见[下载页](/download/)。
+v1.4.10 已正式发布，复现本版使用不可变 Tag；开发使用 main 并记录提交号，不把分支或后续文档改动当作已发布资产。正式下载见[下载页](/download/)。
 
 ## 关键目录与入口
 
-下表为 v1.4.9 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
+下表为 v1.4.10 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
 外部 WebDAV 位于 `src/tg2cloud/addons/external_webdav/`，从 `tg2cloud` → 15 按需管理。历史 v1.3.1 的 `install-webdav.sh` 已于 v1.4.7 从 main 退役，仅保留在原 Tag；下载、构建或发布成功都不等于实机安装通过。
 

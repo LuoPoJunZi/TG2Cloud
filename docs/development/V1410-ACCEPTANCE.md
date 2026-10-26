@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-2026-10-26：按用户授权准备 v1.4.10 正式版。源码、测试和文档在本地；需完成辅助代码 A、入口 B、GitHub CI、同标签发布与实际资产核验后才可称为已发布。真实 VPS 验收安排在发布之后，不自动连接用户主机。
+2026-10-26：按用户授权已发布 [v1.4.10 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.10)。A／B、main、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)及实际资产核验全部通过。真实 VPS、Telegram 和用户网关验收尚未执行，不自动连接用户主机。
 
 ## 本版范围
 
@@ -53,3 +53,12 @@ v1.4.9 → v1.4.10 沿用 schema 3，无新增迁移；v1.4.8 及更早仍经过
 最终干净公共副本 369 文件与工作树逐字节一致。`check_python.py test`：1317 项，1283 通过、34 环境跳过、0 失败；Python 3.10 无 Bot 依赖的 `all --scope cli`：734 项，722 通过、12 跳过、0 失败。网站 37 项通过，34 HTML／4306 本地引用／285 搜索条目；Ruff、编译、Bandit、ShellCheck、两 Edition 组装与两份依赖审计通过。Windows 跳过 Linux UID／flock／PTY、rclone 或 opt-in Docker，后者由远端原生 CI 单独验证。
 
 辅助 A：`cff370d597f1fd78dc7b081ae95300beb27cd974` 已公开，五项检查全部通过：[原生 AMD64／ARM64 与两 Edition 隔离运行](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284157038)、[Python 3.10／3.13 四组合](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284153686)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284149685)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284145808)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40284142319)。入口 B 固定该真实提交，不自指，不改写旧 Tag。A 的成功不代表 B、正式资产或真实 Telegram／VPS 已通过。
+
+### 正式发布核验
+
+- 已验证 A：`cff370d597f1fd78dc7b081ae95300beb27cd974`；最终 B／Tag：`39386ce8c4901727362e7d22ff4676922ad25052`，入口不自指。66 个实际公开辅助文件与候选逐字节一致。
+- 初次入口 B 的内网 pin 赋值格式被 ShellCheck 拒绝；仅修正一行 Bash 赋值，完整 Shell 与 LAN 回归通过，未降低检查。最终 B 五项全部通过：[原生两架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40286961930)、[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40286958586)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40286955676)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40286952587)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40286949434)。
+- main 同一提交的五项 CI 及正式标签工作流成功；[发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)的 prepare、AMD64、ARM64、release 全部成功，原生两 Edition、隔离网关与代理检查通过，不等于真实账号或 VPS 验收。
+- 实际源码资产 `TG2Cloud-v1.4.10-source.tar.gz`：3822084 字节，SHA256 `e657ce1f0017b70f498b07048ab9feb38d4b881855548c5dabbc94f81d348d35`。`SHA256SUMS.txt` 的 SHA256 为 `60419198837e6121ee3557bf79e253a6f54184ee94a88a34c08a30417b49beb7`。
+- 正式验证器、GitHub digest 与下载字节一致；按 Linux LF 归档规则核对不可变 Tag 的全部 369 个文件，逐文件相同。未使用本机重新打包替代正式资产，未改写旧 Tag／Release。
+- 版本、构建与隔离 CI 均不代表真实 Telegram 登录、监听来源、实际云端转存、手机播放或生产恢复已验收；这些项目仍按上表执行。

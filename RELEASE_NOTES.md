@@ -10,7 +10,7 @@
 
 ## 安装与升级
 
-本文件随 v1.4.10 发布准备生成；仅在 GitHub 正式 Release 成功并核验资产后使用以下固定版本命令。正常入口仍只安装已发布的稳定版，不下载未发布业务代码。
+[v1.4.10 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.10) 已发布，[同标签 AMD64／ARM64 工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)成功；实际源码包、SHA256、GitHub 摘要和标签内全部 369 个文件已核验。可使用下列固定版本入口，正常入口仍只安装正式稳定版。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.4.10/install.sh) --edition clouddrive2 --release v1.4.10 --check

@@ -42,7 +42,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.10
 
-待发布：监听筛选、命名、目录改为按钮和逐项文字交互，草稿预览后明确保存；主机增加监听管理，手机号与验证码可见、仅两步验证密码隐藏。外部 WebDAV 维护代码升级不再被未完成账号认证阻断，入口继续安全关闭。补齐计划中文状态、默认目录与返回导航，无新增数据库迁移或运行依赖；真实 Telegram、VPS 和两网关验收待发布后执行。详见[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[监听指南](/usage/listening/)。
+2026-10-26，[v1.4.10 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.10) 已发布；A／B、main、[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)和实际源码资产已核验。监听筛选、命名、目录改为按钮和逐项文字交互，草稿预览后明确保存；主机增加监听管理，手机号与验证码可见、仅两步验证密码隐藏。外部 WebDAV 维护代码升级不再被未完成账号认证阻断，入口继续安全关闭。补齐计划中文状态、默认目录与返回导航，无新增数据库迁移或运行依赖；真实 Telegram、VPS 和两网关验收仍待用户执行。详见[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[监听指南](/usage/listening/)。
 
 ## TG2Cloud v1.4.9
 

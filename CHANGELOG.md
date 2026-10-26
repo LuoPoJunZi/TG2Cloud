@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.4.10
 
-发布准备：待本地审查、GitHub CI、A／B helper 与同标签双架构验证后发布；真实 VPS／Telegram 验收在发布后进行。
+版本日期：2026-10-26。[v1.4.10 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.10) 已正式发布；A／B、main 和[同标签原生双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)均通过，实际源码资产及标签文件核验通过。真实 VPS／Telegram 验收仍待用户执行。
 
 - 监听规则、命名、目录和个人模式改为按钮草稿、逐项文字输入、预览与明确保存；规则历史恢复增加变更预览及确认，现有任务和 schema 3 保持兼容。
 - Linux 增加监听管理子菜单；手机号／验证码在当前终端回显，仅两步验证密码隐藏，原命令继续兼容。

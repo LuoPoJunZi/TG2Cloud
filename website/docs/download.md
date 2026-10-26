@@ -1,8 +1,8 @@
 # 安装、下载与校验
 
-源码准备版本 **TG2Cloud v1.4.10**，待发布；以下下载仍指向已发布的 v1.4.9。请等待新 Release 成功后再验收交互改进。
+正式源码 **TG2Cloud v1.4.10** 已发布，源码包、SHA256 与标签文件核验通过；真实 Telegram／VPS 交互仍需发布后验收。
 
-当前正式稳定版为 **TG2Cloud v1.4.9**。业务部署只使用正式稳定源码，历史 Windows EXE 停留在 v1.2.1。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
+当前正式稳定版为 **TG2Cloud v1.4.10**。业务部署只使用正式稳定源码，历史 Windows EXE 停留在 v1.2.1。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
 
 ## 公网 VPS 安装与升级
 
@@ -77,8 +77,8 @@ tg2cloud uninstall --edition all --check
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.4.9-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.9/TG2Cloud-v1.4.9-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.9/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.4.10-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.10/TG2Cloud-v1.4.10-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.4.10/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -88,7 +88,7 @@ sha256sum -c SHA256SUMS.txt
 
 本版源码包 SHA256 为 `1c9ddb0e95ed5748e6e15d47b539e63a761e1af339215a49f9fe347dbf532fa4`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
 
-[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.9) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.10) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 ### 在线入口与源码资产的区别
 
