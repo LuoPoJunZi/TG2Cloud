@@ -1,5 +1,7 @@
 # 开发与贡献
 
+v1.4.9 发布准备：两个入口当前固定已公开、五项 CI 通过的辅助 A `80258deec5fc8979329cb1dbaa2c6d6c0b391e15`，66 个公开 helper 文件已逐项核对。入口 B 及正式资产仍在验证，当前稳定下载保持 v1.4.8；完成发布后再使用新版功能。下方 SHA 和验收属于历史版本，不代表本次实机通过。
+
 v1.4.8 已正式发布。两个在线入口固定辅助 A `f2c089aeccc1de1c17c43654dad35249236e6e14`，入口 B／Tag 为 `e24cddfa77fe76b90ea63ee9e7d88008066cb0a3`；A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)及实际源码资产核验全部通过。旧离线管理工具须显式更新，外部 WebDAV 另在子菜单 8 升级；下方历史记录保留原范围。
 
 v1.4.7 已正式发布：两个在线安装入口固定辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`，入口 B／Tag 为 `322ae065d6cb6a7330f78b8cc0ee60c4c3c53cdb`。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验全部通过。业务只使用正式稳定 Release；主菜单 14／15 保留卸载与外部 WebDAV 管理，下方历史记录按原版本理解。
