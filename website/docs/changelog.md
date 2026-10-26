@@ -8,7 +8,7 @@ v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊�
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
-| [v1.4.9](#tg2cloud-v1-4-9) | 待发布：管理员监听、持久化审批与命名／目录方案，schema 3 和独立 Session 备份。 |
+| [v1.4.9](#tg2cloud-v1-4-9) | 管理员监听、持久化审批与命名／目录方案，schema 3 和独立 Session 备份。 |
 | [v1.4.8](#tg2cloud-v1-4-8) | 外部 WebDAV 安装、终端输入、实际目录与管理地址维护。 |
 | [v1.4.7](#tg2cloud-v1-4-7) | 外部 WebDAV 统一入口、独立 Shell 退役、Certbot 挂载与中断恢复维护。 |
 | [v1.4.6](#tg2cloud-v1-4-6) | 外部 WebDAV 界面、发布准备工具、共享 CI 与测试及代理模块维护。 |
@@ -41,7 +41,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.9
 
-待发布：管理员专属监听、来源筛选、持久化转存计划、确认前改名和目录／批次操作。业务数据库 schema 2 → 3，个人 Session 独立保存，监听默认关闭。详情见[监听使用说明](/usage/listening/)及[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。真实登录与两网关转存安排在发布后，不以自动化代替实机验收。
+2026-10-26，[v1.4.9 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.9) 已正式发布，A／B、[同标签双架构验证](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)及实际下载资产已核验。新增管理员专属监听、来源筛选、持久化转存计划、确认前改名和目录／批次操作。业务数据库 schema 2 → 3，个人 Session 独立保存，监听默认关闭。详情见[监听使用说明](/usage/listening/)及[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。真实登录与两网关转存安排在发布后，不以自动化代替实机验收。
 
 ## TG2Cloud v1.4.8
 

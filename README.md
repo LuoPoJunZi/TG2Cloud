@@ -24,7 +24,7 @@ TG2Cloud 是一个自托管的个人文件转存工具：把文件发送或转�
 
 Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云存储
 
-v1.4.9 待发布：[管理员监听与转存计划](docs/LISTENING.md)，默认关闭，复用现有队列；稳定版尚不包含。
+v1.4.9 新增[管理员监听与转存计划](docs/LISTENING.md)，默认关闭；升级后可按指南启用，实机验收仍待完成。
 
 ## 主要能力
 
@@ -33,7 +33,7 @@ v1.4.9 待发布：[管理员监听与转存计划](docs/LISTENING.md)，默认�
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前稳定版 **v1.4.8**，支持 Linux AMD64 / ARM64；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
+当前稳定版 **v1.4.9**，支持 Linux AMD64 / ARM64；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.9)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
 
 ## 开始使用
 
@@ -95,7 +95,7 @@ tg2cloud uninstall --edition all --check
 | 家庭与手机读取 | [Bot 家人授权](docs/FAMILY-SHARING.md) · [外部 WebDAV 只读入口](docs/external-webdav.md) |
 | 可选功能 | [文件分类、通知与配额](docs/FEATURE-ENHANCEMENTS.md) · [复用已有 Nginx](docs/DOCKER-NGINX.md) |
 | 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) · [维护增强](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| 本版维护 | [v1.4.8 安装交互与输入维护](docs/development/LOCAL-MAINTENANCE.md) |
+| 本版维护 | [v1.4.9 发布与验收](docs/development/V149-ACCEPTANCE.md) |
 | 升级验收 | [v1.4.4 双架构升级记录](docs/development/V144-ACCEPTANCE.md) · [历史验收目录](docs/README.md) |
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |
@@ -105,7 +105,7 @@ tg2cloud uninstall --edition all --check
 
 ## 使用边界
 
-- 仅转存你有权保存的内容；不自动监听频道、不绕过内容保护。115 只是示例，不是唯一目标网盘。
+- 仅转存你有权保存的内容；监听须管理员显式授权，不绕过内容保护。115 只是示例，不是唯一目标网盘。
 - 云存储登录与授权在你自己的 CloudDrive2 / OpenList 中完成；TG2Cloud 无遥测或凭据回传。
 - WebDAV 大小验证不等于内容哈希校验或云盘官方最终完成；重要文件需自行复核。
 - 不公开 Token、密码、Session、数据库、配置或备份；升级前备份，不用旧 EXE 覆盖新实例。详见[安全政策](.github/SECURITY.md)。

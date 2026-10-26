@@ -11,7 +11,7 @@
 
 ## 安装与升级
 
-本说明正在准备发布；目前 GitHub 稳定版仍为 v1.4.8。以下命令只在 v1.4.9 Release、源码资产和入口验证完成后使用，不应提前运行。
+[v1.4.9 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.9) 已发布，两个入口固定已验证的辅助提交，实际源码包与 SHA256 清单已核验。升级前备份，真实功能按验收指南逐项确认。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.4.9/install.sh) --edition clouddrive2 --release v1.4.9 --check
@@ -22,7 +22,7 @@ OpenList 将 Edition 换为 `openlist`；内网使用同标签的 `install-lan.s
 
 ## 验证与兼容
 
-本地测试结果与远端 CI 状态在[发布准备及验收记录](docs/development/V149-ACCEPTANCE.md)中分别记录。AMD64、ARM64、两 Edition 原生 Docker 验证由远端工作流执行；未执行项目不计为通过。发布前必须通过 A／B 的检查及同标签发布工作流。
+本地测试结果与远端 CI 状态在[发布准备及验收记录](docs/development/V149-ACCEPTANCE.md)中分别记录。A／B 各五项 CI 及[同标签 AMD64／ARM64 发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)全部通过，覆盖两 Edition 原生 Docker 与隔离集成；实际源码资产、SHA256 清单和 GitHub 摘要一致。
 
 **新增监听功能尚待发布后真实 VPS 验收。** 个人 Telegram 登录／验证码／2FA、真实频道权限与媒体组、CloudDrive2／OpenList 云端转存和生产恢复尚未验证；正式版本标识不是实机验收结论。按用户决定发布 v1.4.9 正式版，不发布 v1.5.0 RC。
 

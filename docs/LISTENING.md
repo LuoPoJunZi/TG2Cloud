@@ -1,6 +1,6 @@
-# 管理员监听与转存计划（本地待发布）
+# 管理员监听与转存计划
 
-本页对应待发布正式版 v1.4.9。当前在线稳定版仍为 v1.4.8，不包含这些功能；待新版本发布并显式升级后使用。真实 Telegram 登录、两网关转存和 VPS 恢复安排在发布后验收，自动化通过不替代实机结论。
+本页对应正式版 v1.4.9；需显式升级 Bot 与离线工具后使用，旧版本不包含这些功能。真实 Telegram 登录、两网关转存和 VPS 恢复安排在发布后验收，自动化通过不替代实机结论。
 
 ## 先了解边界
 
@@ -10,7 +10,7 @@
 
 ## 终端登录、检查和停用
 
-以下命令仅在部署了v1.4.9 代码及相应离线工具后可用。使用自己的 Linux SSH 交互终端：
+以下命令仅在部署了 v1.4.9 代码及相应离线工具后可用。使用自己的 Linux SSH 交互终端：
 
 ```bash
 tg2cloud listen login --edition clouddrive2
@@ -128,6 +128,6 @@ Session 位于现有实例 `data/listener/personal.session`，不替换 `data/bo
 
 用专用测试账号与明确隔离的来源，分别在 AMD64／ARM64、CloudDrive2／OpenList 验收登录与 2FA、私有来源、退出／撤权、内容保护、媒体组延迟、FloodWait、断网重连、重启补拉、真实下载／上传及手动任务并行。确认普通成员的命令、伪造回调及任务编号无法越权。检查 Session 权限和私密备份；不得用生产云端删除做测试。
 
-发布前先公开并验证 helper A，再更新入口 B 的真实 pin，运行两架构 CI 与同 Tag 源码资产校验。本地发布准备已完成；远端推送、CI 与正式发布须先取得授权。真实 VPS 验收安排在发布后，由用户执行。
+v1.4.9 已按辅助 A、入口 B、同标签原生双架构和实际资产校验流程发布。两个入口固定已验证 A，业务仅使用正式稳定 Release；发布后由用户完成真实 VPS 验收。
 
 设计参考 [Reelay](https://github.com/Derrors/reelay) 的来源配置与审批流程（MIT，Copyright 2026 Derrors），未复制其源码或增加运行依赖。Telegram 接口遵循 [Telethon 1.45 文档](https://docs.telethon.dev/en/stable/modules/client.html)；不承诺超出实际权限的能力。

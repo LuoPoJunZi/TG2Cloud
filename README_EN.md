@@ -24,7 +24,7 @@ TG2Cloud is a self-hosted personal file transfer tool. Send or forward files to 
 
 Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your cloud storage
 
-Planned for v1.4.9, not yet released: [administrator monitoring and transfer plans](docs/LISTENING.md). Disabled by default; reuses the existing transfer queue. Not included in the stable release.
+v1.4.9 adds optional [administrator monitoring and transfer plans](docs/LISTENING.md). Disabled by default; real Telegram and gateway acceptance remains pending.
 
 ## Features
 
@@ -33,7 +33,7 @@ Planned for v1.4.9, not yet released: [administrator monitoring and transfer pla
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **v1.4.8**, supporting Linux AMD64 / ARM64. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
+Current stable version: **v1.4.9**, supporting Linux AMD64 / ARM64. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.9). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
 
 ## Getting started
 
@@ -95,7 +95,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Optional features | [Classification, notifications and quotas](docs/FEATURE-ENHANCEMENTS.md) · [Existing Nginx reuse](docs/DOCKER-NGINX.md) |
 | Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) · [Maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| Current maintenance | [v1.4.8 setup and input maintenance](docs/development/LOCAL-MAINTENANCE.md) |
+| Current maintenance | [v1.4.9 release and acceptance](docs/development/V149-ACCEPTANCE.md) |
 | Upgrade acceptance | [v1.4.4 dual-architecture upgrade](docs/development/V144-ACCEPTANCE.md) · [Historical records](docs/README.md) |
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |
@@ -105,7 +105,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 
 ## Boundaries
 
-- Transfer only content you are authorized to save. No automatic channel monitoring or protection bypass. 115 is an example, not the only destination.
+- Transfer only content you are authorized to save. Monitoring requires explicit administrator authorization; content protection is respected. 115 is an example, not the only destination.
 - Cloud authentication stays in your own CloudDrive2 / OpenList instance. TG2Cloud has no telemetry or credential callback.
 - WebDAV size verification is not a content hash or an official cloud-provider completion result. Verify important files independently.
 - Never publish tokens, passwords, Sessions, databases, configuration or backups. Back up before upgrading; never overwrite a newer instance with an old EXE. See [Security](.github/SECURITY.md).

@@ -4,11 +4,11 @@
 
 按用户最新决定，目标是 **v1.4.9 正式版**，不发布 v1.5.0-rc.1。不把真实 VPS／Telegram 验收设为发布前必需条件，但必须明确它尚未完成；发布成功只表示已生成可安装资产。
 
-当前本地基础为 `main` 的 `9caf007c5d48e20965c4f7c601e81ecbe6a1d02a`；远端最新稳定版 v1.4.8。v1.4.9 本地提交按下述 A／B 流程整理，尚未推送、打 Tag 或发布。代码和自动化通过后仍须用户授权远端操作。
+2026-10-26，用户授权后已发布正式 [v1.4.9](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.9)。基础提交为 `9caf007c5d48e20965c4f7c601e81ecbe6a1d02a`；新 A／B、同标签 CI 与实际资产已核验，真实 VPS／Telegram 与网关转存尚未执行。
 
-## A／B 与远端计划
+## A／B 发布流程
 
-现有两个在线入口均固定真实辅助 A `f2c089aeccc1de1c17c43654dad35249236e6e14`；v1.4.8 Tag 指向入口 B `e24cddfa77fe76b90ea63ee9e7d88008066cb0a3`，文档后续提交未移动 Tag。v1.4.8 的两 Edition 指纹已从该原始提交核验并加入升级基线。
+上一稳定版 v1.4.8 的两个在线入口固定真实辅助 A `f2c089aeccc1de1c17c43654dad35249236e6e14`；v1.4.8 Tag 指向入口 B `e24cddfa77fe76b90ea63ee9e7d88008066cb0a3`，文档后续提交未移动 Tag。v1.4.8 的两 Edition 指纹已从该原始提交核验并加入升级基线。
 
 1. 在临时 `codex/release-1.4.9` 分支整理本次源码、测试、文档和版本为辅助提交 A；先不改 main 的入口。A 的实际 SHA 只能在提交后产生，不预填。
 2. 授权后推送该分支，显式触发 tests、VPS installer checks、repository-quality、docs-quality、website-docs 五个现有工作流，核对它们的实际 head SHA 均为 A。失败先修复，新的 A 重新验收。
@@ -16,7 +16,7 @@
 4. 检查远端 main 未被其他提交推进后，再更新 main 至已验证 B。创建不可变 `v1.4.9` Tag；现有 release workflow 从同一标签运行原生 AMD64／ARM64、两 Edition 及隔离集成，成功后创建非预发布 Release。
 5. 核验唯一源码归档、SHA256 清单、Tag／源码版本和下载内容。成功后更新网站 publishedVersion 和发布事实，移除本次辅助分支。若远端 main 已变化，重新整合和验证，不强推覆盖。
 
-新 helper 尚未发布时，`maintenance_preflight.py` 的 helpers 项应阻断，不能绕过它。默认稳定入口不执行本地未发布源码。Bot 镜像仍由安装器从已固定 Release 载荷在目标机原生构建，网关镜像继续使用已有固定 digest；本轮不增加镜像仓库发布。
+发布准备阶段，新 helper 尚未发布时，`maintenance_preflight.py` 的 helpers 项应阻断，不能绕过它。默认稳定入口不执行本地未发布源码。Bot 镜像仍由安装器从已固定 Release 载荷在目标机原生构建，网关镜像继续使用已有固定 digest；本轮不增加镜像仓库发布。
 
 ## 本地审计范围
 
@@ -31,7 +31,7 @@
 
 ## 发布后安装和升级
 
-下面命令须在 GitHub v1.4.9 Release 发布并完成资产核验后使用。当前尚不可用；不要先运行，也不要通过修改 URL 到 main 假装固定了版本。
+下面命令须在 GitHub v1.4.9 Release 发布并完成资产核验后使用。本版已发布并完成下载校验，可以运行；保持脚本 Tag 与 --release 一致。
 
 公网 CloudDrive2：
 
@@ -137,4 +137,14 @@ PYTHONPATH=src python3 -B -m tg2cloud.persistence.rehearsal /srv/private-backups
 
 以上是最终代码的干净副本结果；填写本段执行记录前，364 个公共文件与工作树逐字节一致。凭据模式扫描及人工复核未发现真实秘密；匹配项仅为合成测试值和读取配置的表达式，Session／数据库／本地私有文件不属于提交集合。扫描不等于对所有未知秘密的绝对保证。
 
-远端 A／B CI、Tag、Release、实际下载校验、VPS／Telegram 与生产恢复均尚未执行。GitHub 自动化检查必须成功后才发布，实机失败后修复发布新维护版本，不覆盖既有不可变 Tag 或资产。
+远端 A／B CI、Tag、Release 与实际下载校验已完成，详见下方记录；VPS／Telegram 与生产恢复尚未执行。实机失败后修复发布新维护版本，不覆盖既有不可变 Tag 或资产。
+
+
+## 正式发布核验（2026-10-26）
+
+- 辅助 A：`80258deec5fc8979329cb1dbaa2c6d6c0b391e15`；最终入口 B／Tag：`8a2f7a1be42c1f229530cde16f5fa63650a0c17a`。B 初次网站检查因指南仍记录旧 pin 失败，仅同步四份指南后重跑；未更改测试断言。最初本地入口命令误用了不存在的测试模块，纠正后 138 项：132 通过、6 环境跳过、0 失败。
+- A 的五项 CI：[website-docs](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40259763648)、[docs-quality](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40259760902)、[repository-quality](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40259758265)、[VPS installer checks](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40259755661)、[tests](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40259752862)；全部通过。
+- 最终 B 的五项 CI：[website-docs](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268425678)、[docs-quality](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268423053)、[repository-quality](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268420208)、[VPS installer checks](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268417145)、[tests](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268414477)；全部通过。
+- [同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)的 prepare、AMD64、ARM64 和发布均成功；非草稿、非预发布。66 个公开 helper 文件与 A 一致。
+- 下载 `TG2Cloud-v1.4.9-source.tar.gz`：3798452 字节，SHA256 `1c9ddb0e95ed5748e6e15d47b539e63a761e1af339215a49f9fe347dbf532fa4`；校验清单 SHA256 `2f1268d273c3b0b511f8a89a0a2d91327a03a0c0608b0676c58a451890318a3d`。正式验证器和 GitHub digest 通过；按 Linux LF 归档规则，与真实 Tag 逐文件精确字节一致。Windows 默认归档含 CRLF，未用其压缩包摘要冒充 Linux 资产。
+- 在线入口和下载可以用于用户实机验收；未自动操作 VPS、真实 Telegram、网关或生产恢复。按上面的步骤分别填写两 Edition 的结果，不把发布成功标记为业务验收通过。

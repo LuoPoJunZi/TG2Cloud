@@ -4,7 +4,7 @@ v1.4.8 已发布安装交互与输入维护，检测保留但不重复展示环�
 
 v1.4.7 已正式发布统一外部 WebDAV 管理。历史正式 v1.4.6 尚无此选项；须显式更新离线工具后才生效，更新文档不会更新 VPS。
 
-本文说明正式 v1.4.8 的 Linux 管理行为与外部 WebDAV 统一入口。状态、日志和检查结果按所选 Edition 展示；业务数据库、网关和外部附加功能仍分别管理。须显式升级离线工具并重新打开 `tg2cloud` 才能加载新页面。
+本文说明正式 v1.4.9 的 Linux 管理行为与外部 WebDAV 统一入口。状态、日志和检查结果按所选 Edition 展示；业务数据库、网关和外部附加功能仍分别管理。须显式升级离线工具并重新打开 `tg2cloud` 才能加载新页面。
 
 当前用户升级与 WebDAV 日志见[v1.4.5 验收记录](development/V145-ACCEPTANCE.md)，自动发布证据见[维护说明](development/MAINTENANCE-NEXT.md)。更早版本的编号与验收在[历史维护记录](development/MAINTENANCE-IMPROVEMENTS.md)及[文档目录](README.md)中保留，不用于推断当前所有场景均通过。
 
@@ -13,9 +13,9 @@ v1.4.7 已正式发布统一外部 WebDAV 管理。历史正式 v1.4.6 尚无此
 任务恢复见[恢复指南](RECOVERY.md)，配置字段见[配置参考](CONFIGURATION.md)，完整备份与恢复预检见[备份指南](BACKUP-RESTORE.md)。公网 NAT 和 APT 问题见[VPS 指南](VPS-INSTALL.md)；历史图形教程见[旧版教程](README-小白使用说明.md)。
 
 
-## 本地待发布：个人监听账号
+## 个人监听账号（v1.4.9）
 
-新增 `tg2cloud listen login/status/disable --edition clouddrive2`（将斜杠形式换成单个操作）；交互终端授权后在 Bot 中明确启用，不重启 Bot／网关。实际可复制命令与安全边界见[监听指南](LISTENING.md)。旧稳定版不提供该命令。
+新增 `tg2cloud listen login/status/disable --edition clouddrive2`（将斜杠形式换成单个操作）；交互终端授权后在 Bot 中明确启用，不重启 Bot／网关。实际可复制命令与安全边界见[监听指南](LISTENING.md)。v1.4.8 及更早版本不提供该命令。
 
 ## 实例管理命令
 

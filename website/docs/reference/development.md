@@ -1,6 +1,6 @@
 # 开发与贡献
 
-v1.4.9 发布准备：两个入口当前固定已公开、五项 CI 通过的辅助 A `80258deec5fc8979329cb1dbaa2c6d6c0b391e15`，66 个公开 helper 文件已逐项核对。入口 B 及正式资产仍在验证，当前稳定下载保持 v1.4.8；完成发布后再使用新版功能。下方 SHA 和验收属于历史版本，不代表本次实机通过。
+v1.4.9 已正式发布。两个在线入口固定辅助 A `80258deec5fc8979329cb1dbaa2c6d6c0b391e15`，入口 B／Tag 为 `8a2f7a1be42c1f229530cde16f5fa63650a0c17a`；A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)及实际下载资产核验通过。真实 Telegram 登录、VPS 与两种网关转存尚待用户验收；下方历史记录保留原范围。
 
 v1.4.8 已正式发布。两个在线入口固定辅助 A `f2c089aeccc1de1c17c43654dad35249236e6e14`，入口 B／Tag 为 `e24cddfa77fe76b90ea63ee9e7d88008066cb0a3`；A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)及实际源码资产核验全部通过。旧离线管理工具须显式更新，外部 WebDAV 另在子菜单 8 升级；下方历史记录保留原范围。
 
@@ -37,15 +37,15 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.4.9
 git rev-parse HEAD
 ```
 
-v1.4.8 已正式发布，复现本版使用不可变 Tag；开发使用 main 并记录提交号，不把分支或后续文档改动当作已发布资产。正式下载见[下载页](/download/)。
+v1.4.9 已正式发布，复现本版使用不可变 Tag；开发使用 main 并记录提交号，不把分支或后续文档改动当作已发布资产。正式下载见[下载页](/download/)。
 
 ## 关键目录与入口
 
-下表为 v1.4.8 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
+下表为 v1.4.9 继续沿用的 Linux / Python + Bash 结构；复现正式版本使用对应不可变 Tag。桌面源码及专用测试仅在历史版本和本地恢复备份中保留，完整回归不需要 Qt、Paramiko 或 PyInstaller。
 
 外部 WebDAV 位于 `src/tg2cloud/addons/external_webdav/`，从 `tg2cloud` → 15 按需管理。历史 v1.3.1 的 `install-webdav.sh` 已于 v1.4.7 从 main 退役，仅保留在原 Tag；下载、构建或发布成功都不等于实机安装通过。
 

@@ -1,8 +1,8 @@
 {
   "name": "TG2Cloud",
   "version": "1.4.9",
-  "publishedVersion": "1.4.8",
-  "releaseStatus": "unreleased",
+  "publishedVersion": "1.4.9",
+  "releaseStatus": "released",
   "verifiedAt": "2026-10-26",
   "repo": "https://github.com/LuoPoJunZi/TG2Cloud",
   "upstreamRepo": "https://github.com/whyhhh20/TG115",
@@ -91,7 +91,7 @@
           "slug": "usage/streaming"
         },
         {
-          "title": "监听与转存计划（待发布）",
+          "title": "监听与转存计划",
           "slug": "usage/listening"
         }
       ]

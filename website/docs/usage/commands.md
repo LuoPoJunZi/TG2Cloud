@@ -1,6 +1,6 @@
 # Bot 命令速查
 
-本地待发布的 `/listen`（仅管理员）、`/transfer`、`/pending` 与 `/cancelinput` 见[监听指南](listening.md)；当前稳定版不包含，原命令继续兼容。
+v1.4.9 新增 `/listen`（仅管理员）、`/transfer`、`/pending` 与 `/cancelinput`，见[监听指南](listening.md)；需升级 Bot 与离线工具，原命令继续兼容。
 
 ## 家人个人配额（v1.4.3）
 
