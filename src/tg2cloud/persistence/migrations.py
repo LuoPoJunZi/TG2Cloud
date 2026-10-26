@@ -3,7 +3,7 @@ import sqlite3
 
 from tg2cloud.domain.states import FAILED_STATES
 
-SCHEMA_VERSION = 2
+SCHEMA_VERSION = 3
 
 def migrate(connection: sqlite3.Connection, columns: set[str]) -> None:
     connection.execute("BEGIN IMMEDIATE")
@@ -18,6 +18,8 @@ def migrate(connection: sqlite3.Connection, columns: set[str]) -> None:
             ("original_file_name", "TEXT"),
             ("target_directory", "TEXT NOT NULL DEFAULT ''"),
             ("target_base", "TEXT"),
+            ("read_identity", "TEXT NOT NULL DEFAULT 'bot'"),
+            ("source_id", "INTEGER"),
         ):
             if name not in columns:
                 connection.execute(f"ALTER TABLE tasks ADD COLUMN {name} {declaration}")
@@ -88,8 +90,10 @@ def migrate(connection: sqlite3.Connection, columns: set[str]) -> None:
                     VALUES(NEW.id,OLD.state,NEW.state,NEW.updated_at);
                 END"""
         )
+        from tg2cloud.persistence.plans import create_schema
+        create_schema(connection)
         connection.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
         connection.execute("COMMIT")
-    except Exception:
+    except BaseException:
         connection.execute("ROLLBACK")
         raise

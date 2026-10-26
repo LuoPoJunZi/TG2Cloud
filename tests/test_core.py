@@ -1414,7 +1414,7 @@ class PayloadTests(unittest.TestCase):
         self.assertNotIn("chmod -R 777", dockerfile)
 
     def test_runtime_logger_is_tg2cloud_and_persistent_paths_are_unchanged(self) -> None:
-        settings = SimpleNamespace(
+        settings = SimpleNamespace(allowed_user_id=123,
             log_dir=Mock(), data_dir=Path("/data"), download_dir=Path("/downloads"),
             rclone_config_path=Path("/config/rclone/rclone.conf"),
             api_id=123456, api_hash="FAKE_LOCAL_TEST_API_HASH",

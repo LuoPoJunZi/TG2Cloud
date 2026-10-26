@@ -64,6 +64,8 @@ def pack(snapshot: Path, archive: Path, edition: str, source_version: str) -> No
     if snapshot.is_symlink() or not snapshot.is_dir() or archive.is_relative_to(snapshot):
         raise ValueError("invalid offline snapshot/destination")
     selected = [*required(edition), "config", "clouddrive/config" if edition == "clouddrive2" else "openlist/data"]
+    if (snapshot / "data/listener/personal.session").is_file():
+        selected.append("data/listener/personal.session")
     if (snapshot / "tg2cloud-release.json").is_file():
         selected.append("tg2cloud-release.json")
     records = {}
@@ -96,7 +98,7 @@ def pack(snapshot: Path, archive: Path, edition: str, source_version: str) -> No
             with path.open("rb") as handle:
                 records[relative] = {"size": path.stat().st_size, "sha256": checksum(handle)}
     # SQLite sidecars for the individually selected DB/session are not in rglob.
-    for relative in ("data/tg115.db", "data/bot.session"):
+    for relative in ("data/tg115.db", "data/bot.session", "data/listener/personal.session"):
         for suffix in ("-wal", "-shm", "-journal"):
             sidecar = snapshot / (relative + suffix)
             if sidecar.exists() and sidecar.stat().st_size:
@@ -153,7 +155,7 @@ def verified_snapshot(archive: Path, scratch: Path, edition: str, target_version
         total = 0
         for name, record in records.items():
             validate_name(name)
-            if (name not in {*required(edition), "tg2cloud-release.json"}
+            if (name not in {*required(edition), "tg2cloud-release.json", "data/listener/personal.session"}
                     and not name.startswith(("config/", gateway))):
                 raise ValueError("entry outside declared snapshot scope")
             if name.endswith(("-wal", "-shm", "-journal")):

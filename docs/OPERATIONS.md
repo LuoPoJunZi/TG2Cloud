@@ -12,6 +12,11 @@ v1.4.7 已正式发布统一外部 WebDAV 管理。历史正式 v1.4.6 尚无此
 
 任务恢复见[恢复指南](RECOVERY.md)，配置字段见[配置参考](CONFIGURATION.md)，完整备份与恢复预检见[备份指南](BACKUP-RESTORE.md)。公网 NAT 和 APT 问题见[VPS 指南](VPS-INSTALL.md)；历史图形教程见[旧版教程](README-小白使用说明.md)。
 
+
+## 本地待发布：个人监听账号
+
+新增 `tg2cloud listen login/status/disable --edition clouddrive2`（将斜杠形式换成单个操作）；交互终端授权后在 Bot 中明确启用，不重启 Bot／网关。实际可复制命令与安全边界见[监听指南](LISTENING.md)。旧稳定版不提供该命令。
+
 ## 实例管理命令
 
 v1.4.2 的 `external_docker` 使用外部 Nginx、宿主离线续期任务及文件级备份，不使用本页 managed 模式的容器循环或整目录清理。检测、授权、恢复和保守漂移复核命令见[Docker Nginx 专题](DOCKER-NGINX.md)。默认模式不自动切换，旧 v1.4.1 工具不支持 schema 3，应先更新离线维护工具。

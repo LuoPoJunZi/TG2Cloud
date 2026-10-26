@@ -141,6 +141,8 @@ class TaskViews:
                 *([Button.inline("🖥", data=b"vps_resources")] if admin else []),
                 Button.inline("🔄", data=b"refresh:home"),
             ],
+            [Button.inline("转存设置", data=b"menu:transfer"),
+             *([Button.inline("监听管理", data=b"menu:listen")] if admin else [])],
         ]
 
     @staticmethod

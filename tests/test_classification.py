@@ -78,4 +78,4 @@ class ClassificationTests(unittest.IsolatedAsyncioTestCase):
         self.mode("type")
         repeated = self.task(media_kind="视频")
         self.assertEqual(task, repeated)
-        self.assertEqual(self.db._conn.execute("PRAGMA user_version").fetchone()[0], 2)
+        self.assertEqual(self.db._conn.execute("PRAGMA user_version").fetchone()[0], 3)

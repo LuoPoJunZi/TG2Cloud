@@ -1,9 +1,9 @@
 {
   "name": "TG2Cloud",
-  "version": "1.4.8",
+  "version": "1.4.9",
   "publishedVersion": "1.4.8",
-  "releaseStatus": "released",
-  "verifiedAt": "2026-10-25",
+  "releaseStatus": "unreleased",
+  "verifiedAt": "2026-10-26",
   "repo": "https://github.com/LuoPoJunZi/TG2Cloud",
   "upstreamRepo": "https://github.com/whyhhh20/TG115",
   "siteUrl": "https://tg2cloud.pages.dev",
@@ -89,6 +89,10 @@
         {
           "title": "流式传输与速度",
           "slug": "usage/streaming"
+        },
+        {
+          "title": "监听与转存计划（待发布）",
+          "slug": "usage/listening"
         }
       ]
     },

@@ -55,6 +55,11 @@ def selected_files(instance) -> dict[str, Path]:
         raise ValueError("实例路径经过链接")
     gateway = "openlist/data" if instance.product.is_openlist else "clouddrive/config"
     names = [*bundle.required(instance.product.key), "config", gateway]
+    personal = root / "data/listener/personal.session"
+    if personal.exists() or personal.is_symlink():
+        if personal.is_symlink() or not personal.is_file():
+            raise ValueError("监听 Session 不是常规文件，停止备份")
+        names.append("data/listener/personal.session")
     if (root / "tg2cloud-release.json").exists():
         names.append("tg2cloud-release.json")
     files = {}

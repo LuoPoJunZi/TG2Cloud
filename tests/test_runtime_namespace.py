@@ -50,6 +50,27 @@ key, iv = bytes(range(32)), bytes(reversed(range(32)))
 assert cryptg.decrypt_ige(cryptg.encrypt_ige(sample, key, iv), key, iv) == sample
 assert psutil.virtual_memory().total > 0 and psutil.Process().pid > 0
 assert telethon.TelegramClient is not None
+# Run the optional subsystem's offline boundary inside each native Edition image.
+# No socket, real Session or production volume is used (--network none).
+import tempfile
+from types import SimpleNamespace
+from tg2cloud.listening.account import state, session_lock
+from tg2cloud.persistence.sqlite import TaskDB
+from tg2cloud.persistence.plans import Plans
+with tempfile.TemporaryDirectory() as temporary:
+    root = Path(temporary)
+    db = TaskDB(root / 'tg115.db')
+    assert db._conn.execute('PRAGMA user_version').fetchone()[0] == 3
+    assert state(db)['enabled'] is False and state(db)['account'] is None
+    assert Plans(db, 42).preferences(42)['confirmation'] is False
+    (root / 'bot.session').write_bytes(b'synthetic-bot-session')
+    with session_lock(SimpleNamespace(data_dir=root)) as path:
+        assert path == root / 'listener/personal'
+        assert path.parent.stat().st_mode & 0o777 == 0o700
+        assert not path.with_suffix('.session').exists()
+    assert (root / 'bot.session').read_bytes() == b'synthetic-bot-session'
+    assert db._conn.execute('PRAGMA integrity_check').fetchone()[0] == 'ok'
+    db.close()
 assert subprocess.run(['rclone', 'version'], check=True, capture_output=True).stdout.startswith(b'rclone ')
 sys.argv = ['deployment_check', '--validate-only']
 assert main() == 0

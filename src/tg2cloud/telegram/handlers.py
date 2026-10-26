@@ -135,7 +135,9 @@ class TelegramHandlers:
         for message, kind, extension in zip(messages, kinds, extensions):
             file = message.file
             name = None
-            if title and kind and file:
+            from tg2cloud.domain.planning import fields
+            tokens = fields((file.name or "") + " " + self._media_caption(message)) if file else {}
+            if title and kind and file and not (tokens.get("episode") or tokens.get("chapter")):
                 numbers[kind] += 1
                 name = album_file_name(title, kind, None if pair else numbers[kind], extension)
             proxy = SimpleNamespace(sender_id=message.sender_id, chat_id=message.chat_id,
@@ -174,6 +176,11 @@ class TelegramHandlers:
             await self._handle_command(event, text)
             return
 
+        if not downloadable:
+            from tg2cloud.telegram.planning import text as planning_text
+            if await planning_text(self, event, text):
+                return
+
         if not message.media or not message.file:
             await event.reply("这条消息没有可下载的文件。请转发视频或文档。")
             return
@@ -205,6 +212,10 @@ class TelegramHandlers:
             file_name = album_name
         from tg2cloud.persistence.quotas import QuotaExceeded
         try:
+            from tg2cloud.telegram.planning import manual
+            if await manual(self, event, message, file_name, created_at=created_at,
+                            classification_options=classification_options):
+                return
             task, created = self.db.create_task(
                 chat_id=int(event.chat_id),
                 message_id=int(message.id),

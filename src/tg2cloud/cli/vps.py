@@ -26,6 +26,7 @@ from tg2cloud.deployment.profiles import PRODUCTS
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="TG2Cloud 可选 VPS 向导：稳定 Release 安装 / 保留配置升级")
+    result.add_argument("--release", help="显式选择已发布正式 vX.Y.Z；默认仍为最新稳定版，不接受 RC")
     result.add_argument("--edition", choices=["clouddrive2", "openlist", "both"], help="both 仅用于两套已有完整实例")
     result.add_argument("--install-dir", help="仅支持单 Edition 的 /opt 下目录；不搬迁现有实例")
     result.add_argument("--check", action="store_true", help="只读实例/版本/HTTPS检查；不收集秘密，不执行安装")
@@ -41,7 +42,7 @@ def parser() -> argparse.ArgumentParser:
 def main(argv: list[str] | None = None, *, friendly: bool | None = None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
     args = parser().parse_args(arguments)
-    friendly = not arguments if friendly is None else friendly
+    friendly = (not arguments or bool(args.release) and not args.check) if friendly is None else friendly
     log = InstallerLog(SafeLog(), friendly=friendly)
     ui = None
     try:
@@ -85,8 +86,8 @@ def main(argv: list[str] | None = None, *, friendly: bool | None = None) -> int:
         client = releases.ReleaseClient()
         bootstrap = Path(os.environ.get("TG2CLOUD_SOURCE_ROOT", Path(__file__).resolve().parents[3])) / ".bootstrap-release.json"
         pinned = json.loads(configuration.regular_private(bootstrap)) if bootstrap.exists() else None
-        release = client.resolve(pinned["tag"] if pinned else None)
-        if pinned and release.commit != pinned["commit"]:
+        release = client.resolve(args.release or (pinned["tag"] if pinned else None))
+        if pinned and not args.release and release.commit != pinned["commit"]:
             raise ValueError("引导之后 Release Tag 发生变化；停止，重新下载入口")
         log("正式 Release：" + release.tag + "；固定源码 commit：" + release.commit)
         with tempfile.TemporaryDirectory(prefix="tg2cloud-cli-source-") as private:

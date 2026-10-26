@@ -28,6 +28,8 @@ class TransferService(TaskService, TelegramHandlers, CommandHandlers, TaskViews)
                          destination=destination or RcloneClient(settings),
                          monitor=ResourceMonitor(settings.download_dir, 数据库=settings.data_dir,
                                                  日志=settings.log_dir, 配置=settings.rclone_config_path.parent))
+        from tg2cloud.listening.service import Listener
+        self.listener = Listener(self)
         self._register_handlers()
 
     async def start(self) -> None:
@@ -39,6 +41,7 @@ class TransferService(TaskService, TelegramHandlers, CommandHandlers, TaskViews)
         await self._register_bot_menu()
         from tg2cloud.monitoring.notifications import run as notifications
         self._background = [
+            asyncio.create_task(self.listener.run(), name="optional-listener"),
             asyncio.create_task(notifications(self), name="optional-notifications"),
             asyncio.create_task(self._resource_loop(), name="resource-loop"),
             asyncio.create_task(self._destination_loop(), name="destination-loop"),
@@ -61,6 +64,7 @@ class TransferService(TaskService, TelegramHandlers, CommandHandlers, TaskViews)
             task.cancel()
         if all_tasks:
             await asyncio.gather(*all_tasks, return_exceptions=True)
+        await self.listener.close()
         await self.client.disconnect()
         self.db.close()
 

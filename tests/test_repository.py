@@ -334,7 +334,9 @@ class UserDocumentationTests(unittest.TestCase):
                         self.assertFalse(target.is_relative_to(ROOT / "website"))
 
     def test_documented_bot_commands_are_handled_and_include_recovery(self):
-        tree = ast.parse((ROOT / "src/tg2cloud/telegram/commands.py").read_text(encoding="utf-8"))
+        # Both production routers are called by CommandHandlers; do not hand-maintain a command allowlist.
+        tree = ast.Module(body=[node for path in ("commands.py","planning.py")
+                               for node in ast.parse((ROOT / "src/tg2cloud/telegram" / path).read_text(encoding="utf-8")).body],type_ignores=[])
         supported = set()
         for node in ast.walk(tree):
             if not isinstance(node, ast.Compare) or not isinstance(node.left, ast.Name) or node.left.id != "command":

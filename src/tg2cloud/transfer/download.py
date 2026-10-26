@@ -35,6 +35,8 @@ async def _download_one(self, task_id: int) -> None:
             last_progress_at = now
 
     try:
+        from tg2cloud.listening.service import ListenerReadError, task_source
+        source = task_source(self, task)
         for attempt in range(
             int(task["download_retries"]), self.settings.max_retries
         ):
@@ -50,13 +52,13 @@ async def _download_one(self, task_id: int) -> None:
             if part_path.exists():
                 part_path.unlink()
             try:
-                message = await self.source.get_messages(
+                message = await source.get_messages(
                     int(task["chat_id"]), ids=int(task["message_id"])
                 )
                 if not message or not message.media:
                     raise RuntimeError("Telegram 消息或文件已经不可访问")
                 self._record_progress(task_id, "download", 0, reset=True)
-                result = await self.source.download_media(
+                result = await source.download_media(
                     message, file=str(part_path), progress_callback=progress
                 )
                 if not result or not part_path.is_file():
@@ -92,6 +94,13 @@ async def _download_one(self, task_id: int) -> None:
                 return
             except asyncio.CancelledError:
                 raise
+            except ListenerReadError as exc:
+                self.db.transition(task_id, "download_failed", local_path=None,
+                                   error=str(exc), failure_kind="source_access")
+                if part_path.exists():
+                    part_path.unlink()
+                await self._notify(f"任务 #{task_id} 需要检查监听授权或来源；未切换读取身份。")
+                return
             except Exception as exc:  # noqa: BLE001 - retry external I/O
                 self.recent_download_errors.append(time.time())
                 self.log.warning(

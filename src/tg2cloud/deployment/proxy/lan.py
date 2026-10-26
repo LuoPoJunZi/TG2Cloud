@@ -506,6 +506,7 @@ def execute(plan: Plan, release, source, baseline, session, log, ui, *, verify=F
 
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description="TG2Cloud 独立局域网/NAS 向导；不改变 EXE/VPS HTTPS 模式")
+    result.add_argument("--release", help="显式选择已发布正式 vX.Y.Z；默认最新稳定版，不接受 RC")
     result.add_argument("--edition", choices=["clouddrive2", "openlist"])
     result.add_argument("--lan-ip", help="人工指定本机 RFC1918 IPv4；已有实例不隐式换地址")
     result.add_argument("--check", action="store_true", help="只读预检；首次需 --edition 和 --lan-ip")
@@ -517,7 +518,7 @@ def parser() -> argparse.ArgumentParser:
 def main(argv=None, *, friendly=None) -> int:
     arguments = list(sys.argv[1:] if argv is None else argv)
     args = parser().parse_args(arguments)
-    friendly = not arguments if friendly is None else friendly
+    friendly = (not arguments or bool(args.release) and not args.check) if friendly is None else friendly
     log, ui = InstallerLog(SafeLog(), friendly=friendly), None
     try:
         if args.check and (args.verify or args.show_credentials):
@@ -548,7 +549,7 @@ def main(argv=None, *, friendly=None) -> int:
             log("TG2CLOUD_LAN_RESULT=NO_CHANGE；未修改配置或密码")
             return 0
         client = releases.ReleaseClient()
-        release = client.resolve()
+        release = client.resolve(args.release) if args.release else client.resolve()
         log("正式 Release：" + release.tag + "；固定 payload commit：" + release.commit)
         with tempfile.TemporaryDirectory(prefix="tg2cloud-lan-source-") as private:
             root = Path(private)

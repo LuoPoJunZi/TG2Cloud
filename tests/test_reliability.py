@@ -55,6 +55,21 @@ class BundleTests(unittest.TestCase):
             pack(self.snapshot, self.archive, "openlist", "1.2.0")
         self.assertTrue(self.archive.exists())
 
+    def test_optional_personal_session_is_private_and_validated(self):
+        session=self.snapshot / "data/listener/personal.session"
+        session.parent.mkdir(mode=0o700)
+        with closing(sqlite3.connect(session)) as connection:
+            connection.execute("CREATE TABLE synthetic(value TEXT)")
+        pack(self.snapshot,self.archive,"openlist","1.4.8")
+        with tarfile.open(self.archive) as tar:
+            manifest=json.load(tar.extractfile("manifest.json"))
+            self.assertIn("data/listener/personal.session",manifest["files"])
+            self.assertEqual(tar.getmember("data/listener/personal.session").mode,0o600)
+        self.archive.unlink()
+        session.with_name(session.name+"-wal").write_bytes(b"live")
+        with self.assertRaises(ValueError):
+            pack(self.snapshot,self.archive,"openlist","1.4.8")
+
     def test_corrupt_database_and_live_sidecar_fail_before_bundle(self):
         (self.snapshot / "data/tg115.db-wal").write_bytes(b"fixture")
         with self.assertRaises(ValueError):

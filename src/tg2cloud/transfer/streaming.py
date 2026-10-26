@@ -93,12 +93,19 @@ async def _stream_one(self, task_id: int) -> None:
     remote_temp = self.db.staging_name(task_id, safe_name)
     stream = None
     try:
+        from tg2cloud.listening.service import ListenerReadError, task_source
+        source = task_source(self, task)
         for attempt in range(
             int(task["download_retries"]), self.settings.max_retries
         ):
             try:
                 if await self._resume_remote(task_id, task, None, safe_name):
                     return
+                message = await source.get_messages(
+                    int(task["chat_id"]), ids=int(task["message_id"])
+                )
+                if not message or not message.media:
+                    raise RuntimeError("Telegram 消息或文件已经不可访问")
                 remote_write = await self._begin_remote_write(
                     task_id, task, safe_name, "streaming", remote_temp,
                     transfer_mode="stream",
@@ -109,11 +116,6 @@ async def _stream_one(self, task_id: int) -> None:
                     error=None,
                     wait_reason=None,
                 )
-                message = await self.source.get_messages(
-                    int(task["chat_id"]), ids=int(task["message_id"])
-                )
-                if not message or not message.media:
-                    raise RuntimeError("Telegram 消息或文件已经不可访问")
                 stream = await self.rclone.open_upload_stream(
                     remote_write, int(task["file_size"])
                 )
@@ -132,7 +134,7 @@ async def _stream_one(self, task_id: int) -> None:
                         last_progress_at = now
 
                 self._record_progress(task_id, "stream", 0, reset=True)
-                await self.source.download_media(
+                await source.download_media(
                     message,
                     file=stream,
                     progress_callback=progress,
@@ -157,6 +159,13 @@ async def _stream_one(self, task_id: int) -> None:
                 return
             except asyncio.CancelledError:
                 raise
+            except ListenerReadError as exc:
+                if stream is not None:
+                    await stream.abort()
+                self.db.transition(task_id, "download_failed", local_path=None,
+                                   error=str(exc), failure_kind="source_access")
+                await self._notify(f"任务 #{task_id} 需要检查监听授权或来源；保留远端现场，不切换身份。")
+                return
             except MoveUncertainError as exc:
                 if stream is not None:
                     await stream.abort()

@@ -229,7 +229,8 @@ class TaskDB:
                     error=NULL, wait_reason='用户确认恢复；等待资源与目的端就绪',
                     next_retry_at=0, updated_at=?, message_id=COALESCE(?,message_id) WHERE id=?""",
                     ("waiting_upload" if local_complete else "queued", local_complete, local_complete,
-                     fresh_path, fresh_path, fresh_path, now, message_id, task_id),
+                     fresh_path, fresh_path, fresh_path, now,
+                     message_id if task.get("read_identity", "bot") == "bot" else None, task_id),
                 )
                 self._conn.execute("COMMIT")
                 return True
@@ -273,10 +274,12 @@ class TaskDB:
         media_kind: str = "", mime_type: str = "", media_extension: str = "",
         target_base: str | None = None, created_at: float | None = None,
         classification_options: dict | None = None,
+        directory_override: str | None = None, read_identity: str = "bot", source_id: int | None = None,
     ) -> tuple[dict[str, Any], bool]:
         now = time.time() if created_at is None else created_at
         with self._lock:
-            self._conn.execute("BEGIN IMMEDIATE")
+            nested = self._conn.in_transaction
+            self._conn.execute("SAVEPOINT create_task" if nested else "BEGIN IMMEDIATE")
             try:
                 # Resolve duplicates before any quota/path decision; repeated
                 # forwards must return the original persisted task unchanged.
@@ -285,20 +288,24 @@ class TaskDB:
                     "OR (sender_id=? AND media_key=? AND ? IS NOT NULL) LIMIT 1",
                     (chat_id, message_id, sender_id, media_key, media_key)).fetchone()
                 if row:
-                    self._conn.execute("COMMIT")
+                    self._conn.execute("RELEASE create_task" if nested else "COMMIT")
                     return dict(row), False
-                from tg2cloud.domain.classification import directory
+                from tg2cloud.domain.classification import directory, safe_directory
                 from tg2cloud.persistence.quotas import admit
                 admit(self._conn, sender_id, file_size, now, self.feature_settings()["timezone"])
                 target_directory = directory(classification_options or self.feature_settings(), now, kind=media_kind,
                                              mime=mime_type, extension=media_extension)
+                if directory_override is not None:
+                    target_directory = safe_directory(directory_override)
+                if read_identity != "bot" and (not read_identity.startswith("listener:") or source_id is None):
+                    raise ValueError("读取身份无效")
                 cursor = self._conn.execute(
                     """
                     INSERT INTO tasks (
                         chat_id, message_id, sender_id, media_key, file_name,
                         file_size, state, created_at, updated_at, original_file_name,
-                        target_directory, target_base
-                    ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?)
+                        target_directory, target_base, read_identity, source_id
+                    ) VALUES (?, ?, ?, ?, ?, ?, 'queued', ?, ?, ?, ?, ?, ?, ?)
                     """,
                     (
                         chat_id,
@@ -310,7 +317,7 @@ class TaskDB:
                         now,
                         now,
                         original_file_name,
-                        target_directory, target_base,
+                        target_directory, target_base, read_identity, source_id,
                     ),
                 )
                 row = self._conn.execute(
@@ -318,10 +325,12 @@ class TaskDB:
                 ).fetchone()
                 self._conn.execute("INSERT INTO quota_ledger(task_id,user_id,bytes) VALUES(?,?,?)",
                                    (cursor.lastrowid, sender_id, file_size))
-                self._conn.execute("COMMIT")
+                self._conn.execute("RELEASE create_task" if nested else "COMMIT")
                 return dict(row), True
             except sqlite3.IntegrityError:
-                self._conn.execute("ROLLBACK")
+                self._conn.execute("ROLLBACK TO create_task" if nested else "ROLLBACK")
+                if nested:
+                    self._conn.execute("RELEASE create_task")
                 row = self._conn.execute(
                     "SELECT * FROM tasks WHERE chat_id = ? AND message_id = ?",
                     (chat_id, message_id),
@@ -338,7 +347,9 @@ class TaskDB:
                     raise
                 return dict(row), False
             except BaseException:
-                self._conn.execute("ROLLBACK")
+                self._conn.execute("ROLLBACK TO create_task" if nested else "ROLLBACK")
+                if nested:
+                    self._conn.execute("RELEASE create_task")
                 raise
 
     def get(self, task_id: int) -> dict[str, Any] | None:

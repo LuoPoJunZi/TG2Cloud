@@ -1,5 +1,15 @@
 # 更新记录
 
+## TG2Cloud v1.4.9
+
+待发布：管理员专属频道／群组监听与智能转存增强。按用户决定准备正式版，不发布 RC；真实账号与网关转存由用户在 GitHub 发布后验收。
+
+- 默认关闭的独立个人 Session；管理员按来源配置有限组合规则，只读取已加入且未受保护的来源。
+- 共用原队列、配额和两个网关提交策略，新增持久化计划、确认前改名／目录／批次，以及显式来源命名反馈。
+- 补充已核对的 v1.4.8 固定升级基线；业务 schema 2 → 3 事务迁移，历史任务默认 Bot 读取身份；独立 Session 纳入可选离线备份覆盖，回退须匹配数据库快照。
+- 发布审计补强长 Unicode 文本分页、登录断开异常时的权限掩码恢复与迁移中断回滚；两 Edition 原生镜像增加默认停用／独立 Session 锁的离线验证。
+- 详细边界、操作和发布门槛见[监听指南](docs/LISTENING.md)。发布前保持现有在线稳定 helper；新 A／B 及同标签原生双架构 CI 仍需通过。发布后步骤见[1.4.9 验收说明](docs/development/V149-ACCEPTANCE.md)。
+
 ## TG2Cloud v1.4.8
 
 版本日期：2026-10-25。[v1.4.8 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8) 已正式发布。A／B 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)全部通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验；本版实机仍须独立验收。
@@ -50,12 +60,13 @@
 
 发布后验收补充：用户已提供 v1.4.5 的 CloudDrive2 ARM64 升级与单独 WebDAV 写入日志，按[记录范围](docs/development/V145-ACCEPTANCE.md)保留；上段未验收说明是发布当时状态，不扩展到本版或其他场景。
 
-本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.4.8 共 27 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
+本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.4.9 共 28 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
 
 截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.4.9](#tg2cloud-v149) | 待发布：管理员监听、持久化审批与命名／目录方案，schema 3 和独立 Session 备份。 |
 | [v1.4.8](#tg2cloud-v148) | 简化外部 WebDAV 安装交互，修复终端输入，自动读取或复用目录并显示管理地址。 |
 | [v1.4.7](#tg2cloud-v147) | 统一外部 WebDAV 管理、退役两个独立 Shell 入口，修复 Certbot 挂载复验和安装中断恢复。 |
 | [v1.4.6](#tg2cloud-v146) | 优化外部 WebDAV 次级界面；新增发布候选工具，共享 CI 校验、分类测试及纯代理渲染，补齐 v1.4.5 升级基线。 |

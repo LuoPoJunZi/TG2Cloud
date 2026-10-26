@@ -24,6 +24,8 @@ TG2Cloud 是一个自托管的个人文件转存工具：把文件发送或转�
 
 Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云存储
 
+v1.4.9 待发布：[管理员监听与转存计划](docs/LISTENING.md)，默认关闭，复用现有队列；稳定版尚不包含。
+
 ## 主要能力
 
 - 两个 Edition 共用 Bot 核心，各自保留配置、任务数据库与 Session。

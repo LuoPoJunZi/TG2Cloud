@@ -6,6 +6,11 @@ v1.4.4 UI 将分类与通知拆为 `tg2cloud` 主菜单 8／9，不改 Telegram 
 
 适用于当前 Linux 版的共享 Bot 核心，CloudDrive2 和 OpenList 操作相同；页面中的网关名称按实际 Edition 显示。安装入口见 [VPS 指南](VPS-INSTALL.md)和[内网指南](LAN-INSTALL.md)，首次挂载与验收见[存储网关配置](STORAGE.md)。
 
+
+## 本地待发布：监听与转存设置
+
+新增管理员入口 `/listen`，通用 `/transfer`、`/pending`、`/cancelinput`；手动转存默认保持自动，普通成员没有监听能力。详细步骤、规则、权限和范围见[监听与转存计划](LISTENING.md)。需候选 Bot 和离线工具同步更新，当前 v1.4.8 不包含。
+
 ## 提交与处理流程
 
 v1.3.3 增加[家庭成员授权](FAMILY-SHARING.md)：安装仍只填写一个管理员 ID；安装后在 `tg2cloud` 管理家人，成员仅操作自己的任务，共用保存目录。以下原管理员用法保留；v1.3.2 及更旧版本需升级 Bot 和管理工具后再使用。

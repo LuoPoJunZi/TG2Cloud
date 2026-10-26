@@ -147,8 +147,10 @@ def _queued_batches(self, states: tuple[str, ...]):
         )
         if not batch:
             return
-        yield batch
+        # A bounded listener backlog must not jump ahead of manual transfers
+        # in the same existing keyset page. Preserve the original cursor.
         after_id = int(batch[-1]["id"])
+        yield sorted(batch, key=lambda task: (task.get("read_identity", "bot") != "bot", task["id"]))
 
 
 async def _start_downloads(self) -> None:
@@ -174,6 +176,14 @@ async def _start_downloads(self) -> None:
             task_id = int(task["id"])
             if task_id in self.download_tasks:
                 continue
+            if task.get("read_identity", "bot") != "bot":
+                from tg2cloud.listening.account import state as listener_state
+                listener = getattr(self, "listener", None)
+                account_state = listener_state(self.db)
+                if (listener is None or listener.client is None or not account_state["enabled"]
+                        or account_state.get("cooldown_until", 0) > time.time()):
+                    self.db.update(task_id, wait_reason="等待监听账号授权、连接或冷却结束；手动任务继续调度")
+                    continue
             if ((task.get("transfer_mode") == "stream"
                  or task["file_size"] > self.settings.local_budget_bytes)
                     and len(self.upload_tasks) + self._stream_count() >= self.upload_window.value):

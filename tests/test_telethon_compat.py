@@ -60,11 +60,11 @@ class TelethonContractTests(unittest.IsolatedAsyncioTestCase):
             restored = reader.tgread_object()
         self.assertEqual(
             [[callback_data(button) for button in row.buttons] for row in restored.rows],
-            [[b"queue:1", b"vps_resources", b"refresh:home"]],
+            [[b"queue:1", b"vps_resources", b"refresh:home"], [b"menu:transfer", b"menu:listen"]],
         )
         self.assertEqual(
             [[button.text for button in row.buttons] for row in restored.rows],
-            [["📋", "🖥", "🔄"]],
+            [["📋", "🖥", "🔄"], ["转存设置", "监听管理"]],
         )
         with self.assertRaises(TypeError):
             callback_data(Button.url("Not a callback", "https://example.com"))

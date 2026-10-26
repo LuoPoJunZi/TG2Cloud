@@ -1,6 +1,8 @@
 # 文档来源与维护
 
-当前源码与正式稳定版本为 [**v1.4.8**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8)；资料核对日期 **2026 年 10 月 25 日**。A／B、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)和实际源码资产核验通过，原生 Linux PTY 与隔离网关由 CI 验证，真实 VPS 及账号目录仍须人工验收。
+源码 **v1.4.9** 待发布；资料核对日期 **2026 年 10 月 26 日**。本次发布前审计和本地自动化结果单独记录，远端 CI、资产与实机结论须实际完成后更新。
+
+上一版源码与当前正式稳定版本为 [**v1.4.8**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.8)；资料核对日期 **2026 年 10 月 25 日**。A／B、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)和实际源码资产核验通过，原生 Linux PTY 与隔离网关由 CI 验证，真实 VPS 及账号目录仍须人工验收。
 
 历史资料（2026-10-25）：当时正式稳定版本为 [**v1.4.7**](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7)；资料核对日期 **2026 年 10 月 25 日**。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验通过；本版未执行真实 VPS、手机、公网 ACME 或灾难恢复验收。
 

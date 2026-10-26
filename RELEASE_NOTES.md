@@ -1,32 +1,31 @@
-## TG2Cloud v1.4.8 · 外部 WebDAV 交互与输入维护
+## TG2Cloud v1.4.9 · 管理员监听与智能转存增强
 
 ## 本次改动
 
-- 本地管理和外部 WebDAV 不再重复展示环境检测表、启动横幅和多层相同标题；全部平台、实例和 Docker 归属检查保留，异常继续停止并说明原因。
-- 控制终端逐字节读取当前行，避免父菜单缓存子进程后续答案；普通字段恢复回显，密码输入隐藏，并在异常／中断后恢复原终端状态。支持完整的括号粘贴封装。
-- 域名、邮箱和目录正常显示输入；邮箱回车可跳过，普通字段提示固定具体原因，密码及未知校验异常不复述秘密。
-- 已核验实例优先读取 Bot 账号目录：CloudDrive2 仅接受可精确匹配的已识别用户配置，OpenList 使用本机当前用户接口；无法读取时自动复用绑定未变的历史确认值，否则仅首次补录。未知／加密结构不猜测、不解密。
-- 安装计划、后台建号及手机配置使用同一实际目录；显示当前 Edition 的管理页地址，取消第二次手打路径，保留计划确认、独立账号及原生只读权限确认。
-- 新模块纳入运行与引导清单，补入 v1.4.7 固定升级基线，并扩充终端、目录、权限、错误脱敏及最低 Python 回归。
+- 可选个人 Telegram 账号监听，默认关闭、仅管理员可用；独立 Session，不复用 Bot 登录，不自动加入来源或绕过内容保护。
+- 按已加入频道／群组配置文件类型、扩展名、文件名、关键词、大小与有限 AND/OR 规则；有界补拉、持久化去重、冷却和接收上限。
+- 手动和监听转存共用原队列、配额与 CloudDrive2／OpenList 提交策略；可选确认前改名、授权目录、批次审批、来源命名方案及明确保存／撤销修正规则。
+- 业务数据库 schema 2 → 3 事务迁移；历史任务默认 Bot 读取身份。实例快照与离线包纳入已有个人 Session，锁文件不入包。
+- 发布审计修复长 Unicode 文本超长发送、登录异常清理、停用期间的登记竞态和迁移中断回滚；补充两 Edition 镜像内的默认停用与 Session 隔离检查。
+- 公网／内网安装器支持 `--release v1.4.9` 显式选择已发布正式版本；默认仍为最新稳定 Release，拒绝 RC 和 main，保留原有不降级保护。
 
 ## 安装与升级
 
+本说明正在准备发布；目前 GitHub 稳定版仍为 v1.4.8。以下命令只在 v1.4.9 Release、源码资产和入口验证完成后使用，不应提前运行。
+
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.4.9/install.sh) --edition clouddrive2 --release v1.4.9 --check
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.4.9/install.sh) --edition clouddrive2 --release v1.4.9
 ```
 
-内网使用 `install-lan.sh`。已有实例按原公网／内网模式升级并保留配置，随后重新打开 `tg2cloud`。外部 WebDAV 位于 **15. 外部 WebDAV**，其离线工具需单独选择 **8. 升级附加功能** 才能加载新向导；主项目升级不自动替换这套工具。首次打开仅经确认下载正式稳定管理组件，不默认启用访问。
+OpenList 将 Edition 换为 `openlist`；内网使用同标签的 `install-lan.sh` 并保持原安装模式。先在独立测试实例验收，不启动共用同一个 Bot Token 的两个实例。升级离线工具后，使用 `tg2cloud listen login --edition clouddrive2` 在私有终端授权，再在 Bot 的 `/listen` 中启用。
 
 ## 验证与兼容
 
-版本同步后本地完整回归 1,216 项：1,183 通过、33 项因平台或工具条件跳过；最低 Python 3.10 标准库环境 121 项：119 通过、2 跳过。Ruff、语法、Bandit、ShellCheck、清单、仓库、网站 37 项及链接检查通过。已完成本版 A／B 各五项 CI、[同标签原生 AMD64／ARM64 发布验证](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)及实际源码资产核验。原生 Linux PTY、权限与隔离集成由对应 CI 执行；不将本地跳过写成已通过。
+本地测试结果与远端 CI 状态在[发布准备及验收记录](docs/development/V149-ACCEPTANCE.md)中分别记录。AMD64、ARM64、两 Edition 原生 Docker 验证由远端工作流执行；未执行项目不计为通过。发布前必须通过 A／B 的检查及同标签发布工作流。
 
-不新增运行依赖、必填配置或数据库迁移；不更改 Bot 账号、rclone、数据库、Session、网关监听和转存流程。目录读取不等于原生权限自动审计，仍须创建独立只读账号。**升级前备份。** 更早业务 schema 的原有迁移和匹配代码／数据库回退规则继续适用。
+**新增监听功能尚待发布后真实 VPS 验收。** 个人 Telegram 登录／验证码／2FA、真实频道权限与媒体组、CloudDrive2／OpenList 云端转存和生产恢复尚未验证；正式版本标识不是实机验收结论。按用户决定发布 v1.4.9 正式版，不发布 v1.5.0 RC。
 
-本版未连接真实 VPS、Telegram 或用户网盘；真实 SSH／Web 终端、原生两网关账号目录、手机播放／Range、公网 ACME、长期续期及完整恢复仍需独立验收。源码校验和不是数字签名，不使用旧版实机结论代替本版。
+升级前在主菜单 13 创建并校验实例快照，另外保护程序／镜像身份、下载文件与共享代理／附加状态。迁移保留旧任务、配置和 Bot Session；不增加运行依赖、必填环境变量、端口或服务。**回退必须使用匹配旧代码的升级前数据库快照，不能只切换旧镜像读取 schema 3，也不能自动删除升级后新任务。** 完整范围见[备份说明](docs/BACKUP-RESTORE.md)与[监听指南](docs/LISTENING.md)。
 
-详情见[外部 WebDAV](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/external-webdav.md)、[维护记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)和[更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。历史验收保留原范围：[v1.3.0](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)、[v1.4.3](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)、[v1.4.4](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)、[v1.4.5](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V145-ACCEPTANCE.md)。
-
-## 发布核验
-
-Tag 固定入口 B `e24cddfa77fe76b90ea63ee9e7d88008066cb0a3`，两个入口固定已验证辅助 A `f2c089aeccc1de1c17c43654dad35249236e6e14`。源码包 SHA256：`6282058970c09e05e0b74cab1df7d775373464b8c3b40bbfc90e3ae4cd57ee69`。后续文档提交不移动 Tag、不替换资产。
+历史验收仅保留当时范围，不代表 v1.4.9 已通过：[v1.3.0](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)、[v1.4.3](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)、[v1.4.4](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)、[v1.4.5](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V145-ACCEPTANCE.md)。

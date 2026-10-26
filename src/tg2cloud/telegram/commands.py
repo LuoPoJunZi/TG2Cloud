@@ -147,6 +147,9 @@ class CommandHandlers:
         )
 
     async def _handle_callback(self, event: Any) -> None:
+        from tg2cloud.telegram.planning import callback
+        if await callback(self, event):
+            return
         try:
             data = bytes(event.data).decode("ascii")
             parts = data.split(":")
@@ -347,6 +350,9 @@ class CommandHandlers:
     async def _handle_command(
         self, event: events.NewMessage.Event, text: str
     ) -> None:
+        from tg2cloud.telegram.planning import command as planning_command
+        if await planning_command(self, event, text):
+            return
         parts = text.split()
         command = parts[0].split("@", 1)[0].lower()
         actor = current_user(self.settings.allowed_user_id)

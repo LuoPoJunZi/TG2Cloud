@@ -84,6 +84,34 @@ class SnapshotTests(unittest.TestCase):
                 lines = next(target.glob("operation-*.jsonl")).read_text().splitlines()
                 self.assertEqual(json.loads(lines[-1])["state"], "completed")
 
+    def test_both_editions_include_optional_personal_session_not_lock(self):
+        for key in PRODUCTS:
+            with self.subTest(edition=key):
+                instance, docker, target = self.fixture(key)
+                directory = instance.directory / "data/listener"
+                directory.mkdir(mode=0o700)
+                personal = directory / "personal.session"
+                with closing(sqlite3.connect(personal)) as conn, conn:
+                    conn.execute("CREATE TABLE sessions (marker TEXT)")
+                    conn.execute("INSERT INTO sessions VALUES ('synthetic-only')")
+                personal.chmod(0o600)
+                (directory / "session.lock").write_text("synthetic-lock")
+                archive = self.create(instance, docker, target)
+                with bundle.verified_snapshot(archive, target, key, "1.4.9") as (restored, _):
+                    self.assertTrue((restored / "data/bot.session").is_file())
+                    self.assertTrue((restored / "data/listener/personal.session").is_file())
+                    self.assertFalse((restored / "data/listener/session.lock").exists())
+                    with closing(sqlite3.connect(restored / "data/listener/personal.session")) as conn:
+                        self.assertEqual(conn.execute("SELECT marker FROM sessions").fetchone()[0], "synthetic-only")
+                self.assertTrue(all(state["running"] for state in docker.states.values()))
+
+    def test_invalid_personal_session_refused_before_stopping_services(self):
+        instance, docker, target = self.fixture()
+        (instance.directory / "data/listener/personal.session").mkdir(parents=True)
+        with self.assertRaisesRegex(ValueError, "Session"):
+            self.create(instance, docker, target)
+        self.assertFalse(docker.calls)
+
     def test_originally_stopped_bot_is_not_started(self):
         instance, docker, target = self.fixture()
         docker.states[instance.product.bot_container]["running"] = False

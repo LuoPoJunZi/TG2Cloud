@@ -113,10 +113,10 @@ class OptimizationTests(unittest.IsolatedAsyncioTestCase):
         self.assertIn("☁️ **TG2Cloud**", text)
         self.assertIn("🟢 正常运行 · CloudDrive2", text)
         self.assertIn("🕐 更新于 21:35:08", text)
-        self.assertEqual([[button.text for button in row] for row in buttons], [["📋", "🖥", "🔄"]])
+        self.assertEqual([[button.text for button in row] for row in buttons], [["📋", "🖥", "🔄"], ["转存设置", "监听管理"]])
         self.assertEqual(
             [[callback_data(button) for button in row] for row in buttons],
-            [[b"queue:1", b"vps_resources", b"refresh:home"]],
+            [[b"queue:1", b"vps_resources", b"refresh:home"], [b"menu:transfer", b"menu:listen"]],
         )
 
     async def test_dashboard_uses_live_counts_rates_and_openlist_label(self) -> None:
