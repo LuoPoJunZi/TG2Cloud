@@ -147,6 +147,8 @@ v1.4.5 诊断补充只读入口结果及认证、权限、冷却、容量和远�
 
 v1.5.0 将 Bot 和宿主 CLI 分开核验：离线工具来自目标正式 Release 的已校验源码，安装提示包含实际 CLI 版本、目标是否一致以及离线命令检查。管理首页显示当前进程版本；工具更新后需退出旧菜单，再运行 `tg2cloud`。
 
+从 v1.4.11 或更早版本首次升级时，使用[下载页](/download/)中的公网或内网在线入口；旧管理进程不会自行加载新版工具更新逻辑。
+
 升级后可用 `tg2cloud --version` 查看 CLI，`tg2cloud listen --help` 检查监听入口；这些命令不执行 Telegram 登录。Bot 的运行代码／版本和 CLI 的可用性分别判定，缺少证据时明确未核实。监听登录兼容在线向导标准输入被重定向的控制终端，2FA 继续隐藏。
 
 用户已提供两台 Linux 的 v1.4.11 基础升级记录，Bot、备份和本机 HTTPS 通过，但 CLI 版本未单独核验、监听登录未完成。真实转存等范围见[实机补充](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V1411-ACCEPTANCE.md)，本版修复的实机验收尚未执行。

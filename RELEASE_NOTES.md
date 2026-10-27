@@ -18,6 +18,8 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.0/i
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.0/install.sh) --edition clouddrive2 --release v1.5.0
 ```
 
+首次从 v1.4.11 或更早版本升级，请使用上方在线入口，让新版向导同时更新 Bot 和离线管理工具；旧 CLI 已在运行的菜单不会自行加载新版逻辑。
+
 OpenList 将 Edition 换为 `openlist`；内网使用同标签 `install-lan.sh`。工具更新后退出旧菜单，重新运行 `tg2cloud`，核对 `tg2cloud --version` 及升级摘要。CLI 的帮助检查不等于个人账号已登录或监听已转存。
 
 ## 验证与兼容
