@@ -58,3 +58,11 @@ OpenList 改为 `--edition openlist`；内网使用同标签 `install-lan.sh`，
 ### 切换期间旧正式版兼容
 
 新入口与正式资产发布存在先后顺序：目标仍为旧稳定版时，管理工具继续来自该已校验 Release。仅对已知旧版本和 argparse 明确“未提供命令”的退出结果标记 legacy，并显示未验证／不提供项；v1.5.0 缺少版本查询或任意未知错误仍失败。不会为了发布切换而回退到 main、降低文件身份检查或把缺少的命令记为通过。
+
+## 辅助 A 验证结果
+
+最终辅助 A 为 `aa73201138cb379c295ebdcd459f40b6cce3ac45`，66 个真实公开 helper 与不可变 Git 文件逐字节一致。五项全部成功：[Linux 运行与两 Edition](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40438624058)、[四组最低／当前 Python CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40438620842)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40438610339)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40438614001)和[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40438617546)。
+
+最初 A `401d07a2fbb5892ab26c380b9ac7ad41ed3c6fa2` 亦通过五项检查；随后补充“发布切换时目标仍为旧稳定版”的严格兼容，36 项针对性回归通过并重新验证最终 A，未借用旧提交结果。旧版未提供命令独立标注，新版缺失必要命令仍失败。
+
+入口 B 将只固定上述已验证 A，不改变其源码，不伪造 SHA 或关闭正式校验。B、Tag 和实际资产结果将在完成后另记。
