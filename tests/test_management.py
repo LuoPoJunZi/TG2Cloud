@@ -238,6 +238,27 @@ class RuntimeTests(unittest.TestCase):
         self.assertEqual(result["version"], "9.9.9")
         self.assertEqual(runtime.installed_status("8.8.8", root=self.root, command=self.command)["state"], "failed")
 
+    def test_previous_stable_without_version_flag_is_explicit_legacy_not_false_success(self):
+        source = self.private / "legacy-source"
+        for name, body in runtime.files(ROOT).items():
+            path = source / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(body)
+        version = source / "src/tg2cloud/version.py"
+        version.write_text('VERSION = "1.4.11"\n', encoding="utf-8")
+        commands = source / "src/tg2cloud/cli/commands.py"
+        commands.write_text(commands.read_text(encoding="utf-8").replace(
+            '    parser.add_argument("--version", action="version", version="TG2Cloud CLI v" + VERSION)\n', ''), encoding="utf-8")
+        runtime.install(source=source, root=self.root, command=self.command)
+        result = runtime.installed_status("1.4.11", root=self.root, command=self.command)
+        self.assertEqual(result["state"], "legacy")
+        self.assertEqual(result["commands"], {"version": "unsupported", "listen": "ok"})
+        version.write_text('VERSION = "1.5.0"\n', encoding="utf-8")
+        runtime.install(source=source, root=self.root, command=self.command)
+        result = runtime.installed_status("1.5.0", root=self.root, command=self.command)
+        self.assertEqual(result["state"], "failed")
+        self.assertEqual(result["commands"]["version"], "failed")
+
     def test_release_source_mismatch_does_not_replace_existing_command(self):
         self.install()
         original = self.command.read_bytes()

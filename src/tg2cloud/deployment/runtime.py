@@ -124,7 +124,7 @@ def check_destination(*, root: Path = ROOT, command: Path = COMMAND) -> dict | N
 
 def installed_status(target: str, *, root: Path | None = None, command: Path | None = None) -> dict:
     """Read only: verify active launcher, static version and offline help capabilities."""
-    from tg2cloud.deployment.releases import source_version
+    from tg2cloud.deployment.releases import source_version, version_tuple
 
     root, command = root or ROOT, command or COMMAND
     result = {"version": "", "matches": False, "state": "missing", "commands": {}}
@@ -149,8 +149,17 @@ def installed_status(target: str, *, root: Path | None = None, command: Path | N
                 probe.stdout.strip() == "TG2Cloud CLI v" + version if name == "version"
                 else "--edition" in probe.stdout and all(x in probe.stdout for x in ("login", "status", "disable"))
             )
-            result["commands"][name] = "ok" if valid else "failed"
-        result["state"] = "ok" if result["matches"] and all(x == "ok" for x in result["commands"].values()) else "failed"
+            unsupported = not valid and probe.returncode == 2 and (
+                name == "version" and version_tuple(version) < (1, 5, 0)
+                and "unrecognized arguments: --version" in probe.stderr
+                or name == "listen" and version_tuple(version) < (1, 4, 9)
+                and "invalid choice: 'listen'" in probe.stderr
+            )
+            result["commands"][name] = "ok" if valid else "unsupported" if unsupported else "failed"
+        if result["matches"] and all(x == "ok" for x in result["commands"].values()):
+            result["state"] = "ok"
+        elif result["matches"] and all(x in {"ok", "unsupported"} for x in result["commands"].values()):
+            result["state"] = "legacy"
     except (ValueError, OSError, RuntimeError, subprocess.TimeoutExpired):
         result["state"] = "failed"
     return result
@@ -162,9 +171,15 @@ def install_release(source: Path, release, log) -> dict:
     result = installed_status(release.version)
     label = "v" + result["version"] if result["version"] else "未核实"
     log("本地管理工具：" + label + "；目标 v" + release.version)
-    if result["state"] != "ok":
+    if result["state"] not in {"ok", "legacy"}:
         raise RuntimeError("管理工具版本或命令核验未通过；未开始升级 Bot，请重新运行可信安装入口")
-    log("本地管理命令已安装：tg2cloud · v" + result["version"] + "（与目标一致；版本查询、监听入口通过）")
+    if result["state"] == "legacy":
+        missing = "、".join({"version": "版本查询", "listen": "监听入口"}[key]
+                           for key, value in result["commands"].items() if value == "unsupported")
+        log("本地管理命令已安装：tg2cloud · v" + result["version"] + "（受管源码版本与目标一致）")
+        log("所选旧版未提供：" + missing + "；未把这些项目记为通过。升级到 v1.5.0 后可用。")
+    else:
+        log("本地管理命令已安装：tg2cloud · v" + result["version"] + "（与目标一致；版本查询、监听入口通过）")
     from tg2cloud.version import VERSION
     if VERSION != result["version"]:
         log("当前菜单进程仍使用 v" + VERSION + "；退出后重新运行 tg2cloud 使用已更新的管理工具。")

@@ -98,7 +98,8 @@ class OperationReport:
         else:
             cli_version = "v" + self.cli["version"] if self.cli.get("version") else "未安装或未核实"
             lines.append("本地管理工具：" + cli_version + ("（与目标一致）" if self.cli.get("matches") else "（与目标不一致）"))
-            lines.append("管理工具命令：" + ("版本查询、监听入口通过" if self.cli.get("state") == "ok" else "未通过，请更新管理工具"))
+            command_state = {"ok": "版本查询、监听入口通过", "legacy": "旧版功能已核对；未提供的命令未记为通过"}
+            lines.append("管理工具命令：" + command_state.get(self.cli.get("state"), "未通过，请更新管理工具"))
         if self.mode == "lan":
             lines.append("公网 HTTPS：不适用（内网模式）")
         known = self.alerts - {"unknown"}
