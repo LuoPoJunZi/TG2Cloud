@@ -11,7 +11,7 @@
 
 ## 安装与升级
 
-本版处于正式发布准备阶段，远端 CI、Tag 与资产核验完成后再标记发布成功。保持原安装模式；先备份并运行对应入口的只读预检，确认后执行升级。正式发布后可固定版本运行：
+[v1.5.0 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.0) 已发布；[同标签 Linux 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40439954791)与实际源码资产、SHA256 和标签文件核验通过。保持原安装模式；先备份并运行对应入口的只读预检，确认后执行升级。可固定版本运行：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.0/install.sh) --edition clouddrive2 --release v1.5.0 --check

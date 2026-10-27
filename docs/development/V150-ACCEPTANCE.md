@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-2026-10-27：用户授权提交推送并正式发布 v1.5.0。当前为发布准备；本地修改、辅助提交 A、入口提交 B、远端 CI、同标签发布与实际资产分别记录，不用前一个版本的结果替代本版。
+2026-10-27：用户授权提交推送并正式发布 v1.5.0。现已正式发布，辅助 A、入口 B、同标签检查及实际资产结果见文末；真实 VPS 与账号功能仍待本版验收。
 
 ## 变更与兼容
 
@@ -70,3 +70,13 @@ OpenList 改为 `--edition openlist`；内网使用同标签 `install-lan.sh`，
 ### 入口检查修正
 
 初始 B `8ae836c66c27b2aa7ed8e689865298b6eb5a641d` 的 CLI／运行检查被 ShellCheck 阻止：生成 pin 时将 LAN 的 Bash 赋值误写为带空格形式（SC2283／SC2154），不是 Bot 或权限测试失败。仅恢复该行正确 Bash 语法，辅助 A 与 SHA 保持不变；不改工作流、不关闭规则，重新运行最终提交的全部 CI。
+
+## 正式发布与实际资产核验
+
+- 最终辅助 A：`aa73201138cb379c295ebdcd459f40b6cce3ac45`；入口 B／不可变 Tag：`eb635967d22bdc8d7c7467b6a6e3b7812ab8fa56`。
+- B 的五项检查全部成功：[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40439577680)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40439577747)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40439577637)、[CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40439577610)、[Linux](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40439577668)。
+- [同标签正式发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40439954791)的 prepare、两个原生 Linux 平台和 release 均成功，非草稿、非预发布；本版为 Latest。
+- 实际资产 `SHA256SUMS.txt`：96 字节；SHA256 `44f020bf7a45cb1e1083aa8504242f30f6ab88f98dba3d2ef7d603cc653e9587`。
+- 实际资产 `TG2Cloud-v1.5.0-source.tar.gz`：3854592 字节；SHA256 `264589d9e9935b4aa96cc5c103d3790c932dce6c56a79f0cf83001398c88da93`。
+- 正式 source_release.py 验证器通过；实际字节与 GitHub 资产 digest 一致，373 个文件与 Tag 按 Linux LF 归档规则逐字节相同。两个实际 main 安装入口及 66 个公开 helper 与对应 Git 文件一致。
+- 真实 VPS 升级、个人登录、监听转存、两网关用户数据、手机和生产恢复尚未执行，不借用旧版反馈宣称通过。
