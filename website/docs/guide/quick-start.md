@@ -8,7 +8,7 @@
 
 ## 第一步：登录自己的 Linux 主机
 
-通过自己的 SSH 终端登录 Debian / Ubuntu 原生 AMD64 或 ARM64 主机，并以 root 运行安装入口。首次连接或主机指纹变化时，先按[SSH 指南](/deploy/ssh/)核对服务器身份。
+通过自己的 SSH 终端登录符合[部署前准备](/guide/prerequisites/)的 Debian / Ubuntu Linux 主机，并以 root 运行安装入口。首次连接或主机指纹变化时，先按[SSH 指南](/deploy/ssh/)核对服务器身份。
 
 准备 Telegram API ID、API Hash、Bot Token，以及一个管理员数字 ID。CloudDrive2 还需要主机提供 `/dev/fuse`；OpenList 不要求 FUSE。
 

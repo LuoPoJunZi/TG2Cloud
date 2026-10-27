@@ -6,6 +6,7 @@ import argparse
 import os
 import shutil
 import subprocess  # nosec B404
+from contextlib import ExitStack
 
 
 def main(argv=None):
@@ -23,6 +24,7 @@ def main(argv=None):
     from tg2cloud.deployment.profiles import PRODUCTS
 
     log = SafeLog()
+    stage = "Linux 与 Docker 环境检查"
     try:
         preflight.validate_host()
         # Do not let root's docker CLI context silently target another host.
@@ -30,6 +32,7 @@ def main(argv=None):
 
         check_environment()
         root = Path(__file__).resolve().parents[3]
+        stage = "本地管理工具完整性检查"
         if (root / "installation.json").exists():
             runtime.verify(root)
         docker = shutil.which("docker")
@@ -39,7 +42,9 @@ def main(argv=None):
         session = LocalSession(log)
         from tg2cloud.deployment.architecture import check_docker
 
+        stage = "本机 Docker 检查"
         check_docker(session)
+        stage = "实例身份与运行版本检查"
         with edition_lock(Path("/opt/tg2cloud-cli-locks") / (product.key + ".lock")):
             item = instances.discover(
                 product,
@@ -50,8 +55,6 @@ def main(argv=None):
             )
             if not item.present or not item.running:
                 raise ValueError("请先安装并启动所选 Edition")
-            if args.action == "login" and (not os.isatty(0) or not os.isatty(1)):
-                raise ValueError("请在 SSH 交互终端登录；不要将验证码发送给 Bot")
             command = [
                 docker,
                 "exec",
@@ -63,10 +66,21 @@ def main(argv=None):
                 "tg2cloud.listening.account",
                 args.action,
             ]
-            # Inherit the private terminal directly; never capture codes/passwords in logs.
-            return subprocess.run(command, check=False).returncode  # nosec B603
+            stage = "个人监听账号操作"
+            with ExitStack() as stack:
+                options = {}
+                if args.action == "login" and (not os.isatty(0) or not os.isatty(1)):
+                    stage = "交互终端检查；请从自己的 SSH 终端运行 tg2cloud"
+                    # Online Bash launches the wizard asynchronously, so stdin may
+                    # be /dev/null even though Terminal's /dev/tty menu works.
+                    tty = stack.enter_context(open("/dev/tty", "r+b", buffering=0))
+                    if not os.isatty(tty.fileno()):
+                        raise ValueError("无法取得控制终端")
+                    options = {"stdin": tty, "stdout": tty, "stderr": tty}
+                # Inherit/reopen only the private terminal, never capture secrets.
+                return subprocess.run(command, check=False, **options).returncode  # nosec B603
     except (ValueError, RuntimeError, OSError):
-        log("监听操作未完成；请核对 Linux、本机 Docker、实例身份、运行版本和交互终端。")
+        log("监听操作未完成：" + stage + "未通过；未显示凭据或内部异常。")
         return 1
 
 

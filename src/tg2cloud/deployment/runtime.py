@@ -8,6 +8,7 @@ import re
 import runpy
 import shlex
 import stat
+import subprocess  # nosec B404
 import sys
 import tempfile
 from pathlib import Path
@@ -93,7 +94,7 @@ def launcher(bundle: Path) -> str:
     return HEADER + "exec python3 -B " + shlex.quote(str(bundle / "src/tg2cloud/deployment/runtime.py")) + ' "$@"\n'
 
 
-def check_destination(*, root: Path = ROOT, command: Path = COMMAND) -> None:
+def check_destination(*, root: Path = ROOT, command: Path = COMMAND) -> dict | None:
     """Read-only collision check, called before confirming installation."""
     safe_path(root, private=True)
     safe_path(command)
@@ -117,16 +118,71 @@ def check_destination(*, root: Path = ROOT, command: Path = COMMAND) -> None:
         if (bundle.parent != root / "runtime" or not re.fullmatch(r"[a-f0-9]{64}", bundle.name)
                 or entry != bundle / "src/tg2cloud/deployment/runtime.py" or text != launcher(bundle)):
             raise ValueError("tg2cloud 命令的运行路径不符合受管布局")
-        verify(bundle)
+        return verify(bundle)
+    return None
 
 
-def install(*, source: Path | None = None, root: Path = ROOT, command: Path = COMMAND) -> None:
+def installed_status(target: str, *, root: Path | None = None, command: Path | None = None) -> dict:
+    """Read only: verify active launcher, static version and offline help capabilities."""
+    from tg2cloud.deployment.releases import source_version
+
+    root, command = root or ROOT, command or COMMAND
+    result = {"version": "", "matches": False, "state": "missing", "commands": {}}
+    try:
+        marker = check_destination(root=root, command=command)
+        if marker is None:
+            return result
+        result["state"] = "failed"
+        entry = Path(shlex.split(command.read_text(encoding="utf-8").splitlines()[-1])[3])
+        bundle = entry.parents[3]
+        version = source_version(bundle)
+        if version != marker.get("version"):
+            return result
+        result.update(version=version, matches=version == target)
+        for name, args in (("version", ["--version"]), ("listen", ["listen", "--help"])):
+            # Verified private code with fixed, read-only arguments.
+            probe = subprocess.run(  # nosec B603
+                [sys.executable, "-I", "-S", "-B", "-X", "utf8", str(entry), *args],
+                capture_output=True, text=True, encoding="utf-8", timeout=20, check=False,
+            )
+            valid = probe.returncode == 0 and (
+                probe.stdout.strip() == "TG2Cloud CLI v" + version if name == "version"
+                else "--edition" in probe.stdout and all(x in probe.stdout for x in ("login", "status", "disable"))
+            )
+            result["commands"][name] = "ok" if valid else "failed"
+        result["state"] = "ok" if result["matches"] and all(x == "ok" for x in result["commands"].values()) else "failed"
+    except (ValueError, OSError, RuntimeError, subprocess.TimeoutExpired):
+        result["state"] = "failed"
+    return result
+
+
+def install_release(source: Path, release, log) -> dict:
+    """The verified business Release supplies the offline manager, never the old helper."""
+    install(source=source, release=release)
+    result = installed_status(release.version)
+    label = "v" + result["version"] if result["version"] else "未核实"
+    log("本地管理工具：" + label + "；目标 v" + release.version)
+    if result["state"] != "ok":
+        raise RuntimeError("管理工具版本或命令核验未通过；未开始升级 Bot，请重新运行可信安装入口")
+    log("本地管理命令已安装：tg2cloud · v" + result["version"] + "（与目标一致；版本查询、监听入口通过）")
     from tg2cloud.version import VERSION
+    if VERSION != result["version"]:
+        log("当前菜单进程仍使用 v" + VERSION + "；退出后重新运行 tg2cloud 使用已更新的管理工具。")
+    return result
+
+
+def install(*, source: Path | None = None, root: Path = ROOT, command: Path = COMMAND, release=None) -> dict:
+    from tg2cloud.deployment.releases import source_version
 
     source = source or Path(__file__).resolve().parents[3]
+    version = source_version(source)
     content = files(source)
     origin = {"kind": "local-source"}
-    if (source / ".bootstrap-release.json").is_file():
+    if release is not None:
+        if version != release.version or not re.fullmatch(r"[0-9a-f]{40}", release.commit):
+            raise ValueError("管理工具源码与目标正式 Release 不一致")
+        origin = {"kind": "stable-release", "tag": release.tag, "commit": release.commit}
+    elif (source / ".bootstrap-release.json").is_file():
         from tg2cloud.deployment.configuration import regular_private
         raw = json.loads(regular_private(source / ".bootstrap-release.json"))
         if not re.fullmatch(r"[0-9a-f]{40}", raw.get("installer_commit", "")):
@@ -134,7 +190,7 @@ def install(*, source: Path | None = None, root: Path = ROOT, command: Path = CO
         origin = {"kind": "pinned-helper", "commit": raw["installer_commit"]}
     elif (source / "installation.json").is_file():
         origin = verify(source)["origin"]
-    metadata = {"schema": 1, "owner": "tg2cloud.cli", "version": VERSION, "origin": origin,
+    metadata = {"schema": 1, "owner": "tg2cloud.cli", "version": version, "origin": origin,
                 "files": {name: hashlib.sha256(body).hexdigest() for name, body in content.items()}}
     manifest = (json.dumps(metadata, sort_keys=True, ensure_ascii=True) + "\n").encode()
     key = hashlib.sha256(manifest).hexdigest()
@@ -175,6 +231,7 @@ def install(*, source: Path | None = None, root: Path = ROOT, command: Path = CO
             temporary.replace(command)
         finally:
             temporary.unlink(missing_ok=True)
+    return metadata
 
 
 def remove(*, root: Path = ROOT, command: Path = COMMAND) -> bool:

@@ -1,4 +1,4 @@
-# Linux AMD64 / ARM64（v1.4.5）
+# Linux 部署与兼容性
 
 2026-10-24，v1.4.5 的辅助 A、入口 B 以及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)均通过原生 AMD64／ARM64 验证，实际源码资产已核验；证据见[本版记录](development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。不新增架构或运行依赖，不改变固定镜像；仅开发审计依赖 filelock 安全更新。下方用户实机验收按旧版和原范围保留，不推断本版 VPS 或云盘已通过。
 

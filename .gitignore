@@ -9,6 +9,9 @@
 *.csr
 *.crt
 *.session
+*.session-shm
+*.session-wal
+*.session-journal
 rclone.conf
 letsencrypt/
 **/certbot/www/

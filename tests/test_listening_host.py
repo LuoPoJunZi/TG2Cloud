@@ -7,7 +7,7 @@ import sys
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
 
 from tg2cloud.deployment.listening import main
 
@@ -33,8 +33,8 @@ class HostListeningTests(unittest.TestCase):
         self.assertNotIn("ModuleNotFoundError", result.stderr)
 
     def test_verified_existing_container_is_only_touched_identity(self):
-        for edition in ("clouddrive2", "openlist"):
-            with self.subTest(edition=edition), contextlib.ExitStack() as stack:
+        for edition, redirected in ((e, r) for e in ("clouddrive2", "openlist") for r in (False, True)):
+            with self.subTest(edition=edition, redirected=redirected), contextlib.ExitStack() as stack:
                 stack.enter_context(
                     patch("tg2cloud.deployment.preflight.validate_host")
                 )
@@ -51,8 +51,13 @@ class HostListeningTests(unittest.TestCase):
                     )
                 )
                 stack.enter_context(
-                    patch("tg2cloud.deployment.listening.os.isatty", return_value=True)
+                    patch("tg2cloud.deployment.listening.os.isatty", side_effect=lambda fd, redirected=redirected: not redirected or fd == 77)
                 )
+                opened = mock_open()
+                opened.return_value.fileno.return_value = 77
+                opened.return_value.__exit__.side_effect = None
+                opened.return_value.__exit__.return_value = False
+                stack.enter_context(patch("builtins.open", opened))
                 stack.enter_context(
                     patch(
                         "tg2cloud.deployment.host.edition_lock",
@@ -109,6 +114,13 @@ class HostListeningTests(unittest.TestCase):
                     ],
                 )
                 self.assertNotIn("capture_output", runner.call_args.kwargs)
+                if redirected:
+                    opened.assert_called_once_with("/dev/tty", "r+b", buffering=0)
+                    for stream in ("stdin", "stdout", "stderr"):
+                        self.assertIs(runner.call_args.kwargs[stream], opened.return_value)
+                    opened.return_value.__exit__.assert_called_once()
+                else:
+                    opened.assert_not_called()
 
     def test_invalid_or_partial_instance_never_executes_login(self):
         with (

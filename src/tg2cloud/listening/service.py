@@ -7,7 +7,7 @@ import time
 from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 
-from tg2cloud.domain.planning import PlanningError, name_plan
+from tg2cloud.domain.planning import PlanningError, fields, name_plan
 from tg2cloud.domain.source_directories import media_directory
 from tg2cloud.listening import account, rules
 from tg2cloud.persistence.plans import Plans
@@ -84,8 +84,10 @@ class CheckedSource:
     def __init__(self, listener, task):
         self.listener, self.task = listener, task
         self.message = None
+        self._client = None
 
-    async def get_messages(self, entity, *, ids):
+    def _identity(self):
+        """Recheck durable authorization at every async metadata/download boundary."""
         l, task = self.listener, self.task
         if (
             not l.client
@@ -102,15 +104,23 @@ class CheckedSource:
                 "监听授权已停用或读取身份变化，请重新授权后手动重试"
             )
         source = l.plans.source(l.admin, task["source_id"])
-        if (
-            source["chat"] != entity
-            or task["message_id"] != ids
-            or source["account"] != current["account"]
-        ):
+        if source["chat"] != task["chat_id"] or source["account"] != current["account"]:
+            raise ListenerReadError("来源身份不一致")
+        return l.client, source
+
+    async def get_messages(self, entity, *, ids):
+        # Failed revalidation must not leave an earlier message authorized.
+        self.message = self._client = None
+        client, source = self._identity()
+        if source["chat"] != entity or self.task["message_id"] != ids:
             raise ListenerReadError("来源身份不一致")
         try:
-            await verified_chat(l.client, entity)
-            message = await l.client.get_messages(entity, ids=ids)
+            await verified_chat(client, entity)
+            if self._identity()[0] is not client:
+                raise ListenerReadError("监听连接已变化；请重新核验附件")
+            message = await client.get_messages(entity, ids=ids)
+            if self._identity()[0] is not client:
+                raise ListenerReadError("监听连接已变化；请重新核验附件")
         except ListenerReadError:
             raise
         except Exception as exc:
@@ -123,19 +133,17 @@ class CheckedSource:
             or not rules.facts(message)["attachment"]
         ):
             raise ListenerReadError("消息已删除或无可读取的附件；停止下载")
-        if rules.facts(message)["media_key"] != task["media_key"]:
+        if rules.facts(message)["media_key"] != self.task["media_key"]:
             raise ListenerReadError("来源附件已变化；停止原任务，避免下载错误文件")
-        self.message = message
+        self.message, self._client = message, client
         return message
 
     async def download_media(self, message, **options):
-        if (
-            message is not self.message
-            or not account.state(self.listener.db)["enabled"]
-        ):
+        client, _ = self._identity()
+        if message is None or message is not self.message or client is not self._client:
             raise ListenerReadError("未核验的监听附件不能下载")
         try:
-            return await self.listener.client.download_media(message, **options)
+            return await client.download_media(message, **options)
         except Exception as exc:
             source = self.listener.plans.source(
                 self.listener.admin, self.task["source_id"]
@@ -169,6 +177,27 @@ def task_source(owner, task):
     if listener is None or task["sender_id"] != owner.settings.allowed_user_id:
         raise ListenerReadError("监听任务无法取得匹配的管理员读取身份")
     return CheckedSource(listener, task)
+
+
+def album_captions(messages):
+    """Only associate text from this bounded page and the same chat/album."""
+    captions = {}
+    for message in sorted(messages, key=lambda item: item.id):
+        group = getattr(message, "grouped_id", None)
+        text = getattr(message, "raw_text", "") or getattr(message, "message", "")
+        if group and text:
+            captions.setdefault((message.chat_id, group), text)
+    return captions
+
+
+def message_caption(message, captions):
+    text = getattr(message, "raw_text", "") or getattr(message, "message", "")
+    if text:
+        return text
+    original = fields(getattr(getattr(message, "file", None), "name", "") or "")
+    if original["episode"] or original["chapter"]:
+        return None  # Never borrow a different episode's title.
+    return captions.get((message.chat_id, getattr(message, "grouped_id", None)))
 
 
 class Listener:
@@ -342,8 +371,9 @@ class Listener:
         await verified_chat(self.client, source["chat"])
         messages = await self.client.get_messages(source["chat"], limit=10)
         result = []
+        captions = album_captions(messages)
         for m in messages:
-            item, matched, reason, naming = self.preview(source, m)
+            item, matched, reason, naming = self.preview(source, m, message_caption(m, captions))
             naming["directory_preview"] = media_directory(source["config"], kind=item["kind"],
                                                          mime=item["mime"], extension=item["extension"],
                                                          base=self.owner.settings.cd2_target)
@@ -378,10 +408,14 @@ class Listener:
     async def receive(self, source, message, caption=None):
         # Every event decision is persisted before the poll cursor moves; duplicate edits are ignored.
         self.require_admin(self.admin)
+        source = self.plans.source(self.admin, source["id"])
+        previous_revision = source["revision"]
         if self._verified_until.get(source["chat"], 0) < time.monotonic():
             await verified_chat(self.client, source["chat"])
             self._verified_until[source["chat"]] = time.monotonic() + 10
         source = self.plans.source(self.admin, source["id"])
+        if source["revision"] != previous_revision:
+            return  # Discard a decision whose rules changed during the permission check.
         current = account.state(self.db)
         if not current["enabled"]:
             return  # A stop during the awaited permission check must not admit a new plan.
@@ -437,8 +471,21 @@ class Listener:
                 "监听已登记新附件；使用 /pending 查看待确认，/queue 查看已入队任务。"
             )
 
+    def _poll_current(self, source, client):
+        current = self.plans.source(self.admin, source["id"])
+        authorization = account.state(self.db)
+        return (
+            self.client is client
+            and current["revision"] == source["revision"]
+            and current["enabled"] and not current["deleted"]
+            and authorization["enabled"] and authorization["account"] == source["account"]
+        )
+
     async def poll(self, source):
-        await verified_chat(self.client, source["chat"])
+        client = self.client
+        await verified_chat(client, source["chat"])
+        if not self._poll_current(source, client):
+            return
         self._verified_until[source["chat"]] = time.monotonic() + 10
         gap = bool(source.get("gap")) or bool(
             source.get("polled_at") and time.time() - source["polled_at"] > LOOKBACK
@@ -451,7 +498,7 @@ class Listener:
         # Ascending pages, never a live-event maximum watermark. A batch is bounded.
         messages = [
             m
-            async for m in self.client.iter_messages(
+            async for m in client.iter_messages(
                 source["chat"],
                 min_id=source["cursor"],
                 offset_date=datetime.now(timezone.utc) - timedelta(seconds=LOOKBACK),
@@ -466,43 +513,21 @@ class Listener:
                 if tail
                 else []
             )
-        # Same fetched group only; no replies/comments/history crawling for captions.
-        groups = {}
-        for m in messages:
-            if getattr(m, "grouped_id", None):
-                groups.setdefault(m.grouped_id, []).append(m)
+        # Preview and ingestion share the same bounded, per-chat album policy.
+        captions = album_captions(messages)
         for m in messages:
             if time.time() - m.date.timestamp() < 2:
                 break  # Allow a short bounded wait for Album members on the next poll.
+            if not self._poll_current(source, client):
+                return
             latest = self.plans.source(self.admin, source["id"])
-            if (
-                not latest["enabled"]
-                or latest["deleted"]
-                or not account.state(self.db)["enabled"]
-            ):
-                break
             if time.time() - m.date.timestamp() > LOOKBACK:
                 self.journal(source, m.id, "超过 6 小时补拉窗口，存在缺口")
             else:
-                siblings = groups.get(getattr(m, "grouped_id", None), [])
-                from tg2cloud.domain.planning import fields
-
-                original_fields = fields(
-                    getattr(getattr(m, "file", None), "name", "") or ""
-                )
-                if original_fields["episode"] or original_fields["chapter"]:
-                    siblings = []  # Never borrow another episode's caption for a member with its own number.
-                # Preserve explicit member text. Shared text is only a fallback from this group.
-                caption = getattr(m, "raw_text", "") or next(
-                    (
-                        getattr(s, "raw_text", "")
-                        for s in siblings
-                        if getattr(s, "raw_text", "")
-                    ),
-                    None,
-                )
-                await self.receive(latest, m, caption)
+                await self.receive(latest, m, message_caption(m, captions))
             with self.plans.transaction(self.admin, admin=True):
+                if not self._poll_current(source, client):
+                    return  # A notification await may overlap pause/delete/configuration.
                 self.db._conn.execute(
                     "UPDATE listener_sources SET cursor=?,status=? WHERE id=? AND cursor<?",
                     (
@@ -517,10 +542,12 @@ class Listener:
                     ),
                 )
 
-        self.db._conn.execute(
-            "UPDATE listener_sources SET polled_at=?,status=CASE WHEN enabled=0 THEN '暂停' WHEN gap=1 THEN '超出补拉窗口，可能存在缺口；请核对历史' ELSE '正常监听' END WHERE id=?",
-            (time.time(), source["id"]),
-        )
+        with self.plans.transaction(self.admin, admin=True):
+            if self._poll_current(source, client):
+                self.db._conn.execute(
+                    "UPDATE listener_sources SET polled_at=?,status=CASE WHEN gap=1 THEN '超出补拉窗口，可能存在缺口；请核对历史' ELSE '正常监听' END WHERE id=?",
+                    (time.time(), source["id"]),
+                )
 
     async def source_failure(self, source, exc):
         """Return false when the account needs to cool down or be reauthorized."""
@@ -561,8 +588,8 @@ class Listener:
             status = "网络或接收持久化失败，60 秒后重查；未推进失败消息"
         with self.db._lock:
             self.db._conn.execute(
-                "UPDATE listener_sources SET status=?,enabled=CASE WHEN ? THEN 0 ELSE enabled END,next_retry=? WHERE id=?",
-                (status, int(paused), time.time() + 60, source["id"]),
+                "UPDATE listener_sources SET status=?,enabled=CASE WHEN ? THEN 0 ELSE enabled END,next_retry=? WHERE id=? AND revision=? AND deleted=0",
+                (status, int(paused), time.time() + 60, source["id"], source["revision"]),
             )
         return True
 

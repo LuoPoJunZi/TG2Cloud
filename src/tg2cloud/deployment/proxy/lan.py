@@ -572,8 +572,8 @@ def main(argv=None, *, friendly=None) -> int:
                     raise ValueError("基础预检完成，但内网管理入口尚未通过；未执行恢复或重建")
                 log("TG2CLOUD_LAN_CHECK=OK；只读预检，不等于安装/外部访问/WebDAV/转存通过")
                 return 0
-            if friendly:
-                from tg2cloud.deployment import runtime
+            from tg2cloud.deployment import runtime
+            manage_runtime = friendly or runtime.COMMAND.exists()
             if plan.action == "newer" or (plan.action == "current" and plan.entry_healthy and not args.verify):
                 if friendly:
                     runtime.check_destination()
@@ -582,20 +582,19 @@ def main(argv=None, *, friendly=None) -> int:
                             current = instances.discover(product, instances.docker_inventory(session), session, log, install_dir=product.install_dir)
                             if not current.present or current.raw_config != instance.raw_config or current.version != instance.version:
                                 raise ValueError("确认期间实例已移除或变化；不重新创建管理命令")
-                            runtime.install()
-                        log("本地管理命令已安装：tg2cloud")
+                            log.cli = runtime.install_release(source, release, log)
                 log("TG2CLOUD_LAN_RESULT=NO_CHANGE；不重建、不降级")
                 return 0
-            if friendly:
+            if manage_runtime:
                 runtime.check_destination()
+            if friendly:
                 log("将安装本地管理命令 tg2cloud；仅用于可信局域网，不自动切换为公网 HTTPS。")
             if not ui.confirm("确认上述内网 HTTP 计划？仅用于可信局域网，禁止公网转发；所选 Bot 可能短暂停止"):
                 log("TG2CLOUD_LAN_RESULT=CANCELLED；未修改实例或内网状态")
                 return 0
-            with runtime.lifecycle_lock() if friendly else nullcontext():
-                if friendly:
-                    runtime.install()
-                    log("本地管理命令已安装：tg2cloud（后续操作失败时可用于检查）")
+            with runtime.lifecycle_lock() if manage_runtime else nullcontext():
+                if manage_runtime:
+                    log.cli = runtime.install_release(source, release, log)
                 execute(plan, release, source, baseline, session, log, ui, verify=args.verify)
             log("TG2CLOUD_LAN_RESULT=BASE_LAN_OK；WebDAV 与真实转存以独立验收为准")
         return 0

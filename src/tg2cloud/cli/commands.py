@@ -11,7 +11,10 @@ def interrupted(_signal, _frame):
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="TG2Cloud Linux 安装与维护入口")
+    from tg2cloud.version import VERSION
+
+    parser = argparse.ArgumentParser(prog="tg2cloud", description="TG2Cloud Linux 安装与维护入口")
+    parser.add_argument("--version", action="version", version="TG2Cloud CLI v" + VERSION)
     parser.add_argument("command", choices=("install", "lan", "uninstall", "webdav", "manage", "proxy", "naming-preview", "listen"), nargs="?", default="manage")
     # Leave every existing Edition-specific option to its original parser.
     arguments = list(sys.argv[1:] if argv is None else argv)

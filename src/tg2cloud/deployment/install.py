@@ -53,6 +53,8 @@ def execution_feedback(plan, release, session, log, *, mode):
     plan.feedback = feedback
     previous = log.operation if isinstance(log, InstallerLog) else None
     if isinstance(log, InstallerLog):
+        feedback.cli = log.cli
+    if isinstance(log, InstallerLog):
         log.operation = feedback
     try:
         yield feedback

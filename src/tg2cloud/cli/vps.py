@@ -119,6 +119,7 @@ def main(argv: list[str] | None = None, *, friendly: bool | None = None) -> int:
                 log("TG2CLOUD_CLI_CHECK=OK；只读预检，不等于部署/WebDAV/公网验收通过")
                 return 0
             actionable = [(plan, baseline) for plan, baseline in plans if plan.action in {"install", "upgrade"} or plan.configure_https or args.verify]
+            manage_runtime = friendly or runtime.COMMAND.exists()
             if not actionable:
                 if friendly:
                     runtime.check_destination()
@@ -128,22 +129,21 @@ def main(argv: list[str] | None = None, *, friendly: bool | None = None) -> int:
                                 current = instances.discover(selected.product, instances.docker_inventory(session), session, log, install_dir=str(selected.directory))
                                 if not current.present or current.raw_config != selected.raw_config or current.version != selected.version:
                                     raise ValueError("确认期间实例已移除或变化；不重新创建管理命令")
-                            runtime.install()
-                        log("本地管理命令已安装：tg2cloud")
+                            log.cli = runtime.install_release(source, release, log)
                 log("TG2CLOUD_CLI_RESULT=NO_CHANGE")
                 return 0
-            if friendly:
+            if manage_runtime:
                 runtime.check_destination()
+            if friendly:
                 log("\n── 执行确认 ──\n将安装本地管理命令 tg2cloud；备份含敏感配置，仅保存在本机。请勿同时运行其他安装器。")
             else:
                 log("备份含敏感配置，仅保存在 VPS；失败可能需人工恢复。请勿同时运行其他安装器。")
             if not ui.confirm("确认执行上述所选计划？所选 Bot 可能短暂中断"):
                 log("TG2CLOUD_CLI_RESULT=CANCELLED；未执行安装/升级/HTTPS变更")
                 return 0
-            with runtime.lifecycle_lock() if friendly else nullcontext():
-                if friendly:
-                    runtime.install()
-                    log("本地管理命令已安装：tg2cloud（后续操作失败时可用于检查）")
+            with runtime.lifecycle_lock() if manage_runtime else nullcontext():
+                if manage_runtime:
+                    log.cli = runtime.install_release(source, release, log)
                 for plan, baseline in actionable:
                     install.execute_plan(plan, release, source, baseline, session, log, ui, verify=args.verify)
             log("TG2CLOUD_CLI_RESULT=BASE_HTTPS_OK；WebDAV 是否验收请以独立结果为准")

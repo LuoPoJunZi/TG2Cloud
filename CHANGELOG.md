@@ -1,5 +1,17 @@
 # 更新记录
 
+## TG2Cloud v1.5.0
+
+版本日期：2026-10-27。**待发布**：Linux 管理工具同步、监听稳定性与版本验收维护；进度见[本版发布与验收](docs/development/V150-ACCEPTANCE.md)。
+
+- 监听规则预览与接收共用同一批次、同来源媒体组的说明文本，保留单个附件自身的说明及集数；不读取评论，也不额外抓取历史。
+- 暂停、删除或修改来源后，旧轮询不再覆盖新状态或推进旧游标；下载前重新核对监听账号、连接和附件身份，失败的重新核验撤销旧结果。
+- 离线管理工具改为从目标正式 Release 的已核验源码安装，单独核对实际版本、`--version` 与 `listen --help`，升级摘要分别显示 Bot 和 CLI 结果；当前旧菜单进程提示退出重开。
+- 在线入口的后台进程缺少标准输入 TTY 时，监听登录使用当前控制终端；凭据不进入日志。失败提示指出检查阶段。
+- 用户可见平台名称统一为 Linux；保留架构检测、镜像选择、CI 矩阵和历史验收范围。补齐 Session 辅助文件防误提交规则，精简网站维护 README。
+
+没有新增数据库迁移、运行依赖或必填配置。本版正式发布前，现有 v1.4.11 Tag、Release 和在线 helper 保持原样；尚未用本轮代码执行 VPS、真实 Telegram 或网关验收。
+
 ## TG2Cloud v1.4.11
 
 版本日期：2026-10-26。[v1.4.11 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11) 已正式发布；A／B、main、[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)和实际源码资产核验通过，证据见[本版发布与验收](docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS／用户网关验收仍安排在发布后。
@@ -84,12 +96,13 @@
 
 发布后验收补充：用户已提供 v1.4.5 的 CloudDrive2 ARM64 升级与单独 WebDAV 写入日志，按[记录范围](docs/development/V145-ACCEPTANCE.md)保留；上段未验收说明是发布当时状态，不扩展到本版或其他场景。
 
-本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.4.11 共 30 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
+本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.0 共 31 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
 
 截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.5.0](#tg2cloud-v150) | Linux 管理工具同步、Bot／CLI 版本验收、监听并发与预览、终端登录修复。 |
 | [v1.4.11](#tg2cloud-v1411) | 监听来源独立目录与类型归档、目录名清理、失败恢复、读取策略和返回状态导航。 |
 | [v1.4.10](#tg2cloud-v1410) | 监听按钮草稿、中文计划导航、终端监听菜单与外部 WebDAV 升级恢复。 |
 | [v1.4.9](#tg2cloud-v149) | 管理员监听、持久化审批与命名／目录方案，schema 3 和独立 Session 备份。 |

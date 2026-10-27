@@ -4,7 +4,7 @@
 
 ## 一、安装与资源检查
 
-按[从零开始部署](/guide/quick-start/)在自己的 Linux 主机运行公网或内网入口，选择 **2. OpenList**。支持 Debian / Ubuntu 原生 AMD64 / ARM64，标准安装目录为 `/opt/tg2cloud-openlist`，产品配置不要求 FUSE。
+按[从零开始部署](/guide/quick-start/)在自己的 Linux 主机运行公网或内网入口，选择 **2. OpenList**。支持符合部署要求的 Linux（Debian / Ubuntu），标准安装目录为 `/opt/tg2cloud-openlist`，产品配置不要求 FUSE。
 
 首次安装按资源推荐选择预算和保留线，不机械套用源码的 20GB / 8GB 默认值。填写 Telegram 管理员 ID 和专用 WebDAV 凭据，核对计划后执行；不需要下载 EXE 或连接桌面部署器。
 

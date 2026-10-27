@@ -4,7 +4,7 @@
 
 ## 一、确认部署方式
 
-先完成[部署前准备](/guide/prerequisites/)，确认 Debian / Ubuntu 原生 AMD64 / ARM64、root 权限及 `/dev/fuse` 可用。
+先完成[部署前准备](/guide/prerequisites/)，确认 Linux（Debian / Ubuntu）、root 权限及 `/dev/fuse` 可用。
 
 按[从零开始部署](/guide/quick-start/)选择公网或可信内网入口，再选 **1. CloudDrive2**。首次安装按向导核对域名或私有 IP、磁盘建议及 Telegram 配置；标准安装目录为 `/opt/tg2cloud-clouddrive2`。
 

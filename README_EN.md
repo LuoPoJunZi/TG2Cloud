@@ -33,7 +33,7 @@ Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are di
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **v1.4.11**, supporting Linux AMD64 / ARM64. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
+Current stable version: **v1.4.11**, supporting Linux. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
 
 ## Getting started
 
@@ -52,7 +52,7 @@ v1.4.7 provides unified management. External WebDAV provides read-only mobile ac
 
 Requires Debian / Ubuntu with native 64-bit userspace, root, Python 3.10+, curl and an interactive terminal, with access to GitHub, Telegram, container registries and the destination. CloudDrive2 also requires `/dev/fuse`.
 
-Native AMD64 / ARM64 (`linux/amd64` / `linux/arm64`) are supported without QEMU. Public NAT prerequisites and platform limits are covered in the [installation guide](docs/VPS-INSTALL.md) and [architecture guide](docs/ARCHITECTURES.md).
+Linux system requirements, public NAT prerequisites and platform limits are covered in the [installation guide](docs/VPS-INSTALL.md) and [architecture guide](docs/ARCHITECTURES.md).
 
 ### Public VPS
 
@@ -95,7 +95,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Optional features | [Classification, notifications and quotas](docs/FEATURE-ENHANCEMENTS.md) · [Existing Nginx reuse](docs/DOCKER-NGINX.md) |
 | Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) · [Maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| Current maintenance | [v1.4.11 release and acceptance](docs/development/V1411-ACCEPTANCE.md) |
+| Current maintenance | [v1.5.0 release preparation](docs/development/V150-ACCEPTANCE.md) |
 | Upgrade acceptance | [v1.4.4 dual-architecture upgrade](docs/development/V144-ACCEPTANCE.md) · [Historical records](docs/README.md) |
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |

@@ -388,7 +388,8 @@ class Management:
     def run(self):
         while True:
             instance = self.discover()
-            self.log(f"\n── TG2Cloud 本地管理 ──\n\n{self.product.display_name} · 版本 {instance.version or '未安装'} · Bot {'运行中' if instance.running else '未运行'}\n安装目录：{instance.directory}\n\n")
+            from tg2cloud.version import VERSION
+            self.log(f"\n── TG2Cloud 本地管理 ──\n\n{self.product.display_name} · 版本 {instance.version or '未安装'} · Bot {'运行中' if instance.running else '未运行'}\n安装目录：{instance.directory}\n管理工具（当前进程）：v{VERSION}\n\n")
             if not instance.present:
                 if self.ui.confirm(self.product.display_name + " 尚未安装，是否进入安装向导？"):
                     self.upgrade(instance)

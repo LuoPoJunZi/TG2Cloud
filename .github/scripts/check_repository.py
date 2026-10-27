@@ -86,6 +86,7 @@ def forbidden_reason(name: str) -> str | None:
     if basename.startswith(".coverage.") or basename.endswith((
         ".db-shm", ".db-wal", ".db-journal", ".sqlite-shm", ".sqlite-wal", ".sqlite-journal",
         ".sqlite3-shm", ".sqlite3-wal", ".sqlite3-journal",
+        ".session-shm", ".session-wal", ".session-journal",
     )):
         return "coverage or database sidecar"
     return None

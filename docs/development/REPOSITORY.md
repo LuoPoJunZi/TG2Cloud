@@ -65,10 +65,18 @@ RECOVERY 等旧入口中已被外部链接的标题保留作简短导航，详�
 
 `build/`、`dist/`、`website/dist/`、测试缓存是可重建输出；`.venv/`、个人 AI 指令、内部审计、工作记录及恢复 ZIP 不属于可随意删除的垃圾。本地独有资料优先使用 `.git/info/exclude`，不作为公共文档；通用产物和秘密由 `.gitignore` 排除。
 
-目录标准化不提升版本、不创建 Tag、不替换已有 Release。在线入口的下载白名单、包结构和不可变 helper pin 必须配套：先在隔离分支提交辅助代码并验证，再把三个入口固定到通过的同一提交。正式业务 payload 仍来自稳定 Release，不改用 main／RC。
+目录标准化不提升版本、不创建 Tag、不替换已有 Release。在线入口的下载白名单、包结构和不可变 helper pin 必须配套：先在隔离分支提交辅助代码并验证，再把两个入口固定到通过的同一提交。正式业务 payload 仍来自稳定 Release，不改用 main／RC。
 
 Release 继续从同一 Tag 验证并打包源码一次，发布 Job 复用 artifact 和实际 SHA256。历史 Tag 的重试按历史布局验证，不要求本地桌面资料。更多边界见[脚本优先说明](SCRIPT-FIRST.md)。
 
-## 后续渐进整理
+## 已完成的目录整理
 
-待发布维护仅保留 `install.sh`、`install-lan.sh` 两个根目录 Shell 入口。卸载和外部 WebDAV 在 `tg2cloud` 菜单及公共 Python 核心维护，两个独立 Shell 文件移除；历史版本文件继续存在于原提交／Tag，不改写历史资产。四组命名回归集中到 `tests/naming/`，原夹具和混合测试按实际依赖保留；迁移须核对完整测试发现集合。代理纯渲染集中在 `deployment/proxy/rendering.py`，旧 manager 接口继续导出。共享 CI 和只生成候选的发布准备工具见[维护开发说明](LOCAL-MAINTENANCE.md)。不删除历史运行路径、归档或用户数据。
+当前公共仓库仅保留 `install.sh`、`install-lan.sh` 两个根目录 Shell 入口。卸载和外部 WebDAV 在 `tg2cloud` 菜单及公共 Python 核心维护，两个独立 Shell 文件移除；历史版本文件继续存在于原提交／Tag，不改写历史资产。四组命名回归集中到 `tests/naming/`，原夹具和混合测试按实际依赖保留；迁移须核对完整测试发现集合。代理纯渲染集中在 `deployment/proxy/rendering.py`，旧 manager 接口继续导出。共享 CI 和只生成候选的发布准备工具见[维护开发说明](LOCAL-MAINTENANCE.md)。不删除历史运行路径、归档或用户数据。
+
+## 平台称呼与整理结论
+
+项目首页、安装介绍和文档导航统一称为 **Linux**。CPU 架构仅在兼容说明、镜像平台标识、环境诊断、CI 矩阵和具体历史验收中注明；保留真实的 amd64／arm64 检测与校验，不将名称精简理解成支持所有 Linux 发行版或 CPU。
+
+当前根目录已按职责分为源码、部署资源、测试、文档和网站，无需大范围移动稳定模块。两个 Shell 入口、requirements 锁文件、pyproject.toml、编辑器和 Git 配置职责不同，继续保留；历史运行名称、兼容入口、验收记录、本地归档和用户数据不作为冗余文件删除。网站维护 README 只保留构建与维护说明及记录导航。
+
+Telegram Session 是 SQLite 文件，其 .session-shm、.session-wal、.session-journal 也可能含授权数据：Git ignore 与公共文件检查均禁止误提交。已跟踪文件仍须由公共文件检查拒绝，不能仅通过 ignore 隐藏；检查不等同于完整凭据或历史扫描。

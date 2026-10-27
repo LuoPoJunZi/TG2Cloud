@@ -33,7 +33,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前稳定版 **v1.4.11**，支持 Linux AMD64 / ARM64；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
+当前稳定版 **v1.4.11**，支持 Linux；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
 
 ## 开始使用
 
@@ -52,7 +52,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 要求 Debian / Ubuntu、64 位原生用户态、root、Python 3.10+、curl 和可交互终端；主机需能访问 GitHub、Telegram、镜像仓库及目的端。CloudDrive2 还需要 `/dev/fuse`。
 
-原生支持 AMD64 / ARM64（`linux/amd64` / `linux/arm64`），不使用 QEMU。公网 NAT 条件与平台限制见[安装指南](docs/VPS-INSTALL.md)和[双架构说明](docs/ARCHITECTURES.md)。
+Linux 的系统要求、公网 NAT 条件与平台限制见[安装指南](docs/VPS-INSTALL.md)和[Linux 兼容说明](docs/ARCHITECTURES.md)。
 
 ### 公网 VPS
 
@@ -95,7 +95,7 @@ tg2cloud uninstall --edition all --check
 | 家庭与手机读取 | [Bot 家人授权](docs/FAMILY-SHARING.md) · [外部 WebDAV 只读入口](docs/external-webdav.md) |
 | 可选功能 | [文件分类、通知与配额](docs/FEATURE-ENHANCEMENTS.md) · [复用已有 Nginx](docs/DOCKER-NGINX.md) |
 | 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) · [维护增强](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| 本版维护 | [v1.4.11 发布与验收](docs/development/V1411-ACCEPTANCE.md) |
+| 本版维护 | [v1.5.0 发布准备](docs/development/V150-ACCEPTANCE.md) |
 | 升级验收 | [v1.4.4 双架构升级记录](docs/development/V144-ACCEPTANCE.md) · [历史验收目录](docs/README.md) |
 | 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |

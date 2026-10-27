@@ -41,7 +41,7 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout v1.4.11
+git checkout main
 git rev-parse HEAD
 ```
 

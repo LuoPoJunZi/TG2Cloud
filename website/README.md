@@ -1,26 +1,8 @@
 # TG2Cloud Docs
 
-TG2Cloud v1.4.11 已正式发布：监听来源目录、失败恢复和返回导航，详见[发布与验收](../docs/development/V1411-ACCEPTANCE.md)。本页下方旧版结果是历史记录；本版未执行真实 Telegram／VPS 验收。
+TG2Cloud 中文静态文档网站，提供安装、使用、运维指南、本地搜索及版本记录。当前源码为 **TG2Cloud v1.5.0**（待发布），正式下载基线仍为 v1.4.11；资料核对日期：2026-10-27。进度见[本版记录](../docs/development/V150-ACCEPTANCE.md)，真实账号和 VPS 验收按各版本实际记录理解。
 
-
-TG2Cloud v1.4.10 已正式发布；资料核对日期：2026-10-26。A／B、main、同标签双架构和实际源码资产核验通过；新增监听交互与维护恢复，不新增依赖或品牌资源。真实 Telegram／VPS 验收尚未执行，下面历史结果保持原范围。
-TG2Cloud v1.4.9 已正式发布；资料核对日期：2026-10-26。A／B、同标签 AMD64／ARM64 CI 和实际资产核验通过；真实 VPS／Telegram／两网关转存尚待验收。本版不新增运行依赖、品牌资源或许可证。
-
-**TG2Cloud v1.4.7 已正式发布；资料核对日期：2026-10-25。** A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验全部通过。本版统一管理入口并退役两个独立脚本，实机范围另行验收；下方历史记录保留原范围。
-
-**TG2Cloud v1.4.6 已正式发布；资料核对日期：2026-10-24。** A／B 与同标签双架构校验通过，实际源码资产已核验。旧版发布与验收记录在下方按历史范围保留，不扩展为本版实机通过。
-
-2026-10-24 新增用户提供的 [v1.4.5 CloudDrive2 ARM64 升级与 WebDAV 验收记录](../docs/development/V145-ACCEPTANCE.md)。这是发布后的补充，下面保留发布当时与历史版本的记录。本版维护代码见[开发说明](../docs/development/LOCAL-MAINTENANCE.md)，现已发布；网站样式与构建方式不变。
-
-**源码与正式版本：TG2Cloud v1.4.5；资料核对日期：2026-10-24。** 辅助 A、入口 B 和[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)均通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验。本版统一管理次级页面、完善诊断和隔离数据库恢复演练；范围与证据见[维护说明](../docs/development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。不借用旧版用户反馈宣称本版实机验收。
-
-2026-10-23 用户提供两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过：Ubuntu 26.04.1／ARM64 与 Debian 13／AMD64，配置保留、数据库备份、Bot healthy、运行代码／版本、本机 HTTPS 和最近业务就绪观察均通过。WebDAV 写入未执行，真实转存、外网及回退等未单独确认，详见[双架构升级记录](../docs/development/V144-ACCEPTANCE.md)。这不是维护者重新登录实测；旧版 [v1.4.3 用户日志](../docs/development/V143-ACCEPTANCE.md)单独保留，不公开原始日志或私人部署信息。
-
-**历史 v1.4.4 发布记录（2026-10-23）：** 辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 本次补充安装反馈与管理菜单精简，无新增依赖或数据库迁移。用户双架构升级反馈独立记录，真实转存与恢复等未覆盖项目仍需另行验收，不借用旧版结论。
-
-TG2Cloud 中文网页文档。包含品牌首页、31 篇 Markdown 文档、本地全文搜索、版本菜单、深浅色主题、移动端导航，以及 Cloudflare Pages 所需静态产物。
-
-发布后已完成专用 Debian AMD64 测试机的 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，健康、历史数据、只读 WebDAV 和外部 HTTPS 通过。旧 Release 已删除的自动升级限制与未执行项目见[本次记录](../docs/development/V142-ACCEPTANCE.md)；继续使用 managed，不作为新增代理模式或实际文件转存验收。
+历史发布说明集中在[更新日志](docs/changelog.md)；[v1.4.4 升级记录](../docs/development/V144-ACCEPTANCE.md)、[v1.4.5 用户验收](../docs/development/V145-ACCEPTANCE.md)及其他历史验收可从[仓库文档目录](../docs/README.md)查阅，不在本页重复积累发布正文。
 
 项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
 

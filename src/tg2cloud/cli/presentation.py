@@ -50,6 +50,7 @@ class OperationReport:
     checks: dict[str, str] = field(default_factory=dict)
     alerts: set[str] = field(default_factory=set)
     readiness: dict[str, str] | None = None
+    cli: dict | None = None
 
     def observe_line(self, line: str) -> tuple[str, str, str]:
         result = classify_install_line(line, base=self.stage == "基础安装与升级")
@@ -91,6 +92,13 @@ class OperationReport:
                   "升级前数据库备份：" + state("backup"), "运行代码与版本：" + state("code"),
                   "Bot 容器健康：" + state("health"),
                   ("本机 HTTPS：" if self.mode == "https" else "本机内网入口：") + state("entry")]
+        lines.append("Bot 实际版本：" + ("v" + self.target if self.checks.get("code") == "ok" else "未核实"))
+        if self.cli is None:
+            lines.append("本地管理工具：未核实；请使用本次安装入口更新管理工具")
+        else:
+            cli_version = "v" + self.cli["version"] if self.cli.get("version") else "未安装或未核实"
+            lines.append("本地管理工具：" + cli_version + ("（与目标一致）" if self.cli.get("matches") else "（与目标不一致）"))
+            lines.append("管理工具命令：" + ("版本查询、监听入口通过" if self.cli.get("state") == "ok" else "未通过，请更新管理工具"))
         if self.mode == "lan":
             lines.append("公网 HTTPS：不适用（内网模式）")
         known = self.alerts - {"unknown"}
@@ -147,6 +155,7 @@ class InstallerLog:
         self.log = log
         self.friendly = friendly
         self.operation: OperationReport | None = None
+        self.cli: dict | None = None
 
     def register(self, config) -> None:
         self.log.register(config)

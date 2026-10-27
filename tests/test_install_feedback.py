@@ -120,6 +120,22 @@ class EvidenceTests(unittest.TestCase):
         report.observe_base(1, "TG2CLOUD_DATABASE_BACKUP=FAILED\n")
         self.assertEqual(report.checks["backup"], "failed")
 
+    def test_bot_and_cli_evidence_are_reported_independently(self):
+        report = feedback()
+        report.observe_base(0, SUCCESS)
+        report.cli = {"version": "0.0.0", "matches": False, "state": "failed"}
+        messages = []
+        report.render(messages.append)
+        text = "\n".join(messages)
+        self.assertIn("Bot 实际版本：v" + VERSION, text)
+        self.assertIn("本地管理工具：v0.0.0（与目标不一致）", text)
+        self.assertIn("管理工具命令：未通过", text)
+        report.cli = {"version": VERSION, "matches": True, "state": "ok"}
+        messages.clear()
+        report.render(messages.append)
+        self.assertIn("本地管理工具：v" + VERSION + "（与目标一致）", messages[-1])
+        self.assertIn("管理工具命令：版本查询、监听入口通过", messages[-1])
+
     def test_render_separates_skipped_unknown_failed_and_manual_checks(self):
         report = feedback()
         report.completed = True

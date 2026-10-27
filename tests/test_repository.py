@@ -413,12 +413,29 @@ class PublicFileTests(unittest.TestCase):
             "TG2Cloud-v1.0.0-RELEASE-CHECKLIST.md", "website/QA_REPORT.md",
             ".env", "payload_openlist/.env.production", "rclone.conf", "secret.pem", "id_ed25519",
             "tasks.db", "tasks.sqlite3", "tasks.sqlite-wal", "tasks.sqlite3-shm", "run.log",
+            "bot.session-wal", "personal.session-shm", "personal.session-journal",
+            "nested/Personal.SESSION-JOURNAL",
             ".coverage.host.123", "coverage.xml", "draft.tmp", "draft.bak", "Thumbs.db",
             "../outside.md", "/outside.md", "C:/local.md", "docs\\local.md",
             "legacy/desktop/installer.py", "legacy/desktop/tests/test_core.py",
             "installer.py", "build.ps1", "requirements-build.txt",
         ):
             with self.subTest(name=name):
+                self.assertIsNotNone(repository.forbidden_reason(name))
+
+    @unittest.skipUnless(shutil.which("git"), "Git is required for isolated inventory regression")
+    def test_session_sidecars_are_ignored_and_forced_additions_are_rejected(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary).resolve()
+            (root / ".gitignore").write_bytes((ROOT / ".gitignore").read_bytes())
+            names = ["personal.session", "personal.session-journal", "personal.session-wal", "personal.session-shm"]
+            for name in names:
+                (root / name).write_bytes(b"synthetic fixture only")
+            subprocess.run(["git", "-C", str(root), "init", "--quiet"], check=True, capture_output=True)
+            self.assertTrue(set(names).isdisjoint(repository.public_files(root)))
+            subprocess.run(["git", "-C", str(root), "add", "--force", "--", *names], check=True, capture_output=True)
+            self.assertTrue(set(names).issubset(repository.public_files(root)))
+            for name in names:
                 self.assertIsNotNone(repository.forbidden_reason(name))
 
     def test_public_sources_resources_and_example_config_are_allowed(self):

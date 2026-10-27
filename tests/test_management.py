@@ -28,6 +28,7 @@ from tg2cloud.deployment import (
 from tg2cloud.deployment.host import SafeLog
 from tg2cloud.deployment.profiles import PRODUCTS
 from tg2cloud.deployment.proxy import lan
+from tg2cloud.version import VERSION
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -220,6 +221,41 @@ class RuntimeTests(unittest.TestCase):
             self.assertEqual(self.command.stat().st_mode & 0o777, 0o700)
             self.assertTrue(all(p.stat().st_mode & 0o777 == 0o600 for p in bundle.rglob("*") if p.is_file()))
 
+    def test_target_release_version_is_read_from_source_not_running_helper(self):
+        source = self.private / "release-source"
+        for name, body in runtime.files(ROOT).items():
+            path = source / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(body)
+        (source / "src/tg2cloud/version.py").write_text('VERSION = "9.9.9"\n', encoding="utf-8")
+        release = releases.Release("v9.9.9", "a" * 40)
+        data = runtime.install(source=source, release=release, root=self.root, command=self.command)
+        self.assertEqual(data["version"], "9.9.9")
+        self.assertEqual(data["origin"], {"kind": "stable-release", "tag": "v9.9.9", "commit": "a" * 40})
+        result = runtime.installed_status("9.9.9", root=self.root, command=self.command)
+        self.assertEqual(result["state"], "ok")
+        self.assertEqual(result["commands"], {"version": "ok", "listen": "ok"})
+        self.assertEqual(result["version"], "9.9.9")
+        self.assertEqual(runtime.installed_status("8.8.8", root=self.root, command=self.command)["state"], "failed")
+
+    def test_release_source_mismatch_does_not_replace_existing_command(self):
+        self.install()
+        original = self.command.read_bytes()
+        with self.assertRaises(ValueError):
+            runtime.install(source=ROOT, release=releases.Release("v9.9.9", "a" * 40),
+                            root=self.root, command=self.command)
+        self.assertEqual(self.command.read_bytes(), original)
+
+    def test_installed_status_rejects_edited_metadata_or_unowned_launcher(self):
+        bundle = self.install()
+        marker = bundle / "installation.json"
+        metadata = json.loads(marker.read_text())
+        metadata["version"] = "0.0.0"
+        marker.write_text(json.dumps(metadata), encoding="utf-8")
+        self.assertEqual(runtime.installed_status("0.0.0", root=self.root, command=self.command)["state"], "failed")
+        self.command.write_text("#!/bin/sh\necho unrelated\n", encoding="utf-8")
+        self.assertEqual(runtime.installed_status("0.0.0", root=self.root, command=self.command)["state"], "failed")
+
     def test_source_mutation_and_unknown_files_rejected(self):
         bundle = self.install()
         path = bundle / "src/tg2cloud/cli/management.py"
@@ -378,7 +414,7 @@ class ManagementTests(unittest.TestCase):
         self.assertLess(text.index("── TG2Cloud 本地管理 ──"), text.index("CloudDrive2 · 版本 1.3.1"))
         self.assertLess(text.index("安装目录："), text.index("1.  安装与升级"))
         expected = ("\n── TG2Cloud 本地管理 ──\n\nCloudDrive2 · 版本 1.3.1 · Bot 运行中\n"
-                    + f"安装目录：{self.instance.directory}\n\n" + management.MENU)
+                    + f"安装目录：{self.instance.directory}\n管理工具（当前进程）：v{VERSION}\n\n" + management.MENU)
         self.assertEqual(text, expected)
 
     def test_remote_docker_and_compose_overrides_rejected_before_command(self):
@@ -672,7 +708,7 @@ class FriendlyInstallTests(unittest.TestCase):
                 ui.confirm.return_value = mode not in {"cancel", "check"}
                 plan.action = "current" if mode in {"no-change", "removed"} else "upgrade"
                 discovery = [instance, instances.Instance(product, instance.directory, False)] if mode == "removed" else None
-                with patch.object(vps.preflight, "validate_host"), patch.object(instances, "docker_inventory", return_value=set()), patch.object(instances, "discover", return_value=instance, side_effect=discovery), patch.object(releases, "ReleaseClient", return_value=client), patch.object(terminal, "Terminal", return_value=ui), patch.object(install, "make_plan", return_value=plan), patch.object(install, "execute_plan") as execute, patch.object(runtime, "check_destination") as check, patch.object(runtime, "install") as local, patch.object(vps, "SafeLog", return_value=SafeLog(lambda _: None)):
+                with patch.object(vps.preflight, "validate_host"), patch.object(instances, "docker_inventory", return_value=set()), patch.object(instances, "discover", return_value=instance, side_effect=discovery), patch.object(releases, "ReleaseClient", return_value=client), patch.object(terminal, "Terminal", return_value=ui), patch.object(install, "make_plan", return_value=plan), patch.object(install, "execute_plan") as execute, patch.object(runtime, "check_destination") as check, patch.object(runtime, "install_release") as local, patch.object(vps, "SafeLog", return_value=SafeLog(lambda _: None)):
                     args = ["--edition", product.key] + (["--check"] if mode == "check" else [])
                     self.assertEqual(vps.main(args, friendly=True), 1 if mode == "removed" else 0)
                     self.assertEqual(local.call_count, int(mode in {"execute", "no-change"}))

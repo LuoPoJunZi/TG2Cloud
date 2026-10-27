@@ -1,12 +1,12 @@
 # 安装、下载与校验
 
-正式源码 **TG2Cloud v1.4.11** 已发布；同标签 AMD64／ARM64、实际源码包、SHA256 与标签内文件核验通过。真实 Telegram／VPS 仍需发布后验收。
+**TG2Cloud v1.5.0**（待发布）；本页下载仍指向已发布的 v1.4.11。发布后再更新固定入口与资产，不把候选当作已经上线。
 
 当前正式稳定版为 **TG2Cloud v1.4.11**。业务部署只使用正式稳定源码，历史 Windows EXE 停留在 v1.2.1。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
 
 ## 公网 VPS 安装与升级
 
-在自己的 Debian / Ubuntu 原生 AMD64 / ARM64 主机上，以 root 运行；需要 Python 3.10+、curl、CA 证书和可交互终端：
+在符合[部署前准备](/guide/prerequisites/)的 Debian / Ubuntu Linux 主机上，以 root 运行；需要 Python 3.10+、curl、CA 证书和可交互终端：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh)

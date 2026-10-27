@@ -526,6 +526,155 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         self.checked = self.verify.start()
         self.addCleanup(self.verify.stop)
 
+    async def test_album_rule_preview_matches_poll_without_writing(self):
+        self.repo.change_source(
+            self.admin, self.source["id"], self.source["revision"],
+            config={"rules": {"groups": [{"types": ["视频"], "keywords": ["光学"]}]},
+                    "profile": {"mode": "caption"}},
+        )
+        source = self.repo.source(self.admin, self.source["id"])
+        video = message(1, caption="", group=91)
+        cover = message(2, original="cover.jpg", caption="光学实验演示", kind="photo", group=91)
+        messages = [video, cover]
+        self.listener.client.get_messages.return_value = list(reversed(messages))
+        before = self.db._conn.total_changes
+        result = await self.listener.test(self.admin, source["id"])
+        self.assertEqual(self.db._conn.total_changes, before)
+        preview = next(row for row in result if row[0] == video.id)
+        self.assertTrue(preview[1])
+        self.assertIn("光学实验", preview[3]["file_name"])
+
+        async def history(*_, **__):
+            for item in messages:
+                yield item
+
+        self.listener.client.iter_messages = history
+        await self.listener.poll(source)
+        plans = self.repo.pending(self.admin)
+        self.assertEqual(len(plans), 1)
+        self.assertEqual(plans[0]["payload"]["file_name"], preview[3]["file_name"])
+
+    async def test_preview_keeps_own_episode_and_does_not_borrow_other_group(self):
+        messages = [
+            message(1, original="光学实验 第01讲.mp4", caption="", group=91),
+            message(2, caption="光学实验 第02讲", group=91),
+            message(3, caption="", group=92),
+        ]
+        self.listener.client.get_messages.return_value = messages
+        result = await self.listener.test(self.admin, self.source["id"])
+        self.assertIn("第01讲", result[0][3]["file_name"])
+        self.assertNotIn("第02讲", result[0][3]["file_name"])
+        self.assertNotIn("光学实验", result[2][3]["file_name"])
+
+    async def test_poll_does_not_overwrite_pause_while_notifying(self):
+        saved = {}
+
+        async def pause(_):
+            current = self.repo.source(self.admin, self.source["id"])
+            self.repo.change_source(self.admin, current["id"], current["revision"], enabled=False)
+            saved.update(self.repo.source(self.admin, current["id"]))
+
+        async def history(*_, **__):
+            yield message()
+
+        self.owner._notify.side_effect = pause
+        self.listener.client.iter_messages = history
+        await self.listener.poll(self.source)
+        self.assertEqual(self.repo.source(self.admin, self.source["id"]), saved)
+        self.assertEqual(len(self.repo.pending(self.admin)), 1)
+
+    async def test_poll_discards_page_fetched_before_configuration_change(self):
+        saved = {}
+
+        async def history(*_, **__):
+            current = self.repo.source(self.admin, self.source["id"])
+            self.repo.change_source(self.admin, current["id"], current["revision"],
+                                    config=current["config"] | {"confirmation": False})
+            saved.update(self.repo.source(self.admin, current["id"]))
+            yield message()
+
+        self.listener.client.iter_messages = history
+        await self.listener.poll(self.source)
+        self.assertEqual(self.repo.source(self.admin, self.source["id"]), saved)
+        self.assertEqual(self.repo.pending(self.admin), [])
+        self.assertEqual(self.db.counts(), {})
+
+    async def test_download_rechecks_account_and_client_after_metadata(self):
+        await self.listener.receive(self.source, message())
+        plan = self.repo.pending(self.admin)[0]
+        task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+        original_client = self.listener.client
+        original_client.get_messages.return_value = message()
+        for change in ("account", "client"):
+            with self.subTest(change=change):
+                account.write_state(self.db, account=42, enabled=True)
+                self.listener.client = original_client
+                reader = CheckedSource(self.listener, task)
+                msg = await reader.get_messages(-1001, ids=1)
+                if change == "account":
+                    account.write_state(self.db, account=43, enabled=True)
+                else:
+                    self.listener.client = NS(download_media=AsyncMock())
+                with self.assertRaises(ListenerReadError):
+                    await reader.download_media(msg, file="unused")
+                self.listener.client.download_media.assert_not_awaited()
+        original_client.download_media.assert_not_awaited()
+
+    async def test_failed_metadata_recheck_revokes_previous_message(self):
+        await self.listener.receive(self.source, message())
+        plan = self.repo.pending(self.admin)[0]
+        task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+        reader = CheckedSource(self.listener, task)
+        self.listener.client.get_messages.return_value = message()
+        old_message = await reader.get_messages(-1001, ids=1)
+        self.listener.client.get_messages.return_value = None
+        with self.assertRaises(ListenerReadError):
+            await reader.get_messages(-1001, ids=1)
+        with self.assertRaises(ListenerReadError):
+            await reader.download_media(old_message, file="unused")
+        self.listener.client.download_media.assert_not_awaited()
+
+    async def test_stale_poll_failure_does_not_pause_reconfigured_source(self):
+        current = self.repo.source(self.admin, self.source["id"])
+        self.repo.change_source(self.admin, current["id"], current["revision"],
+                                config=current["config"] | {"confirmation": False})
+        saved = self.repo.source(self.admin, current["id"])
+        await self.listener.source_failure(self.source, ListenerReadError("synthetic refusal"))
+        self.assertEqual(self.repo.source(self.admin, current["id"]), saved)
+
+    async def test_metadata_request_cannot_cross_account_change(self):
+        await self.listener.receive(self.source, message())
+        plan = self.repo.pending(self.admin)[0]
+        task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+        client = self.listener.client
+
+        async def change_account(*_args, **_kwargs):
+            account.write_state(self.db, account=43, enabled=True)
+            return message()
+
+        client.get_messages.side_effect = change_account
+        reader = CheckedSource(self.listener, task)
+        with self.assertRaises(ListenerReadError):
+            await reader.get_messages(-1001, ids=1)
+        self.assertIsNone(reader.message)
+        client.download_media.assert_not_awaited()
+
+    async def test_configuration_changed_during_permission_check_is_retried(self):
+        async def change(*_args):
+            current = self.repo.source(self.admin, self.source["id"])
+            self.repo.change_source(self.admin, current["id"], current["revision"],
+                                    config=current["config"] | {"confirmation": False})
+
+        self.listener._verified_until.clear()
+        with patch("tg2cloud.listening.service.verified_chat", side_effect=change):
+            await self.listener.receive(self.source, message())
+        self.assertEqual(self.repo.pending(self.admin), [])
+        self.assertEqual(self.db.counts(), {})
+        self.assertEqual(self.repo.source(self.admin, self.source["id"])["cursor"], 0)
+        await self.listener.receive(self.source, message())
+        self.assertEqual(len(self.repo.pending(self.admin)), 0)
+        self.assertEqual(sum(self.db.counts().values()), 1)
+
     async def test_repeat_receive_is_one_plan_and_no_early_download(self):
         m = message()
         await self.listener.receive(self.source, m)
