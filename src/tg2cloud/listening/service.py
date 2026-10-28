@@ -236,7 +236,7 @@ class Listener:
         self.plans = Plans(self.db, self.admin)
         self.client = None
         self._session = None
-        self._last_notice = 0.0
+        self._last_notice = None
         self._verified_until = {}
         self._poll_after = 0
         self._next_maintenance_at = None
@@ -495,7 +495,7 @@ class Listener:
                     "UPDATE listener_events SET result='等待额度或配置核对（待确认保留）' WHERE plan=?",
                     (plan["id"],),
                 )
-        if created and time.monotonic() - self._last_notice > 60:
+        if created and (self._last_notice is None or time.monotonic() - self._last_notice > 60):
             self._last_notice = time.monotonic()
             await self.owner._notify(
                 "监听已登记新附件；使用 /pending 查看待确认，/queue 查看已入队任务。"

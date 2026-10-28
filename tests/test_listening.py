@@ -702,6 +702,19 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         self.assertNotIn("第02讲", result[0][3]["file_name"])
         self.assertNotIn("光学实验", result[2][3]["file_name"])
 
+    async def test_first_notice_after_fresh_boot_keeps_later_throttle(self):
+        from tg2cloud.listening import service as module
+        clock = [10.0]
+        with patch.object(module, "time", NS(time=time.time, monotonic=lambda: clock[0])):
+            await self.listener.receive(self.source, message(1))
+            self.assertEqual(self.owner._notify.await_count, 1)
+            clock[0] = 11.0
+            await self.listener.receive(self.source, message(2))
+            self.assertEqual(self.owner._notify.await_count, 1)
+            clock[0] = 71.0
+            await self.listener.receive(self.source, message(3))
+            self.assertEqual(self.owner._notify.await_count, 2)
+
     async def test_poll_does_not_overwrite_pause_while_notifying(self):
         saved = {}
 
