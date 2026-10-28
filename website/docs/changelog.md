@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.5.1
 
-版本日期：2026-10-28。**待发布**：当前正式下载仍为 v1.5.0；本版发布进度见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+版本日期：2026-10-28。[v1.5.1 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.1) 已发布；A／B、[同标签 Linux 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622910178)和实际源码资产已核验。真实 VPS、Telegram、两网关转存及小时级负载仍待发布后验收。
 
 - 减少受阻任务和普通上传相同进度的重复数据库写入，保留速度显示、取消、重试、验证与本地副本保护。
 - 调度与监听接收仅查询所需状态，个人统计复用索引；资源循环复用本轮暂存、流式数量和同文件系统采样。

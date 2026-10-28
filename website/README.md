@@ -1,8 +1,8 @@
 # TG2Cloud Docs
 
-**TG2Cloud v1.5.1**（待发布，核对日期：2026-10-28）：性能与监听维护；正式下载仍为 v1.5.0，发布证据将按实际结果更新。
+**TG2Cloud v1.5.1** 已正式发布，资料核对日期：2026-10-28；性能与监听维护。
 
-TG2Cloud 中文静态文档网站，提供安装、使用、运维指南、本地搜索及版本记录。当前正式版本为 **TG2Cloud v1.5.0**；资料核对日期：2026-10-27。同标签 Linux 检查与实际资产核验通过，证据见[本版记录](../docs/development/V150-ACCEPTANCE.md)，真实账号和 VPS 验收按各版本实际记录理解。
+TG2Cloud 中文静态文档网站，提供安装、使用、运维指南、本地搜索及版本记录。当前正式版本为 **TG2Cloud v1.5.1**；资料核对日期：2026-10-28。同标签 Linux 检查与实际资产核验通过，证据见[本版记录](../docs/development/V151-ACCEPTANCE.md)，真实账号和 VPS 验收按各版本实际记录理解。
 
 历史发布说明集中在[更新日志](docs/changelog.md)；[v1.4.4 升级记录](../docs/development/V144-ACCEPTANCE.md)、[v1.4.5 用户验收](../docs/development/V145-ACCEPTANCE.md)及其他历史验收可从[仓库文档目录](../docs/README.md)查阅，不在本页重复积累发布正文。
 

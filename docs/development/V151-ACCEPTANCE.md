@@ -2,7 +2,7 @@
 
 ## 当前状态
 
-2026-10-28：用户授权推送并正式发布 v1.5.1。当前为本地发布准备，辅助 A、入口 B、远端 CI、同标签发布及实际资产证据完成后追加。真实环境验收安排在正式版本可安装之后；未自动连接 VPS 或用户网盘。
+2026-10-28：用户授权推送并正式发布 v1.5.1。现已正式发布，辅助 A、入口 B、远端 CI、同标签发布及实际资产证据见文末。真实环境验收安排在正式版本可安装之后；未自动连接 VPS 或用户网盘。
 
 ## 改动与兼容
 
@@ -59,3 +59,14 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.1/i
 最终完整本地检查通过：1389 项中 1355 通过、34 个既有环境条件跳过、0 失败；仓库、Ruff 与 compileall 均通过。两个入口更新 pin 后，身份、清单、旧版基线与 66 个 helper 一致性四项正式静态门槛全部通过，Bash／ShellCheck 通过。
 
 初始入口 B `bc24886dce771b6593a8571cfbfa3e35f8a8fe6b` 的网站检查指出四份完整指南仍显示旧 helper SHA。仅将当前版本／helper／验收链接同步到 v1.5.1，保留历史正文；未修改测试、工作流、生产能力或 pin。最终 B 各项 CI 重新验证。
+
+## 正式发布与实际资产核验
+
+- 辅助 A：`f17076544a28efc48c952f1114aea442ad809c00`；入口 B／不可变 Tag：`2741c6b5f40469a2bc035c87274b62fc66ef1a74`。
+- 辅助 A 五项 CI 全部通过：[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621797117)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621801695)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621805119)、[CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621808729)、[Linux](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621812271)。
+- 入口 B 五项 CI 全部通过：[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622547215)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622547317)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622547199)、[CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622551071)、[Linux](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622547498)。
+- [同标签正式发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622910178)的准备、两个原生 Linux 平台和发布任务成功；正式版本为非草稿、非预发布。
+- 实际资产 `SHA256SUMS.txt`：96 字节；SHA256 `08b7c92bf836734be706889abc1c912266ad5550e5b9b7aea4234b6210b91e3b`。
+- 实际资产 `TG2Cloud-v1.5.1-source.tar.gz`：3873559 字节；SHA256 `fb8868f1f358eb7f157e37843860efe728d74e22a93a6b07dfc05e9a76b34b03`。
+- 正式源码验证器通过；实际资产与 GitHub 摘要一致，378 个文件与 Tag 按 Linux LF 归档规则逐字节相同。两个公开 main 入口与 66 个公开 helper 逐文件核验通过；校验和不是数字签名。
+- 未连接真实 VPS、Telegram 或用户网关；实际转存、长期负载、手机和生产恢复尚未验收。

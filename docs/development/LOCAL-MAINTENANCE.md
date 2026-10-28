@@ -143,7 +143,7 @@ v1.4.6 已于 2026-10-24 正式发布。辅助 A `56e5115e729356c40a10912bb7d7c0
 回归入口：`python -B -m unittest discover -s tests -p test_database_hotpaths.py -v`。测试使用临时数据库和合成数据，核对查询结果、SQLite 执行工作量、重复等待无写入、取消竞争、事务回滚、重开数据库以及并发预算预留；监听回归另核对 100／99 项边界和冷却结束恢复。完整检查仍执行本页原有流程。模拟查询的加速比例不能视为真实 Telegram／网关传输提速，Linux 实机收益需后续验收。
 
 
-监听轮次使用 `_poll_sources` 管理串行请求的取消、30 秒单来源超时和轮次预算，`_poll_after` 仅保存本进程的公平轮询位置，不替代数据库消息游标。等待中的来源编辑、账号切换、FloodWait、退出与超时后的去重由 `tests/test_listening.py` 覆盖。后台 `_maintain_if_due` 使用单调时钟每 60 秒到期检查；`Plans.create` 只过期当前用户的计划，不再逐附件执行历史 DELETE。完整维护沿用保留策略并在独立事务中提交，失败不影响监听授权；计划审批有效期不依赖该维护时钟。均为待发布行为，详见[监听说明](../LISTENING.md#待发布监听调度与维护优化)。
+监听轮次使用 `_poll_sources` 管理串行请求的取消、30 秒单来源超时和轮次预算，`_poll_after` 仅保存本进程的公平轮询位置，不替代数据库消息游标。等待中的来源编辑、账号切换、FloodWait、退出与超时后的去重由 `tests/test_listening.py` 覆盖。后台 `_maintain_if_due` 使用单调时钟每 60 秒到期检查；`Plans.create` 只过期当前用户的计划，不再逐附件执行历史 DELETE。完整维护沿用保留策略并在独立事务中提交，失败不影响监听授权；计划审批有效期不依赖该维护时钟。均为待发布行为，详见[监听说明](../LISTENING.md#v151监听调度与维护优化)。
 
 
 ## 待发布：资源循环、上传进度与性能测量
@@ -173,3 +173,5 @@ python3 -B .github/scripts/benchmark_runtime.py --tasks 100000 --duration-second
 相关回归：`test_database_hotpaths.py`、`test_readiness.py`、`test_reliability.py`、`test_upload_progress_persistence.py`、`test_runtime_benchmark.py`。工具和这些优化均为本地待发布改动。
 
 本轮完整本地检查：1389 项测试中 1355 通过、34 项因现有 Linux／Docker／rclone 等环境条件跳过、0 失败；仓库检查、Ruff、compileall 与 Bandit 完成。Python 3.10 无第三方依赖的数据库／就绪输出／测量工具回归 22 项通过；网站构建和 37 项测试通过。未执行真实 VPS、Telegram、用户网盘或小时级实际负载验收；未提交或发布。
+
+上述 2026-10-27 待发布优化已随 v1.5.1 发布；完整发布证据与尚待实机验收范围见[v1.5.1 记录](V151-ACCEPTANCE.md)。此前本地阶段记录按当时范围保留。
