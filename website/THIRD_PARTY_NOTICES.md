@@ -1,6 +1,6 @@
 # 来源、致谢与素材说明
 
-**TG2Cloud v1.5.2** 待发布；资料核对日期：2026-10-28。当前正式版仍为 v1.5.1，发布进度见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
+**TG2Cloud v1.5.2** 已正式发布；资料核对日期：2026-10-28。同标签双架构、源码与两版 Compose 资产已核验；真实用户环境仍待验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
 
 TG2Cloud v1.5.1 已正式发布（2026-10-28）；不新增第三方依赖、品牌素材或许可，历史记录保留。
 

@@ -1,8 +1,8 @@
-# 文档来源与维护
+# 资料来源与验证边界
 
-当前源码 **v1.5.2** 待发布，资料核对日期 **2026 年 10 月 28 日**；正式版仍为 v1.5.1。[待发布改动](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)与[进度记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)不等于公开资产已可安装。
+当前源码与正式版本 **v1.5.2**；核对日期 **2026 年 10 月 28 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2)、[同标签双架构检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40662297206)与实际源码资产核验通过；源码、镜像与 Compose 部署包的证据和未执行的真实环境项目见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
 
-当前源码与正式版本 **v1.5.1**；核对日期 **2026 年 10 月 28 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.1)、[同标签 Linux 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622910178)与实际资产核验通过；证据见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V151-ACCEPTANCE.md)。
+历史资料：当时源码与正式版本 **v1.5.1**；核对日期 **2026 年 10 月 28 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.1)、[同标签 Linux 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622910178)与实际资产核验通过；证据见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V151-ACCEPTANCE.md)。
 
 历史资料：当时源码与正式版本 **v1.5.0**；核对日期 **2026 年 10 月 27 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.0)、[同标签 Linux 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40439954791)和实际资产核验通过；证据见[发布与验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V150-ACCEPTANCE.md)。
 
@@ -54,11 +54,11 @@
 | [安全政策](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md) | 凭据保护与第三方边界 |
 | [贡献指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md) | 测试和构建入口 |
 
-本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码与正式版本均为 1.4.9。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
+本网站区分当前工作树和正式发布行为。Linux 唯一版本源为 `src/tg2cloud/version.py`，源码与正式版本均为 1.5.2。发布 helper 必须先验证辅助 A、再由入口 B 固定 A，不以 moving main 替代；业务代码仍只取正式稳定 Release。历史验收按原版本和日期理解。
 
 ## 文档与软件版本分别维护
 
-`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.4.8；依赖和历史版本不机械替换。
+`site.config.json` 的 `version` 表示网站讲解的软件源码版本；`publishedVersion` 表示实际可下载的正式版本，`releaseStatus` 区分 `unreleased` 与 `released`。`package.json` 和 lockfile 的文档包版本本轮统一为 1.5.2；依赖和历史版本不机械替换。
 
 导航“最新 Release”只是跳转到 GitHub，不代表站内内容自动跟随最新。未发布的源码更新可以先更新文档版本，但必须说明待发布，并保留真实下载链接。正式发布完成后再同步下载链接、`publishedVersion`、状态、更新日志和教程。
 

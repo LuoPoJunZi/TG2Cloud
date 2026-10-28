@@ -24,7 +24,7 @@ TG2Cloud is a self-hosted personal file transfer tool. Send or forward files to 
 
 Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → your cloud storage
 
-Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are disabled by default. v1.5.1 improves monitoring scheduling, task database overhead, and resource sampling; upgrade and complete real Telegram and gateway acceptance.
+Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are disabled by default. v1.5.2 improves transient connection recovery and batched history maintenance; upgrade and complete real Telegram and gateway acceptance.
 
 ## Features
 
@@ -33,7 +33,7 @@ Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are di
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **v1.5.1**, supporting Linux. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.1). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
+Current stable version: **v1.5.2**, supporting Linux. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
 
 ## Getting started
 
@@ -89,15 +89,15 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Topic | Repository documents |
 | --- | --- |
 | Installation and configuration | [Public VPS installation / upgrade](docs/VPS-INSTALL.md) · [LAN / NAS installation](docs/LAN-INSTALL.md) · [Information checklist](docs/填写信息清单.md) |
-| Docker Compose | [Direct deployment, setup and backups (in development; images not published)](docs/COMPOSE.md) |
+| Docker Compose | [Direct deployment, setup and backups](docs/COMPOSE.md) |
 | Gateway and first transfer | [CloudDrive2 / OpenList configuration and verification](docs/STORAGE.md) · [Bot usage, menus and commands](docs/BOT-USAGE.md) |
 | Naming and common questions | [Video, caption and album naming](docs/NAMING.md) · [FAQ](docs/FAQ.md) |
 | Configuration and backups | [Configuration fields and runtime paths](docs/CONFIGURATION.md) · [Backup scope and restore preflight](docs/BACKUP-RESTORE.md) |
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Optional features | [Classification, notifications and quotas](docs/FEATURE-ENHANCEMENTS.md) · [Existing Nginx reuse](docs/DOCKER-NGINX.md) |
 | Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) · [Maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| Release preparation | [v1.5.2 Compose and listener recovery](docs/development/V152-ACCEPTANCE.md) |
-| Current maintenance | [v1.5.1 release and acceptance](docs/development/V151-ACCEPTANCE.md) |
+| Current maintenance | [v1.5.2 Compose and listener recovery](docs/development/V152-ACCEPTANCE.md) |
+| Historical acceptance | [v1.5.1 release and acceptance](docs/development/V151-ACCEPTANCE.md) |
 | Upgrade acceptance | [v1.4.4 dual-architecture upgrade](docs/development/V144-ACCEPTANCE.md) · [Historical records](docs/README.md) |
 | Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |

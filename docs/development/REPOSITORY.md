@@ -82,7 +82,7 @@ Release 继续从同一 Tag 验证并打包源码一次，发布 Job 复用 arti
 Telegram Session 是 SQLite 文件，其 .session-shm、.session-wal、.session-journal 也可能含授权数据：Git ignore 与公共文件检查均禁止误提交。已跟踪文件仍须由公共文件检查拒绝，不能仅通过 ignore 隐藏；检查不等同于完整凭据或历史扫描。
 
 
-## 独立 Compose 部署（开发中）
+## 独立 Compose 部署
 
 `src/tg2cloud/compose/` 承担短期初始化、离线配置检查和候选部署包生成，不进入 Bot 任务流程。生成器复用 `packaging/compose/` 的网关／Bot安全配置，不维护第二套网关模板。新增模块进入递归 runtime 清单；在线 helper pin 保持原有效提交，发布前按 A/B 流程处理实际变更。
 

@@ -1,6 +1,6 @@
 # Docker Compose 部署
 
-本版源码提供独立 Compose 部署及发布流程。镜像与部署包在源码 Release 之后单独发布，以对应版本的实际资产为准；尚未出现并验证时，请继续使用一键脚本。
+v1.5.2 已发布两 Edition 的 Compose 部署包及共享双架构 Bot 镜像。实际资产校验、固定 digest 和未执行的实机范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。已有一键脚本实例继续使用原方式升级，不自动迁移。
 
 ## 适用范围
 
@@ -10,9 +10,11 @@
 
 Compose 安装与一键脚本安装分别维护。不要把部署包解压到已有脚本安装目录，也不要让两个实例同时使用同一个 Bot Token 或数据库。默认容器与网络身份保持两 Edition 的标准命名，因此同一主机不能直接同时启动同 Edition 的两套部署。`tg2cloud` 目前不接管直接 Compose 安装；完整交互管理和自动 HTTPS 请继续使用一键脚本。
 
-## 获取正式部署包（发布后）
+## 获取正式部署包
 
-从对应 GitHub Release 下载同版的文件：
+从[正式 v1.5.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2)下载所选 Edition 和独立校验清单：[CloudDrive2 部署包](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.2/TG2Cloud-v1.5.2-compose-clouddrive2.tar.gz) · [OpenList 部署包](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.2/TG2Cloud-v1.5.2-compose-openlist.tar.gz) · [COMPOSE-SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.2/COMPOSE-SHA256SUMS.txt)。
+
+后续版本也须使用同一 Release 中匹配的文件：
 
 - `TG2Cloud-v<版本>-compose-clouddrive2.tar.gz`，或 OpenList 对应包。
 - `COMPOSE-SHA256SUMS.txt`。
@@ -127,6 +129,8 @@ python3 .github/scripts/compose_release.py bundle --directory build/compose-cand
 候选仍指向当前源码版本的镜像名称，不表示该镜像存在。开发者可用已有 `build_payload.py` 生成上下文并本地构建，在隔离 Compose override 中替换 setup 与 Bot 的 image；不要修改生产部署。
 
 先正常发布包含本功能的新稳定 Tag，完成同标签原生 Linux 检查和源码资产验证，再人工运行 Actions 的 **Compose images and bundles** 并填写该 Tag。工作流从相同不可变提交构建两架构、运行两版隔离初始化与非 root 配置检查，再发布版本 manifest 和固定 digest 的部署包。禁止从 moving main 发布，不改稳定 helper pin，也不替换历史源代码资产。
+
+发布维护工具固定到触发该工作流的不可变提交 `github.sha`，业务镜像和部署包仍取所选正式 Tag；不会为修正发布工具而移动业务 Tag。已有版本镜像先复核两平台的实际子镜像 digest、版本和提交标签；只有一致时才复用，不重新构建或覆盖。Docker manifest list 不支持 OCI index 注解时仍必须通过这些身份检查，未知格式或不匹配立即停止。
 
 首次 GHCR 包可能默认私有。发布管理员需将其设为 public；匿名拉取检查未通过时不会发布用户部署包。修正可见性后可重跑：相同提交的版本 index 会复核并复用，已有资产逐字节相同才接受，不能通过 clobber 覆盖。
 

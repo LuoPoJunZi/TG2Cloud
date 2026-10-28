@@ -2,12 +2,13 @@
 
 ## TG2Cloud v1.5.2
 
-版本日期：2026-10-28。待发布：监听临时故障自动重连、历史维护分批事务、独立 Compose 初始化与备份及双架构镜像发布。正式发布与实际资产证据见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)，实机未执行。[待发布详细改动](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+版本日期：2026-10-28。[v1.5.2 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2) 已发布；A／B、同标签双架构、共享镜像和两 Edition Compose 资产已核验。真实 VPS、NAS、Telegram 与网关转存仍待用户验收，详见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
 
 - 临时网络／服务器异常保留监听启用状态并退避重连，失效授权和不安全 Session 继续停止。
+- 修复系统启动不足 60 秒时首条监听通知被误抑制，保留后续 60 秒限流。
 - 历史维护每类每批最多 500 行，保留期限和引用保护不变；schema 3 下幂等增加辅助索引。
 - Compose 两 Edition 共用 Bot 镜像，复用原有网关固定镜像与权限；提供交互初始化、检查和离线备份，第一版用于内网或已有 HTTPS 代理。
-- 新增正式 Tag 的原生双架构镜像／部署包工作流；实际镜像和资产验证待发布后记录。保留一键脚本入口与配置／Session。
+- 新增正式 Tag 的原生双架构镜像／部署包工作流；镜像与部署包的实际发布结果见本版记录。保留一键脚本入口与配置／Session。
 
 ## TG2Cloud v1.5.1
 

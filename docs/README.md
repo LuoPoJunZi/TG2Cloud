@@ -1,8 +1,8 @@
 # TG2Cloud 文档目录
 
-当前正式版本为 **v1.5.1**，v1.5.2 正在发布准备，以 Linux Python + Bash 一键脚本维护；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 → 3 迁移与回退见[监听指南](LISTENING.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
+当前正式版本为 **v1.5.2**，以 Linux Python + Bash 一键脚本维护；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 → 3 迁移与回退见[监听指南](LISTENING.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
 
-当前版本的发布证据与用户验收见 [v1.5.1 记录](development/V151-ACCEPTANCE.md)。历史记录统一列在下方，按对应版本与实际测试范围理解。
+当前版本的发布证据与待执行的实机清单见 [v1.5.2 记录](development/V152-ACCEPTANCE.md)。历史记录统一列在下方，按对应版本与实际测试范围理解。
 
 ## 按你的情况开始
 
@@ -25,7 +25,7 @@
 - [填写信息清单](填写信息清单.md)：部署前需要准备的信息，不在文档中保存秘密。
 - [Linux 部署与兼容性](ARCHITECTURES.md)：原生支持、镜像和依赖证据、CI／发布结果及已确认的实机范围。
 - [VPS 一键安装与升级](VPS-INSTALL.md)：公网服务器、强制 HTTPS、保留配置升级。
-- [Docker Compose 部署（开发中）](COMPOSE.md)：两版部署包、交互初始化、固定镜像与备份升级边界。
+- [Docker Compose 部署](COMPOSE.md)：两版部署包、交互初始化、固定镜像与备份升级边界。
 - [局域网 / NAS 安装](LAN-INSTALL.md)：独立内网入口、支持平台与安全边界。
 - [存储网关配置与 WebDAV 验收](STORAGE.md)：两版后台配置、专用用户权限、根目录／子目录及真实写入验收。
 - [外部 WebDAV](external-webdav.md)：v1.3.1 起提供，v1.3.2 优化向导；独立 HTTPS 只读附加入口、独立账号、目录和生命周期，不加入主安装，原生权限需按指南验收。
@@ -64,7 +64,7 @@
 
 ### 按版本查阅验收
 
-- [v1.5.2 Compose 与监听恢复（发布准备）](development/V152-ACCEPTANCE.md)：真实进度、兼容边界与发布后清单。
+- [v1.5.2 Compose 与监听恢复](development/V152-ACCEPTANCE.md)：真实进度、兼容边界与发布后清单。
 
 - [v1.5.1 性能维护与用户验收](development/V151-ACCEPTANCE.md)：发布资产、CloudDrive2 升级与 WebDAV 验收。
 - [v1.5.0 管理工具同步](development/V150-ACCEPTANCE.md)：Bot／CLI 版本、监听稳定性与发布核验。

@@ -45,11 +45,11 @@ v1.4.3 的快照、命名预览等共用标准库模块，host helper 和 runtim
 ```powershell
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.5.2
 git rev-parse HEAD
 ```
 
-v1.4.10 已正式发布，复现本版使用不可变 Tag；开发使用 main 并记录提交号，不把分支或后续文档改动当作已发布资产。正式下载见[下载页](/download/)。
+v1.5.2 已正式发布，复现本版使用不可变 Tag；开发使用 main 并记录提交号，不把分支或后续文档改动当作已发布资产。正式下载见[下载页](/download/)。
 
 ## 关键目录与入口
 
