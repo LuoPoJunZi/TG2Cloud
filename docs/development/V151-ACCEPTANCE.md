@@ -57,3 +57,5 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.1/i
 辅助 A 为 `f17076544a28efc48c952f1114aea442ad809c00`，五项 CI 全部成功：[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621797117)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621801695)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621805119)、[CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621808729)、[Linux](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621812271)。包含两组原生 Linux 运行、四组宿主 CLI、两 Edition 候选构建与现有隔离 WebDAV／网关／代理检查。入口 B 仅固定此真实公开 SHA；不使用旧版结果代替本版。
 
 最终完整本地检查通过：1389 项中 1355 通过、34 个既有环境条件跳过、0 失败；仓库、Ruff 与 compileall 均通过。两个入口更新 pin 后，身份、清单、旧版基线与 66 个 helper 一致性四项正式静态门槛全部通过，Bash／ShellCheck 通过。
+
+初始入口 B `bc24886dce771b6593a8571cfbfa3e35f8a8fe6b` 的网站检查指出四份完整指南仍显示旧 helper SHA。仅将当前版本／helper／验收链接同步到 v1.5.1，保留历史正文；未修改测试、工作流、生产能力或 pin。最终 B 各项 CI 重新验证。
