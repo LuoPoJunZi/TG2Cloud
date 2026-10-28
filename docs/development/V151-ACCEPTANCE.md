@@ -51,3 +51,9 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.1/i
 ## 版本同步后的本地复核
 
 首次完整运行 1389 项，1354 通过、34 个既有环境条件跳过、1 项文档失败：根 CHANGELOG 的历史索引漏列 1.5.1。补齐索引和 32 版总数后，关联仓库／发布准备回归 58 项通过，Ruff、compileall、Bash／ShellCheck、Bandit、Python 3.10 标准库回归 22 项通过。网站最初缺日期／版本标记与历史验收链接，补齐后构建及 37 项测试、4345 本地引用通过；没有删除测试或放宽检查。最终完整回归和远端结果完成后追加。
+
+## 辅助 A 远端验证
+
+辅助 A 为 `f17076544a28efc48c952f1114aea442ad809c00`，五项 CI 全部成功：[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621797117)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621801695)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621805119)、[CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621808729)、[Linux](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40621812271)。包含两组原生 Linux 运行、四组宿主 CLI、两 Edition 候选构建与现有隔离 WebDAV／网关／代理检查。入口 B 仅固定此真实公开 SHA；不使用旧版结果代替本版。
+
+最终完整本地检查通过：1389 项中 1355 通过、34 个既有环境条件跳过、0 失败；仓库、Ruff 与 compileall 均通过。两个入口更新 pin 后，身份、清单、旧版基线与 66 个 helper 一致性四项正式静态门槛全部通过，Bash／ShellCheck 通过。
