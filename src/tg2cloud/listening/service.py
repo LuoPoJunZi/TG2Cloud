@@ -14,6 +14,9 @@ from tg2cloud.persistence.plans import Plans
 
 BATCH = 100
 LOOKBACK = 6 * 3600
+SOURCE_POLL_TIMEOUT = 30
+POLL_ROUND_BUDGET = 30
+MAINTENANCE_INTERVAL = 60
 
 
 class ReceiveLimited(ValueError):
@@ -212,6 +215,9 @@ class Listener:
         self._session = None
         self._last_notice = 0.0
         self._verified_until = {}
+        self._poll_after = 0
+        self._next_maintenance_at = None
+        self._maintenance_warning = False
 
     def require_admin(self, actor):
         self.plans.authorize(actor, admin=True)
@@ -435,14 +441,7 @@ class Listener:
         if not matched:
             self.journal(source, message.id, reason, attachment=item["attachment"])
             return
-        counts = self.db.counts()
-        if (
-            sum(
-                counts.get(k, 0)
-                for k in ("queued", "reserved", "downloading", "streaming")
-            )
-            >= 100
-        ):
+        if self.db.count_states(("queued", "reserved", "downloading", "streaming")) >= 100:
             raise ReceiveLimited(
                 "资源受限：队列达到监听接收上限；保留进度，优先处理手动任务"
             )
@@ -582,6 +581,8 @@ class Listener:
             and str(exc) == "待确认已达 200 项；请先处理"
         ):
             status = "资源受限：队列或待确认达到上限，60 秒后重查"
+        elif isinstance(exc, (TimeoutError, asyncio.TimeoutError)):
+            status = "来源读取超时，60 秒后重查；保留已登记进度，其他来源继续"
         elif isinstance(exc, ValueError):
             status, paused = "规则或计划配置无效，已暂停；请核对后启用", True
         else:
@@ -593,9 +594,61 @@ class Listener:
             )
         return True
 
+    def _maintain_if_due(self):
+        now = time.monotonic()
+        if self._next_maintenance_at is not None and now < self._next_maintenance_at:
+            return
+        self._next_maintenance_at = now + MAINTENANCE_INTERVAL
+        try:
+            # Commit all retention statements together, independently of account state.
+            with self.plans.transaction(self.admin, admin=True):
+                self.plans.expire()
+        except Exception:  # noqa: BLE001 - maintenance must not revoke a valid login
+            if not self._maintenance_warning:
+                self.owner.log.warning("监听记录维护暂不可用；稍后重试，不影响监听授权")
+            self._maintenance_warning = True
+        else:
+            self._maintenance_warning = False
+
+    async def _poll_sources(self):
+        """Serial requests, bounded source time and a rotating round budget.
+
+        Check the round budget between sources so a source starting near its end
+        still gets the full request timeout. No detached requests or parallel
+        account clients; wait_for joins cancellation before another source runs.
+        """
+        started = time.monotonic()
+        client = self.client
+        sources = self.plans.sources(self.admin)
+        sources = ([s for s in sources if s["id"] > self._poll_after]
+                   + [s for s in sources if s["id"] <= self._poll_after])
+        for saved in sources:
+            value = account.state(self.db)
+            if (self.owner._stop.is_set() or not value["enabled"]
+                    or value.get("cooldown_until", 0) > time.time()
+                    or client is None or self.client is not client):
+                return
+            # An earlier request may have awaited while this source was edited.
+            source = self.plans.source(self.admin, saved["id"])
+            if (not source["enabled"] or source["deleted"]
+                    or source.get("next_retry", 0) > time.time()
+                    or source["account"] != value["account"]):
+                continue
+            self._poll_after = source["id"]
+            try:
+                await asyncio.wait_for(self.poll(source), timeout=SOURCE_POLL_TIMEOUT)
+            except Exception as exc:  # noqa: BLE001 - isolate external source failures
+                if self.client is not client or account.state(self.db)["account"] != source["account"]:
+                    return  # An old request must not revoke a replacement account/client.
+                if not await self.source_failure(source, exc):
+                    return
+            if time.monotonic() - started >= POLL_ROUND_BUDGET:
+                return
+
     async def run(self):
         try:
             while not self.owner._stop.is_set():
+                self._maintain_if_due()
                 try:
                     value = account.state(self.db)
                     if not value["enabled"]:
@@ -604,18 +657,7 @@ class Listener:
                         value.get("cooldown_until", 0) <= time.time()
                         and await self.connect()
                     ):
-                        for source in self.plans.sources(self.admin):
-                            if (
-                                source["enabled"]
-                                and source.get("next_retry", 0) <= time.time()
-                            ):
-                                try:
-                                    await self.poll(source)
-                                except Exception as exc:  # noqa: BLE001 - isolate optional external Telegram failures
-                                    if not await self.source_failure(source, exc):
-                                        break
-                    with self.db._lock:
-                        self.plans.expire()
+                        await self._poll_sources()
                 except Exception as exc:  # noqa: BLE001 - private boundary must not expose credentials
                     await self.close()
                     from telethon.errors import FloodWaitError

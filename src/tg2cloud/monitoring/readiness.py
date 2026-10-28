@@ -18,7 +18,7 @@ CHECKS = ("heartbeat", "telegram", "destination", "queue", "capacity")
 STATES = {"ok", "failed", "unknown", "paused", "cooldown", "partial"}
 
 
-def publish(service, counts) -> None:
+def publish(service, counts, *, used_local_bytes: int | None = None) -> None:
     settings = service.settings
     connected = getattr(service.client, "is_connected", None)
     connected = connected() if callable(connected) else None
@@ -31,10 +31,12 @@ def publish(service, counts) -> None:
     cooldown = max(0, int(getattr(service, "_destination_next_probe_at", 0) - time.monotonic()))
     if destination == "failed" and cooldown:
         destination = "cooldown"
+    if used_local_bytes is None:
+        used_local_bytes = service.db.used_local_bytes()
     checks = {"telegram": "ok" if connected is True else "failed" if connected is False else "unknown",
               "destination": destination, "queue": "paused" if service.db.is_paused() else "ok",
               "capacity": "ok" if free > settings.min_free_disk_bytes
-              and service.db.used_local_bytes() < settings.local_budget_bytes else "failed"}
+              and used_local_bytes < settings.local_budget_bytes else "failed"}
     value = {"schema": 1, "version": VERSION, "edition": settings.storage_backend,
              "sampled_at": time.time(), "ttl": min(300, max(15, settings.control_interval * 3)),
              "checks": checks, "cooldown_seconds": cooldown,

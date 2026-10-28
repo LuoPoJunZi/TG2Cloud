@@ -116,13 +116,17 @@ class ResourceAndMigrationTests(unittest.TestCase):
     def test_filesystem_sampling_groups_same_device_without_summing_capacity(self):
         with tempfile.TemporaryDirectory() as folder:
             root = Path(folder)
-            monitor = ResourceMonitor(root, database=root)
-            snapshot = monitor.sample()
+            database = root / "database"
+            database.mkdir()
+            monitor = ResourceMonitor(root, database=database)
+            with patch("tg2cloud.monitoring.resources.psutil.disk_usage", return_value=SimpleNamespace(free=1000)) as usage:
+                snapshot = monitor.sample()
+            self.assertEqual(usage.call_count, 1)
             self.assertEqual(len(snapshot.filesystems), 1)
             self.assertIn("database", snapshot.filesystems[0][0])
             self.assertGreater(snapshot.filesystems[0][1], 0)
             with patch.object(Path, "stat", side_effect=[SimpleNamespace(st_dev=1), SimpleNamespace(st_dev=2)]), \
-                    patch("tg2cloud.monitoring.resources.psutil.disk_usage", side_effect=[SimpleNamespace(free=100), SimpleNamespace(free=100), SimpleNamespace(free=5)]):
+                    patch("tg2cloud.monitoring.resources.psutil.disk_usage", side_effect=[SimpleNamespace(free=100), SimpleNamespace(free=5)]):
                 snapshot = monitor.sample()
             self.assertEqual([free for _, free in snapshot.filesystems], [100, 5])
 

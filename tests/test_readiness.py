@@ -112,7 +112,7 @@ class ReadinessTests(unittest.TestCase):
             service._stop = asyncio.Event()
             original = service.snapshot
             service.monitor = SimpleNamespace(sample=lambda: original)
-            service.db.counts = dict
+            service.db.counts = lambda **_: {}
             service._enforce_disk_emergency = AsyncMock()
             service._stream_count = lambda: 0
             service._errors_in_last_minute = lambda value: 0
@@ -129,4 +129,40 @@ class ReadinessTests(unittest.TestCase):
             self.assertIs(service.snapshot, original)
             service.log.exception.assert_not_called()
             self.assertNotIn("private failure", str(service.log.warning.call_args))
+        asyncio.run(run())
+
+
+    def test_resource_cycle_reuses_only_its_own_counts_budget_and_stream_sample(self):
+        from tg2cloud.domain.states import SCHEDULING_STATES
+
+        async def run():
+            service = self.service
+            service._stop = asyncio.Event()
+            original = service.snapshot
+            service.monitor = SimpleNamespace(sample=lambda: original)
+            service.db.counts = Mock(return_value={"queued": 2, "uploading": 1})
+            service.db.used_local_bytes = Mock(side_effect=[1500, 100])
+            service._enforce_disk_emergency = AsyncMock()
+            service._stream_count = Mock(return_value=1)
+            service._errors_in_last_minute = lambda value: 0
+            service._stage_rate = lambda value: 0
+            service.recent_download_errors = service.recent_upload_errors = []
+            service.download_window = SimpleNamespace(update=Mock())
+            service.upload_window = SimpleNamespace(update=Mock())
+            service.log = Mock()
+            snapshots = []
+            async def next_cycle(_):
+                snapshots.append(json.loads((self.root / "readiness.json").read_text()))
+                if len(snapshots) == 2:
+                    service._stop.set()
+            with patch("tg2cloud.transfer.scheduler.asyncio.sleep", side_effect=next_cycle):
+                await _resource_loop(service)
+            self.assertEqual(service.db.counts.call_count, 2)
+            service.db.counts.assert_called_with(states=SCHEDULING_STATES)
+            self.assertEqual(service.db.used_local_bytes.call_count, 2)
+            self.assertEqual(service._stream_count.call_count, 2)
+            self.assertEqual([s["checks"]["capacity"] for s in snapshots], ["failed", "ok"])
+            self.assertEqual([c.kwargs["backlog_pressure"] for c in service.download_window.update.call_args_list], [True, False])
+            self.assertEqual([c.kwargs["active_count"] for c in service.upload_window.update.call_args_list], [1, 1])
+            service.log.exception.assert_not_called()
         asyncio.run(run())

@@ -45,7 +45,8 @@ class ResourceMonitor:
             if device in filesystems:
                 filesystems[device][0].append(label)
             else:
-                filesystems[device] = ([label], int(psutil.disk_usage(str(directory)).free))
+                free = disk.free if directory == self.download_dir else psutil.disk_usage(str(directory)).free
+                filesystems[device] = ([label], int(free))
         net = psutil.net_io_counters()
         elapsed = max(0.001, now - self._last_time)
         network_delta = (net.bytes_recv - self._last_net.bytes_recv) + (

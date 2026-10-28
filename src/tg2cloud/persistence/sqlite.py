@@ -413,15 +413,57 @@ class TaskDB:
                 ).fetchall()
             ]
 
-    def counts(self, *, sender_id: int | None = None) -> dict[str, int]:
+    def counts(self, *, sender_id: int | None = None, states: Iterable[str] | None = None) -> dict[str, int]:
+        query = "SELECT state, COUNT(*) AS count FROM tasks"
+        conditions = []
+        params: list[Any] = []
+        if sender_id is not None:
+            conditions.append("sender_id=?")
+            params.append(sender_id)
+        if states is not None:
+            values = tuple(states)
+            if not values:
+                return {}
+            conditions.append("state IN (" + ",".join("?" for _ in values) + ")")
+            params.extend(values)
+        if conditions:
+            query += " WHERE " + " AND ".join(conditions)
+        query += " GROUP BY state"
         with self._lock:
-            return {
-                row["state"]: row["count"]
-                for row in self._conn.execute(
-                    "SELECT state, COUNT(*) AS count FROM tasks WHERE (? IS NULL OR sender_id=?) GROUP BY state",
-                    (sender_id, sender_id),
-                ).fetchall()
-            }
+            return {row["state"]: row["count"]
+                    for row in self._conn.execute(query, params).fetchall()}
+
+    def count_states(self, states: Iterable[str]) -> int:
+        """Count only relevant states using the existing state index, without caching."""
+        values = tuple(states)
+        if not values:
+            return 0
+        placeholders = ",".join("?" for _ in values)
+        with self._lock:
+            return int(self._conn.execute(
+                f"SELECT COUNT(*) FROM tasks WHERE state IN ({placeholders})",  # nosec B608
+                values,
+            ).fetchone()[0])
+
+    def set_wait_reason(self, task_id: int, reason: str, *, states: Iterable[str]) -> bool:
+        """Persist a changed wait reason only while the task is still eligible.
+
+        The read avoids acquiring a writer lock on unchanged waits. The UPDATE
+        repeats the state/cancellation guard for writers on other connections.
+        reserve() calls this inside its existing BEGIN IMMEDIATE transaction.
+        """
+        with self._lock:
+            task = self._conn.execute(
+                "SELECT state,cancel_requested,wait_reason FROM tasks WHERE id=?", (task_id,)
+            ).fetchone()
+            if (task is None or task["state"] not in states or task["cancel_requested"]
+                    or task["wait_reason"] == reason):
+                return False
+            return self._conn.execute(
+                "UPDATE tasks SET wait_reason=?,updated_at=? WHERE id=? AND state=? "
+                "AND cancel_requested=0 AND wait_reason IS NOT ?",
+                (reason, time.time(), task_id, task["state"], reason),
+            ).rowcount == 1
 
     def weekly_failed_count(self, *, now: float | None = None, sender_id: int | None = None) -> int:
         """Current failed tasks that failed this local calendar week, counted once.
@@ -494,7 +536,7 @@ class TaskDB:
                     return False, "任务状态已经改变"
                 from tg2cloud.persistence.quotas import slot_available
                 if not slot_available(self._conn, task["sender_id"], task_id):
-                    self._conn.execute("UPDATE tasks SET wait_reason='等待个人并发额度' WHERE id=?", (task_id,))
+                    self.set_wait_reason(task_id, "等待个人并发额度", states=("queued",))
                     self._conn.execute("COMMIT")
                     return False, "等待个人并发额度"
                 row = self._conn.execute(
@@ -512,13 +554,7 @@ class TaskDB:
                 if requested_stream or size > budget_bytes:
                     if current_free_bytes <= minimum_free_bytes:
                         reason = "等待真实磁盘空间恢复后使用流式模式"
-                        self._conn.execute(
-                            """
-                            UPDATE tasks SET wait_reason = ?, updated_at = ?
-                            WHERE id = ?
-                            """,
-                            (reason, time.time(), task_id),
-                        )
+                        self.set_wait_reason(task_id, reason, states=("queued",))
                         self._conn.execute("COMMIT")
                         return False, reason
                     self._conn.execute(
@@ -538,13 +574,7 @@ class TaskDB:
                     )
                 if used + size > budget_bytes:
                     reason = "等待本地临时空间额度"
-                    self._conn.execute(
-                        """
-                        UPDATE tasks SET wait_reason = ?, updated_at = ?
-                        WHERE id = ?
-                        """,
-                        (reason, time.time(), task_id),
-                    )
+                    self.set_wait_reason(task_id, reason, states=("queued",))
                     self._conn.execute("COMMIT")
                     return False, reason
                 if (
@@ -556,13 +586,7 @@ class TaskDB:
                         "等待真实磁盘空间（至少还需释放 "
                         f"{shortfall / 1024**3:.2f}GB；可用 /stream #{task_id} 改为流式）"
                     )
-                    self._conn.execute(
-                        """
-                        UPDATE tasks SET wait_reason = ?, updated_at = ?
-                        WHERE id = ?
-                        """,
-                        (reason, time.time(), task_id),
-                    )
+                    self.set_wait_reason(task_id, reason, states=("queued",))
                     self._conn.execute("COMMIT")
                     return False, reason
                 self._conn.execute(

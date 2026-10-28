@@ -25,6 +25,12 @@ LOCAL_STATES = (
     "verification_failed_retained",
 )
 GROWING_STATES = ("reserved", "downloading")
+# Resource-window demand excludes terminal history, but local budget accounting
+# still uses LOCAL_STATES above, including retained upload/verification failures.
+SCHEDULING_STATES = (
+    "queued", "reserved", "downloading", "streaming", "downloaded",
+    "waiting_upload", "cleanup_pending", "uploading", "verifying", "finalizing",
+)
 FAILED_STATES = ("download_failed", "upload_failed_retained", "verification_failed_retained")
 
 # Persisted state changes must follow one of these edges. Self-transitions are

@@ -5,6 +5,8 @@ import shutil
 import time
 from collections import deque
 
+from tg2cloud.domain.states import SCHEDULING_STATES
+
 
 def _sample_fresh(self) -> bool:
     return bool(self.snapshot and 0 <= time.time() - self.snapshot.sampled_at
@@ -68,7 +70,9 @@ async def _resource_loop(self) -> None:
         try:
             self.snapshot = self.monitor.sample()
             await self._enforce_disk_emergency()
-            counts = self.db.counts()
+            counts = self.db.counts(states=SCHEDULING_STATES)
+            used_local_bytes = self.db.used_local_bytes()
+            streams = self._stream_count()
             download_demand = bool(
                 self.download_tasks
                 or counts.get("queued")
@@ -84,7 +88,7 @@ async def _resource_loop(self) -> None:
                 or counts.get("uploading")
                 or counts.get("verifying")
                 or counts.get("finalizing")
-                or self._stream_count()
+                or streams
             )
             self.download_window.update(
                 self.snapshot,
@@ -95,7 +99,7 @@ async def _resource_loop(self) -> None:
                 demand_present=download_demand,
                 throughput=self._stage_rate("download") + self._stage_rate("stream"),
                 active_count=len(self.download_tasks),
-                backlog_pressure=self.db.used_local_bytes() >= self.settings.local_budget_bytes * 0.8,
+                backlog_pressure=used_local_bytes >= self.settings.local_budget_bytes * 0.8,
             )
             self.upload_window.update(
                 self.snapshot,
@@ -105,12 +109,12 @@ async def _resource_loop(self) -> None:
                 destination_healthy=self._destination_ready(),
                 demand_present=upload_demand,
                 throughput=self._stage_rate("upload") + self._stage_rate("stream"),
-                active_count=len(self.upload_tasks) + self._stream_count(),
+                active_count=len(self.upload_tasks) + streams,
             )
             (self.settings.data_dir / "resource-heartbeat").touch()
             try:
                 from tg2cloud.monitoring.readiness import publish
-                publish(self, counts)
+                publish(self, counts, used_local_bytes=used_local_bytes)
             except Exception:  # noqa: BLE001 - optional diagnostics must not change scheduling decisions
                 # A diagnostic export must never change scheduling decisions.
                 if not getattr(self, "_readiness_warning", False):
@@ -182,12 +186,12 @@ async def _start_downloads(self) -> None:
                 account_state = listener_state(self.db)
                 if (listener is None or listener.client is None or not account_state["enabled"]
                         or account_state.get("cooldown_until", 0) > time.time()):
-                    self.db.update(task_id, wait_reason="等待监听账号授权、连接或冷却结束；手动任务继续调度")
+                    self.db.set_wait_reason(task_id, "等待监听账号授权、连接或冷却结束；手动任务继续调度", states=("queued",))
                     continue
             if ((task.get("transfer_mode") == "stream"
                  or task["file_size"] > self.settings.local_budget_bytes)
                     and len(self.upload_tasks) + self._stream_count() >= self.upload_window.value):
-                self.db.update(task_id, wait_reason="流式任务等待共享上传窗口")
+                self.db.set_wait_reason(task_id, "流式任务等待共享上传窗口", states=("queued",))
                 continue
             reserved, reason = self.db.reserve(
                 task_id,
@@ -233,7 +237,7 @@ async def _start_uploads(self) -> None:
                 continue
             admit = getattr(self.db, "admit_upload", None)
             if admit and not admit(task_id):
-                self.db.update(task_id, wait_reason="等待个人并发额度")
+                self.db.set_wait_reason(task_id, "等待个人并发额度", states=("waiting_upload", "downloaded"))
                 continue
             async_task = asyncio.create_task(
                 self._upload_one(task_id), name=f"upload-{task_id}"

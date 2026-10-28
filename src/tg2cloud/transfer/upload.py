@@ -259,8 +259,16 @@ async def _upload_one(self, task_id: int) -> None:
                 )
                 self._record_progress(task_id, "upload", 0, reset=True)
 
+                # Per-attempt cache only: persist the first observation, every
+                # byte change (including restart/reset), and keep speed samples live.
+                last_persisted = None
+
                 def progress(count: int, speed: float | None) -> None:
-                    self.db.update(task_id, uploaded_bytes=min(count, int(task["file_size"])))
+                    nonlocal last_persisted
+                    uploaded = min(count, int(task["file_size"]))
+                    if uploaded != last_persisted:
+                        self.db.update(task_id, uploaded_bytes=uploaded)
+                        last_persisted = uploaded
                     self._record_progress(task_id, "upload", count, speed)
 
                 await self.rclone.upload(local_path, remote_write, progress=progress)

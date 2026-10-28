@@ -318,12 +318,19 @@ class Plans:
                 ),
             )
 
+    def expire_pending(self, owner=None):
+        """Caller holds the transaction; admission only expires this owner's plans."""
+        query = "UPDATE transfer_plans SET status='expired',revision=revision+1 WHERE status='pending' AND expires<?"
+        params = (time.time(),)
+        if owner is not None:
+            query += " AND owner=?"
+            params += (owner,)
+        self.c.execute(query, params)
+
     def expire(self):
+        """Full historical maintenance, separate from per-attachment admission."""
         now = time.time()
-        self.c.execute(
-            "UPDATE transfer_plans SET status='expired',revision=revision+1 WHERE status='pending' AND expires<?",
-            (now,),
-        )
+        self.expire_pending()
         self.c.execute(
             "DELETE FROM listener_events WHERE created<? AND (plan IS NULL OR plan IN (SELECT id FROM transfer_plans WHERE status!='pending'))",
             (now - TTL,),
@@ -352,7 +359,7 @@ class Plans:
         classification_options=None,
     ):
         with self.transaction(actor, admin=source is not None):
-            self.expire()
+            self.expire_pending(actor)
             if source is not None:
                 saved = self.source(actor, source)
                 if (

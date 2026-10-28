@@ -317,6 +317,58 @@ class StoreTests(unittest.TestCase):
         self.repo.change_source(self.admin, s["id"], s["revision"], enabled=True)
         return self.repo.source(self.admin, s["id"])
 
+    def test_creating_plans_only_expires_owner_without_history_cleanup(self):
+        own = self.plan(mid=1)
+        other = self.plan(actor=2, mid=1)
+        self.db._conn.execute("UPDATE transfer_plans SET expires=0")
+        statements = []
+        self.db._conn.set_trace_callback(statements.append)
+        try:
+            self.plan(mid=2)
+        finally:
+            self.db._conn.set_trace_callback(None)
+        self.assertFalse(any(sql.lstrip().upper().startswith("DELETE") for sql in statements))
+        self.assertEqual(self.db._conn.execute("SELECT status FROM transfer_plans WHERE id=?", (own["id"],)).fetchone()[0], "expired")
+        self.assertEqual(self.db._conn.execute("SELECT status FROM transfer_plans WHERE id=?", (other["id"],)).fetchone()[0], "pending")
+        # Live validation still rejects another owner's expired plan before maintenance.
+        self.assertEqual(self.repo.pending(2), [])
+        with self.assertRaises(ValueError):
+            self.repo.submit(2, other["id"], other["revision"])
+        with self.assertRaises(ValueError):
+            self.repo.edit(2, other["id"], other["revision"], name="expired")
+        self.assertEqual(self.db.counts(), {})
+
+    def test_expired_pending_records_do_not_consume_admission_limit(self):
+        first = self.plan()
+        c = self.db._conn
+        row = c.execute("SELECT * FROM transfer_plans WHERE id=?", (first["id"],)).fetchone()
+        c.executemany(
+            "INSERT INTO transfer_plans(owner,identity,chat,message,batch,payload,status,created,expires) "
+            "VALUES(?,'bot',?,?,'',?,'pending',0,0)",
+            ((self.admin, self.admin, mid, row["payload"]) for mid in range(2, 201)),
+        )
+        c.execute("UPDATE transfer_plans SET expires=0")
+        new = self.plan(mid=201)
+        self.assertEqual([p["id"] for p in self.repo.pending(self.admin)], [new["id"]])
+        self.assertEqual(c.execute("SELECT COUNT(*) FROM transfer_plans WHERE status='expired'").fetchone()[0], 200)
+
+    def test_full_maintenance_keeps_referenced_pending_and_recent_history(self):
+        source = self.source()
+        keep = self.plan(mid=1)
+        remove = self.plan(mid=2)
+        recent = self.plan(mid=3)
+        old = time.time() - 40 * 86400
+        c = self.db._conn
+        c.execute("UPDATE transfer_plans SET created=?", (old,))
+        c.execute("UPDATE transfer_plans SET status='ignored' WHERE id IN (?,?)", (remove["id"], recent["id"]))
+        for mid, plan, created in ((1, keep["id"], old), (2, remove["id"], old), (3, recent["id"], time.time()), (4, None, old)):
+            c.execute("INSERT INTO listener_events(account,chat,message,source,result,plan,created) VALUES(42,-1001,?,?,'synthetic',?,?)",
+                      (mid, source["id"], plan, created))
+        with self.repo.transaction(self.admin, admin=True):
+            self.repo.expire()
+        self.assertEqual([r[0] for r in c.execute("SELECT message FROM listener_events ORDER BY message")], [1, 3])
+        self.assertEqual([r[0] for r in c.execute("SELECT id FROM transfer_plans ORDER BY id")], [keep["id"], recent["id"]])
+
     def test_migration_keeps_history_identity_and_unknown_schema_rejected(self):
         task = self.db.create_task(
             chat_id=1, message_id=1, sender_id=1, file_name="old.mp4", file_size=100
@@ -1037,7 +1089,7 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         batch = next(self.owner._queued_batches(("queued",)))
         self.assertEqual(batch[0]["read_identity"], "bot")
         with (
-            patch.object(self.db, "counts", return_value={"queued": 100}),
+            patch.object(self.db, "count_states", return_value=100),
             self.assertRaises(ValueError),
         ):
             await self.listener.receive(s, message(3))
@@ -1046,6 +1098,198 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
                 "SELECT 1 FROM listener_events WHERE message=3"
             ).fetchone()
         )
+
+    async def test_queue_limit_counts_active_states_and_ignores_history(self):
+        from tg2cloud.listening.service import ReceiveLimited
+
+        c = self.db._conn
+        c.executemany(
+            "INSERT INTO tasks(chat_id,message_id,sender_id,file_name,file_size,state,created_at,updated_at) "
+            "VALUES(777,?,?,'synthetic.bin',1,'completed',0,0)",
+            ((i, self.admin) for i in range(2000)),
+        )
+        active = []
+        for i in range(100):
+            task, _ = self.db.create_task(chat_id=778, message_id=i, sender_id=self.admin,
+                                         file_name="synthetic.bin", file_size=1)
+            self.db.update(task["id"], state=("queued", "reserved", "downloading", "streaming")[i % 4])
+            active.append(task)
+        with patch.object(self.db, "counts", side_effect=AssertionError("must not scan historical counts")):
+            with self.assertRaises(ReceiveLimited):
+                await self.listener.receive(self.source, message(999))
+            self.assertEqual(self.repo.pending(self.admin), [])
+            self.assertEqual(c.execute("SELECT COUNT(*) FROM listener_events").fetchone()[0], 0)
+            self.db.update(active[0]["id"], state="completed")
+            await self.listener.receive(self.source, message(999))
+        self.assertEqual(len(self.repo.pending(self.admin)), 1)
+
+    def another_source(self, chat=-1002):
+        source = self.repo.save_source(self.admin, account=42, chat=chat, title="另一个合成来源", cursor=0,
+                                      config=self.source["config"])
+        self.repo.change_source(self.admin, source["id"], source["revision"], enabled=True)
+        return self.repo.source(self.admin, source["id"])
+
+    async def test_maintenance_runs_once_per_minute_and_after_restart(self):
+        from tg2cloud.listening import service as module
+
+        with patch.object(module, "time", NS(monotonic=lambda: 100)), patch.object(self.repo, "expire", wraps=self.repo.expire) as cleanup:
+            for _ in range(12):
+                self.listener._maintain_if_due()
+            self.assertEqual(cleanup.call_count, 1)
+            self.assertEqual(self.listener._next_maintenance_at, 160)
+        with patch.object(module, "time", NS(monotonic=lambda: 160)), patch.object(self.repo, "expire", wraps=self.repo.expire) as cleanup:
+            self.listener._maintain_if_due()
+            self.assertEqual(cleanup.call_count, 1)
+        replacement = Listener(self.owner)
+        with patch.object(replacement.plans, "expire", wraps=replacement.plans.expire) as cleanup:
+            replacement._maintain_if_due()
+            self.assertEqual(cleanup.call_count, 1)
+
+    async def test_maintenance_failure_rolls_back_without_revoking_account(self):
+        from tg2cloud.listening import service as module
+
+        await self.listener.receive(self.source, message())
+        plan = self.repo.pending(self.admin)[0]
+        self.db._conn.execute("UPDATE transfer_plans SET expires=0 WHERE id=?", (plan["id"],))
+        before = account.state(self.db)
+        def fail():
+            self.repo.expire_pending()
+            raise sqlite3.OperationalError("PRIVATE_DETAIL")
+        with patch.object(module, "time", NS(monotonic=lambda: 100)), patch.object(self.repo, "expire", side_effect=fail) as cleanup:
+            self.listener._maintain_if_due()
+            self.listener._maintain_if_due()
+            self.assertEqual(cleanup.call_count, 1)
+        self.assertFalse(self.db._conn.in_transaction)
+        self.assertEqual(self.db._conn.execute("SELECT status FROM transfer_plans WHERE id=?", (plan["id"],)).fetchone()[0], "pending")
+        self.assertEqual(account.state(self.db), before)
+        self.assertNotIn("PRIVATE_DETAIL", str(self.owner.log.warning.call_args))
+        with patch.object(module, "time", NS(monotonic=lambda: 160)):
+            self.listener._maintain_if_due()
+        self.assertEqual(self.db._conn.execute("SELECT status FROM transfer_plans WHERE id=?", (plan["id"],)).fetchone()[0], "expired")
+
+    async def test_poll_budget_rotates_sources_without_starving_later_ids(self):
+        second, third = self.another_source(), self.another_source(-1003)
+        with patch.object(self.listener, "poll", new=AsyncMock()) as poll, patch("tg2cloud.listening.service.POLL_ROUND_BUDGET", 0):
+            for _ in range(4):
+                await self.listener._poll_sources()
+        self.assertEqual([call.args[0]["id"] for call in poll.await_args_list],
+                         [self.source["id"], second["id"], third["id"], self.source["id"]])
+
+    async def test_slow_source_is_cancelled_before_next_source_runs(self):
+        second = self.another_source()
+        cancelled = asyncio.Event()
+        seen = []
+        async def poll(source):
+            seen.append(source["id"])
+            if source["id"] == self.source["id"]:
+                try:
+                    await asyncio.Event().wait()
+                finally:
+                    cancelled.set()
+            else:
+                self.assertTrue(cancelled.is_set())
+        with patch.object(self.listener, "poll", new=poll), patch("tg2cloud.listening.service.SOURCE_POLL_TIMEOUT", 0.02):
+            await self.listener._poll_sources()
+        self.assertEqual(seen, [self.source["id"], second["id"]])
+        current = self.repo.source(self.admin, self.source["id"])
+        self.assertTrue(current["enabled"])
+        self.assertEqual(current["cursor"], 0)
+        self.assertIn("超时", current["status"])
+        self.assertGreater(current["next_retry"], time.time())
+        with patch.object(self.listener, "poll", new=AsyncMock()) as poll:
+            await self.listener._poll_sources()
+        self.assertEqual([call.args[0]["id"] for call in poll.await_args_list], [second["id"]])
+
+    async def test_poll_timeout_after_registration_replays_without_duplicate_plan(self):
+        async def history(*_, **__):
+            yield message()
+        async def stalled_notice(_):
+            await asyncio.Event().wait()
+        self.listener.client.iter_messages = history
+        self.owner._notify.side_effect = stalled_notice
+        with patch("tg2cloud.listening.service.SOURCE_POLL_TIMEOUT", 0.02):
+            await self.listener._poll_sources()
+        plans = self.repo.pending(self.admin)
+        self.assertEqual(len(plans), 1)
+        self.assertEqual(self.repo.source(self.admin, self.source["id"])["cursor"], 0)
+        # Persisted inbox survives replacement of the worker (as on restart).
+        self.db._conn.execute("UPDATE listener_sources SET next_retry=0")
+        replacement = Listener(self.owner)
+        replacement.client = self.listener.client
+        self.owner._notify.side_effect = None
+        await replacement._poll_sources()
+        self.assertEqual([p["id"] for p in self.repo.pending(self.admin)], [plans[0]["id"]])
+        self.assertEqual(self.repo.source(self.admin, self.source["id"])["cursor"], 1)
+
+    async def test_account_cooldown_stops_remaining_source_requests(self):
+        from telethon.errors import FloodWaitError
+
+        self.another_source()
+        with patch.object(self.listener, "poll", new=AsyncMock(side_effect=FloodWaitError(request=None, capture=45))) as poll:
+            await self.listener._poll_sources()
+            await self.listener._poll_sources()
+        self.assertEqual(poll.await_count, 1)
+        self.assertTrue(account.state(self.db)["enabled"])
+        self.assertGreater(account.state(self.db)["cooldown_until"], time.time())
+
+    async def test_poll_rechecks_source_and_account_changes_between_requests(self):
+        second = self.another_source()
+        seen = []
+        async def pause_next(source):
+            seen.append(source["id"])
+            self.repo.change_source(self.admin, second["id"], second["revision"], enabled=False)
+        with patch.object(self.listener, "poll", new=pause_next):
+            await self.listener._poll_sources()
+        self.assertEqual(seen, [self.source["id"]])
+        async def disable(_):
+            account.write_state(self.db, enabled=False)
+        second = self.repo.source(self.admin, second["id"])
+        self.repo.change_source(self.admin, second["id"], second["revision"], enabled=True)
+        self.listener._poll_after = 0
+        with patch.object(self.listener, "poll", new=AsyncMock(side_effect=disable)) as poll:
+            await self.listener._poll_sources()
+        self.assertEqual(poll.await_count, 1)
+
+    async def test_revoked_authorization_stops_round_without_polling_other_sources(self):
+        from telethon.errors import SessionRevokedError
+
+        self.another_source()
+        self.listener.client.disconnect = AsyncMock()
+        with patch.object(self.listener, "poll", new=AsyncMock(side_effect=SessionRevokedError(request=None))) as poll:
+            await self.listener._poll_sources()
+        self.assertEqual(poll.await_count, 1)
+        self.assertFalse(account.state(self.db)["enabled"])
+        self.assertIsNone(self.listener.client)
+
+    async def test_old_request_failure_cannot_revoke_replacement_account(self):
+        from telethon.errors import SessionRevokedError
+
+        async def replaced(_):
+            account.write_state(self.db, account=43, enabled=True)
+            raise SessionRevokedError(request=None)
+        with patch.object(self.listener, "poll", new=replaced), patch.object(self.listener, "source_failure", new=AsyncMock()) as failure:
+            await self.listener._poll_sources()
+            failure.assert_not_awaited()
+        self.assertEqual(account.state(self.db)["account"], 43)
+        self.assertTrue(account.state(self.db)["enabled"])
+
+    async def test_external_cancellation_joins_poll_and_does_not_record_failure(self):
+        entered, finished = asyncio.Event(), asyncio.Event()
+        async def poll(_):
+            entered.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                finished.set()
+        with patch.object(self.listener, "poll", new=poll), patch.object(self.listener, "source_failure", new=AsyncMock()) as failure:
+            worker = asyncio.create_task(self.listener._poll_sources())
+            await entered.wait()
+            worker.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await worker
+            self.assertTrue(finished.is_set())
+            failure.assert_not_awaited()
+        self.assertEqual(self.repo.source(self.admin, self.source["id"])["cursor"], 0)
 
     async def test_empty_listener_loop_keeps_enabled_account(self):
         self.repo.change_source(
@@ -1232,6 +1476,11 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
             self.assertEqual(self.db.get(watched["id"])["state"], "queued")
             self.assertIn("冷却", self.db.get(watched["id"])["wait_reason"])
             self.owner._download_one.assert_awaited_once_with(manual["id"])
+            before_wait = self.db.get(watched["id"])
+            changes = self.db._conn.total_changes
+            await self.owner._start_downloads()
+            self.assertEqual(self.db._conn.total_changes, changes)
+            self.assertEqual(self.db.get(watched["id"]), before_wait)
             account.write_state(self.db, cooldown_until=0)
             await self.owner._start_downloads()
             await asyncio.gather(*list(self.owner.download_tasks.values()))
