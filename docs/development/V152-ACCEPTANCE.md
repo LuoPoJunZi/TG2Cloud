@@ -48,3 +48,8 @@ Compose 镜像公开可见性与匿名访问须通过；既有版本 index 或�
 首轮 A 为 `6d7870d92a0ac94ff75adcae188f7571178597df`；仓库、文档、网站和 CLI 检查通过。Linux ARM64 完整测试及隔离 Docker 通过，AMD64 在两项监听通知竞争测试失败，尚未进入其 Docker 步骤，不将整轮记为通过。
 
 已用模拟系统单调时钟 10 秒复现：首次通知计时器原值为 0，系统启动不足 60 秒时首条通知被误抑制。用户明确授权限定修复；改为显式未通知状态，首条登记允许通知，后续仍保留原 60 秒限流。新增短运行时间回归，不删除／跳过原测试。修复后的 A 将重新执行五项 CI，通过后再固定入口。
+
+
+## 修复后的辅助 A 验证
+
+辅助 A 为 `fa91d616ed03b1ad3f8d8442e92d2d803487ac90`；五项CI全部通过：[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40660713080)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40660718410)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40660723550)、[CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40660729120)、[Linux](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40660733578)。含两原生平台实际Compose初始化、非root访问、网关/FUSE和代理检查；真实VPS/账号不据此认作通过。入口B只固定此已验证A，main/Tag和资产核验仍待追加。

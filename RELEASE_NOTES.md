@@ -10,7 +10,7 @@
 
 ## 安装与升级
 
-本版发布准备中；只有正式 Release、在线 helper 与实际资产核验完成后，下面的固定版本入口才表示已可安装。已有脚本实例先在菜单 13 备份，再执行所选 Edition 的预检和升级；不需要卸载。
+本版提供保留配置升级与独立 Compose 部署；实际 CI、helper 与资产证据见本版记录。已有脚本实例先在菜单 13 备份，再执行所选 Edition 的预检和升级；不需要卸载。
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.2/install.sh) --edition clouddrive2 --release v1.5.2 --check
