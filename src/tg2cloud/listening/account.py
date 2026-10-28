@@ -28,11 +28,15 @@ def state(db):
         )
 
 
-def write_state(db, **changes):
+def write_state(db, *, expected=None, **changes):
     with db._lock:
         db._conn.execute("BEGIN IMMEDIATE")
         try:
-            value = state(db) | changes
+            current = state(db)
+            if expected is not None and current != expected:
+                db._conn.execute("COMMIT")
+                return None  # An awaited request cannot overwrite a newer authorization.
+            value = current | changes
             db._conn.execute(
                 "INSERT OR REPLACE INTO service_meta VALUES(?,?)",
                 (KEY, json.dumps(value)),
@@ -97,6 +101,9 @@ def client(settings, path):
         settings.api_id,
         settings.api_hash,
         request_retries=2,
+        # Keep the final RPC error type so transient failures are not mistaken
+        # for invalid configuration after Telethon exhausts its own retries.
+        raise_last_call_error=True,
         connection_retries=2,
         retry_delay=5,
         flood_sleep_threshold=0,

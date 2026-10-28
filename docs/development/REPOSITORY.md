@@ -80,3 +80,12 @@ Release 继续从同一 Tag 验证并打包源码一次，发布 Job 复用 arti
 当前根目录已按职责分为源码、部署资源、测试、文档和网站，无需大范围移动稳定模块。两个 Shell 入口、requirements 锁文件、pyproject.toml、编辑器和 Git 配置职责不同，继续保留；历史运行名称、兼容入口、验收记录、本地归档和用户数据不作为冗余文件删除。网站维护 README 只保留构建与维护说明及记录导航。
 
 Telegram Session 是 SQLite 文件，其 .session-shm、.session-wal、.session-journal 也可能含授权数据：Git ignore 与公共文件检查均禁止误提交。已跟踪文件仍须由公共文件检查拒绝，不能仅通过 ignore 隐藏；检查不等同于完整凭据或历史扫描。
+
+
+## 独立 Compose 部署（开发中）
+
+`src/tg2cloud/compose/` 承担短期初始化、离线配置检查和候选部署包生成，不进入 Bot 任务流程。生成器复用 `packaging/compose/` 的网关／Bot安全配置，不维护第二套网关模板。新增模块进入递归 runtime 清单；在线 helper pin 保持原有效提交，发布前按 A/B 流程处理实际变更。
+
+`.github/scripts/compose_release.py` 生成两 Edition 部署归档及校验清单；`.github/workflows/compose-images.yml` 只允许人工选择已正式发布的稳定 Tag，分别在两种原生 Linux Runner 构建、验证并推送同核心镜像，最后创建／复核版本 index。用户包固定实际 digest；源码 Release 的两个原资产保持不变，另附 Compose 两包与独立校验清单。GitHub 默认包可见性需要发布管理员确认；匿名检查失败不发布用户包。
+
+直接 Compose 实例通过独立标记和容器标签识别，一键升级和卸载遇到该方式会停止并指向[Compose 指南](../COMPOSE.md)，不静默转为脚本受管实例。当前不提供完整主菜单接管、自动证书和监听终端授权等价支持，不能把本地候选描述为已经发布。

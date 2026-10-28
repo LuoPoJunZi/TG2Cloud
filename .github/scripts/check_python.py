@@ -10,6 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI_TESTS = (
+    "test_compose.py",
     "test_architecture.py",
     "test_vps_installer.py", "test_lan_installer.py", "test_uninstaller.py",
     "test_proxy_host_compat.py", "test_repository.py", "test_storage_wizard.py", "test_source_release.py", "test_layout_contracts.py",
@@ -27,6 +28,7 @@ CLI_TESTS = (
     "test_listening_host.py", "test_webdav_upgrade.py", "test_listening_login.py",
 )
 CLI_PATHS = (
+    "src/tg2cloud/compose", ".github/scripts/compose_release.py",
     "src/tg2cloud/cli", "src/tg2cloud/deployment", "src/tg2cloud/addons", "src/tg2cloud/__init__.py",
     "src/tg2cloud/version.py", "src/tg2cloud/config.py", "scripts",
     ".github/scripts/check_python.py", ".github/scripts/check_repository.py",

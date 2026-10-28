@@ -183,6 +183,14 @@ def verify(directory: Path, tag: str) -> None:
         runtime = {path for path in files if path.startswith("src/tg2cloud/") and path.endswith(".py")}
         manifest_files(files["packaging/runtime-manifest.json"], runtime)
         manifest_files(files["packaging/bootstrap-manifest.json"], helpers_in_tree(set(files)))
+    if "packaging/compose-release.json" in files:
+        contract = json.loads(files["packaging/compose-release.json"])
+        if contract != {"format": 1, "registry": "ghcr.io", "image": "tg2cloud", "platforms": ["linux/amd64", "linux/arm64"]}:
+            raise ValueError("unsupported direct Compose contract")
+        if not {"src/tg2cloud/compose/__main__.py", "src/tg2cloud/compose/runtime.py",
+                "src/tg2cloud/compose/packaging.py", ".github/scripts/compose_release.py",
+                ".github/workflows/compose-images.yml", "docs/COMPOSE.md"} <= files.keys():
+            raise ValueError("incomplete direct Compose source layout")
     # Verify all declared Edition payload inputs, not just a hand-maintained list.
     profile = "src/tg2cloud/deployment/profiles.py" if modern else "scripts/lib/deployer_products.py" if legacy_lib else "deployer_products.py"
     tree = ast.parse(files[profile].decode("utf-8"))

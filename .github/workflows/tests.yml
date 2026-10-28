@@ -72,6 +72,11 @@ jobs:
       - name: Build Linux Bot image
         run: docker build -t tg2cloud-bot:test build/ci-contexts/clouddrive2
 
+      - name: Direct Compose initialization and non-root checks
+        env:
+          TG2CLOUD_TEST_COMPOSE_DOCKER: "1"
+        run: python -B -m unittest discover -s tests -p test_compose_docker.py -v
+
       - name: Isolated external WebDAV Nginx, authentication and Range
         env:
           TG2CLOUD_TEST_EXTERNAL_WEBDAV_DOCKER: "1"

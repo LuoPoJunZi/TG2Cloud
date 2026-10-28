@@ -51,6 +51,8 @@ on:
       - ".github/scripts/source_release.py"
       - ".github/scripts/check_python.py"
       - ".github/scripts/check_repository.py"
+      - "tests/test_compose*.py"
+      - ".github/scripts/compose_release.py"
       - "packaging/**"
       - ".github/workflows/vps-installer.yml"
   pull_request:
@@ -102,6 +104,8 @@ on:
       - ".github/scripts/source_release.py"
       - ".github/scripts/check_python.py"
       - ".github/scripts/check_repository.py"
+      - "tests/test_compose*.py"
+      - ".github/scripts/compose_release.py"
       - "packaging/**"
       - ".github/workflows/vps-installer.yml"
 

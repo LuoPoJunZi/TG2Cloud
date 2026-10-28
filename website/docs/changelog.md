@@ -1,5 +1,14 @@
 # 更新日志
 
+## TG2Cloud v1.5.2
+
+版本日期：2026-10-28。待发布：监听临时故障自动重连、历史维护分批事务、独立 Compose 初始化与备份及双架构镜像发布。正式发布与实际资产证据见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)，实机未执行。[待发布详细改动](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+
+- 临时网络／服务器异常保留监听启用状态并退避重连，失效授权和不安全 Session 继续停止。
+- 历史维护每类每批最多 500 行，保留期限和引用保护不变；schema 3 下幂等增加辅助索引。
+- Compose 两 Edition 共用 Bot 镜像，复用原有网关固定镜像与权限；提供交互初始化、检查和离线备份，第一版用于内网或已有 HTTPS 代理。
+- 新增正式 Tag 的原生双架构镜像／部署包工作流；实际镜像和资产验证待发布后记录。保留一键脚本入口与配置／Session。
+
 ## TG2Cloud v1.5.1
 
 版本日期：2026-10-28。[v1.5.1 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.1) 已发布；A／B、[同标签 Linux 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622910178)和实际源码资产已核验。真实 VPS、Telegram、两网关转存及小时级负载仍待发布后验收。
@@ -23,12 +32,13 @@
 
 v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊断报告。分类／通知默认关闭，成员默认不限额；涉及业务 schema 2，升级前备份。见[转存](/usage/first-transfer/)、[个人配额](/usage/commands/)、[维护](/operations/maintenance/)和[备份](/operations/backup/)。
 
-这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.5.1 共 32 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.5.2 共 33 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 可下载版本以 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 实际列表为准，不固定“只保留几版”的数量。部分历史发布页和标签已移除，历史说明仍保留；下面的测试结论按当时版本理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.5.2](#tg2cloud-v1-5-2) | 监听断网恢复、分批历史维护、独立 Compose 部署与共享双架构镜像。 |
 | [v1.5.1](#tg2cloud-v1-5-1) | 监听公平轮询、后台维护、数据库／资源热点与上传进度优化。 |
 | [v1.5.0](#tg2cloud-v1-5-0) | Linux 管理工具同步、Bot／CLI 版本验收、监听并发与预览、终端登录修复。 |
 | [v1.4.11](#tg2cloud-v1-4-11) | 监听来源独立目录、类型归档、名称清理、创建失败恢复与返回导航。 |

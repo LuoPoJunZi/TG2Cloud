@@ -152,6 +152,8 @@ def require_labels(item: dict, expected: dict) -> None:
 
 
 def core_identity(product: ProductProfile, name: str, item: dict) -> str:
+    if (item.get("labels") or {}).get("com.tg2cloud.install-mode") == "compose":
+        raise UninstallError("独立 Compose 实例请按 Compose 指南移除；此卸载器不接管")
     directory = Path(product.install_dir)
     checked_path(directory)
     service = product.bot_service if name == product.bot_container else product.key

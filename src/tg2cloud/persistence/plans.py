@@ -19,6 +19,7 @@ from tg2cloud.domain.source_directories import (
 from tg2cloud.listening.rules import validate
 
 TTL = 7 * 86400
+MAINTENANCE_BATCH = 500
 
 
 def create_schema(c):
@@ -30,6 +31,9 @@ def create_schema(c):
         "CREATE TABLE IF NOT EXISTS transfer_plans(id INTEGER PRIMARY KEY, owner INTEGER NOT NULL, source INTEGER REFERENCES listener_sources(id), identity TEXT NOT NULL, chat INTEGER NOT NULL, message INTEGER NOT NULL, batch TEXT NOT NULL, payload TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1, status TEXT NOT NULL, task INTEGER REFERENCES tasks(id), created REAL NOT NULL, expires REAL NOT NULL, UNIQUE(identity,chat,message))",
         "CREATE INDEX IF NOT EXISTS idx_plans_owner_status ON transfer_plans(owner,status,id)",
         "CREATE INDEX IF NOT EXISTS idx_events_age ON listener_events(created)",
+        "CREATE INDEX IF NOT EXISTS idx_listener_events_plan ON listener_events(plan) WHERE plan IS NOT NULL",
+        "CREATE INDEX IF NOT EXISTS idx_plans_expiry ON transfer_plans(expires,id) WHERE status='pending'",
+        "CREATE INDEX IF NOT EXISTS idx_plans_retention ON transfer_plans(created,id) WHERE status!='pending'",
         "CREATE TABLE IF NOT EXISTS listener_revisions(id INTEGER PRIMARY KEY, source INTEGER NOT NULL, revision INTEGER NOT NULL, config TEXT NOT NULL, operator INTEGER NOT NULL, created REAL NOT NULL)",
         "CREATE TABLE IF NOT EXISTS naming_feedback(id INTEGER PRIMARY KEY, owner INTEGER NOT NULL, source INTEGER, plan INTEGER NOT NULL, before_name TEXT NOT NULL, after_name TEXT NOT NULL, rule_revision INTEGER, operation TEXT NOT NULL, created REAL NOT NULL)",
     ):
@@ -328,21 +332,36 @@ class Plans:
         self.c.execute(query, params)
 
     def expire(self):
-        """Full historical maintenance, separate from per-attachment admission."""
+        """One atomic bounded batch; True asks the loop to revisit a possible backlog.
+
+        Retention and pending/reference protection are unchanged. LIMIT bounds
+        mutations, not wall time: protected history can still require scanning.
+        """
         now = time.time()
-        self.expire_pending()
-        self.c.execute(
-            "DELETE FROM listener_events WHERE created<? AND (plan IS NULL OR plan IN (SELECT id FROM transfer_plans WHERE status!='pending'))",
-            (now - TTL,),
-        )
-        self.c.execute(
-            "DELETE FROM naming_feedback WHERE created<? OR id NOT IN (SELECT id FROM naming_feedback ORDER BY id DESC LIMIT 2000)",
-            (now - 30 * 86400,),
-        )
-        self.c.execute(
-            "DELETE FROM transfer_plans WHERE status!='pending' AND created<? AND id NOT IN (SELECT plan FROM listener_events WHERE plan IS NOT NULL)",
-            (now - 30 * 86400,),
-        )
+        counts = []
+        counts.append(self.c.execute(
+            "UPDATE transfer_plans SET status='expired',revision=revision+1 WHERE id IN "
+            "(SELECT id FROM transfer_plans WHERE status='pending' AND expires<? "
+            "ORDER BY expires,id LIMIT ?)", (now, MAINTENANCE_BATCH),
+        ).rowcount)
+        counts.append(self.c.execute(
+            "DELETE FROM listener_events WHERE rowid IN (SELECT e.rowid FROM listener_events e "
+            "WHERE e.created<? AND (e.plan IS NULL OR EXISTS "
+            "(SELECT 1 FROM transfer_plans p WHERE p.id=e.plan AND p.status!='pending')) "
+            "ORDER BY e.created LIMIT ?)", (now - TTL, MAINTENANCE_BATCH),
+        ).rowcount)
+        counts.append(self.c.execute(
+            "DELETE FROM naming_feedback WHERE id IN (SELECT id FROM naming_feedback "
+            "WHERE created<? OR id NOT IN (SELECT id FROM naming_feedback ORDER BY id DESC LIMIT 2000) "
+            "ORDER BY id LIMIT ?)", (now - 30 * 86400, MAINTENANCE_BATCH),
+        ).rowcount)
+        counts.append(self.c.execute(
+            "DELETE FROM transfer_plans WHERE id IN (SELECT p.id FROM transfer_plans p "
+            "WHERE p.status!='pending' AND p.created<? AND NOT EXISTS "
+            "(SELECT 1 FROM listener_events e WHERE e.plan=p.id) "
+            "ORDER BY p.created,p.id LIMIT ?)", (now - 30 * 86400, MAINTENANCE_BATCH),
+        ).rowcount)
+        return any(count == MAINTENANCE_BATCH for count in counts)
 
     def create(
         self,

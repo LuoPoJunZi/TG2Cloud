@@ -352,6 +352,90 @@ class StoreTests(unittest.TestCase):
         self.assertEqual([p["id"] for p in self.repo.pending(self.admin)], [new["id"]])
         self.assertEqual(c.execute("SELECT COUNT(*) FROM transfer_plans WHERE status='expired'").fetchone()[0], 200)
 
+    def test_large_maintenance_is_bounded_and_eventually_finishes(self):
+        from tg2cloud.persistence.plans import MAINTENANCE_BATCH
+        source = self.source()
+        c = self.db._conn
+        total = 10001
+        c.execute("BEGIN IMMEDIATE")
+        c.executemany(
+            "INSERT INTO transfer_plans(id,owner,identity,chat,message,batch,payload,status,created,expires) "
+            "VALUES(?,?,'bot',1,?,'','{}','ignored',0,0)",
+            ((i, self.admin, i) for i in range(1, total + 1)),
+        )
+        c.executemany(
+            "INSERT INTO listener_events(account,chat,message,source,result,plan,created) "
+            "VALUES(42,-1001,?,?,'synthetic',?,0)",
+            ((i, source["id"], i) for i in range(1, total + 1)),
+        )
+        c.execute("COMMIT")
+        previous = total
+        for _ in range(total // MAINTENANCE_BATCH + 2):
+            with self.repo.transaction(self.admin, admin=True):
+                backlog = self.repo.expire()
+            events = c.execute("SELECT COUNT(*) FROM listener_events").fetchone()[0]
+            plans = c.execute("SELECT COUNT(*) FROM transfer_plans").fetchone()[0]
+            self.assertLessEqual(previous - events, MAINTENANCE_BATCH)
+            self.assertGreater(previous - events, 0)
+            self.assertEqual(events, plans)
+            previous = events
+            if not backlog:
+                break
+        self.assertEqual(previous, 0)
+        self.assertEqual(c.execute("PRAGMA integrity_check").fetchone()[0], "ok")
+
+    def test_maintenance_rollback_restores_all_tables(self):
+        source = self.source()
+        plan = self.plan()
+        c = self.db._conn
+        c.execute("UPDATE transfer_plans SET created=0,expires=0")
+        c.execute("INSERT INTO listener_events(account,chat,message,source,result,plan,created) "
+                  "VALUES(42,-1001,1,?,'synthetic',?,0)", (source["id"], plan["id"]))
+        before = list(c.iterdump())
+        with self.assertRaisesRegex(RuntimeError, "synthetic"), self.repo.transaction(self.admin, admin=True):
+            self.repo.expire()
+            raise RuntimeError("synthetic interruption")
+        self.assertEqual(before, list(c.iterdump()))
+        self.assertFalse(c.in_transaction)
+
+    def test_batched_expiration_and_feedback_keep_retention_rules(self):
+        from tg2cloud.persistence.plans import MAINTENANCE_BATCH
+        c = self.db._conn
+        c.executemany(
+            "INSERT INTO transfer_plans(owner,identity,chat,message,batch,payload,status,created,expires) "
+            "VALUES(?,'bot',1,?,'','{}','pending',0,0)",
+            ((self.admin, i) for i in range(1, MAINTENANCE_BATCH + 2)),
+        )
+        c.executemany(
+            "INSERT INTO naming_feedback(owner,plan,before_name,after_name,operation,created) "
+            "VALUES(?,1,'before','after','synthetic',?)",
+            ((self.admin, time.time()) for _ in range(2600)),
+        )
+        with self.repo.transaction(self.admin, admin=True):
+            self.assertTrue(self.repo.expire())
+        self.assertEqual(c.execute("SELECT COUNT(*) FROM transfer_plans WHERE status='pending'").fetchone()[0], 1)
+        self.assertEqual(c.execute("SELECT COUNT(*) FROM naming_feedback").fetchone()[0], 2100)
+        for _ in range(2):
+            with self.repo.transaction(self.admin, admin=True):
+                self.repo.expire()
+        self.assertEqual(c.execute("SELECT COUNT(*) FROM transfer_plans").fetchone()[0], 0)
+        self.assertEqual(c.execute("SELECT MIN(id),COUNT(*) FROM naming_feedback").fetchone()[:], (601, 2000))
+
+    def test_new_maintenance_indexes_are_additive_and_recreated(self):
+        c = self.db._conn
+        expected = {"idx_listener_events_plan", "idx_plans_expiry", "idx_plans_retention"}
+        task = self.db.create_task(chat_id=1, message_id=1, sender_id=self.admin,
+                                   file_name="retained.mp4", file_size=100)[0]
+        for name in expected:
+            c.execute("DROP INDEX " + name)
+        self.db.close()
+        self.db = TaskDB(self.root / "tasks.db")
+        self.addCleanup(self.db.close)
+        self.assertEqual(self.db.get(task["id"])["file_name"], "retained.mp4")
+        self.assertEqual(self.db._conn.execute("PRAGMA user_version").fetchone()[0], 3)
+        names = {row[0] for row in self.db._conn.execute("SELECT name FROM sqlite_master WHERE type='index'")}
+        self.assertLessEqual(expected, names)
+
     def test_full_maintenance_keeps_referenced_pending_and_recent_history(self):
         source = self.source()
         keep = self.plan(mid=1)
@@ -1290,6 +1374,241 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
             self.assertTrue(finished.is_set())
             failure.assert_not_awaited()
         self.assertEqual(self.repo.source(self.admin, self.source["id"])["cursor"], 0)
+
+    async def test_connection_backoff_recovers_without_revoking_authorization(self):
+        from tg2cloud.listening import service as module
+        now = [1000.0]
+        delays = []
+        calls = 0
+
+        async def connect():
+            nonlocal calls
+            calls += 1
+            if calls <= 8:
+                raise module.ListenerConnectionError("PRIVATE_DETAIL")
+            account.write_state(self.db, status="正常监听", cooldown_until=0)
+            return True
+
+        async def sleep(_):
+            value = account.state(self.db)
+            if value.get("cooldown_until", 0) > now[0]:
+                delays.append(value["cooldown_until"] - now[0])
+                self.assertTrue(value["enabled"])
+                self.assertNotIn("PRIVATE_DETAIL", value["status"])
+                now[0] = value["cooldown_until"]
+
+        async def polled():
+            self.owner._stop.set()
+
+        with (
+            patch.object(module, "time", NS(time=lambda: now[0], monotonic=lambda: now[0])),
+            patch.object(self.listener, "connect", side_effect=connect),
+            patch.object(self.listener, "close", new=AsyncMock()),
+            patch.object(self.listener, "_poll_sources", side_effect=polled),
+            patch.object(module.asyncio, "sleep", side_effect=sleep),
+        ):
+            await self.listener.run()
+        self.assertEqual(delays, [5, 10, 20, 40, 80, 160, 300, 300])
+        self.assertEqual(calls, 9)
+        self.assertEqual(self.listener._connect_failures, 0)
+        self.assertTrue(account.state(self.db)["enabled"])
+        self.owner._notify.assert_not_awaited()
+
+    async def test_failed_connection_does_not_overwrite_changed_account(self):
+        from tg2cloud.listening.service import ListenerConnectionError
+        for enabled, identity in ((False, 42), (True, 43)):
+            self.owner._stop.clear()
+            account.write_state(self.db, enabled=True, account=42)
+            async def connect(enabled=enabled, identity=identity):
+                account.write_state(self.db, enabled=enabled, account=identity, status="new state")
+                self.owner._stop.set()
+                raise ListenerConnectionError("PRIVATE_DETAIL")
+            with patch.object(self.listener, "connect", side_effect=connect), patch.object(self.listener, "close", new=AsyncMock()):
+                await self.listener.run()
+            current = account.state(self.db)
+            self.assertEqual((current["enabled"], current["account"], current["status"]), (enabled, identity, "new state"))
+
+    async def test_connection_auth_and_local_errors_still_disable(self):
+        from telethon.errors import AuthKeyUnregisteredError
+        for exc in (AuthKeyUnregisteredError(request=None), PermissionError("PRIVATE_DETAIL"),
+                    ValueError("PRIVATE_DETAIL"), ListenerReadError("invalid account")):
+            self.owner._stop.clear()
+            account.write_state(self.db, enabled=True)
+            async def halt(_):
+                self.owner._stop.set()
+            with (
+                patch.object(self.listener, "connect", new=AsyncMock(side_effect=exc)),
+                patch.object(self.listener, "close", new=AsyncMock()),
+                patch("tg2cloud.listening.service.asyncio.sleep", side_effect=halt),
+            ):
+                await self.listener.run()
+            self.assertFalse(account.state(self.db)["enabled"])
+            self.assertNotIn("PRIVATE_DETAIL", str(account.state(self.db)))
+
+    async def test_disconnected_client_is_replaced_and_healthy_client_reused(self):
+        from contextlib import contextmanager
+        path = self.settings.data_dir / "synthetic-reconnect"
+        path.with_suffix(".session").touch()
+        released = []
+        @contextmanager
+        def lock(_):
+            try:
+                yield path
+            finally:
+                released.append(True)
+        stale = NS(is_connected=lambda: False, disconnect=AsyncMock())
+        client = NS(is_connected=lambda: True, connect=AsyncMock(),
+                    get_me=AsyncMock(return_value=NS(id=42, bot=False)), disconnect=AsyncMock())
+        self.listener.client = stale
+        with patch.object(account, "session_lock", lock), patch.object(account, "client", return_value=client) as factory:
+            self.assertTrue(await self.listener.connect())
+            self.assertTrue(await self.listener.connect())
+            factory.assert_called_once()
+        stale.disconnect.assert_awaited_once()
+        client.connect.assert_awaited_once()
+        self.assertIs(self.listener.client, client)
+        self.assertTrue(account.state(self.db)["enabled"])
+        await self.listener.close()
+        self.assertEqual(released, [True])
+
+    async def test_real_telethon_retry_exhaustion_preserves_server_error(self):
+        from telethon.errors import ServerError
+
+        from tg2cloud.listening.service import (
+            ListenerConnectionError,
+            connected_identity,
+        )
+        client = account.client(self.settings, self.settings.data_dir / "offline-test-session")
+        self.addCleanup(client.session.close)
+        self.assertTrue(client._raise_last_call_error)
+        async def failed_request(*_args, **_kwargs):
+            raise ServerError(request=None, message="synthetic", code=500)
+        # Exercise actual get_me/_call with an offline sender, including retry
+        # exhaustion; no Telegram connection or real Session is used.
+        sender = NS(send=AsyncMock(side_effect=failed_request))
+        with (
+            patch.object(client, "connect", new=AsyncMock()),
+            patch.object(client, "_sender", sender),
+            patch("telethon.client.users.asyncio.sleep", new=AsyncMock()),
+            self.assertRaises(ListenerConnectionError),
+        ):
+            await connected_identity(client)
+        self.assertEqual(sender.send.await_count, 3)
+
+    async def test_connection_network_boundary_and_timeout(self):
+        from telethon.errors import FloodWaitError, ServerError
+
+        from tg2cloud.listening import service as module
+        client = NS(connect=AsyncMock(), get_me=AsyncMock())
+        for exc in (OSError("PRIVATE_DETAIL"), ServerError(request=None, message="PRIVATE_DETAIL", code=500)):
+            client.get_me.side_effect = exc
+            with self.assertRaises(module.ListenerConnectionError):
+                await module.connected_identity(client)
+        client.get_me.side_effect = FloodWaitError(request=None, capture=45)
+        with self.assertRaises(FloodWaitError):
+            await module.connected_identity(client)
+        client.get_me.side_effect = PermissionError("PRIVATE_DETAIL")
+        with self.assertRaises(PermissionError):
+            await module.connected_identity(client)
+        finished = asyncio.Event()
+        async def stalled():
+            try:
+                await asyncio.Event().wait()
+            finally:
+                finished.set()
+        client.get_me.side_effect = stalled
+        with patch.object(module, "CONNECT_TIMEOUT", 0.01), self.assertRaises(module.ListenerConnectionError):
+            await module.connected_identity(client)
+        self.assertTrue(finished.is_set())
+        client.get_me.side_effect = None
+        client.get_me.return_value = None
+        self.assertIsNone(await module.connected_identity(client))
+
+    async def test_connection_success_rechecks_identity_after_await(self):
+        from contextlib import contextmanager
+        path = self.settings.data_dir / "synthetic-personal"
+        path.with_suffix(".session").touch()
+        released = []
+        @contextmanager
+        def lock(_):
+            try:
+                yield path
+            finally:
+                released.append(True)
+        client = NS(connect=AsyncMock(), get_me=AsyncMock(), disconnect=AsyncMock())
+        async def changed():
+            account.write_state(self.db, enabled=False, status="disabled by user")
+            return NS(id=42, bot=False)
+        client.get_me.side_effect = changed
+        self.listener.client = None
+        with patch.object(account, "session_lock", lock), patch.object(account, "client", return_value=client):
+            self.assertFalse(await self.listener.connect())
+        self.assertEqual(released, [True])
+        self.assertFalse(account.state(self.db)["enabled"])
+        self.assertIsNone(self.listener.client)
+        client.disconnect.assert_awaited_once()
+
+    async def test_connection_cooldown_does_not_attempt_early_reconnect(self):
+        account.write_state(self.db, cooldown_until=time.time() + 3600, status="Telegram 限流冷却")
+        async def halt(_):
+            self.owner._stop.set()
+        with (
+            patch.object(self.listener, "connect", new=AsyncMock()) as connect,
+            patch.object(self.listener, "close", new=AsyncMock()),
+            patch("tg2cloud.listening.service.asyncio.sleep", side_effect=halt),
+        ):
+            await self.listener.run()
+        connect.assert_not_awaited()
+        self.assertEqual(account.state(self.db)["status"], "Telegram 限流冷却")
+        self.assertTrue(account.state(self.db)["enabled"])
+
+    async def test_cancelled_connect_releases_client_and_session_without_revoking(self):
+        from contextlib import contextmanager
+        path = self.settings.data_dir / "synthetic-cancelled"
+        path.with_suffix(".session").touch()
+        released = []
+        @contextmanager
+        def lock(_):
+            try:
+                yield path
+            finally:
+                released.append(True)
+        entered, finished = asyncio.Event(), asyncio.Event()
+        async def stalled():
+            entered.set()
+            try:
+                await asyncio.Event().wait()
+            finally:
+                finished.set()
+        client = NS(connect=AsyncMock(side_effect=stalled), disconnect=AsyncMock())
+        self.listener.client = None
+        with patch.object(account, "session_lock", lock), patch.object(account, "client", return_value=client):
+            task = asyncio.create_task(self.listener.run())
+            await entered.wait()
+            task.cancel()
+            with self.assertRaises(asyncio.CancelledError):
+                await task
+        self.assertTrue(finished.is_set())
+        self.assertEqual(released, [True])
+        self.assertIsNone(self.listener.client)
+        self.assertIsNone(self.listener._session)
+        client.disconnect.assert_awaited_once()
+        self.assertTrue(account.state(self.db)["enabled"])
+
+    async def test_account_conditional_write_rejects_stale_state(self):
+        old = account.state(self.db)
+        account.write_state(self.db, enabled=False)
+        self.assertIsNone(account.write_state(self.db, expected=old, enabled=True, status="stale"))
+        self.assertFalse(account.state(self.db)["enabled"])
+        self.assertFalse(self.db._conn.in_transaction)
+
+    async def test_maintenance_backlog_yields_until_next_round(self):
+        from tg2cloud.listening import service as module
+        with patch.object(module, "time", NS(monotonic=lambda: 100)), patch.object(self.repo, "expire", return_value=True) as cleanup:
+            self.listener._maintain_if_due()
+            self.listener._maintain_if_due()
+            self.assertEqual(cleanup.call_count, 1)
+            self.assertEqual(self.listener._next_maintenance_at, 105)
 
     async def test_empty_listener_loop_keeps_enabled_account(self):
         self.repo.change_source(

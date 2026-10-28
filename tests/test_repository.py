@@ -575,7 +575,10 @@ class RepositoryGuardrailTests(unittest.TestCase):
 
     def test_successful_main_is_read_only_and_explicit_about_limits(self):
         files = self.build_fixture()
-        self.put("docs/README.md", "# Index\n")
+        self.put("docs/README.md", "# Index\n" + "".join(
+            f"[Guide]({name.removeprefix('docs/')})\n" for name in files
+            if name.startswith("docs/") and name.endswith(".md")
+        ))
         files.append("docs/README.md")
         output = io.StringIO()
         with patch.object(repository, "ROOT", self.root), patch.object(repository, "public_files", return_value=files), redirect_stdout(output):

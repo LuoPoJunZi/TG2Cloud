@@ -66,8 +66,9 @@ def pack(snapshot: Path, archive: Path, edition: str, source_version: str) -> No
     selected = [*required(edition), "config", "clouddrive/config" if edition == "clouddrive2" else "openlist/data"]
     if (snapshot / "data/listener/personal.session").is_file():
         selected.append("data/listener/personal.session")
-    if (snapshot / "tg2cloud-release.json").is_file():
-        selected.append("tg2cloud-release.json")
+    for optional in ("tg2cloud-release.json", "tg2cloud-compose.json", "compose-bundle.json"):
+        if (snapshot / optional).is_file():
+            selected.append(optional)
     records = {}
     total = 0
     for name in selected:
@@ -155,7 +156,7 @@ def verified_snapshot(archive: Path, scratch: Path, edition: str, target_version
         total = 0
         for name, record in records.items():
             validate_name(name)
-            if (name not in {*required(edition), "tg2cloud-release.json", "data/listener/personal.session"}
+            if (name not in {*required(edition), "tg2cloud-release.json", "tg2cloud-compose.json", "compose-bundle.json", "data/listener/personal.session"}
                     and not name.startswith(("config/", gateway))):
                 raise ValueError("entry outside declared snapshot scope")
             if name.endswith(("-wal", "-shm", "-journal")):

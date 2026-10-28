@@ -17,10 +17,33 @@ LOOKBACK = 6 * 3600
 SOURCE_POLL_TIMEOUT = 30
 POLL_ROUND_BUDGET = 30
 MAINTENANCE_INTERVAL = 60
+MAINTENANCE_BACKLOG_INTERVAL = 5
+CONNECT_TIMEOUT = 30
 
 
 class ReceiveLimited(ValueError):
     """Durable backpressure: retry later without consuming a message cursor."""
+
+
+class ListenerConnectionError(ConnectionError):
+    """Only transient failures inside Telegram connection/authentication I/O."""
+
+
+async def connected_identity(client):
+    from telethon.errors import ServerError, TimedOutError
+
+    async def request():
+        await client.connect()
+        # is_user_authorized() collapses all RPCError (including server failures)
+        # into False. get_me() only translates UnauthorizedError into None.
+        return await client.get_me()
+
+    try:
+        return await asyncio.wait_for(request(), CONNECT_TIMEOUT)
+    except (PermissionError, FileNotFoundError):
+        raise  # Local permission/configuration failures must not become network retries.
+    except (OSError, asyncio.TimeoutError, ServerError, TimedOutError):
+        raise ListenerConnectionError("Telegram 连接暂不可用") from None
 
 
 class ListenerReadError(RuntimeError):
@@ -218,6 +241,7 @@ class Listener:
         self._poll_after = 0
         self._next_maintenance_at = None
         self._maintenance_warning = False
+        self._connect_failures = 0
 
     def require_admin(self, actor):
         self.plans.authorize(actor, admin=True)
@@ -227,12 +251,14 @@ class Listener:
             raise PermissionError("管理员授权已失效")
 
     async def close(self):
-        if self.client:
-            await self.client.disconnect()
-            self.client = None
-        if self._session:
-            self._session.close()
-            self._session = None
+        client, session = self.client, self._session
+        self.client = self._session = None
+        try:
+            if client:
+                await client.disconnect()
+        finally:
+            if session:
+                session.close()
 
     async def connect(self):
         value = account.state(self.db)
@@ -240,19 +266,20 @@ class Listener:
             await self.close()
             return False
         if self.client:
-            return True
+            if self.client.is_connected():
+                return True
+            await self.close()  # Telethon may have exhausted its reconnect attempts.
         stack = ExitStack()
         try:
             path = stack.enter_context(account.session_lock(self.owner.settings))
             if not path.with_suffix(".session").is_file():
                 raise ListenerReadError("未登录；请先在 Linux 终端授权")
             self.client = account.client(self.owner.settings, path)
-            await self.client.connect()
-            me = (
-                await self.client.get_me()
-                if await self.client.is_user_authorized()
-                else None
-            )
+            me = await connected_identity(self.client)
+            if account.state(self.db) != value or self.owner._stop.is_set():
+                await self.close()
+                stack.close()
+                return False
             if (
                 not me
                 or getattr(me, "bot", None) is not False
@@ -260,11 +287,15 @@ class Listener:
             ):
                 raise ListenerReadError("授权失效或个人账号不匹配")
             self._session = stack
-            account.write_state(self.db, status="正常监听")
+            if account.write_state(self.db, expected=value, status="正常监听", cooldown_until=0) is None:
+                await self.close()
+                return False
             return True
         except BaseException:
-            await self.close()
-            stack.close()
+            try:
+                await self.close()
+            finally:
+                stack.close()
             raise
 
     async def add(self, actor, reference, config):
@@ -602,7 +633,9 @@ class Listener:
         try:
             # Commit all retention statements together, independently of account state.
             with self.plans.transaction(self.admin, admin=True):
-                self.plans.expire()
+                backlog = self.plans.expire()
+            if backlog:
+                self._next_maintenance_at = now + MAINTENANCE_BACKLOG_INTERVAL
         except Exception:  # noqa: BLE001 - maintenance must not revoke a valid login
             if not self._maintenance_warning:
                 self.owner.log.warning("监听记录维护暂不可用；稍后重试，不影响监听授权")
@@ -649,30 +682,47 @@ class Listener:
         try:
             while not self.owner._stop.is_set():
                 self._maintain_if_due()
+                value = account.state(self.db)
                 try:
-                    value = account.state(self.db)
                     if not value["enabled"]:
+                        self._connect_failures = 0
                         await self.close()
                     elif (
                         value.get("cooldown_until", 0) <= time.time()
                         and await self.connect()
                     ):
+                        self._connect_failures = 0
+                        value = account.state(self.db)
                         await self._poll_sources()
                 except Exception as exc:  # noqa: BLE001 - private boundary must not expose credentials
                     await self.close()
                     from telethon.errors import FloodWaitError
 
+                    if self.owner._stop.is_set() or account.state(self.db) != value:
+                        continue  # Do not overwrite disable, re-login or account changes.
                     if isinstance(exc, FloodWaitError):
-                        await self.source_failure(None, exc)
-                    else:
                         account.write_state(
-                            self.db,
-                            enabled=False,
-                            status="授权或连接失败，请在终端检查后重新启用",
+                            self.db, expected=value, status="Telegram 限流冷却",
+                            cooldown_until=time.time() + max(5, exc.seconds),
                         )
-                        await self.owner._notify(
-                            "监听账号连接失败，已停用监听；普通转存不受影响。请在 VPS 终端核对授权，再从监听管理启用。"
+                    elif isinstance(exc, ListenerConnectionError):
+                        self._connect_failures = min(7, self._connect_failures + 1)
+                        delay = min(300, 5 * 2 ** (self._connect_failures - 1))
+                        account.write_state(
+                            self.db, expected=value,
+                            status=f"连接暂不可用，{delay} 秒后自动重试",
+                            cooldown_until=time.time() + delay,
                         )
+                    else:
+                        changed = account.write_state(
+                            self.db, expected=value, enabled=False,
+                            status="授权或配置异常，请在终端检查后重新启用",
+                        )
+                        if changed is not None:
+                            await self.owner._notify(
+                                "监听授权或配置异常，已停用监听；普通转存不受影响。"
+                                "请在 VPS 终端核对后，从监听管理启用。"
+                            )
                 await asyncio.sleep(5)
         finally:
             await self.close()

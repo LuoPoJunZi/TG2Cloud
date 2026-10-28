@@ -1,29 +1,30 @@
-## TG2Cloud v1.5.1 · 性能与监听维护
+## TG2Cloud v1.5.2 · Compose 部署与监听恢复
 
 ## 本次改动
 
-- 受阻任务仅在等待原因变化时写数据库，继续在事务内核对取消状态、磁盘和成员额度；个人任务统计复用现有索引。
-- 监听接收上限只统计排队与执行任务；每个来源增加 30 秒超时，按轮次预算公平轮询，保留串行请求、账号限流、持久化游标和去重。
-- 计划创建仅检查当前用户的过期计划；全局历史维护在后台定期执行，失败事务回滚，审批有效期仍实时核验。
-- 资源控制只查询需要的任务状态，同一轮复用暂存用量和流式任务数；同一文件系统复用采样，独立文件系统继续检测。
-- 普通上传不再重复写入相同字节进度，速度样本仍更新；重试、取消、失败保留与完成验证顺序继续有效。
-- 增加只操作临时合成数据库的性能工具；不增加遥测或生产后台采集。补充 v1.5.0 两 Edition 的不可变升级基线。
+- 增加独立 Docker Compose 部署包，两 Edition 共用一个 Bot 镜像；交互初始化生成私有配置及目录权限，支持配置检查、凭据查看与停机离线备份。默认回环端口，可显式选择可信内网地址；第一版通过已有反向代理提供 HTTPS。
+- 镜像发布工作流只接受已发布的稳定 Tag，在 Linux AMD64、ARM64 原生构建并执行两版隔离测试，部署包固定实际镜像 digest；一键升级和卸载拒绝接管直接 Compose 实例。
+- 修复监听临时网络／服务器故障导致永久停用：30 秒连接／身份查询超时、5～300 秒退避重试、断开客户端重建；失效授权继续停止，旧请求不覆盖新授权或手动停用。
+- 历史维护每类每批最多处理 500 行，保持原保留期、待确认保护及事务回滚；schema 3 下幂等补充查询索引。整理当前指南与历史验收导航，保留旧文件及链接。
+- 补充原正式 v1.5.1 的不可变升级基线，保留两版配置、数据库、Session、下载及既有存储提交策略。
 
 ## 安装与升级
 
-[v1.5.1 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.1) 已发布；[同标签 Linux 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622910178)与实际源码资产、SHA256 和 Tag 文件核验通过。使用下方固定版本入口。已有实例先通过菜单 13 备份，保留原安装模式与配置，不需要卸载。
+本版发布准备中；只有正式 Release、在线 helper 与实际资产核验完成后，下面的固定版本入口才表示已可安装。已有脚本实例先在菜单 13 备份，再执行所选 Edition 的预检和升级；不需要卸载。
 
 ```bash
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.1/install.sh) --edition clouddrive2 --release v1.5.1 --check
-bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.1/install.sh) --edition clouddrive2 --release v1.5.1
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.2/install.sh) --edition clouddrive2 --release v1.5.2 --check
+bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/v1.5.2/install.sh) --edition clouddrive2 --release v1.5.2
 ```
 
-OpenList 使用 `--edition openlist`；内网使用同标签 `install-lan.sh`。从旧离线工具升级优先使用在线入口；更新后退出旧菜单并重新运行 `tg2cloud`，核对 Bot 和 CLI 均为 1.5.1。
+OpenList 改为 `--edition openlist`；内网使用同标签 `install-lan.sh`。升级后退出旧菜单，再运行 `tg2cloud` 核对 Bot 与 CLI 均为 1.5.2。Compose 新安装的资产、root 管理命令及范围见[部署指南](docs/COMPOSE.md)，镜像／部署包发布核验单独记录。
 
 ## 验证与兼容
 
-沿用业务 **schema 3**，不增加数据库 DDL、依赖、必填配置、端口或服务。保留配置、任务、Telegram Session、失败后本地副本及两网关提交策略；v1.4.8 及更早仍经过既有 schema 2 → 3 迁移。回退使用匹配旧代码和升级前一致性数据库快照，不直接覆盖当前数据库。
+沿用业务 schema 3，增加三个可重复创建的辅助索引，不改表字段、不增加运行依赖或必填配置；首次大库建索引可能增加启动时间。回退须先停机并保护现场，按版本恢复匹配代码和一致性备份；仅切换旧镜像不能替代数据库回退。
 
-详细证据、待执行实机步骤与回退说明见[本版发布与验收](docs/development/V151-ACCEPTANCE.md)及[备份恢复指南](docs/BACKUP-RESTORE.md)。本地自动检查已覆盖优化行为，远端 CI、同标签发布与实际资产核验结果已记录。**真实 VPS、Telegram、两网关转存、小时级负载和生产恢复尚未执行。** 合成数据库耗时不能视为实际传输提速或长期稳定性承诺。
+Compose 管理端口保持受控，Bot 非 root；CloudDrive2 保留 FUSE 专用权限。直接 Compose 暂不提供一键脚本的完整管理菜单、自动证书、外部 WebDAV 或个人监听终端登录等价入口，不自动迁移已有脚本实例。
 
-历史验收按原范围保留：[v1.3.0](docs/development/V130-ACCEPTANCE.md)、[v1.4.3](docs/development/V143-ACCEPTANCE.md)、[v1.4.4](docs/development/V144-ACCEPTANCE.md)、[v1.5.0](docs/development/V150-ACCEPTANCE.md)。
+本地回归和实际 CI／资产证据见[本版发布与验收](docs/development/V152-ACCEPTANCE.md)。**真实 VPS、NAS、Telegram、两种网关转存、小时级负载及生产恢复尚未执行。** 合成历史维护的单批耗时只说明单次占用，不代表总清理时间或传输提速。
+
+历史验收按当时范围保留：[v1.3.0](docs/development/V130-ACCEPTANCE.md)、[v1.4.3](docs/development/V143-ACCEPTANCE.md)、[v1.4.4](docs/development/V144-ACCEPTANCE.md)、[v1.5.1](docs/development/V151-ACCEPTANCE.md)。

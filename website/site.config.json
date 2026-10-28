@@ -1,8 +1,8 @@
 {
   "name": "TG2Cloud",
-  "version": "1.5.1",
+  "version": "1.5.2",
   "publishedVersion": "1.5.1",
-  "releaseStatus": "released",
+  "releaseStatus": "unreleased",
   "verifiedAt": "2026-10-28",
   "repo": "https://github.com/LuoPoJunZi/TG2Cloud",
   "upstreamRepo": "https://github.com/whyhhh20/TG115",
@@ -68,6 +68,10 @@
         {
           "title": "外部 WebDAV",
           "slug": "deploy/external-webdav"
+        },
+        {
+          "title": "Docker Compose（开发中）",
+          "slug": "deploy/compose"
         }
       ]
     },

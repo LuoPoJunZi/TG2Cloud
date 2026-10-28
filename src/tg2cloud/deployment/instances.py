@@ -66,6 +66,8 @@ def discover(
     bot = inspect_container(session, product.bot_container)
     gateway = inspect_container(session, product.storage_container)
     labels = bot.get("labels") or {}
+    if labels.get("com.tg2cloud.install-mode") == "compose":
+        raise ValueError("此实例使用独立 Docker Compose 部署，请按 Compose 指南维护；不由一键脚本接管")
     if not labels.get("com.docker.compose.project"):
         raise ValueError("容器缺少 Compose 项目身份")
     directory = configuration.checked_directory(labels.get("com.docker.compose.project.working_dir", ""))
