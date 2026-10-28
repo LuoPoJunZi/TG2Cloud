@@ -60,28 +60,77 @@ def index(image):
     return (data, json.loads(data)) if data is not None else (None, None)
 
 
+def native_identity(repository, digest, architecture, commit, version):
+    """Verify the immutable child config; Docker v2 lists cannot hold annotations."""
+    result = subprocess.run([
+        "docker", "buildx", "imagetools", "inspect", repository + "@" + digest,
+        "--format", "{{json .Image}}",
+    ], check=True, capture_output=True, text=True, timeout=60)  # nosec B603 B607 - fixed executable and validated references
+    if len(result.stdout) > 2 * 1024**2:
+        raise ValueError("image configuration too large")
+    config = json.loads(result.stdout)
+    labels = config.get("config", {}).get("Labels", {})
+    if (config.get("os") != "linux" or config.get("architecture") != architecture
+            or labels.get("org.opencontainers.image.revision") != commit
+            or labels.get("org.opencontainers.image.version") != version):
+        raise ValueError("native image identity mismatch; never overwrite")
+
+
+def validate_index(image, commit, manifest, expected=None):
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise ValueError("invalid source commit")
+    if manifest.get("mediaType") not in (
+            "application/vnd.docker.distribution.manifest.list.v2+json",
+            "application/vnd.oci.image.index.v1+json"):
+        raise ValueError("expected an image index or manifest list")
+    revision = manifest.get("annotations", {}).get("org.opencontainers.image.revision")
+    if revision is not None and revision != commit:
+        raise ValueError("existing image belongs to another commit; never overwrite")
+    children = manifest.get("manifests", [])
+    platforms = {(item.get("platform", {}).get("os"), item.get("platform", {}).get("architecture"))
+                 for item in children}
+    if len(children) != 2 or platforms != {("linux", "amd64"), ("linux", "arm64")}:
+        raise ValueError("image does not contain exactly both native Linux platforms")
+    digests = {item["platform"]["architecture"]: item.get("digest", "") for item in children}
+    if (not all(re.fullmatch(r"sha256:[0-9a-f]{64}", d) for d in digests.values())
+            or len(set(digests.values())) != 2 or (expected is not None and digests != expected)):
+        raise ValueError("native image digest mismatch; never overwrite")
+    repository, version = image.rsplit(":", 1)
+    for architecture, digest in digests.items():
+        native_identity(repository, digest, architecture, commit, version)
+    return digests
+
+
+def inspect_index(image, commit):
+    _, manifest = index(image)
+    if manifest is None:
+        return {"reuse": "false"}
+    digests = validate_index(image, commit, manifest)
+    return {"reuse": "true", **digests}
+
+
 def publish_index(image, commit, amd64, arm64):
     if not re.fullmatch(r"[0-9a-f]{40}", commit) or not all(re.fullmatch(r"sha256:[0-9a-f]{64}", d) for d in (amd64, arm64)):
         raise ValueError("invalid commit or native image digests")
     data, manifest = index(image)
     if data is None:
         repository = image.split(":", 1)[0]
+        # Validate the children before creating any public version tag.
+        for architecture, digest in (("amd64", amd64), ("arm64", arm64)):
+            native_identity(repository, digest, architecture, commit, image.rsplit(":", 1)[1])
         subprocess.run(["docker", "buildx", "imagetools", "create", "--annotation",
                         "index:org.opencontainers.image.revision=" + commit, "--tag", image,
                         repository + "@" + amd64, repository + "@" + arm64], check=True)  # nosec B603 B607 - fixed executable and validated inputs
         data, manifest = index(image)
-    if manifest is None or manifest.get("annotations", {}).get("org.opencontainers.image.revision") != commit:
-        raise ValueError("existing image belongs to another commit; never overwrite")
-    platforms = {(item.get("platform", {}).get("os"), item.get("platform", {}).get("architecture"))
-                 for item in manifest.get("manifests", [])}
-    if platforms != {("linux", "amd64"), ("linux", "arm64")} or len(manifest["manifests"]) != 2:
-        raise ValueError("image does not contain exactly both native Linux platforms")
+    if manifest is None:
+        raise ValueError("published index unavailable")
+    validate_index(image, commit, manifest, {"amd64": amd64, "arm64": arm64})
     return image.split(":", 1)[0] + "@sha256:" + hashlib.sha256(data).hexdigest()
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("action", choices=("bundle", "publish-index"))
+    parser.add_argument("action", choices=("bundle", "publish-index", "inspect-index"))
     parser.add_argument("--directory", type=Path)
     parser.add_argument("--image", default="ghcr.io/luopojunzi/tg2cloud:" + VERSION)
     parser.add_argument("--commit", default="")
@@ -95,6 +144,13 @@ def main():
                 parser.error("bundle requires --directory")
             for archive in build_bundles(ROOT, args.directory, args.image, args.commit):
                 print(archive.name)
+        elif args.action == "inspect-index":
+            outputs = inspect_index(args.image, args.commit)
+            if args.github_output:
+                with args.github_output.open("a", encoding="utf-8") as out:
+                    for key, value in outputs.items():
+                        out.write(key + "=" + value + "\n")
+            print("COMPOSE_INDEX_REUSE=" + outputs["reuse"])
         else:
             image = publish_index(args.image, args.commit, args.amd64 or "", args.arm64 or "")
             print(image)

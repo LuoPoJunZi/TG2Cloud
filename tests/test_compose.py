@@ -230,7 +230,8 @@ class ComposeTests(unittest.TestCase):
 
 class RegistryTests(unittest.TestCase):
     def manifest(self, commit="b" * 40):
-        return {"annotations": {"org.opencontainers.image.revision": commit}, "manifests": [
+        return {"mediaType": "application/vnd.oci.image.index.v1+json",
+                "annotations": {"org.opencontainers.image.revision": commit}, "manifests": [
             {"digest": "sha256:" + "a" * 64, "platform": {"os": "linux", "architecture": "amd64"}},
             {"digest": "sha256:" + "c" * 64, "platform": {"os": "linux", "architecture": "arm64"}},
         ]}
@@ -238,9 +239,10 @@ class RegistryTests(unittest.TestCase):
     def test_existing_same_commit_index_is_reused_without_mutation(self):
         manifest = self.manifest()
         data = json.dumps(manifest).encode()
-        with patch.object(release, "index", return_value=(data, manifest)), patch.object(release.subprocess, "run") as run:
+        with patch.object(release, "index", return_value=(data, manifest)), patch.object(release, "native_identity") as identity, patch.object(release.subprocess, "run") as run:
             result = release.publish_index("ghcr.io/owner/tg2cloud:1.2.3", "b" * 40, "sha256:" + "a" * 64, "sha256:" + "c" * 64)
         run.assert_not_called()
+        self.assertEqual(identity.call_count, 2)
         self.assertTrue(result.endswith(hashlib.sha256(data).hexdigest()))
 
     def test_foreign_commit_wrong_platform_or_registry_failure_never_overwrites(self):
@@ -272,7 +274,69 @@ class RegistryTests(unittest.TestCase):
     def test_new_index_must_be_verified_after_creation(self):
         manifest = self.manifest()
         data = json.dumps(manifest).encode()
-        with patch.object(release, "index", side_effect=[(None, None), (data, manifest)]), patch.object(release.subprocess, "run") as run:
+        with patch.object(release, "index", side_effect=[(None, None), (data, manifest)]), patch.object(release, "native_identity") as identity, patch.object(release.subprocess, "run") as run:
             release.publish_index("ghcr.io/owner/tg2cloud:1.2.3", "b" * 40, "sha256:" + "a" * 64, "sha256:" + "c" * 64)
         self.assertEqual(run.call_count, 1)
+        self.assertEqual(identity.call_count, 4)
         self.assertIn("imagetools", run.call_args.args[0])
+
+
+    def test_docker_list_without_annotations_requires_both_exact_native_identities(self):
+        manifest = self.manifest()
+        manifest["mediaType"] = "application/vnd.docker.distribution.manifest.list.v2+json"
+        del manifest["annotations"]
+        data = json.dumps(manifest).encode()
+        with patch.object(release, "index", return_value=(data, manifest)), patch.object(release, "native_identity") as identity, patch.object(release.subprocess, "run") as mutate:
+            result = release.publish_index("ghcr.io/owner/tg2cloud:1.2.3", "b" * 40, "sha256:" + "a" * 64, "sha256:" + "c" * 64)
+        mutate.assert_not_called()
+        self.assertEqual(identity.call_count, 2)
+        self.assertEqual(identity.call_args_list[0].args, ("ghcr.io/owner/tg2cloud", "sha256:" + "a" * 64, "amd64", "b" * 40, "1.2.3"))
+        self.assertTrue(result.endswith(hashlib.sha256(data).hexdigest()))
+
+    def test_wrong_child_digest_or_duplicate_platform_never_creates_or_replaces(self):
+        wrong = self.manifest()
+        wrong["manifests"][0]["digest"] = "sha256:" + "d" * 64
+        duplicate = self.manifest()
+        duplicate["manifests"][1]["platform"]["architecture"] = "amd64"
+        for manifest in (wrong, duplicate):
+            with self.subTest(manifest=manifest), patch.object(release, "index", return_value=(json.dumps(manifest).encode(), manifest)), patch.object(release.subprocess, "run") as run, self.assertRaises(ValueError):
+                release.publish_index("ghcr.io/owner/tg2cloud:1.2.3", "b" * 40, "sha256:" + "a" * 64, "sha256:" + "c" * 64)
+            run.assert_not_called()
+
+    def test_native_config_version_commit_and_platform_all_must_match(self):
+        correct = {"os": "linux", "architecture": "amd64", "config": {"Labels": {
+            "org.opencontainers.image.revision": "b" * 40, "org.opencontainers.image.version": "1.2.3"}}}
+        with patch.object(release.subprocess, "run", return_value=NS(stdout=json.dumps(correct))) as run:
+            release.native_identity("ghcr.io/owner/tg2cloud", "sha256:" + "a" * 64, "amd64", "b" * 40, "1.2.3")
+        self.assertEqual(run.call_args.args[0][1:4], ["buildx", "imagetools", "inspect"])
+        self.assertEqual(run.call_args.kwargs["timeout"], 60)
+        for key, value in (("os", "windows"), ("architecture", "arm64"), ("revision", "c" * 40), ("version", "1.2.2")):
+            bad = json.loads(json.dumps(correct))
+            if key in ("os", "architecture"):
+                bad[key] = value
+            else:
+                bad["config"]["Labels"]["org.opencontainers.image." + key] = value
+            with self.subTest(key=key), patch.object(release.subprocess, "run", return_value=NS(stdout=json.dumps(bad))), self.assertRaises(ValueError):
+                release.native_identity("ghcr.io/owner/tg2cloud", "sha256:" + "a" * 64, "amd64", "b" * 40, "1.2.3")
+
+    def test_existing_index_preflight_reuses_only_verified_images(self):
+        manifest = self.manifest()
+        with patch.object(release, "index", return_value=(json.dumps(manifest).encode(), manifest)), patch.object(release, "native_identity") as identity:
+            result = release.inspect_index("ghcr.io/owner/tg2cloud:1.2.3", "b" * 40)
+        self.assertEqual(result, {"reuse": "true", "amd64": "sha256:" + "a" * 64, "arm64": "sha256:" + "c" * 64})
+        self.assertEqual(identity.call_count, 2)
+        with patch.object(release, "index", return_value=(None, None)), patch.object(release.subprocess, "run") as run:
+            self.assertEqual(release.inspect_index("ghcr.io/owner/tg2cloud:1.2.3", "b" * 40), {"reuse": "false"})
+        run.assert_not_called()
+        with patch.object(release, "index", return_value=(b"{}", manifest)), patch.object(release, "native_identity", side_effect=ValueError("wrong identity")), self.assertRaises(ValueError):
+            release.inspect_index("ghcr.io/owner/tg2cloud:1.2.3", "b" * 40)
+
+    def test_publication_tool_is_pinned_separately_from_tag_business_sources(self):
+        workflow = (ROOT / ".github/workflows/compose-images.yml").read_text(encoding="utf-8")
+        self.assertEqual(workflow.count("ref: ${{ github.sha }}"), 2)
+        self.assertEqual(workflow.count("path: build/publication-tools"), 2)
+        self.assertIn("ref: refs/tags/${{ inputs.release_tag }}", workflow)
+        self.assertIn("python3 .github/scripts/compose_release.py bundle", workflow)
+        self.assertIn("needs.prepare.outputs.reuse == 'true'", workflow)
+        self.assertIn("needs.native-images.result == 'skipped'", workflow)
+        self.assertNotIn("--clobber", workflow)
