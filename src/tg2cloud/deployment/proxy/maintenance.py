@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import io
+import ipaddress
 import json
 import os
 import re
@@ -24,10 +25,90 @@ from typing import BinaryIO
 
 PROXY_ROOT = Path("/opt/tg2cloud-proxy")
 BACKUP_ROOT = Path("/opt/tg2cloud-proxy-backups")
-SELECTION = ("state/domains.json", "docker-compose.yml", "nginx", "certbot/letsencrypt", "certbot/status", "external-auth")
+COMPOSE_REGISTRY = "state/compose-instances.json"
+COMPOSE_TRANSACTION = "state/compose-transaction.json"
+COMPOSE_REGISTRY_LIMIT = 65536
+SELECTION = ("state/domains.json", COMPOSE_REGISTRY, "docker-compose.yml", "nginx", "certbot/letsencrypt", "certbot/status", "external-auth")
 ARCHIVE_NAME = re.compile(r"proxy-[0-9]{8}T[0-9]{6}Z-[0-9a-f]{32}\.tar\.gz")
 MAX_BYTES = 512 * 1024 * 1024
 MAX_ENTRIES = 20000
+
+
+def validate_compose_registry(value: object, *, physical: bool = False) -> dict:
+    """Validate ownership without importing application modules in this helper."""
+    if (not isinstance(value, dict) or set(value) != {"format", "owner", "instances"}
+            or type(value["format"]) is not int or value["format"] != 1
+            or value["owner"] != "tg2cloud.compose.https"
+            or not isinstance(value["instances"], dict)
+            or set(value["instances"]) - {"clouddrive2", "openlist"}):
+        raise ValueError("invalid Compose HTTPS registry")
+    domains = set()
+    roots = set()
+    for item in value["instances"].values():
+        if not isinstance(item, dict) or set(item) != {"root", "domain"}:
+            raise ValueError("invalid Compose HTTPS owner")
+        root, domain = item["root"], item["domain"]
+        if (not isinstance(root, str) or len(root) > 4096 or "\\" in root
+                or any(ord(char) < 32 or ord(char) == 127 for char in root)
+                or not root.startswith("/") or root.startswith("//") or root == "/"
+                or str(PurePosixPath(root)) != root or ".." in PurePosixPath(root).parts):
+            raise ValueError("invalid Compose HTTPS root")
+        if physical and os.name == "posix":
+            path = Path(root)
+            if path.resolve() != path or any(parent.is_symlink() or parent.exists() and not parent.is_dir()
+                                             for parent in (path, *path.parents)):
+                raise ValueError("linked Compose HTTPS root")
+        if (not isinstance(domain, str) or not domain.isascii() or len(domain) > 253
+                or not re.fullmatch(r"(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?", domain)):
+            raise ValueError("invalid Compose HTTPS domain")
+        try:
+            ipaddress.ip_address(domain)
+        except ValueError:
+            pass
+        else:
+            raise ValueError("IP address in Compose HTTPS registry")
+        if (any(PurePosixPath(root).is_relative_to(PurePosixPath(existing))
+                or PurePosixPath(existing).is_relative_to(PurePosixPath(root)) for existing in roots)
+                or domain in domains):
+            raise ValueError("duplicate or overlapping Compose HTTPS owner")
+        roots.add(root)
+        domains.add(domain)
+    return value
+
+
+def parse_compose_registry(raw: str | bytes, *, physical: bool = False) -> dict:
+    def unique_pairs(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate Compose HTTPS registry field")
+            result[key] = value
+        return result
+
+    if len(raw) > COMPOSE_REGISTRY_LIMIT:
+        raise ValueError("Compose HTTPS registry too large")
+    return validate_compose_registry(json.loads(raw, object_pairs_hook=unique_pairs), physical=physical)
+
+
+def validate_live_compose_registry(root: Path) -> dict | None:
+    journal = root / COMPOSE_TRANSACTION
+    if journal.exists() or journal.is_symlink():
+        raise ValueError("unfinished Compose HTTPS transaction")
+    path = root / COMPOSE_REGISTRY
+    if not path.exists() and not path.is_symlink():
+        return
+    info = path.lstat()
+    if (not stat.S_ISREG(info.st_mode) or path.is_symlink() or path.resolve() != path
+            or info.st_size > COMPOSE_REGISTRY_LIMIT or info.st_nlink != 1
+            or os.name == "posix" and (info.st_uid != os.geteuid() or info.st_mode & 0o077)):
+        raise ValueError("unsafe Compose HTTPS registry")
+    return parse_compose_registry(path.read_bytes(), physical=True)
+
+
+def validate_compose_routes(registry: dict | None, state: dict) -> None:
+    if registry is not None and any(state["domains"].get(edition, {}).get("domain") != item["domain"]
+                                    for edition, item in registry["instances"].items()):
+        raise ValueError("Compose HTTPS registry disagrees with proxy routes")
 
 
 def stream_digest(handle: BinaryIO) -> str:
@@ -84,12 +165,13 @@ def validate_auth_records(state: dict, records: dict) -> None:
 def snapshot(root: Path) -> dict[str, dict]:
     if root.is_symlink() or not root.is_dir():
         raise ValueError("invalid proxy root")
+    registry = validate_live_compose_registry(root)
     records: dict[str, dict] = {}
     total = 0
     for relative in SELECTION:
         start = root / relative
         if not start.exists() and not start.is_symlink():
-            if relative in {"certbot/status", "external-auth"}:  # Older installations have neither.
+            if relative in {"certbot/status", "external-auth", COMPOSE_REGISTRY}:  # Optional in older installations.
                 continue
             raise ValueError("required proxy resource missing")
         for path in (start, *sorted(start.rglob("*"))):
@@ -121,7 +203,9 @@ def snapshot(root: Path) -> dict[str, dict]:
     state = root / "state/domains.json"
     if state.stat().st_size > 65536:
         raise ValueError("state too large")
-    validate_auth_records(json.loads(state.read_text(encoding="utf-8")), records)
+    state_value = json.loads(state.read_text(encoding="utf-8"))
+    validate_auth_records(state_value, records)
+    validate_compose_routes(registry, state_value)
     return records
 
 
@@ -136,6 +220,7 @@ def verify_backup(archive: Path) -> dict[str, dict]:
     records: dict[str, dict] = {}
     manifest = None
     state = None
+    registry = None
     total = 0
     with tarfile.open(archive, "r:gz") as tar:
         for member in tar:
@@ -159,7 +244,13 @@ def verify_backup(archive: Path) -> dict[str, dict]:
                             raise ValueError("invalid manifest")
                         manifest = json.load(handle)
                         continue
-                    if name == "proxy/state/domains.json":
+                    if name == "proxy/" + COMPOSE_REGISTRY:
+                        if member.size > COMPOSE_REGISTRY_LIMIT:
+                            raise ValueError("Compose HTTPS registry too large")
+                        content = handle.read()
+                        registry = parse_compose_registry(content)
+                        content_hash = hashlib.sha256(content).hexdigest()
+                    elif name == "proxy/state/domains.json":
                         if member.size > 65536:
                             raise ValueError("state too large")
                         content = handle.read()
@@ -184,7 +275,10 @@ def verify_backup(archive: Path) -> dict[str, dict]:
     required = ("proxy/state/domains.json", "proxy/docker-compose.yml", "proxy/nginx/nginx.conf")
     if any(records.get(name, {}).get("kind") != "file" for name in required):
         raise ValueError("required resources missing")
+    if "proxy/" + COMPOSE_REGISTRY in records and records["proxy/" + COMPOSE_REGISTRY]["kind"] != "file":
+        raise ValueError("invalid Compose HTTPS registry entry")
     validate_auth_records(state, records)
+    validate_compose_routes(registry, state)
     return records
 
 

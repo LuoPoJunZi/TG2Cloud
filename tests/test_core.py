@@ -1425,7 +1425,7 @@ class PayloadTests(unittest.TestCase):
                 patch("tg2cloud.transfer.service.AdaptiveWindow"), patch.object(TransferService, "_register_handlers"):
             TransferService(settings)
         get_logger.assert_called_once_with("tg2cloud")
-        database.assert_called_once_with(Path("/data/tg115.db"))
+        database.assert_called_once_with(Path("/data/tg2cloud.db").absolute())
         self.assertEqual(telegram.call_args.args[0], str(Path("/data/bot")))
 
     def test_new_log_name_does_not_rename_or_delete_old_logs(self) -> None:

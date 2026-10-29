@@ -274,6 +274,7 @@ class NatProxyTests(unittest.TestCase):
         manager, prompt = self.manager()
         manager.detect(self.DOMAIN)
         manager.read_state = Mock(return_value=proxy.empty_state())
+        manager._check_compose_owner = Mock()  # This fixture isolates NAT/ACME; real ownership probes are tested separately.
         manager._activate = Mock()
         manager._ensure_state_file = Mock()
         manager._commit_state = Mock()
@@ -291,6 +292,7 @@ class NatProxyTests(unittest.TestCase):
         manager, prompt = self.manager()
         manager.detect(self.DOMAIN)
         manager.read_state = Mock(return_value=proxy.empty_state())
+        manager._check_compose_owner = Mock()  # This fixture isolates NAT/ACME; real ownership probes are tested separately.
         manager._ensure_state_file = Mock()
         manager._activate = Mock()
         manager._obtain_certificate = Mock(side_effect=RuntimeError("synthetic ACME failure"))

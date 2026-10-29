@@ -840,9 +840,46 @@ fi
         with self.session.hold_lock(proxy_lock_command(), sudo=self.use_sudo):
             return self._configure_locked(domain, email)
 
+    def _check_compose_owner(self, state: dict[str, Any], *, all_routes: bool = False) -> None:
+        """Run under the global lock before a generic writer changes a route."""
+        from .maintenance import parse_compose_registry, validate_compose_routes
+
+        # A bounded, read-only host probe. No downloaded code or instance .env is
+        # executed. Refuse uncertain transactions and linked/private-file aliases.
+        script = f"""import stat, sys
+from pathlib import Path
+root = Path({PROXY_ROOT!r})
+path = root / 'state/compose-instances.json'
+journal = root / 'state/compose-transaction.json'
+if journal.exists() or journal.is_symlink():
+    raise SystemExit(3)
+if path.exists() or path.is_symlink():
+    if path.resolve() != path or any(parent.is_symlink() or parent.exists() and not parent.is_dir() for parent in path.parents):
+        raise SystemExit(4)
+    info = path.lstat()
+    if not stat.S_ISREG(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o077 or info.st_nlink != 1 or info.st_size > 65536:
+        raise SystemExit(5)
+    sys.stdout.buffer.write(path.read_bytes())
+"""
+        code, output = self._run("python3 -c " + shlex.quote(script), timeout=10)
+        if code:
+            raise RuntimeError("Compose HTTPS 归属或事务状态无法安全核对；停止，不覆盖共享入口。")
+        if not output.strip():
+            return
+        try:
+            registry = parse_compose_registry(output)
+            validate_compose_routes(registry, state)
+        except (ValueError, TypeError):
+            raise RuntimeError("Compose HTTPS 归属清单无法识别或与路由不一致；停止，不覆盖共享入口。") from None
+        if all_routes and registry["instances"]:
+            raise RuntimeError("共享代理仍承载 Compose HTTPS；请先用对应部署包移除这些路由，再安排入口迁移。")
+        if self.product.key in registry["instances"]:
+            raise RuntimeError("当前 Edition 的 HTTPS 由独立 Compose 部署管理；请使用原部署包的 HTTPS 工具修改或移除。")
+
     def _configure_locked(self, domain: str, email: str) -> ProxyReport:
         self.log("TG2CLOUD_STAGE=HTTPS_ENV")
         previous = self.read_state()
+        self._check_compose_owner(previous)
         adapter = self.external_entry(previous)
         if adapter:
             return adapter.configure(domain, email, already_locked=True)
@@ -1110,6 +1147,7 @@ fi
 
     def _remove_locked(self) -> ProxyReport:
         previous = self.read_state()
+        self._check_compose_owner(previous)
         adapter = self.external_entry(previous)
         if adapter:
             return adapter.remove_locked()

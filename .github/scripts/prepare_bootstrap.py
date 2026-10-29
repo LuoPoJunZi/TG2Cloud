@@ -15,6 +15,8 @@ def helper_files(root: Path) -> list[str]:
         paths.extend("src/tg2cloud/" + name for name in (
             "persistence/__init__.py", "persistence/backup.py", "persistence/bundle.py",
             "domain/__init__.py", "domain/naming.py"))
+    if (root / "src/tg2cloud/persistence/paths.py").is_file():
+        paths.append("src/tg2cloud/persistence/paths.py")
     for directory in ("cli", "deployment", "addons"):
         for path in (root / "src/tg2cloud" / directory).rglob("*.py"):
             if path.is_symlink() or path.absolute() != path.resolve():

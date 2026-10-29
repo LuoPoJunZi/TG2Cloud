@@ -25,9 +25,9 @@ async def verify_destination(
     rclone = client or RcloneClient(settings)
     destination_label = getattr(settings, "destination_label", "CloudDrive2")
     token = uuid.uuid4().hex
-    local_path = settings.data_dir / f".tg115-verify-{token}.bin"
-    remote_temp = f".tg115-verify-{token}.uploading"
-    remote_final = f".tg115-verify-{token}.ok"
+    local_path = settings.data_dir / f".tg2cloud-verify-{token}.bin"
+    remote_temp = f".tg2cloud-verify-{token}.uploading"
+    remote_final = f".tg2cloud-verify-{token}.ok"
     direct_final = policy_for(settings).direct_final
     remote_write = remote_final if direct_final else remote_temp
     payload = os.urandom(256)

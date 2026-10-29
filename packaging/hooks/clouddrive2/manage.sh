@@ -120,10 +120,10 @@ case "${1:-status}" in
     apply_config "$@"
     ;;
   backups)
-    tg115_backup_inventory "$BACKUP_DIR"
+    tg2cloud_backup_inventory "$BACKUP_DIR"
     ;;
   prune-backups)
-    tg115_prune_backups "$BACKUP_DIR" "${2:-5}"
+    tg2cloud_prune_backups "$BACKUP_DIR" "${2:-5}"
     ;;
   check|doctor)
     check_config

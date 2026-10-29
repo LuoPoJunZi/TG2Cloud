@@ -77,6 +77,8 @@ def helpers_in_tree(files: set[str]) -> set[str]:
         result.update("src/tg2cloud/" + name for name in (
             "persistence/__init__.py", "persistence/backup.py", "persistence/bundle.py",
             "domain/__init__.py", "domain/naming.py"))
+    if "src/tg2cloud/persistence/paths.py" in files:
+        result.add("src/tg2cloud/persistence/paths.py")
     return result
 
 
@@ -185,12 +187,25 @@ def verify(directory: Path, tag: str) -> None:
         manifest_files(files["packaging/bootstrap-manifest.json"], helpers_in_tree(set(files)))
     if "packaging/compose-release.json" in files:
         contract = json.loads(files["packaging/compose-release.json"])
-        if contract != {"format": 1, "registry": "ghcr.io", "image": "tg2cloud", "platforms": ["linux/amd64", "linux/arm64"]}:
+        legacy = {"format": 1, "registry": "ghcr.io", "image": "tg2cloud", "platforms": ["linux/amd64", "linux/arm64"]}
+        current = legacy | {"format": 2, "https_tools": 1}
+        if (not isinstance(contract, dict) or type(contract.get("format")) is not int
+                or contract not in (legacy, current)
+                or (contract == current and type(contract.get("https_tools")) is not int)):
             raise ValueError("unsupported direct Compose contract")
         if not {"src/tg2cloud/compose/__main__.py", "src/tg2cloud/compose/runtime.py",
                 "src/tg2cloud/compose/packaging.py", ".github/scripts/compose_release.py",
                 ".github/workflows/compose-images.yml", "docs/COMPOSE.md"} <= files.keys():
             raise ValueError("incomplete direct Compose source layout")
+        if contract == current:
+            if not {"packaging/compose-https.sh", "packaging/bootstrap-manifest.json",
+                    "src/tg2cloud/compose/https.py", "src/tg2cloud/compose/access.py"} <= files.keys():
+                raise ValueError("incomplete direct Compose HTTPS source layout")
+            launcher = files["packaging/compose-https.sh"]
+            if (launcher.count(b"@HTTPS_MANIFEST_SHA256@") != 1
+                    or b"exec python3 -I -S -B" not in launcher
+                    or b"tg2cloud.compose.https" not in launcher):
+                raise ValueError("invalid direct Compose HTTPS launcher")
     # Verify all declared Edition payload inputs, not just a hand-maintained list.
     profile = "src/tg2cloud/deployment/profiles.py" if modern else "scripts/lib/deployer_products.py" if legacy_lib else "deployer_products.py"
     tree = ast.parse(files[profile].decode("utf-8"))

@@ -169,10 +169,11 @@ def main(argv=None):
     )
     parser.add_argument("action", choices=("login", "status", "disable"))
     args = parser.parse_args(argv)
+    from tg2cloud.persistence.paths import database_path
     from tg2cloud.persistence.sqlite import TaskDB
 
     settings = Settings.from_env()
-    db = TaskDB(settings.data_dir / "tg115.db")
+    db = TaskDB(database_path(settings.data_dir))
     try:
         if args.action == "login":
             asyncio.run(login(settings, db))

@@ -386,7 +386,7 @@ INFO[2026-09-18] password: Reset_2345""",
                 [
                     BASH,
                     "-c",
-                    'source "$1"; tg115_preserve_existing_webdav_config "$2" "$3"',
+                    'source "$1"; tg2cloud_preserve_existing_webdav_config "$2" "$3"',
                     "--",
                     bash_path(SOURCE / "packaging/hooks/openlist/preserve_webdav_config.sh"),
                     bash_path(candidate),
@@ -418,8 +418,8 @@ INFO[2026-09-18] password: Reset_2345""",
             'source "$1"; '
             'backup_dir="$(cd "$2" && pwd -P)" || exit 1; '
             'if [[ "$3" == inventory ]]; then '
-            'tg115_backup_inventory "$backup_dir"; '
-            'else tg115_prune_backups "$backup_dir" "$4"; fi'
+            'tg2cloud_backup_inventory "$backup_dir"; '
+            'else tg2cloud_prune_backups "$backup_dir" "$4"; fi'
         )
         return subprocess.run(
             [
@@ -641,12 +641,12 @@ class DeploymentStructureTests(unittest.TestCase):
         self.assertIn("-m app.backup_database", script)
         self.assertIn('install -m 600 "$DATABASE_BACKUP" "$ROLLBACK_DATABASE"', script)
         self.assertIn('validate_database_backup "$ROLLBACK_DATABASE"', script)
-        self.assertIn('mv -f -- "$ROLLBACK_DATABASE" "$INSTALL_DIR/data/tg115.db"', script)
+        self.assertIn('mv -f -- "$ROLLBACK_DATABASE" "$INSTALL_DIR/data/$DATABASE_NAME"', script)
         self.assertIn("docker tag \"$OLD_IMAGE_ID\" \"$OLD_IMAGE_TAG\"", script)
         self.assertIn("已自动恢复升级前版本", script)
         self.assertIn("INT TERM HUP", script)
-        self.assertIn('tg115_backup_inventory "$BACKUP_DIR"', script)
-        self.assertNotIn('tg115_prune_backups "$BACKUP_DIR"', script)
+        self.assertIn('tg2cloud_backup_inventory "$BACKUP_DIR"', script)
+        self.assertNotIn('tg2cloud_prune_backups "$BACKUP_DIR"', script)
 
     def test_docker_filesystem_is_rechecked_after_docker_start(self) -> None:
         script = (SOURCE / "packaging/hooks/clouddrive2/remote_install.sh").read_text(

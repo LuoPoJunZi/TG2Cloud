@@ -712,7 +712,11 @@ class ConfigPayloadTests(unittest.TestCase):
         self.assertEqual(VALUES, fixture["values"])
         for product in PRODUCTS.values():
             with self.subTest(edition=product.key):
-                self.assertEqual(tgdep_configuration.new_config(product, VALUES), fixture["expected"][product.key])
+                # Retain the historical fixture. Only obsolete output aliases
+                # are intentionally omitted from newly generated v1.5.3 configs.
+                expected = {key: value for key, value in fixture["expected"][product.key].items()
+                            if not key.startswith("TG115_")}
+                self.assertEqual(tgdep_configuration.new_config(product, VALUES), expected)
 
     def test_shell_characters_in_password_stay_encoded(self):
         config = tgdep_configuration.new_config(PRODUCTS["openlist"], VALUES)

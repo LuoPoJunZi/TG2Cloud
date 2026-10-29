@@ -14,6 +14,7 @@ from pathlib import Path
 
 from tg2cloud.deployment.runtime import safe_path
 from tg2cloud.persistence import bundle
+from tg2cloud.persistence.paths import database_path
 from tg2cloud.version import VERSION
 
 MAX_TASKS = 20000
@@ -49,8 +50,8 @@ def rehearse(archive: Path, scratch: Path, edition: str, target_version: str = V
 
         downloads = root / "rehearsal-downloads"
         downloads.mkdir(mode=0o700)
-        count = task_count(root / "data/tg115.db")
-        db = TaskDB(root / "data/tg115.db")
+        count = task_count(database_path(root / "data", require_existing=True))
+        db = TaskDB(database_path(root / "data", require_existing=True))
         try:
             # Archives exclude downloads. Never stat/read a production path
             # stored in a row; this intentionally models unavailable local files.

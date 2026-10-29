@@ -66,6 +66,7 @@
     "src/tg2cloud/persistence/__init__.py",
     "src/tg2cloud/persistence/backup.py",
     "src/tg2cloud/persistence/bundle.py",
+    "src/tg2cloud/persistence/paths.py",
     "src/tg2cloud/version.py"
   ]
 }

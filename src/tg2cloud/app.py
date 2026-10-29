@@ -8,6 +8,7 @@ from tg2cloud.logging_setup import setup_logging
 from tg2cloud.monitoring.resources import (
     ResourceMonitor,
 )
+from tg2cloud.persistence.paths import database_path
 from tg2cloud.persistence.sqlite import TaskDB
 from tg2cloud.storage.rclone import RcloneClient
 from tg2cloud.telegram.client import create_client
@@ -21,10 +22,11 @@ from tg2cloud.transfer.service import TaskService
 class TransferService(TaskService, TelegramHandlers, CommandHandlers, TaskViews):
     def __init__(self, settings: Settings, *, source: MediaSource | None = None,
                  destination: Destination | None = None):
+        database = database_path(settings.data_dir)
         setup_logging(settings)
         client = create_client(settings)
         super().__init__(settings, source=source, client=client,
-                         repository=TaskDB(settings.data_dir / "tg115.db"),
+                         repository=TaskDB(database),
                          destination=destination or RcloneClient(settings),
                          monitor=ResourceMonitor(settings.download_dir, 数据库=settings.data_dir,
                                                  日志=settings.log_dir, 配置=settings.rclone_config_path.parent))

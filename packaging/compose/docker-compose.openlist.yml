@@ -32,7 +32,6 @@ services:
       LOG_DIR: /logs
       RCLONE_CONFIG_PATH: /config/rclone/rclone.conf
       TG2CLOUD_COMPOSE_SERVICE: tg2cloud-openlist-bot
-      TG115_COMPOSE_SERVICE: tg2cloud-openlist-bot
     user: "10001:10001"
     volumes:
       - ./data:/data

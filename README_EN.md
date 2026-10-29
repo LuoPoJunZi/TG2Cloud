@@ -35,6 +35,8 @@ Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are di
 
 Current stable version: **v1.5.2**, supporting Linux. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
 
+v1.5.3 is in preparation: consistent fresh-install naming and optional Compose HTTPS. See the [preparation and compatibility notes](docs/development/V153-ACCEPTANCE.md).
+
 ## Getting started
 
 1. Prepare your Telegram Bot, API information and server using the [information checklist](docs/填写信息清单.md). Never put real credentials in public documents.
@@ -89,7 +91,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Topic | Repository documents |
 | --- | --- |
 | Installation and configuration | [Public VPS installation / upgrade](docs/VPS-INSTALL.md) · [LAN / NAS installation](docs/LAN-INSTALL.md) · [Information checklist](docs/填写信息清单.md) |
-| Docker Compose | [Direct deployment, setup and backups](docs/COMPOSE.md) |
+| Docker Compose | [Step-by-step deployment, setup and backups](docs/COMPOSE.md) · [Optional HTTPS wizard (unreleased)](docs/COMPOSE.md#待发布可选-https-配置向导) |
 | Gateway and first transfer | [CloudDrive2 / OpenList configuration and verification](docs/STORAGE.md) · [Bot usage, menus and commands](docs/BOT-USAGE.md) |
 | Naming and common questions | [Video, caption and album naming](docs/NAMING.md) · [FAQ](docs/FAQ.md) |
 | Configuration and backups | [Configuration fields and runtime paths](docs/CONFIGURATION.md) · [Backup scope and restore preflight](docs/BACKUP-RESTORE.md) |

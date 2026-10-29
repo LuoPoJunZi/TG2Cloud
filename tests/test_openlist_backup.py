@@ -45,6 +45,8 @@ OLD_OPENLIST_IMAGE_ID=old-gateway
 OLD_OPENLIST_IMAGE_TAG="$TG2CLOUD_TEST_DIGEST"
 ROLLBACK_ARMED=true
 DATABASE_BACKUP=""
+DATABASE_NAME="${TG2CLOUD_TEST_DB_NAME:-tg115.db}"
+RELEASE_STAGE="$TG2CLOUD_TEST_PAYLOAD"
 
 # All Docker operations are simulated. SQLite and tar use real implementations.
 python3() { "$TG2CLOUD_TEST_PYTHON" "$@"; }
@@ -86,7 +88,7 @@ docker() {
   esac
   if [[ "$*" == *'app.backup_database'* ]]; then
     # Use the existing production SQLite snapshot helper for a real fixture DB.
-    python3 - "$TG2CLOUD_TEST_PAYLOAD" "$INSTALL_DIR/data/tg115.db" "$INSTALL_DIR${@: -1}" <<'PY'
+    python3 - "$TG2CLOUD_TEST_PAYLOAD" "$INSTALL_DIR${@: -2:1}" "$INSTALL_DIR${@: -1}" <<'PY'
 import sys
 from pathlib import Path
 sys.path.insert(0, sys.argv[1])
@@ -134,6 +136,9 @@ class OpenListBackupTests(unittest.TestCase):
         self.installation = self.root / "installation"
         (self.installation / "data").mkdir(parents=True)
         (self.root / "backups").mkdir()
+        helper = self.installation / "app/tg2cloud/persistence/paths.py"
+        helper.parent.mkdir(parents=True, exist_ok=True)
+        helper.write_bytes((ROOT / "src/tg2cloud/persistence/paths.py").read_bytes())
         self.database = self.installation / "data/tg115.db"
         self.snapshot = self.root / "good.db"
         self.make_database(self.database, 1)
@@ -158,6 +163,7 @@ class OpenListBackupTests(unittest.TestCase):
             input=PREFIX + HARNESS + before + action,
             env=os.environ | {
                 "TG2CLOUD_TEST_PYTHON": bash_path(Path(sys.executable)),
+                "TG2CLOUD_TEST_DB_NAME": self.database.name,
                 "TG2CLOUD_TEST_PAYLOAD": bash_path(PAYLOAD),
                 "TG2CLOUD_TEST_DIGEST": DIGEST,
                 "TG2CLOUD_TEST_MODE": mode,
@@ -229,7 +235,7 @@ class OpenListBackupTests(unittest.TestCase):
         for path, data in sidecars.items():
             path.write_bytes(data)
         result, calls = self.execute(
-            "rollback_install\n", "restore-copy-fail", 'DATABASE_BACKUP="$test_root/good.db"\n',
+            "rollback_install\n", "restore-copy-fail", 'DATABASE_BACKUP="$test_root/good.db"\nDATABASE_NAME=tg115.db\n',
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("compose rm", calls)
@@ -244,7 +250,7 @@ class OpenListBackupTests(unittest.TestCase):
         for path, data in sidecars.items():
             path.write_bytes(data)
         result, calls = self.execute(
-            "rollback_install\n", "cannot-stop-bot", 'DATABASE_BACKUP="$test_root/good.db"\n',
+            "rollback_install\n", "cannot-stop-bot", 'DATABASE_BACKUP="$test_root/good.db"\nDATABASE_NAME=tg115.db\n',
         )
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("compose up", calls)
@@ -255,7 +261,7 @@ class OpenListBackupTests(unittest.TestCase):
     def test_valid_snapshot_restores_database_and_restarts_bot(self):
         for path, data in self.preserve_sidecars().items():
             path.write_bytes(data)
-        result, calls = self.execute("rollback_install\n", before='DATABASE_BACKUP="$test_root/good.db"\n')
+        result, calls = self.execute("rollback_install\n", before='DATABASE_BACKUP="$test_root/good.db"\nDATABASE_NAME=tg115.db\n')
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assert_database(self.database, 2)
         self.assertFalse(any(path.exists() for path in self.preserve_sidecars()))

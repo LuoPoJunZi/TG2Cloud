@@ -11,6 +11,8 @@ import time
 from contextlib import closing
 from pathlib import Path
 
+from tg2cloud.persistence.paths import database_path
+
 KEY = "family-users.v1"
 MAX_MEMBERS = 32
 
@@ -96,7 +98,7 @@ def main() -> int:
     """Fixed local Docker exec endpoint; never create or migrate a missing DB."""
     try:
         admin_id = user_id(os.environ.get("ALLOWED_USER_ID", ""))
-        path = Path(os.environ.get("DATA_DIR", "/data")) / "tg115.db"
+        path = database_path(Path(os.environ.get("DATA_DIR", "/data")), require_existing=True)
         if path.is_symlink() or not path.is_file() or path.resolve() != path.absolute():
             raise ValueError("现有数据库不存在或路径不安全")
         raw = sys.stdin.buffer.read(4097)

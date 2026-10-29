@@ -1,6 +1,6 @@
 {
   "name": "tg2cloud-docs",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "private": true,
   "type": "module",
   "description": "TG2Cloud Chinese documentation, dependency-free static site",

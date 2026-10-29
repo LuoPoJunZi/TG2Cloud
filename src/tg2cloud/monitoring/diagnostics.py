@@ -11,6 +11,7 @@ from contextlib import closing
 from pathlib import Path
 
 from tg2cloud.monitoring import readiness
+from tg2cloud.persistence.paths import database_path
 from tg2cloud.version import VERSION
 
 KINDS = {"authentication", "permission", "rate_limited", "server", "remote_conflict", "local_missing", "network", "other"}
@@ -38,8 +39,10 @@ def collect(data_dir: Path, *, environment=None, started_at: float = 0) -> dict:
             report["budget_bytes"] = int(amount * 1024**3)
     except (OSError, ValueError, OverflowError):
         pass
-    path = data_dir / "tg115.db"
-    if path.is_symlink() or not path.is_file():
+    try:
+        path = database_path(data_dir, require_existing=True)
+    except (ValueError, OSError):
+        report["failures"] = {"unchecked": 0}
         return report
     try:
         with closing(sqlite3.connect(path.as_uri() + "?mode=ro", uri=True, timeout=2)) as connection:

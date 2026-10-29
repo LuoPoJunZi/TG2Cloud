@@ -18,6 +18,13 @@ import tempfile
 from contextlib import closing, contextmanager
 from pathlib import Path, PurePosixPath
 
+from tg2cloud.persistence.paths import (
+    DATABASE_NAME,
+    DATABASE_NAMES,
+    database_entry,
+    database_path,
+)
+
 MAX_BYTES = 2 * 1024**3
 MAX_FILES = 20000
 MIN_FREE = 256 * 1024**2
@@ -49,10 +56,11 @@ def version(value: str) -> tuple[int, ...]:
     return tuple(map(int, value.split(".")))
 
 
-def required(edition: str) -> tuple[str, ...]:
+def required(edition: str, database: str = "data/" + DATABASE_NAME) -> tuple[str, ...]:
     if edition not in {"clouddrive2", "openlist"}:
         raise ValueError("invalid edition")
-    return (".env", "docker-compose.yml", "data/tg115.db", "data/bot.session")
+    database_entry((database,))
+    return (".env", "docker-compose.yml", database, "data/bot.session")
 
 
 def pack(snapshot: Path, archive: Path, edition: str, source_version: str) -> None:
@@ -63,10 +71,11 @@ def pack(snapshot: Path, archive: Path, edition: str, source_version: str) -> No
     archive = archive.absolute()
     if snapshot.is_symlink() or not snapshot.is_dir() or archive.is_relative_to(snapshot):
         raise ValueError("invalid offline snapshot/destination")
-    selected = [*required(edition), "config", "clouddrive/config" if edition == "clouddrive2" else "openlist/data"]
+    database = database_path(snapshot / "data", require_existing=True).relative_to(snapshot).as_posix()
+    selected = [*required(edition, database), "config", "clouddrive/config" if edition == "clouddrive2" else "openlist/data"]
     if (snapshot / "data/listener/personal.session").is_file():
         selected.append("data/listener/personal.session")
-    for optional in ("tg2cloud-release.json", "tg2cloud-compose.json", "compose-bundle.json"):
+    for optional in ("tg2cloud-release.json", "tg2cloud-compose.json", "compose-bundle.json", "compose-access.json"):
         if (snapshot / optional).is_file():
             selected.append(optional)
     records = {}
@@ -99,7 +108,7 @@ def pack(snapshot: Path, archive: Path, edition: str, source_version: str) -> No
             with path.open("rb") as handle:
                 records[relative] = {"size": path.stat().st_size, "sha256": checksum(handle)}
     # SQLite sidecars for the individually selected DB/session are not in rglob.
-    for relative in ("data/tg115.db", "data/bot.session", "data/listener/personal.session"):
+    for relative in (*("data/" + name for name in DATABASE_NAMES), "data/bot.session", "data/listener/personal.session"):
         for suffix in ("-wal", "-shm", "-journal"):
             sidecar = snapshot / (relative + suffix)
             if sidecar.exists() and sidecar.stat().st_size:
@@ -148,7 +157,10 @@ def verified_snapshot(archive: Path, scratch: Path, edition: str, target_version
                 or source_version > target or source_version[0] != target[0]):
             raise ValueError("edition/version incompatible")
         records = manifest["files"]
-        if not isinstance(records, dict) or len(records) > MAX_FILES or not all(k in records for k in required(edition)):
+        if not isinstance(records, dict) or len(records) > MAX_FILES:
+            raise ValueError("incomplete manifest")
+        database = database_entry(records)
+        if not all(k in records for k in required(edition, database)):
             raise ValueError("incomplete manifest")
         gateway = "clouddrive/config/" if edition == "clouddrive2" else "openlist/data/"
         if not any(k.startswith("config/") for k in records) or not any(k.startswith(gateway) for k in records):
@@ -156,7 +168,7 @@ def verified_snapshot(archive: Path, scratch: Path, edition: str, target_version
         total = 0
         for name, record in records.items():
             validate_name(name)
-            if (name not in {*required(edition), "tg2cloud-release.json", "tg2cloud-compose.json", "compose-bundle.json", "data/listener/personal.session"}
+            if (name not in {*required(edition, database), "tg2cloud-release.json", "tg2cloud-compose.json", "compose-bundle.json", "compose-access.json", "data/listener/personal.session"}
                     and not name.startswith(("config/", gateway))):
                 raise ValueError("entry outside declared snapshot scope")
             if name.endswith(("-wal", "-shm", "-journal")):

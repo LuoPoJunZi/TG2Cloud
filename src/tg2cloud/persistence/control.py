@@ -11,6 +11,7 @@ from pathlib import Path
 
 from tg2cloud.persistence import features, quotas, users
 from tg2cloud.persistence.migrations import SCHEMA_VERSION
+from tg2cloud.persistence.paths import database_path
 
 
 def handle(connection, admin: int, request: dict) -> dict:
@@ -48,7 +49,7 @@ def handle(connection, admin: int, request: dict) -> dict:
 def main() -> int:
     try:
         admin = users.user_id(os.environ.get("ALLOWED_USER_ID", ""))
-        path = Path(os.environ.get("DATA_DIR", "/data")) / "tg115.db"
+        path = database_path(Path(os.environ.get("DATA_DIR", "/data")), require_existing=True)
         if path.is_symlink() or not path.is_file() or path.resolve() != path.absolute():
             raise ValueError("数据库路径不安全")
         raw = sys.stdin.buffer.read(8193)

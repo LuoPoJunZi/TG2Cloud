@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 
+from tg2cloud.compose.access import ACCESS_FILE, choose_access, next_steps, read_access
 from tg2cloud.config import Settings
 from tg2cloud.deployment import configuration
 from tg2cloud.deployment.profiles import PRODUCTS
@@ -40,7 +41,15 @@ def metadata(root: Path) -> dict:
     if path.stat().st_size > 8192:
         raise ComposeError("部署包元数据过大")
     value = json.loads(path.read_text(encoding="utf-8"))
-    if (value.get("format") != 1 or value.get("mode") != "compose"
+    if not isinstance(value, dict):
+        raise ComposeError("部署包元数据不是对象")
+    fields = {"format", "mode", "edition", "version", "image", "commit"}
+    modern = type(value.get("format")) is int and value["format"] == 2
+    if modern:
+        fields.add("https_tools")
+    if (not isinstance(value, dict) or set(value) != fields or type(value.get("format")) is not int
+            or value["format"] not in {1, 2} or (modern and (type(value.get("https_tools")) is not int or value["https_tools"] != 1))
+            or value.get("mode") != "compose"
             or value.get("edition") not in PRODUCTS or value.get("version") != VERSION):
         raise ComposeError("部署包与运行工具版本不匹配，请使用同一正式版本")
     return value
@@ -61,7 +70,7 @@ def checked(pattern, value):
     return value
 
 
-def collect(ui, product):
+def collect(ui, product, access_plan=None):
     from tg2cloud.domain.classification import safe_directory
     def reserve(value):
         configuration.size_gb(value)
@@ -85,8 +94,13 @@ def collect(ui, product):
         "timezone": "Asia/Shanghai", "admin_password": secrets.token_urlsafe(24),
     }
     result = configuration.new_config(product, values)
-    result["TG2CLOUD_BIND_IP"] = ui.ask("管理端口绑定 IPv4（内网访问请填本机内网地址）",
-                                      default="127.0.0.1", validate=lan_address)
+    plan = choose_access(ui, product.key)
+    if access_plan is not None:
+        access_plan.update(plan)
+    result["TG2CLOUD_BIND_IP"] = (
+        ui.ask("管理端口绑定 IPv4（内网访问请填本机内网地址）", default="127.0.0.1", validate=lan_address)
+        if plan["mode"] == "local" else "127.0.0.1"
+    )
     result["TG2CLOUD_INSTALL_MODE"] = "compose"
     return result
 
@@ -134,6 +148,9 @@ def saved_config(root, edition):
         raise ComposeError("配置文件过大")
     config = configuration.parse_config(path.read_bytes())
     validate_config(root, config, edition)
+    access = read_access(root, edition, private_check=private_config_file)
+    if access and access["mode"] != "local" and config.get("TG2CLOUD_BIND_IP") != "127.0.0.1":
+        raise ComposeError("HTTPS 访问方案要求网关管理端口保持 127.0.0.1；请先核对配置")
     return config
 
 
@@ -166,6 +183,8 @@ def setup(root, ui):
     if (root / ".env").exists() or (root / MARKER).exists():
         saved_config(root, product.key)
         return False  # Idempotent; never regenerate passwords or reset an instance.
+    if (root / ACCESS_FILE).exists() or (root / ACCESS_FILE).is_symlink():
+        raise ComposeError("发现未关联完整实例的访问方案；保留文件，请核对")
     for name in ("app", "remote_install.sh", "manage.sh", "tg2cloud-release.json"):
         if (root / name).exists() or (root / name).is_symlink():
             raise ComposeError("发现脚本安装或未知部署文件；不自动接管")
@@ -180,7 +199,8 @@ def setup(root, ui):
             for child in path.rglob("*"):
                 if child.is_symlink() or not child.is_dir() or child.relative_to(root).as_posix() not in allowed:
                     raise ComposeError("已有目录或数据未登记，停止；不覆盖旧安装")
-    config = collect(ui, product)
+    access_plan = {}
+    config = collect(ui, product, access_plan)
     settings = validate_config(root, config, product.key)
     free = shutil.disk_usage(root).free
     if free < settings.local_budget_bytes + settings.min_free_disk_bytes:
@@ -205,7 +225,8 @@ def setup(root, ui):
                          "initialized_version": VERSION}) + "\n").encode()
     created = []
     try:
-        for name, data in ((".env", content), (MARKER, state)):
+        access_content = (json.dumps(access_plan, ensure_ascii=True, indent=2) + "\n").encode()
+        for name, data in ((".env", content), (ACCESS_FILE, access_content), (MARKER, state)):
             write_exclusive(root / name, data)
             created.append(name)
     except BaseException:
@@ -214,6 +235,7 @@ def setup(root, ui):
         raise
     print("配置初始化完成；请先启动网关，在后台挂载云存储并创建专用 WebDAV 用户，再启动 Bot。")
     credentials(ui, product, config)
+    next_steps(access_plan)
     return True
 
 

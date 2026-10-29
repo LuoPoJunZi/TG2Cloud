@@ -71,17 +71,16 @@ def new_config(product: ProductProfile, values: dict[str, str]) -> dict[str, str
         "DEPLOY_CLOUDDRIVE2": "false" if product.is_openlist else "true",
         "TG2CLOUD_REDEPLOY_APPLY_CONFIG": "false",
     }
-    for prefix in ("TG2CLOUD", "TG115"):
-        result[prefix + "_STORAGE_BACKEND"] = product.key
-        result[prefix + "_DESTINATION_LABEL"] = product.display_name
-        result[prefix + "_RCLONE_REMOTE_NAME"] = "openlist" if product.is_openlist else "cd2"
+    result.update({"TG2CLOUD_STORAGE_BACKEND": product.key,
+                   "TG2CLOUD_DESTINATION_LABEL": product.display_name,
+                   "TG2CLOUD_RCLONE_REMOTE_NAME": "openlist" if product.is_openlist else "cd2"})
     for key, value in (("URL", product.webdav_url), ("USERNAME", values["webdav_user"]), ("PASSWORD", values["webdav_password"])):
         result["WEBDAV_" + key + "_B64"] = encoded(value)
         result["CD2_WEBDAV_" + key + "_B64"] = encoded(value)
     result["WEBDAV_TARGET_PATH_B64"] = result["CD2_TARGET_PATH_B64"] = encoded(values["target"])
     if product.is_openlist:
         result["OPENLIST_ADMIN_PASSWORD"] = values["admin_password"]
-        result["TG2CLOUD_PRESERVE_WEBDAV"] = result["TG115_PRESERVE_WEBDAV"] = "false"
+        result["TG2CLOUD_PRESERVE_WEBDAV"] = "false"
     return result
 
 

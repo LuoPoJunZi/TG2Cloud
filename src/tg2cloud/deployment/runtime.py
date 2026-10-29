@@ -54,6 +54,9 @@ def files(source: Path) -> dict[str, bytes]:
         names.extend("src/tg2cloud/" + name for name in (
             "persistence/__init__.py", "persistence/backup.py", "persistence/bundle.py",
             "domain/__init__.py", "domain/naming.py"))
+    # Explicit optional helper preserves verification of historical bundles.
+    if (source / "src/tg2cloud/persistence/paths.py").is_file():
+        names.append("src/tg2cloud/persistence/paths.py")
     for directory in ("cli", "deployment", "addons"):
         names.extend(p.relative_to(source).as_posix() for p in (source / "src/tg2cloud" / directory).rglob("*.py"))
     result = {}

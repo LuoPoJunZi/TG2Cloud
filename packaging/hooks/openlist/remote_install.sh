@@ -12,6 +12,7 @@ OPENLIST_SERVICE="openlist"
 OPENLIST_CONTAINER="tg2cloud-openlist"
 BACKUP=""
 DATABASE_BACKUP=""
+DATABASE_NAME=""
 DATABASE_BACKUP_CANDIDATE=""
 ROLLBACK_DATABASE=""
 OPENLIST_BACKUP=""
@@ -119,8 +120,8 @@ rollback_install() {
   remove_program_files || return 1
   tar -xzf "$BACKUP" -C "$INSTALL_DIR" || return 1
   if [[ -n "$DATABASE_BACKUP" ]]; then
-    rm -f -- "$INSTALL_DIR/data/tg115.db-wal" "$INSTALL_DIR/data/tg115.db-shm" || return 1
-    mv -f -- "$ROLLBACK_DATABASE" "$INSTALL_DIR/data/tg115.db" || return 1
+    rm -f -- "$INSTALL_DIR/data/$DATABASE_NAME-wal" "$INSTALL_DIR/data/$DATABASE_NAME-shm" || return 1
+    mv -f -- "$ROLLBACK_DATABASE" "$INSTALL_DIR/data/$DATABASE_NAME" || return 1
     ROLLBACK_DATABASE=""
   fi
   cd "$INSTALL_DIR" || return 1
@@ -228,7 +229,7 @@ fi
 sed -i 's/\r$//' "$CONFIG_FILE"
 if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
   if grep -Fxq 'TG2CLOUD_REDEPLOY_APPLY_CONFIG=true' "$CONFIG_FILE"; then
-    tg115_preserve_existing_webdav_config "$CONFIG_FILE" "$INSTALL_DIR/.env" \
+    tg2cloud_preserve_existing_webdav_config "$CONFIG_FILE" "$INSTALL_DIR/.env" \
       || fail "无法安全保留 VPS 上的现有 WebDAV 配置"
   fi
   tg2cloud_prepare_redeploy_config "$CONFIG_FILE" "$INSTALL_DIR/.env" \
@@ -373,12 +374,13 @@ if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
     ROLLBACK_ARMED=true
     docker stop --time 30 "$BOT_CONTAINER" >/dev/null
   fi
-  if [[ -f "$INSTALL_DIR/data/tg115.db" ]]; then
+  DATABASE_NAME="$(python3 -I -S -B "$RELEASE_STAGE/app/tg2cloud/persistence/paths.py" "$INSTALL_DIR/data")"
+  if [[ -f "$INSTALL_DIR/data/$DATABASE_NAME" ]]; then
     DATABASE_BACKUP_CANDIDATE="$(mktemp "$BACKUP_DIR/database-XXXXXXXX.db")"
     DB_TEMP_NAME=".upgrade-backup-$$.db"
     docker run --rm --read-only --tmpfs /tmp --user 10001:10001 \
       --volume "$INSTALL_DIR/data:/data" --entrypoint python "$CANDIDATE_TAG" \
-      -m app.backup_database /data/tg115.db "/data/$DB_TEMP_NAME"
+      -m app.backup_database "/data/$DATABASE_NAME" "/data/$DB_TEMP_NAME"
     install -m 600 "$INSTALL_DIR/data/$DB_TEMP_NAME" "$DATABASE_BACKUP_CANDIDATE"
     validate_database_backup "$DATABASE_BACKUP_CANDIDATE"
     DATABASE_BACKUP="$DATABASE_BACKUP_CANDIDATE"
@@ -446,7 +448,7 @@ native_check container "$OPENLIST_CONTAINER"
 ROLLBACK_ARMED=false
 # shellcheck disable=SC1091
 source "$INSTALL_DIR/backup_retention.sh"
-if BACKUP_INVENTORY="$(tg115_backup_inventory "$BACKUP_DIR")"; then
+if BACKUP_INVENTORY="$(tg2cloud_backup_inventory "$BACKUP_DIR")"; then
   BACKUP_COUNT="$(awk -F= '$1=="TOTAL_COUNT" {print $2}' <<< "$BACKUP_INVENTORY")"
   BACKUP_BYTES="$(awk -F= '$1=="TOTAL_BYTES" {print $2}' <<< "$BACKUP_INVENTORY")"
   log "当前保留 ${BACKUP_COUNT:-0} 份程序／数据库／配置备份，占用约 $(( ${BACKUP_BYTES:-0} / 1024 / 1024 ))MB"

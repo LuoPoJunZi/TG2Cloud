@@ -1,5 +1,8 @@
 # 备份与恢复预检
 
+v1.5.3 起，全新安装使用 `data/tg2cloud.db`；已有实例若只有 `data/tg115.db`，继续使用原文件，保留任务、授权和恢复记录，不自动改名或创建空库。若两个文件并存会停止并要求核对，不自动合并。备份／隔离恢复识别两种文件名，但每份实例只能有一个业务数据库。不要手动移动正在使用的 SQLite 文件或删除旁文件。
+
+
 v1.4.3 分类／配额代码会将业务数据库迁移到 schema 2，升级前务必保留匹配旧程序的快照；不能只降级镜像打开新数据库。见[迁移与回退说明](FEATURE-ENHANCEMENTS.md)。
 
 本页集中解释备份覆盖、现有工具及隔离恢复。没有一键覆盖生产数据的 Restore 命令；备份可读取不等于服务已恢复。任务级重试／冲突处理见[恢复指南](RECOVERY.md)，日常菜单见[运维指南](OPERATIONS.md)。
@@ -17,7 +20,7 @@ v1.4.3 分类／配额代码会将业务数据库迁移到 schema 2，升级前�
 | --- | --- | --- |
 | 程序版本、Compose、镜像身份 | 用匹配代码解释配置和 DB，不能仅依赖可变镜像标签。 | 实例程序目录、升级记录与回退点。 |
 | `.env`、rclone 配置 | Bot 接入和目的端配置，包含秘密。 | 实例 `.env`、`config/`。 |
-| 业务 SQLite | 任务、去重、验证、恢复保护及家庭授权。 | `data/tg115.db`。 |
+| 业务 SQLite | 任务、去重、验证、恢复保护及家庭授权。 | `data/tg2cloud.db`。 |
 | Telegram Session | 保留已有登录／授权状态。 | `data/bot.session`。 |
 | 暂存和失败保留文件 | 可能是任务唯一完整本地副本。 | `downloads/`。 |
 | 网关配置与授权 | 云存储挂载、账号和访问权限。 | `clouddrive/config/` 或 `openlist/data/`。 |
@@ -89,7 +92,7 @@ PYTHONPATH=src python3 -m tg2cloud.persistence.bundle --help
 /srv/private-snapshots/openlist/
   .env
   docker-compose.yml
-  data/tg115.db
+  data/tg2cloud.db
   data/bot.session
   config/                 需要实际配置文件，不能只是空目录
   openlist/data/          需要实际网关状态文件

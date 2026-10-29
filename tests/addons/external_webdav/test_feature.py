@@ -218,6 +218,8 @@ class SharedStateTests(unittest.TestCase):
 
     def test_last_management_removal_keeps_proxy_alive(self):
         manager = DomainProxyManager(Mock(), PRODUCTS["clouddrive2"], {}, Mock())
+        # This isolated proxy has no Compose registry; keep the real ownership probe.
+        manager.session.run.return_value = (0, "")
         manager.read_state = Mock(return_value=shared())
         manager._activate = Mock()
         manager._compose = Mock(return_value=(0, ""))

@@ -10,7 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 CLI_TESTS = (
-    "test_compose.py",
+    "test_database_paths.py", "test_compose.py", "test_compose_access.py", "test_compose_https.py",
+    "test_compose_https_bundle.py", "test_compose_proxy_dependencies.py",
     "test_architecture.py",
     "test_vps_installer.py", "test_lan_installer.py", "test_uninstaller.py",
     "test_proxy_host_compat.py", "test_repository.py", "test_storage_wizard.py", "test_source_release.py", "test_layout_contracts.py",
@@ -36,7 +37,7 @@ CLI_PATHS = (
     ".github/scripts/baseline_metadata.py", "src/tg2cloud/domain/naming.py",
     ".github/scripts/maintenance_preflight.py", "src/tg2cloud/persistence/rehearsal.py",
     ".github/scripts/prepare_release.py", ".github/scripts/linux_validation.py",
-    "src/tg2cloud/persistence/backup.py", "src/tg2cloud/persistence/bundle.py", "src/tg2cloud/monitoring/readiness.py",
+    "src/tg2cloud/persistence/backup.py", "src/tg2cloud/persistence/bundle.py", "src/tg2cloud/persistence/paths.py", "src/tg2cloud/monitoring/readiness.py",
     "src/tg2cloud/monitoring/progress.py",
     *(f"tests/{name}" for name in CLI_TESTS if name not in {"test_feature.py", "test_http.py", "test_scope.py", "test_users.py", "test_naming_preview.py"}),
     "tests/naming/test_naming_preview.py",

@@ -376,6 +376,9 @@ class TransactionManager(DomainProxyManager):
     def read_state(self):
         return json.loads(json.dumps(self.current))
 
+    def _check_compose_owner(self, state):
+        pass  # Isolated transaction harness; real ownership probes have separate regressions.
+
     def probe(self, domain: str) -> ProxyEnvironment:
         return ProxyEnvironment(
             "OK", "OK", "FREE", "FREE", ("203.0.113.10",), (), ("203.0.113.10",)

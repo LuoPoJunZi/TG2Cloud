@@ -75,9 +75,8 @@ class OpenListProductTests(unittest.TestCase):
         pairs = tgdep_configuration.new_config(OPENLIST_PRODUCT, values)
         config = "\n".join(f"{key}={value}" for key, value in pairs.items())
         self.assertEqual(pairs["TG2CLOUD_STORAGE_BACKEND"], "openlist")
+        self.assertFalse(any(key.startswith("TG115_") for key in pairs))
         self.assertEqual(pairs["TG2CLOUD_RCLONE_REMOTE_NAME"], "openlist")
-        self.assertEqual(pairs["TG115_STORAGE_BACKEND"], "openlist")
-        self.assertEqual(pairs["TG115_RCLONE_REMOTE_NAME"], "openlist")
         self.assertEqual(pairs["LOCAL_TEMP_BUDGET_GB"], "20")
         self.assertEqual(pairs["MIN_FREE_DISK_GB"], "8")
         self.assertEqual(pairs["WEBDAV_TARGET_PATH_B64"], "")
@@ -90,7 +89,7 @@ class OpenListProductTests(unittest.TestCase):
             pairs["OPENLIST_ADMIN_PASSWORD"], values["admin_password"]
         )
         self.assertEqual(pairs["TG2CLOUD_PRESERVE_WEBDAV"], "false")
-        self.assertEqual(pairs["TG115_PRESERVE_WEBDAV"], "false")
+        self.assertEqual(pairs["TG2CLOUD_PRESERVE_WEBDAV"], "false")
         self.assertNotRegex(config, r"(?i)(115_cookie|115_token|cookie_115)")
 
 
@@ -169,7 +168,7 @@ class OpenListPayloadTests(unittest.TestCase):
         self.assertIn("chmod 600 \"$INSTALL_DIR/.env\"", script)
         self.assertIn("/opt/tg2cloud-openlist-backups", script)
         self.assertIn("openlist-state-", script)
-        self.assertIn("tg115_preserve_existing_webdav_config", script)
+        self.assertIn("tg2cloud_preserve_existing_webdav_config", script)
         helper = (OPENLIST_PAYLOAD / "preserve_webdav_config.sh").read_text(
             encoding="utf-8"
         )

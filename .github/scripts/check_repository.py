@@ -12,6 +12,7 @@ from urllib.parse import unquote, urlsplit
 
 ROOT = Path(__file__).resolve().parents[2]
 BUILD_FILES = (
+    "packaging/compose-https.sh", "src/tg2cloud/compose/https.py", "src/tg2cloud/compose/access.py",
     "packaging/compose-release.json", ".github/scripts/compose_release.py",
     ".github/workflows/compose-images.yml", "docs/COMPOSE.md",
     "install.sh", "install-lan.sh", "packaging/external-webdav.json", ".github/scripts/release_metadata.py",

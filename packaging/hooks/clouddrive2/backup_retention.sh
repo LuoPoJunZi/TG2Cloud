@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-tg115_validate_backup_dir() {
+tg2cloud_validate_backup_dir() {
   local backup_dir="${1:-}" logical physical
   [[ "$backup_dir" == /* && -d "$backup_dir" && ! -L "$backup_dir" ]] || return 1
   logical="$(cd "$backup_dir" && pwd -L)" || return 1
@@ -8,31 +8,31 @@ tg115_validate_backup_dir() {
   [[ "$logical" == "$physical" && "$logical" == "$backup_dir" ]]
 }
 
-tg115_backup_pattern_stats() {
+tg2cloud_backup_pattern_stats() {
   local backup_dir="$1" pattern="$2"
   find "$backup_dir" -maxdepth 1 -type f -name "$pattern" -printf '%s\n' \
     | awk '{count += 1; bytes += $1} END {printf "%d %d\n", count, bytes}'
 }
 
-tg115_backup_inventory() {
+tg2cloud_backup_inventory() {
   local backup_dir="${1:-/opt/tg2cloud-clouddrive2-backups}"
   local config_count config_bytes database_count database_bytes env_count env_bytes
   local openlist_count openlist_bytes
-  tg115_validate_backup_dir "$backup_dir" || {
+  tg2cloud_validate_backup_dir "$backup_dir" || {
     printf 'TG2CLOUD_BACKUPS=FAILED\n备份目录不是安全的真实绝对目录：%s\n' "$backup_dir" >&2
     return 2
   }
   read -r config_count config_bytes < <(
-    tg115_backup_pattern_stats "$backup_dir" 'config-*.tar.gz'
+    tg2cloud_backup_pattern_stats "$backup_dir" 'config-*.tar.gz'
   )
   read -r database_count database_bytes < <(
-    tg115_backup_pattern_stats "$backup_dir" 'database-*.db'
+    tg2cloud_backup_pattern_stats "$backup_dir" 'database-*.db'
   )
   read -r env_count env_bytes < <(
-    tg115_backup_pattern_stats "$backup_dir" 'env-*.env'
+    tg2cloud_backup_pattern_stats "$backup_dir" 'env-*.env'
   )
   read -r openlist_count openlist_bytes < <(
-    tg115_backup_pattern_stats "$backup_dir" 'openlist-state-*.tar.gz'
+    tg2cloud_backup_pattern_stats "$backup_dir" 'openlist-state-*.tar.gz'
   )
   printf 'TG2CLOUD_BACKUPS=OK\n'
   printf 'BACKUP_DIR=%s\n' "$backup_dir"
@@ -46,7 +46,7 @@ tg115_backup_inventory() {
     "$((config_bytes + database_bytes + env_bytes + openlist_bytes))"
 }
 
-tg115_prune_backup_pattern() {
+tg2cloud_prune_backup_pattern() {
   local backup_dir="$1" pattern="$2" keep="$3"
   local seen=0 deleted=0 entry path base
   while IFS= read -r -d '' entry; do
@@ -72,21 +72,21 @@ tg115_prune_backup_pattern() {
   printf '%s\n' "$deleted"
 }
 
-tg115_prune_backups() {
+tg2cloud_prune_backups() {
   local backup_dir="${1:-/opt/tg2cloud-clouddrive2-backups}" keep="${2:-5}"
   local config_deleted database_deleted env_deleted openlist_deleted
   [[ "$keep" =~ ^[1-9][0-9]?$ && "$keep" -le 50 ]] || {
     printf 'TG2CLOUD_BACKUP_PRUNE=FAILED\n保留数量必须是 1 到 50 的整数\n' >&2
     return 2
   }
-  tg115_validate_backup_dir "$backup_dir" || {
+  tg2cloud_validate_backup_dir "$backup_dir" || {
     printf 'TG2CLOUD_BACKUP_PRUNE=FAILED\n备份目录不是安全的真实绝对目录：%s\n' "$backup_dir" >&2
     return 2
   }
-  config_deleted="$(tg115_prune_backup_pattern "$backup_dir" 'config-*.tar.gz' "$keep")" || return 1
-  database_deleted="$(tg115_prune_backup_pattern "$backup_dir" 'database-*.db' "$keep")" || return 1
-  env_deleted="$(tg115_prune_backup_pattern "$backup_dir" 'env-*.env' "$keep")" || return 1
-  openlist_deleted="$(tg115_prune_backup_pattern "$backup_dir" 'openlist-state-*.tar.gz' "$keep")" || return 1
+  config_deleted="$(tg2cloud_prune_backup_pattern "$backup_dir" 'config-*.tar.gz' "$keep")" || return 1
+  database_deleted="$(tg2cloud_prune_backup_pattern "$backup_dir" 'database-*.db' "$keep")" || return 1
+  env_deleted="$(tg2cloud_prune_backup_pattern "$backup_dir" 'env-*.env' "$keep")" || return 1
+  openlist_deleted="$(tg2cloud_prune_backup_pattern "$backup_dir" 'openlist-state-*.tar.gz' "$keep")" || return 1
   printf 'TG2CLOUD_BACKUP_PRUNE=OK\n'
   printf 'KEEP_PER_TYPE=%s\n' "$keep"
   printf 'DELETED_CONFIG=%s\nDELETED_DATABASE=%s\nDELETED_ENV=%s\n' \

@@ -72,7 +72,7 @@ redact_runtime_logs() {
 
 create_backup() (
   local config_backup="" database_backup="" openlist_backup=""
-  local db_temp_name="" services_stopped=false exit_code
+  local db_temp_name="" database_name="" services_stopped=false exit_code
 
   # Invoked indirectly by the signal/error trap below.
   # ShellCheck 0.9 reports the trap body as unreachable (SC2317), while newer
@@ -108,12 +108,13 @@ create_backup() (
   tar -tzf "$config_backup" >/dev/null
   chmod 600 "$config_backup"
 
-  if [[ -f "$INSTALL_DIR/data/tg115.db" ]]; then
+  database_name="$(python3 -I -S -B "$INSTALL_DIR/app/tg2cloud/persistence/paths.py" "$INSTALL_DIR/data")"
+  if [[ -f "$INSTALL_DIR/data/$database_name" ]]; then
     database_backup="$(mktemp "$BACKUP_DIR/database-XXXXXXXX.db")"
     rm -f -- "$database_backup"
     db_temp_name=".manual-backup-$$.db"
     docker compose exec -T "$BOT_SERVICE" python -m app.backup_database \
-      /data/tg115.db "/data/$db_temp_name"
+      "/data/$database_name" "/data/$db_temp_name"
     install -m 600 "$INSTALL_DIR/data/$db_temp_name" "$database_backup"
     rm -f -- "$INSTALL_DIR/data/$db_temp_name"
     db_temp_name=""
@@ -241,10 +242,10 @@ case "${1:-status}" in
     apply_config "$@"
     ;;
   backups)
-    tg115_backup_inventory "$BACKUP_DIR"
+    tg2cloud_backup_inventory "$BACKUP_DIR"
     ;;
   prune-backups)
-    tg115_prune_backups "$BACKUP_DIR" "${2:-5}"
+    tg2cloud_prune_backups "$BACKUP_DIR" "${2:-5}"
     ;;
   check|doctor)
     check_openlist

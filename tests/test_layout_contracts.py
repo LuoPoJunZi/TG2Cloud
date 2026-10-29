@@ -130,7 +130,7 @@ class SourceLayoutTests(unittest.TestCase):
         self.assertIn('"tg2cloud.app"', dockerfile)
         application = (ROOT / "src/tg2cloud/app.py").read_text(encoding="utf-8")
         client = (ROOT / "src/tg2cloud/telegram/client.py").read_text(encoding="utf-8")
-        self.assertIn('settings.data_dir / "tg115.db"', application)
+        self.assertIn('database_path(settings.data_dir)', application)
         self.assertIn('settings.data_dir / "bot"', client)
 
     def test_runtime_host_and_direct_fingerprint_agree_without_bot_dependencies(self):

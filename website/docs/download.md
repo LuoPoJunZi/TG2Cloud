@@ -1,5 +1,7 @@
 # 安装、下载与校验
 
+**TG2Cloud v1.5.3** 待发布，资料核对日期：2026-10-29。新命名与 Compose HTTPS 为本地准备内容；当前正式稳定版仍为 v1.5.2，远端 CI、发布资产及实机验收尚未完成。
+
 当前正式稳定版为 **TG2Cloud v1.5.2**。同标签双架构检查、源码包与校验清单已核验；真实 VPS、NAS、Telegram 和网关转存仍需单独验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
 
 业务部署只使用正式稳定源码，历史 Windows EXE 停留在 v1.2.1。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。

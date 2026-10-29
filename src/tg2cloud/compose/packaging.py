@@ -10,9 +10,46 @@ import tarfile
 from pathlib import Path
 
 from tg2cloud.deployment.profiles import PRODUCTS
+from tg2cloud.deployment.runtime import files as host_files
 from tg2cloud.version import VERSION
 
 IMAGE = re.compile(r"ghcr\.io/[a-z0-9_.-]+/[a-z0-9_./-]+(?::[A-Za-z0-9_.-]+)?(?:@sha256:[a-f0-9]{64})?")
+
+
+def https_tools(root: Path) -> dict[str, bytes]:
+    """Package only the verified shared host helpers and Compose source/resources."""
+    helpers = host_files(root)
+    manifest = json.loads((root / "packaging/bootstrap-manifest.json").read_bytes())
+    if (not isinstance(manifest, dict) or set(manifest) != {"format", "files"}
+            or type(manifest.get("format")) is not int or manifest["format"] != 1
+            or manifest.get("files") != sorted(helpers)):
+        raise ValueError("invalid or stale bootstrap source manifest")
+    selected = dict(helpers)
+    selected.update({path.relative_to(root).as_posix(): b""
+                     for path in (root / "src/tg2cloud/compose").rglob("*.py")})
+    selected.update({"packaging/compose/docker-compose." + edition + ".yml": b"" for edition in PRODUCTS})
+    for name in selected:
+        path = root / name
+        if (path.is_symlink() or path.absolute() != path.resolve() or not path.is_file()
+                or path.stat().st_nlink != 1
+                or path.stat().st_size > 2 * 1024**2):
+            raise ValueError("HTTPS helper source missing, oversized or contains a link")
+        selected[name] = path.read_bytes()
+    if not {"src/tg2cloud/compose/https.py", "src/tg2cloud/compose/access.py"} <= selected.keys():
+        raise ValueError("HTTPS host helper source missing")
+    hashes = {name: hashlib.sha256(content).hexdigest() for name, content in sorted(selected.items())}
+    content = (json.dumps({"format": 1, "files": hashes}, indent=2) + "\n").encode()
+    launcher = root / "packaging/compose-https.sh"
+    if launcher.is_symlink() or launcher.absolute() != launcher.resolve() or not launcher.is_file():
+        raise ValueError("HTTPS launcher missing or contains a link")
+    template = launcher.read_bytes().replace(b"\r\n", b"\n")
+    placeholder = b"@HTTPS_MANIFEST_SHA256@"
+    if template.count(placeholder) != 1:
+        raise ValueError("unexpected HTTPS launcher template")
+    result = {"https.sh": template.replace(placeholder, hashlib.sha256(content).hexdigest().encode()),
+              "https-tools/manifest.json": content}
+    result.update({"https-tools/" + name: body for name, body in sorted(selected.items())})
+    return result
 
 
 def render(root: Path, edition: str, image: str) -> str:
@@ -56,7 +93,7 @@ def render(root: Path, edition: str, image: str) -> str:
 def bundle_files(root: Path, edition: str, image: str, commit: str = "") -> dict[str, bytes]:
     if commit and not re.fullmatch(r"[0-9a-f]{40}", commit):
         raise ValueError("invalid source commit")
-    metadata = {"format": 1, "mode": "compose", "edition": edition,
+    metadata = {"format": 2, "https_tools": 1, "mode": "compose", "edition": edition,
                 "version": VERSION, "image": image, "commit": commit}
     return {
         "docker-compose.yml": render(root, edition, image).encode(),
@@ -64,6 +101,7 @@ def bundle_files(root: Path, edition: str, image: str, commit: str = "") -> dict
         ".env.example": b"# Run the setup service to generate the private .env. Do not put secrets here.\nTG2CLOUD_BIND_IP=127.0.0.1\n",
         "README.md": (root / "docs/COMPOSE.md").read_bytes(),
         "LICENSE": (root / "LICENSE").read_bytes(),
+        **https_tools(root),
     }
 
 
@@ -78,9 +116,13 @@ def build_bundles(root: Path, output: Path, image: str, commit: str = "") -> lis
         archive = output / (name + ".tar.gz")
         with archive.open("wb") as out, gzip.GzipFile(fileobj=out, mode="wb", filename="", mtime=0) as zipped, tarfile.open(fileobj=zipped, mode="w") as tar:
             for relative, content in files.items():
-                (directory / relative).write_bytes(content)
+                target = directory / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes(content)
                 info = tarfile.TarInfo(name + "/" + relative)
-                info.size, info.mode, info.mtime = len(content), 0o644, 0
+                mode = 0o755 if relative == "https.sh" else 0o644
+                target.chmod(mode)
+                info.size, info.mode, info.mtime = len(content), mode, 0
                 tar.addfile(info, io.BytesIO(content))
         archives.append(archive)
     (output / "COMPOSE-SHA256SUMS.txt").write_text("".join(

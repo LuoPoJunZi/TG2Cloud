@@ -172,7 +172,7 @@ class RcloneUploadStream:
 class RcloneClient:
     def __init__(self, settings: Settings):
         self.settings = settings
-        self.log = logging.getLogger("tg115.rclone")
+        self.log = logging.getLogger("tg2cloud.rclone")
         self._config_lock = asyncio.Lock()
         self._config_ready = False
 

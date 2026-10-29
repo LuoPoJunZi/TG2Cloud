@@ -10,6 +10,7 @@
 | `src/tg2cloud/addons/external_webdav/` | 独立只读附加功能，从 `tg2cloud` 菜单按需管理，不加入主安装或 Bot 菜单 |
 | `src/tg2cloud/` | 共享 Bot、CLI、公共部署、存储、持久化及监测 |
 | `scripts/run_source.py` | 不依赖当前目录或 Bot 依赖的受控源码入口 |
+| `src/tg2cloud/compose/` | 独立 Compose 的离线初始化、发布包组装和可选宿主 HTTPS；复用公共代理，不接管脚本实例 |
 | `packaging/` | 共用 Dockerfile、两版 Compose、Shell 钩子和 `app.*` 兼容入口 |
 | `requirements/`、`pyproject.toml` | 包元数据、依赖分组及同一 uv 工具生成的哈希锁文件 |
 | `assets/brand/` | 正式 Logo／Icon 唯一来源，不自动重绘或覆盖 |

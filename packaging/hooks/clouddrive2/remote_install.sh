@@ -10,6 +10,7 @@ BOT_SERVICE="tg2cloud-clouddrive2-bot"
 BOT_CONTAINER="tg2cloud-clouddrive2-bot"
 BACKUP=""
 DATABASE_BACKUP=""
+DATABASE_NAME=""
 DATABASE_BACKUP_CANDIDATE=""
 ROLLBACK_DATABASE=""
 RELEASE_STAGE=""
@@ -78,8 +79,8 @@ rollback_install() {
   remove_program_files || return 1
   tar -xzf "$BACKUP" -C "$INSTALL_DIR" || return 1
   if [[ -n "$DATABASE_BACKUP" ]]; then
-    rm -f -- "$INSTALL_DIR/data/tg115.db-wal" "$INSTALL_DIR/data/tg115.db-shm" || return 1
-    mv -f -- "$ROLLBACK_DATABASE" "$INSTALL_DIR/data/tg115.db" || return 1
+    rm -f -- "$INSTALL_DIR/data/$DATABASE_NAME-wal" "$INSTALL_DIR/data/$DATABASE_NAME-shm" || return 1
+    mv -f -- "$ROLLBACK_DATABASE" "$INSTALL_DIR/data/$DATABASE_NAME" || return 1
     ROLLBACK_DATABASE=""
   fi
   cd "$INSTALL_DIR" || return 1
@@ -356,14 +357,15 @@ if [[ -f "$INSTALL_DIR/docker-compose.yml" ]]; then
     ROLLBACK_ARMED=true
     docker stop --time 30 "$BOT_CONTAINER" >/dev/null
   fi
-  if [[ -f "$INSTALL_DIR/data/tg115.db" ]]; then
+  DATABASE_NAME="$(python3 -I -S -B "$RELEASE_STAGE/app/tg2cloud/persistence/paths.py" "$INSTALL_DIR/data")"
+  if [[ -f "$INSTALL_DIR/data/$DATABASE_NAME" ]]; then
     DATABASE_BACKUP_CANDIDATE="$(mktemp "$BACKUP_DIR/database-XXXXXXXX.db")"
     rm -f -- "$DATABASE_BACKUP_CANDIDATE"
     DB_TEMP_NAME=".upgrade-backup-$$.db"
     log "创建并校验升级前数据库一致性快照"
     docker run --rm --read-only --tmpfs /tmp --user 10001:10001 \
       --volume "$INSTALL_DIR/data:/data" --entrypoint python "$CANDIDATE_TAG" \
-      -m app.backup_database /data/tg115.db "/data/$DB_TEMP_NAME"
+      -m app.backup_database "/data/$DATABASE_NAME" "/data/$DB_TEMP_NAME"
     install -m 600 "$INSTALL_DIR/data/$DB_TEMP_NAME" "$DATABASE_BACKUP_CANDIDATE"
     validate_database_backup "$DATABASE_BACKUP_CANDIDATE"
     DATABASE_BACKUP="$DATABASE_BACKUP_CANDIDATE"
@@ -477,7 +479,7 @@ fi
 ROLLBACK_ARMED=false
 # shellcheck disable=SC1091
 source "$INSTALL_DIR/backup_retention.sh"
-if BACKUP_INVENTORY="$(tg115_backup_inventory "$BACKUP_DIR")"; then
+if BACKUP_INVENTORY="$(tg2cloud_backup_inventory "$BACKUP_DIR")"; then
   BACKUP_COUNT="$(awk -F= '$1=="TOTAL_COUNT" {print $2}' <<< "$BACKUP_INVENTORY")"
   BACKUP_BYTES="$(awk -F= '$1=="TOTAL_BYTES" {print $2}' <<< "$BACKUP_INVENTORY")"
   log "当前保留 ${BACKUP_COUNT:-0} 份升级／配置备份，占用约 $(( ${BACKUP_BYTES:-0} / 1024 / 1024 ))MB"

@@ -177,7 +177,7 @@ class CloudRollbackTests(unittest.TestCase):
         self.prefix = script.split('[[ "$(id -u)" -eq 0 ]]', 1)[0]
 
     def run_rollback(self, mode="ok", extra=""):
-        before = 'OLD_IMAGE_ID=old-bot\nOLD_IMAGE_TAG=old-bot:latest\nDATABASE_BACKUP="$test_root/good.db"\n' + extra
+        before = 'OLD_IMAGE_ID=old-bot\nOLD_IMAGE_TAG=old-bot:latest\nDATABASE_BACKUP="$test_root/good.db"\nDATABASE_NAME=tg115.db\n' + extra
         with patch.object(shell_fixture, "PREFIX", self.prefix):
             return self.fixture.execute("rollback_install\n", mode=mode, before=before)
 

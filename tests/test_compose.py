@@ -60,6 +60,7 @@ class ComposeTests(unittest.TestCase):
         target = self.root / edition
         target.mkdir()
         for name, content in packaging.bundle_files(ROOT, edition, IMAGE).items():
+            (target / name).parent.mkdir(parents=True, exist_ok=True)
             (target / name).write_bytes(content)
         return target
 
@@ -87,12 +88,15 @@ class ComposeTests(unittest.TestCase):
         archives = packaging.build_bundles(ROOT, one, IMAGE, "b" * 40)
         other = packaging.build_bundles(ROOT, two, IMAGE, "b" * 40)
         self.assertEqual(len(archives), 2)
-        for first, second in zip(archives, other):
+        for edition, first, second in zip(PRODUCTS, archives, other):
             self.assertEqual(first.read_bytes(), second.read_bytes())
             self.assertIn(hashlib.sha256(first.read_bytes()).hexdigest(), (one / "COMPOSE-SHA256SUMS.txt").read_text())
             with tarfile.open(first) as tar:
-                names = {Path(m.name).name for m in tar}
-            self.assertEqual(names, {"docker-compose.yml", "compose-bundle.json", ".env.example", "README.md", "LICENSE"})
+                members = list(tar)
+                prefix = first.name.removesuffix(".tar.gz") + "/"
+                names = {m.name.removeprefix(prefix) for m in members}
+            self.assertEqual(names, set(packaging.bundle_files(ROOT, edition, IMAGE, "b" * 40)))
+            self.assertEqual(next(m.mode for m in members if m.name.endswith("/https.sh")), 0o755)
         with self.assertRaises(FileExistsError):
             packaging.build_bundles(ROOT, one, IMAGE)
 
@@ -129,6 +133,7 @@ class ComposeTests(unittest.TestCase):
             with self.subTest(name=name), tempfile.TemporaryDirectory(dir=self.root) as temp:
                 path = Path(temp)
                 for relative, data in packaging.bundle_files(ROOT, "clouddrive2", IMAGE).items():
+                    (path / relative).parent.mkdir(parents=True, exist_ok=True)
                     (path / relative).write_bytes(data)
                 (path / name).mkdir()
                 (path / name / "retained").write_bytes(b"unchanged")

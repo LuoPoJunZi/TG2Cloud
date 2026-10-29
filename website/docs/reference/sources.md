@@ -1,6 +1,8 @@
 # 资料来源与验证边界
 
-当前源码与正式版本 **v1.5.2**；核对日期 **2026 年 10 月 28 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2)、[同标签双架构检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40662297206)与实际源码资产核验通过；源码、镜像与 Compose 部署包的证据和未执行的真实环境项目见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
+当前开发源码 **v1.5.3**，待发布；文档核对日期 **2026 年 10 月 29 日**。未完成远端 CI、资产发布或实机验收；下方原正式版本与验收证据按历史范围保留。
+
+上次正式版本 **v1.5.2**；核对日期 **2026 年 10 月 28 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2)、[同标签双架构检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40662297206)与实际源码资产核验通过；源码、镜像与 Compose 部署包的证据和未执行的真实环境项目见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
 
 历史资料：当时源码与正式版本 **v1.5.1**；核对日期 **2026 年 10 月 28 日**。[正式 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.1)、[同标签 Linux 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40622910178)与实际资产核验通过；证据见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V151-ACCEPTANCE.md)。
 

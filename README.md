@@ -35,6 +35,8 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 
 当前稳定版 **v1.5.2**，支持 Linux；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
 
+v1.5.3 正在准备：统一新安装命名，增加可选 Compose HTTPS 向导；[查看准备与兼容说明](docs/development/V153-ACCEPTANCE.md)。
+
 ## 开始使用
 
 1. 按[填写信息清单](docs/填写信息清单.md)准备 Telegram Bot、API 信息和服务器环境；不要把真实凭据填写到公共文档。
@@ -89,7 +91,7 @@ tg2cloud uninstall --edition all --check
 | 主题 | 仓库文档 |
 | --- | --- |
 | 安装与配置 | [公网 VPS 安装 / 升级](docs/VPS-INSTALL.md) · [局域网 / NAS 安装](docs/LAN-INSTALL.md) · [填写信息清单](docs/填写信息清单.md) |
-| Docker Compose | [独立部署、初始化与备份](docs/COMPOSE.md) |
+| Docker Compose | [新手分步部署、初始化与备份](docs/COMPOSE.md) · [可选 HTTPS 向导（待发布）](docs/COMPOSE.md#待发布可选-https-配置向导) |
 | 网关与首次转存 | [CloudDrive2 / OpenList 配置与验收](docs/STORAGE.md) · [Bot 使用、菜单与命令](docs/BOT-USAGE.md) |
 | 命名与常见问题 | [视频、说明及媒体组命名](docs/NAMING.md) · [FAQ](docs/FAQ.md) |
 | 配置与备份 | [配置字段及运行目录](docs/CONFIGURATION.md) · [备份范围与恢复预检](docs/BACKUP-RESTORE.md) |

@@ -18,7 +18,12 @@ from tg2cloud.cli import terminal
 from tg2cloud.deployment import configuration, preflight, runtime
 from tg2cloud.deployment.host import LocalSession, SafeLog, edition_lock
 from tg2cloud.deployment.profiles import PRODUCTS, ProductProfile
-from tg2cloud.deployment.proxy.maintenance import ARCHIVE_NAME
+from tg2cloud.deployment.proxy.maintenance import (
+    ARCHIVE_NAME,
+    COMPOSE_REGISTRY,
+    COMPOSE_TRANSACTION,
+    parse_compose_registry,
+)
 from tg2cloud.deployment.proxy.maintenance import BACKUP_ROOT as PROXY_BACKUP_ROOT
 from tg2cloud.deployment.proxy.manager import (
     PROXY_CERTBOT_CONTAINER,
@@ -70,6 +75,27 @@ def read_state() -> dict:
     if root.exists() and {item.name for item in root.iterdir()} - {"transaction.lock"}:
         raise UninstallError("共享代理有文件但缺少状态；停止，不能猜测或覆盖未知路由")
     return empty_state()
+
+
+def read_compose_instances() -> dict:
+    """Read independent HTTPS owners, including stopped or missing gateways."""
+    path = Path(PROXY_ROOT) / COMPOSE_REGISTRY
+    if not path.exists() and not path.is_symlink():
+        return {}
+    try:
+        checked_path(path.parent)
+        if path.lstat().st_nlink != 1:
+            raise ValueError("linked Compose HTTPS registry")
+        value = parse_compose_registry(configuration.regular_private(path), physical=True)
+    except (ValueError, OSError):
+        raise UninstallError("Compose HTTPS 归属记录无效或不安全；停止，不删除共享入口或证书") from None
+    return value["instances"]
+
+
+def check_compose_transaction() -> None:
+    journal = Path(PROXY_ROOT) / COMPOSE_TRANSACTION
+    if journal.exists() or journal.is_symlink():
+        raise UninstallError("Compose HTTPS 事务尚未完成；请先用部署包 HTTPS 工具核对，不删除入口、证书或恢复材料")
 
 
 def docker_snapshot(session: LocalSession) -> tuple[dict, dict]:
@@ -240,7 +266,7 @@ class Plan:
 
 def other_edition_present(editions: tuple[str, ...], containers: dict) -> bool:
     """Retained data also needs its shared certificates, not just live containers."""
-    return any(PRODUCTS[key].bot_container in containers or PRODUCTS[key].storage_container in containers
+    return bool(read_compose_instances()) or any(PRODUCTS[key].bot_container in containers or PRODUCTS[key].storage_container in containers
                or Path(PRODUCTS[key].install_dir).exists() or (LAN_ROOT / key).exists()
                for key in PRODUCTS if key not in editions)
 
@@ -280,6 +306,10 @@ def backup_identity(root: Path, pattern: re.Pattern) -> tuple | None:
 def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: bool = False,
                purge_backups: bool = False) -> Plan:
     purge_data = purge_data or purge_backups
+    check_compose_transaction()
+    compose_instances = read_compose_instances()
+    if set(editions) & set(compose_instances):
+        raise UninstallError("所选 Edition 已由独立 Compose HTTPS 登记；请使用部署包 HTTPS 工具移除路由，再按 Compose 指南维护；此卸载器不接管")
     containers, networks = docker_snapshot(session)
     state = read_state()
     journal = Path(PROXY_ROOT) / "state/external-transaction.json"
@@ -334,7 +364,8 @@ def build_plan(editions: tuple[str, ...], session: LocalSession, *, purge_data: 
     remaining = set(state["domains"]) - set(editions)
     # External ingress and retained certificate metadata are never purge targets.
     # Last-route removal still deletes our sites and renewal schedule via adapter.
-    remove_proxy = not remaining and not state.get("external_webdav") and state.get("version") != 3
+    remove_proxy = (not remaining and not state.get("external_webdav")
+                    and state.get("version") != 3 and not compose_instances)
     for name, item in containers.items():
         labels = item.get("labels") or {}
         if name in {PROXY_NGINX_CONTAINER, PROXY_CERTBOT_CONTAINER} or labels.get(COMPOSE + "project") == PROXY_PROJECT:
@@ -398,6 +429,10 @@ def mountpoints() -> tuple[Path, ...]:
 
 def purge_preflight(editions: tuple[str, ...], containers: dict, selected: dict, remove_proxy: bool,
                     backups: tuple[Path, ...] = ()) -> None:
+    check_compose_transaction()
+    compose_instances = read_compose_instances()
+    if set(editions) & set(compose_instances) or remove_proxy and compose_instances:
+        raise UninstallError("独立 Compose HTTPS 仍依赖共享入口；停止，不删除其入口、状态或证书")
     roots = [Path(PRODUCTS[key].install_dir) for key in editions]
     # Never delete shared certificates while another Edition is still present,
     # even if that Edition has no committed HTTPS route yet.
@@ -568,6 +603,9 @@ def validate_environment(session: LocalSession) -> None:
 
 def manager_in_use(session: LocalSession) -> bool:
     """Conservative post-removal dependency check, including stopped/partial instances."""
+    check_compose_transaction()
+    if read_compose_instances():
+        return True
     containers, networks = docker_snapshot(session)
     for name, item in (*containers.items(), *networks.items()):
         labels = item.get("labels") or {}

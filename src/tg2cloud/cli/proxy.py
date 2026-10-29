@@ -278,6 +278,7 @@ def migrate(manager, name, email, log):
     state = manager.read_state()
     if state.get("version") == 3 or not has_routes(state) or not name:
         raise ValueError("迁移仅适用于已有独立代理，且必须显式选择目标容器。")
+    manager._check_compose_owner(state, all_routes=True)
     old = DockerNginx(manager.session).inspect("tg2cloud-proxy-nginx")
     if old["running"]:
         raise ValueError("请先导出 migration-plan，在维护窗口由用户切换公网入口；当前不会自动停止任何 Nginx。")
@@ -296,6 +297,7 @@ def migrate(manager, name, email, log):
     with manager.session.hold_lock(proxy_lock_command()):
         if manager.read_state() != state:
             raise ValueError("迁移确认期间共享状态已改变。")
+        manager._check_compose_owner(state, all_routes=True)
         manager.external_plan = entry
         # Reuse every certificate only if it is already accessible and valid in
         # the new persistent mount. Otherwise explicit preparation is required;

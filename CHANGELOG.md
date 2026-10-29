@@ -1,5 +1,19 @@
 # 更新记录
 
+## TG2Cloud v1.5.3
+
+准备中，尚未发布；线上稳定版仍为 v1.5.2。见[发布准备与兼容记录](docs/development/V153-ACCEPTANCE.md)。
+
+- 全新安装统一使用 `data/tg2cloud.db`；已有唯一旧库继续使用，不自动改名或重建。双库、链接和无主旁文件拒绝操作；业务 schema 3 不变。
+- Bot、监听、管理、诊断、备份和隔离恢复复用统一的数据库选择；两 Edition 一键升级／回退按原文件名备份、恢复，保留现有 Session 与任务。
+- 新配置不再生成 `TG115_*`，旧变量保留读取；rclone 日志、临时验收文件和内部 Shell 函数统一 TG2Cloud 命名。保留上游致谢和旧实例隔离。
+- 补充已核实的 v1.5.2 升级基线；Compose 的新增交互保持独立，不加入公网或内网一键安装向导。
+
+- Compose 初始化增加可选的本机／内网、自动 HTTPS、已有代理访问计划；默认保持本机／内网，初始化容器继续离线且不挂载 Docker Socket。
+- 新版部署包增加离线 `https.sh` 宿主向导，复用共享 Nginx＋Certbot；已有其他代理时只导出候选配置，不自动修改原站点。新增 Compose 路由归属保护、共享备份覆盖与安全卸载边界。
+- 新包采用 format 2，旧 format 1 部署包继续按原规则检查；业务 schema 3 不变。须发布匹配的新镜像与完整部署包后才能在线使用，v1.5.2 历史资产不替换。
+- 补充新手 Docker／Compose 安装、访问方式与 HTTPS 维护说明；实际 DNS／ACME、VPS、NAS 和两网关验收尚未执行。
+
 ## TG2Cloud v1.5.2
 
 版本日期：2026-10-28。[v1.5.2 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2) 已发布；A／B、同标签双架构、共享镜像和两 Edition Compose 资产已核验。真实 VPS、NAS、Telegram 与网关转存仍待用户验收，详见[本版记录](docs/development/V152-ACCEPTANCE.md)。
@@ -123,12 +137,13 @@
 
 发布后验收补充：用户已提供 v1.4.5 的 CloudDrive2 ARM64 升级与单独 WebDAV 写入日志，按[记录范围](docs/development/V145-ACCEPTANCE.md)保留；上段未验收说明是发布当时状态，不扩展到本版或其他场景。
 
-本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.2 共 33 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
+本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.3 共 34 个版本（包括准备中的 v1.5.3）**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
 
 截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.5.3](#tg2cloud-v153) | 准备中：TG2Cloud 新安装命名统一、数据库兼容与可选 Compose HTTPS；一键脚本流程保持独立。 |
 | [v1.5.2](#tg2cloud-v152) | 监听断网恢复、分批历史维护、独立 Compose 部署与共享双架构镜像。 |
 | [v1.5.1](#tg2cloud-v151) | 监听公平轮询、后台维护、数据库／资源热点与上传进度优化。 |
 | [v1.5.0](#tg2cloud-v150) | Linux 管理工具同步、Bot／CLI 版本验收、监听并发与预览、终端登录修复。 |

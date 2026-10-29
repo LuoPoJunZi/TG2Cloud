@@ -83,8 +83,8 @@ class ValidationTests(unittest.TestCase):
     def test_shell_stage_checks_all_entries_and_every_managed_hook(self):
         commands = validation.commands('shell')
         self.assertEqual([c for c in commands if c[:2] == ['bash', '-n']],
-                         [['bash', '-n', 'install.sh'], ['bash', '-n', 'install-lan.sh']])
-        self.assertIn(['shellcheck', 'install.sh', 'install-lan.sh'], commands)
+                         [['bash', '-n', 'install.sh'], ['bash', '-n', 'install-lan.sh'], ['bash', '-n', 'packaging/compose-https.sh']])
+        self.assertIn(['shellcheck', 'install.sh', 'install-lan.sh', 'packaging/compose-https.sh'], commands)
         hooks = commands[-1]
         for path in (ROOT / 'packaging/hooks').glob('*/*.sh'):
             self.assertIn(path.relative_to(ROOT).as_posix(), hooks)

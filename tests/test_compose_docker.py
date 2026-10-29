@@ -51,11 +51,18 @@ class ComposeDockerTests(unittest.TestCase):
     def test_both_bundles_setup_offline_and_bot_nonroot(self):
         self.assertEqual(os.name, "posix")
         self.run_command(["docker", "info"])
-        for edition, product in PRODUCTS.items():
-            with self.subTest(edition=edition), tempfile.TemporaryDirectory(prefix="tg2cloud-compose-ci-") as temp:
+        for edition, mode in ((edition, mode) for edition in PRODUCTS for mode in ("local", "managed")):
+            product = PRODUCTS[edition]
+            setup = SETUP
+            if mode == "managed":
+                setup = setup.replace("'任务暂存预算 GB':'1'", "'任务暂存预算 GB':'1','选择访问方式':'2','管理页域名（只填域名）':'panel.example.com'")
+            setup += "\nimport json;assert json.loads(Path('/workspace/compose-access.json').read_text())['mode']==" + repr(mode)
+            with self.subTest(edition=edition, mode=mode), tempfile.TemporaryDirectory(prefix="tg2cloud-compose-ci-") as temp:
                 root = Path(temp)
                 for name, data in bundle_files(ROOT, edition, "ghcr.io/luopojunzi/tg2cloud:ci").items():
-                    (root / name).write_bytes(data)
+                    target = root / name
+                    target.parent.mkdir(parents=True, exist_ok=True)
+                    target.write_bytes(data)
                 identifier = "tg2cloud-compose-test-" + uuid.uuid4().hex
                 override = {"services": {"setup": {"image": IMAGE}, product.bot_service: {"image": IMAGE, "container_name": identifier}},
                             "networks": {product.docker_network: {"name": identifier}}}
@@ -63,7 +70,8 @@ class ComposeDockerTests(unittest.TestCase):
                 compose = ["docker", "compose", "-p", identifier, "-f", str(root / "docker-compose.yml"), "-f", str(root / "override.json")]
                 try:
                     self.run_command([*compose, "config", "--quiet"])
-                    self.run_command([*compose, "run", "--rm", "-T", "--pull", "never", "setup", "python", "-c", SETUP])
+                    self.assertIn("HTTPS", self.run_command(["bash", str(root / "https.sh"), "--help"]))
+                    self.run_command([*compose, "run", "--rm", "-T", "--pull", "never", "setup", "python", "-c", setup])
                     self.run_command([*compose, "run", "--rm", "-T", "--pull", "never", "setup", "python", "-m", "tg2cloud.compose", "check"])
                     output = self.run_command([*compose, "run", "--rm", "-T", "--no-deps", "--pull", "never", product.bot_service, "python", "-c", CHECK])
                     self.assertIn("COMPOSE_NONROOT=OK", output)

@@ -21,6 +21,7 @@ from pathlib import Path
 from tg2cloud.deployment import runtime
 from tg2cloud.persistence import bundle
 from tg2cloud.persistence.backup import backup_database
+from tg2cloud.persistence.paths import database_path
 
 ACTIVE = ("reserved", "downloading", "streaming", "uploading", "verifying", "finalizing", "cleanup_pending")
 
@@ -42,7 +43,7 @@ def mountpoints() -> set[Path]:
 
 
 def active_tasks(directory: Path) -> int:
-    database = directory / "data/tg115.db"
+    database = database_path(directory / "data", require_existing=True)
     if database.is_symlink() or database.resolve() != database or not database.is_file():
         raise ValueError("业务数据库缺失或经过链接，无法确认备份条件")
     with closing(sqlite3.connect(database.as_uri() + "?mode=ro", uri=True, timeout=5)) as conn:
@@ -54,7 +55,8 @@ def selected_files(instance) -> dict[str, Path]:
     if root.resolve() != root:
         raise ValueError("实例路径经过链接")
     gateway = "openlist/data" if instance.product.is_openlist else "clouddrive/config"
-    names = [*bundle.required(instance.product.key), "config", gateway]
+    database = database_path(root / "data", require_existing=True).relative_to(root).as_posix()
+    names = [*bundle.required(instance.product.key, database), "config", gateway]
     personal = root / "data/listener/personal.session"
     if personal.exists() or personal.is_symlink():
         if personal.is_symlink() or not personal.is_file():
