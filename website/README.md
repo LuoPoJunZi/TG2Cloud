@@ -1,12 +1,12 @@
 # TG2Cloud Docs
 
-**TG2Cloud v1.5.3** 待发布，资料核对日期：2026-10-29。新命名与 Compose HTTPS 为本地准备内容；当前正式稳定版仍为 v1.5.2，远端 CI、发布资产及实机验收尚未完成。
+**TG2Cloud v1.5.3** 已正式发布，资料核对日期：2026-10-29。同标签原生双架构、实际源码包、镜像及两版 Compose 资产已核验；真实 VPS、DNS／ACME、Telegram 与网关转存仍待用户验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。
 
 **TG2Cloud v1.5.2** 已正式发布；资料核对日期：2026-10-28。同标签双架构、源码与两版 Compose 资产已核验；真实用户环境仍待验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
 
 **TG2Cloud v1.5.1** 已正式发布，资料核对日期：2026-10-28；性能与监听维护。
 
-TG2Cloud 中文静态文档网站，提供安装、使用、运维指南、本地搜索及版本记录。当前正式版本为 **TG2Cloud v1.5.2**；资料核对日期：2026-10-28。同标签 Linux 检查与实际源码资产核验通过，证据见[本版记录](../docs/development/V152-ACCEPTANCE.md)，真实账号和 VPS 验收按各版本实际记录理解。
+TG2Cloud 中文静态文档网站，提供安装、使用、运维指南、本地搜索及版本记录。当前正式版本为 **TG2Cloud v1.5.3**；资料核对日期：2026-10-29。同标签 Linux 检查与实际发布资产核验通过，证据见[本版记录](../docs/development/V153-ACCEPTANCE.md)，真实账号和 VPS 验收按各版本实际记录理解。
 
 历史发布说明集中在[更新日志](docs/changelog.md)；[v1.4.4 升级记录](../docs/development/V144-ACCEPTANCE.md)、[v1.4.5 用户验收](../docs/development/V145-ACCEPTANCE.md)及其他历史验收可从[仓库文档目录](../docs/README.md)查阅，不在本页重复积累发布正文。
 

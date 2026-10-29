@@ -1,6 +1,6 @@
 # 来源、致谢与素材说明
 
-**TG2Cloud v1.5.3** 待发布，资料核对日期：2026-10-29。新命名与 Compose HTTPS 为本地准备内容；当前正式稳定版仍为 v1.5.2，远端 CI、发布资产及实机验收尚未完成。
+**TG2Cloud v1.5.3** 已正式发布，资料核对日期：2026-10-29。同标签原生双架构、实际源码包、镜像及两版 Compose 资产已核验；真实 VPS、DNS／ACME、Telegram 与网关转存仍待用户验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。
 
 **TG2Cloud v1.5.2** 已正式发布；资料核对日期：2026-10-28。同标签双架构、源码与两版 Compose 资产已核验；真实用户环境仍待验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
 

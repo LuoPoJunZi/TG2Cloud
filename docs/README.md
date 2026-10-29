@@ -1,8 +1,8 @@
 # TG2Cloud 文档目录
 
-当前正式版本为 **v1.5.2**，以 Linux Python + Bash 一键脚本维护；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 → 3 迁移与回退见[监听指南](LISTENING.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
+当前正式版本为 **v1.5.3**，以 Linux Python + Bash 一键脚本维护；Windows PySide6 部署器停留在 v1.2.1。本文档目录面向仓库读者，不要求跳到网站源码中阅读教程。升级前备份，业务 schema 2 → 3 迁移与回退见[监听指南](LISTENING.md)；公网 NAT 的执行条件见[VPS 指南](VPS-INSTALL.md)。
 
-当前版本的发布证据与待执行的实机清单见 [v1.5.2 记录](development/V152-ACCEPTANCE.md)。历史记录统一列在下方，按对应版本与实际测试范围理解。
+当前版本的发布证据与待执行的实机清单见 [v1.5.3 记录](development/V153-ACCEPTANCE.md)。历史记录统一列在下方，按对应版本与实际测试范围理解。
 
 ## 按你的情况开始
 
@@ -64,6 +64,8 @@
 
 ### 按版本查阅验收
 
+- [v1.5.3 命名统一与 Compose HTTPS](development/V153-ACCEPTANCE.md)：发布资产、兼容边界和发布后实机清单。
+
 - [v1.5.2 Compose 与监听恢复](development/V152-ACCEPTANCE.md)：真实进度、兼容边界与发布后清单。
 
 - [v1.5.1 性能维护与用户验收](development/V151-ACCEPTANCE.md)：发布资产、CloudDrive2 升级与 WebDAV 验收。
@@ -96,5 +98,3 @@
 `docs/` 是仓库阅读入口，不以网站源码或网站文章代替必要说明；README 导航指向本目录。`website/` 是独立的网站内容，两边可以包含相同主题，不为消除跨入口重复而删减任一侧。仓库内部同一主题尽量集中在对应指南，并用相互链接连接安装、使用、恢复与维护；命令、安全边界和版本事实仍应一致。
 
 历史教程与验收记录继续保留原路径和链接。当前操作以用户指南为准；过去某一版本、某个 Edition 的验收结果不外推到全部功能或其他实例。
-
-- [v1.5.3 发布准备与兼容说明](development/V153-ACCEPTANCE.md)：新安装命名、Compose HTTPS、脚本隔离及发布前门槛。

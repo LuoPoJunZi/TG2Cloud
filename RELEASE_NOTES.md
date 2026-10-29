@@ -12,14 +12,14 @@
 
 ## 使用与兼容
 
-使用步骤见 [Compose 指南](docs/COMPOSE.md)、[一键安装](docs/VPS-INSTALL.md)及[发布准备记录](docs/development/V153-ACCEPTANCE.md)。在线安装仍只使用正式稳定 Release；Compose 请使用同版镜像、完整 format 2 部署包及校验清单，不混用旧版资源。v1.5.2 历史资产不替换。
+使用步骤见 [Compose 指南](docs/COMPOSE.md)、[一键安装](docs/VPS-INSTALL.md)及[发布与兼容记录](docs/development/V153-ACCEPTANCE.md)。在线安装仍只使用正式稳定 Release；Compose 请使用同版镜像、完整 format 2 部署包及校验清单，不混用旧版资源。v1.5.2 历史资产不替换。
 
 沿用业务 schema 3，不增加必填环境变量或依赖，不清理数据库、Session、凭据、下载及云端文件。已有唯一旧库保留原名；全新实例使用新名，旧版本可能无法识别，禁止直接换旧镜像造成空库。回退应使用匹配的一致性备份，在隔离目录验证后再规划恢复。
 
 ## 验证状态
 
-本地完整检查退出 0：1508 项中 1473 通过、35 条件跳过、0 失败；Python 3.10 宿主 CLI 共 845 项（833 通过、12 条件跳过），网站 37 项通过。详细命令及范围见[发布准备记录](docs/development/V153-ACCEPTANCE.md)。远端 Actions 与实际发布资产的核验结果分别记录于发布记录，不将本地测试当作远端结果。真实 DNS／ACME、Telegram、两网关转存和生产恢复仍需发布后验收。
+本地完整检查退出 0：1508 项中 1473 通过、35 条件跳过、0 失败；Python 3.10 宿主 CLI 共 845 项（833 通过、12 条件跳过），网站 37 项通过。详细命令及范围见[发布与兼容记录](docs/development/V153-ACCEPTANCE.md)。[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40844895202)及[镜像与部署包发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40845397585)通过；五份实际下载资产的 SHA256、源码与 Tag、两版部署包与镜像摘要已核验，详细证据见发布记录。真实 DNS／ACME、Telegram、两网关转存和生产恢复仍需发布后验收。
 
-helper A／入口 B 必须使用真实公开提交。正式发布不移动历史 Tag、不覆盖旧 Release，不自动连接或升级 VPS。
+入口固定真实辅助 A `9dbae452c81c170fe74e03a4a52afecb6e60d721`；正式 Tag 对应 `2e6f06f09e1e2ac9fe8ae2d9c6e1d83cc7a3bee1`。不移动历史 Tag、不覆盖旧 Release，不自动连接或升级 VPS。
 
 历史验收范围保留：[v1.3.0](docs/development/V130-ACCEPTANCE.md)、[v1.4.3](docs/development/V143-ACCEPTANCE.md)、[v1.4.4](docs/development/V144-ACCEPTANCE.md)、[v1.4.5](docs/development/V145-ACCEPTANCE.md)、[v1.5.1](docs/development/V151-ACCEPTANCE.md)、[v1.5.2](docs/development/V152-ACCEPTANCE.md)。它们不代表本版实机验收。

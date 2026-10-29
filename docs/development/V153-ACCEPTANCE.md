@@ -1,6 +1,6 @@
-# v1.5.3 发布准备与兼容记录
+# v1.5.3 发布与兼容记录
 
-状态：v1.5.3 发布进行中；本地检查已完成，辅助代码 A、入口 B、GitHub CI 及正式资产的结果将按实际执行补充。当前正式稳定版本仍为 v1.5.2。本文记录本次真实范围，不将历史 CI 或模拟检查当作当前实机验收。
+状态：2026-10-29，v1.5.3 已正式发布。入口 B、文档提交、同标签原生双架构与镜像／Compose 发布流程通过，实际下载资产已核验。真实用户 VPS、DNS／ACME、Telegram 与两种网关转存尚未执行；发布成功不等于实机验收。
 
 ## 本次范围
 
@@ -44,17 +44,31 @@ Compose 使用自己的初始化标记、容器标签和部署目录；一键升
 | 版本、发布文案、源码清单及仓库检查 | 通过；`git diff --check` 通过。 |
 | 干净公共副本 | 不含 legacy、私有记录或本地配置，Python 3.10 标准库可生成两 Edition 包并打开 HTTPS 帮助；新路径模块包含在宿主 helper 中。 |
 
-本轮测试只使用临时目录、合成任务和模拟 Docker。真实 Linux Docker、DNS／ACME、Telegram、两网关转存、长期续期和生产恢复尚未执行。上述平台跳过不得记为通过；本地检查也不代表远端 CI 已执行。
+本地测试使用临时目录、合成任务和模拟 Docker；平台条件跳过不计为通过。远端原生 Linux CI 另执行隔离 Docker、回环 WebDAV、两版网关／FUSE 及 Nginx 验证；没有连接用户 VPS、Telegram 或真实网盘。长期续期、真实公网 ACME、NAS 与生产恢复尚未验收。
 
-发布仍须完成：
+## 实际发布链与资产核验
 
-1. 审阅并明确授权提交／推送；先公开辅助代码提交 A，等待两架构 CI。
-2. 使用经核实的真实公开 A 提交生成两个入口 B，不伪造 SHA、不固定 moving main。
-3. B 的完整 CI 通过后，按授权创建不可变 v1.5.3 Tag 和正式源码资产。
-4. 同标签构建、验证并发布共享多架构镜像、两 Edition format 2 Compose 包及校验清单；不复用旧版缺少功能的镜像。
-5. 下载实际资产核验后才更新网站正式发布状态和固定下载链接，再安排用户实机验收。
+- 辅助 A：`9dbae452c81c170fe74e03a4a52afecb6e60d721`，67 个宿主 helper；A 的过渡版本校验失败原因及 B 的修复保留在下方。
+- 入口 B：`b098fb6d36cc39a7dcd555ce8faafbb23a4385c9`，固定真实 A；所有 helper 与 A 的换行正规化内容一致，B 五项 CI 全部通过。
+- 随包教程提交与正式 Tag：`2e6f06f09e1e2ac9fe8ae2d9c6e1d83cc7a3bee1`。只补同步 v1.5.3 下载说明、完整 HTTPS 文件与旧锚点，三个文档／仓库检查通过，不修改 B 的业务或 helper。
+- [同标签源码发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40844895202)通过两个原生 Linux 平台检查，生成一次源码包并复用校验后的 artifact。[共享镜像与两版部署包](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40845397585)按同一 Tag 构建，匿名拉取及非 root 初始化检查通过。
+- 下载五份真实资产：SHA256 同清单及 GitHub 资产 digest 一致；源码文件逐项对应 Tag 的 `git archive`，两版部署包完整内容逐字节对应 Tag 生成器。没有覆盖旧版资产或修改历史 Tag。
+- 两版部署包均为 format 2，提供 `https.sh` 和带摘要的离线 helper；固定同一真实镜像 index。各原生子镜像的架构、版本和源码 revision 均核验。
 
-当前入口仍保留原真实 helper pin；本地版本标识已准备为 1.5.3，但旧 pin 不代表新辅助代码已经发布。严格发布检查应继续拒绝未完成的 A/B 版本链。
+| 资产 | 字节数 | SHA256 |
+| --- | ---: | --- |
+| `COMPOSE-SHA256SUMS.txt` | 215 | `08e1efeac5c6b94bf8d2e54b66c2b5649b70954c046ff90bc0bddf1da943f2a0` |
+| `SHA256SUMS.txt` | 96 | `f335d1b90df4fbe1ee9475f609cdcc9df2ec10eb639b95e082957b24f50ae2d0` |
+| `TG2Cloud-v1.5.3-compose-clouddrive2.tar.gz` | 239927 | `a1cd4baad71fb9eb941617fda1874acee5742b03009dc720c3e33a0f02be9450` |
+| `TG2Cloud-v1.5.3-compose-openlist.tar.gz` | 239742 | `6cebeb8e84ece45566fc523dc5ebf03b20f2b3180b516c2362f7c388ada69f65` |
+| `TG2Cloud-v1.5.3-source.tar.gz` | 3979513 | `46232fe261ba2c13ff076c4f0c69d9e173c30f28fafd8d27f47b670e88d67b68` |
+
+镜像：`ghcr.io/luopojunzi/tg2cloud@sha256:21b1da6d84cfccfebe4fc0dd88a0cfe3edd730e33dca241639834e1fb8e5dc44`。
+
+- `linux/amd64`：`sha256:9e46fd31750e986326d4a40dc74a518d9aac3356d2b38f023b9eeea0d505b0ad`。
+- `linux/arm64`：`sha256:c6ffc43a829a0181df8808f977e8071a6506cac75868e26ed84e12c118eeb9b3`。
+
+远端分支只保留 main；正式 [v1.5.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3) 已发布。在线公网／内网入口固定辅助 A，业务仍从正式稳定 Release 解析不可变提交，不下载 moving main 业务代码。
 
 ## 发布后人工验收
 
@@ -71,10 +85,10 @@ Compose 使用自己的初始化标记、容器标签和部署目录；一键升
 
 辅助代码 A：`9dbae452c81c170fe74e03a4a52afecb6e60d721`，已公开至 main；不创建额外远端分支。A 保持线上入口的旧版本标识与旧 pin，以免切换未发布入口。宿主 CLI 四组及文档／仓库／网站检查通过；双架构完整回归各有 4 项版本元数据错误，原因是入口标识仍为 1.5.2，而源码为 1.5.3。该过渡状态不用于正式 Tag。
 
-入口 B 将两个入口固定到真实 A，清单扩展为 67 个 helper，并同步 installer_version 为 1.5.3。所有 helper 文件与 A 逐字节（换行正规化）相同；版本元数据回归已在本地通过。没有降低校验门槛；B 的完整 CI 全部通过后才创建正式 Tag。
+入口 B 已将两个入口固定到真实 A，清单扩展为 67 个 helper，并同步 installer_version 为 1.5.3。所有 helper 文件与 A 逐字节（换行正规化）相同；版本元数据回归已在本地通过。没有降低校验门槛；B 的完整 CI 全部通过后创建正式 Tag，最终结果见上方发布链。
 
 A 的实际执行：[完整回归](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820012181)、[宿主 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820012227)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820012195)。A 的失败记录按原样保留，不记为通过。
 
 入口 B：`b098fb6d36cc39a7dcd555ce8faafbb23a4385c9`。版本元数据回归修复后，[完整双架构 CI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413412)、[宿主 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413413)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413382)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413422)和[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413432)五项全部通过，包含原生 Docker／隔离 WebDAV 与 Nginx 测试；不等于真实用户 VPS 或网关验收。
 
-正式 Tag 前另同步随 Compose 包分发的教程：下载命令对应 v1.5.3、列出完整 HTTPS 工具，并保留旧锚点；业务 helper 和 Docker 配置不变。实际 Tag／资产提交另行记录。
+正式 Tag 前已同步随 Compose 包分发的教程：下载命令对应 v1.5.3、列出完整 HTTPS 工具，并保留旧锚点；业务 helper 和 Docker 配置不变。实际 Tag／资产结果见上方记录。

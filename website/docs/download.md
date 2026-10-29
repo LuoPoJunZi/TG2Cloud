@@ -1,8 +1,8 @@
 # 安装、下载与校验
 
-**TG2Cloud v1.5.3** 待发布，资料核对日期：2026-10-29。新命名与 Compose HTTPS 为本地准备内容；当前正式稳定版仍为 v1.5.2，远端 CI、发布资产及实机验收尚未完成。
+**TG2Cloud v1.5.3** 已正式发布，资料核对日期：2026-10-29。同标签原生双架构、实际源码包、镜像及两版 Compose 资产已核验；真实 VPS、DNS／ACME、Telegram 与网关转存仍待用户验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。
 
-当前正式稳定版为 **TG2Cloud v1.5.2**。同标签双架构检查、源码包与校验清单已核验；真实 VPS、NAS、Telegram 和网关转存仍需单独验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
+当前正式稳定版为 **TG2Cloud v1.5.3**。源码、镜像和部署包须使用同版资源；已有实例先备份，再按原部署方式升级。
 
 业务部署只使用正式稳定源码，历史 Windows EXE 停留在 v1.2.1。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
 
@@ -79,8 +79,8 @@ tg2cloud uninstall --edition all --check
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.5.2-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.2/TG2Cloud-v1.5.2-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.2/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.5.3-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.3/TG2Cloud-v1.5.3-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.3/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -88,9 +88,9 @@ tg2cloud uninstall --edition all --check
 sha256sum -c SHA256SUMS.txt
 ```
 
-本版源码包 SHA256 为 `29ac52d30141610a7f0ef632239317902e3f3e1abcb3aa067aa4bf62d8be13fc`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
+本版源码包 SHA256 为 `46232fe261ba2c13ff076c4f0c69d9e173c30f28fafd8d27f47b670e88d67b68`。校验不一致时停止，不混用其他版本或 EXE 的清单。校验和不是数字签名。
 
-[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 ### 在线入口与源码资产的区别
 
