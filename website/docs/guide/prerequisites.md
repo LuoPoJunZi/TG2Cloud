@@ -1,6 +1,6 @@
 # 部署前准备
 
-准备好一台自己控制的 Linux 主机、可用的 SSH 终端和浏览器、Telegram Bot 配置，以及一个可写的云存储目标。v1.3.0 的一键脚本不要求 Windows 电脑。
+准备好一台自己控制的 Linux 主机、可用的 SSH 终端和浏览器、Telegram Bot 配置，以及一个可写的云存储目标。使用一键脚本或独立 Compose 部署。
 
 ## 推荐环境与硬门槛
 
@@ -9,7 +9,7 @@
 | VPS | 2 核 / 4GB 内存 / 50GB SSD | 批量使用可考虑 4 核 / 8GB / 80～100GB |
 | 系统 | Debian／Ubuntu、原生 64 位 AMD64／ARM64 用户态 | v1.4.0 统一支持两架构；不等于兼容所有 NAS |
 | 登录权限 | 以 root 运行脚本 | 使用自己的 SSH 终端登录主机 |
-| 本地设备 | 可用的终端和浏览器 | Windows、macOS、Linux 均可；历史 EXE 仅支持 Windows |
+| 本地设备 | 可用的终端和浏览器 | Windows、macOS、Linux 均可 |
 | 网络 | VPS 可达 Telegram、镜像仓库及目的端 | 按实际文件量准备流量 |
 | CloudDrive2 | 受管容器需要 `/dev/fuse` | OpenList Edition 产品配置不要求 FUSE |
 
@@ -18,12 +18,12 @@
 ## 原生 AMD64 / ARM64
 
 :::warning 公网 NAT 的 HTTPS 前置检查
-Oracle 等主机的网卡可能只有私有 IPv4，公网 A 正确时仍会触发 v1.4.0 的旧版预检错误。正式 v1.4.1 和匹配线上 helper 已增加手动输入云控制台公网 IPv4、确认映射及执行前复核，仍要求端口归属安全、AAAA 正确和 ACME／TLS 自检通过。重新运行公开入口；旧离线工具需显式更新。不要把公网 A 改成私有 IP，详见[仓库 VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。
+Oracle 等主机的网卡可能只有私有 IPv4，公网 A 正确时仍会触发 v1.4.0 的旧版预检错误。正式 v1.4.1 和匹配线上 helper 已增加手动输入云控制台公网 IPv4、确认映射及执行前复核，仍要求端口归属安全、AAAA 正确和 ACME／TLS 自检通过。重新运行公开入口；旧离线工具需显式更新。不要把公网 A 改成私有 IP，详见[仓库 VPS 指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md#公网-nat-与域名检查)。
 :::
 
 新源码将 x86_64／amd64 统一为 `linux/amd64`，aarch64／arm64 统一为 `linux/arm64`，核对 64 位 Python、dpkg 用户态、本机 rootful Docker 及实际镜像；不安装 QEMU、不接受远端 daemon 或强制平台覆盖。两 Edition 和公网／内网／外部 WebDAV 共用规则，不增加 ARM 专用入口。
 
-v1.4.1 稳定包与匹配线上 helper 已发布核验，两个原生 runner 的 Bot、网关 HTTP／FUSE、扩展依赖、LAN 和外部 DAV 隔离检查均通过。2026-10-21，用户另行提供 Ubuntu26.04.1／原生ARM64／公网NAT 的 CloudDrive2 首装、Bot健康、本机HTTPS与WebDAV验收日志；不将它或CI扩大为OpenList、其他系统、手机外网、升级回退及长期续期已通过。见[本次实机记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)与[双架构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/ARCHITECTURES.md)。
+v1.4.1 稳定包与匹配线上 helper 已发布核验，两个原生 runner 的 Bot、网关 HTTP／FUSE、扩展依赖、LAN 和外部 DAV 隔离检查均通过。2026-10-21，用户另行提供 Ubuntu26.04.1／原生ARM64／公网NAT 的 CloudDrive2 首装、Bot健康、本机HTTPS与WebDAV验收日志；不将它或CI扩大为OpenList、其他系统、手机外网、升级回退及长期续期已通过。见[本次实机记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V141-ACCEPTANCE.md)与[双架构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/ARCHITECTURES.md)。
 
 Oracle Ampere A1 的 Ubuntu 24.04／26.04、Debian ARM64 需确认 `uname -m` 为 aarch64／arm64、`getconf LONG_BIT` 为 64、`dpkg --print-architecture` 为 arm64。检查 Docker／Compose 与 `/dev/fuse`；CloudDrive2 仍需 FUSE 和原权限，OpenList 不要求 FUSE。脚本不会调整 Oracle 安全组或防火墙，真实挂载、HTTPS、转存和回退仍需独立验收。
 

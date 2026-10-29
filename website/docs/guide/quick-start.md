@@ -1,6 +1,6 @@
 # 从零开始部署
 
-在自己的 Linux 主机运行安装脚本，再到存储网关挂载云盘、创建 WebDAV 用户，最后验证一个真实小文件。不需要 Windows 或 EXE。
+在自己的 Linux 主机运行安装脚本，再到存储网关挂载云盘、创建 WebDAV 用户，最后验证一个真实小文件。通过自己的终端操作即可。
 
 :::tip 先选安装场景
 公网 VPS 使用 HTTPS 域名；可信内网 / NAS 使用独立内网入口。两种方式都需要主机能够访问 GitHub、Telegram、镜像仓库和目的端，具体条件见[部署前准备](/guide/prerequisites/)。
@@ -62,7 +62,7 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 确认 Edition、安装目录、资源预算、管理入口和是否为保留配置升级，再同意执行。未确认前不安装；执行后可能安装基础系统依赖、构建镜像并启动所选实例。
 
-查看真实阶段、错误及最终摘要。常见 `WARNING` 不等于失败，但也不能忽略错误；解释见[安装反馈](/operations/update/#v1-4-4-安装与升级反馈)。
+查看真实阶段、错误及最终摘要。常见 `WARNING` 不等于失败，但也不能忽略错误；解释见[安装反馈](/operations/update/#安装与升级反馈)。
 
 基础健康与管理入口通过后，后续可运行离线管理命令：
 
@@ -109,9 +109,3 @@ Bot 完成后，在云存储官方客户端检查位置、大小及可打开性�
 6. 真实小文件可在云存储中正常打开。
 
 本机 HTTPS 通过后，仍须从另一网络验证公网访问；内网部署从局域网其他设备验证。日常操作见[Bot 命令](/usage/commands/)，已有实例见[升级说明](/operations/update/)。
-
-## 历史 Windows 教程
-
-Windows 部署器停更于 v1.2.1，不用于当前 Linux 流程。历史说明保存在[仓库存档](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/README-%E5%B0%8F%E7%99%BD%E4%BD%BF%E7%94%A8%E8%AF%B4%E6%98%8E.md)，不要用旧 EXE 覆盖已升级实例。
-
-各版本自动检查、用户验收和未验证范围分别列在[文档来源](/reference/sources/)，不把某一版的结果视为所有环境都已通过。

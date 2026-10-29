@@ -1,21 +1,8 @@
 # TG2Cloud Docs
 
-**TG2Cloud v1.5.3** 已正式发布，资料核对日期：2026-10-29。同标签原生双架构、实际源码包、镜像及两版 Compose 资产已核验；真实 VPS、DNS／ACME、Telegram 与网关转存仍待用户验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。
+**TG2Cloud v1.5.3**，资料核对日期：2026-10-29。本站讲解当前 Linux 项目的安装、使用和维护；当前发布与实机未验收范围见[记录](../docs/development/V153-ACCEPTANCE.md)。
 
-**TG2Cloud v1.5.2** 已正式发布；资料核对日期：2026-10-28。同标签双架构、源码与两版 Compose 资产已核验；真实用户环境仍待验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
-
-**TG2Cloud v1.5.1** 已正式发布，资料核对日期：2026-10-28；性能与监听维护。
-
-TG2Cloud 中文静态文档网站，提供安装、使用、运维指南、本地搜索及版本记录。当前正式版本为 **TG2Cloud v1.5.3**；资料核对日期：2026-10-29。同标签 Linux 检查与实际发布资产核验通过，证据见[本版记录](../docs/development/V153-ACCEPTANCE.md)，真实账号和 VPS 验收按各版本实际记录理解。
-
-历史发布说明集中在[更新日志](docs/changelog.md)；[v1.4.4 升级记录](../docs/development/V144-ACCEPTANCE.md)、[v1.4.5 用户验收](../docs/development/V145-ACCEPTANCE.md)及其他历史验收可从[仓库文档目录](../docs/README.md)查阅，不在本页重复积累发布正文。
-
-项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)
-
-上游致谢：[whyhhh20/TG115](https://github.com/whyhhh20/TG115)
-视觉参考：[TG115 文档站](https://tg115.pages.dev/)
-
-> 这是“TG2Cloud 的说明网站”，不是 TG2Cloud Bot、Windows 部署器或 VPS 服务。部署这个网站不会自动部署文件转存服务。
+这是静态文档网站，部署网站不会部署 TG2Cloud 服务。项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)；上游致谢：[whyhhh20/TG115](https://github.com/whyhhh20/TG115)。完整版本事实见[更新日志](docs/changelog.md)。
 
 ## 立即使用
 
@@ -79,9 +66,9 @@ npm run dev
 | 分类 | 内容 |
 | --- | --- |
 | 开始使用（5 篇） | 项目介绍、版本选择、部署前准备、从零部署、下载与校验 |
-| 部署与配置（8 篇） | SSH、域名 HTTPS、Telegram 配置、CloudDrive2、OpenList、资源预算、WebDAV 验收、外部 WebDAV |
-| 日常使用（4 篇） | 第一次转存、Bot 命令、任务状态、流式传输与速度 |
-| 运维与迁移（4 篇） | 状态与日志、升级与配置、备份边界、TG115 迁移 |
+| 部署与配置（9 篇） | SSH、HTTPS、Telegram、两版网关、资源、WebDAV 验收、外部 WebDAV、Compose |
+| 日常使用（5 篇） | 第一次转存、Bot 命令、任务状态、流式传输、管理员监听 |
+| 运维与升级（3 篇） | 状态与日志、升级与配置、备份边界 |
 | 问题排查（4 篇） | FAQ、SSH 与管理页、WebDAV、队列/空间/上传失败 |
 | 项目参考（6 篇） | 配置路径、安全、更新日志、开发、致谢、资料来源 |
 
@@ -116,7 +103,7 @@ TG2Cloud-Docs/
 
 日常内容直接编辑对应 Markdown。新增文章时，创建 `docs/分类/文件名.md`，并在 `site.config.json` 的 `navigation` 中新增标题与 `slug`；slug 不加开头或结尾斜杠，站内链接使用 `/分类/文件名/`。
 
-首页文案、卡片与流程图在 `src/templates.mjs` 的 `homeContent()`；配色在 `public/assets/style.css`。更新版本时同步配置中的 `version`、`verifiedAt`、更新日志与受影响的教程。`publishedVersion` 是实际可下载的正式版本，`releaseStatus` 为 `unreleased` 或 `released`；尚未发布时保留真实下载基线，不生成不存在的新版本 EXE/Tag 链接。正式 Release 完成后再同步下载链接、`publishedVersion` 和状态。
+首页文案、卡片与流程图在 `src/templates.mjs` 的 `homeContent()`；配色在 `public/assets/style.css`。更新版本时同步配置中的 `version`、`verifiedAt`、更新日志与受影响的教程。`publishedVersion` 是实际可下载的正式版本，`releaseStatus` 为 `unreleased` 或 `released`；尚未发布时保留真实下载基线，不生成不存在的新版本资产／Tag 链接。正式 Release 完成后再同步下载链接、`publishedVersion` 和状态。
 
 提交前运行：
 

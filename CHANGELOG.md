@@ -16,7 +16,7 @@
 
 ## TG2Cloud v1.5.2
 
-版本日期：2026-10-28。[v1.5.2 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2) 已发布；A／B、同标签双架构、共享镜像和两 Edition Compose 资产已核验。真实 VPS、NAS、Telegram 与网关转存仍待用户验收，详见[本版记录](docs/development/V152-ACCEPTANCE.md)。
+版本日期：2026-10-28。[v1.5.2 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2) 已发布；A／B、同标签双架构、共享镜像和两 Edition Compose 资产已核验。真实 VPS、NAS、Telegram 与网关转存仍待用户验收，详见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V152-ACCEPTANCE.md)。
 
 - 增加独立 Docker Compose 部署包、交互初始化、配置检查与离线备份；复用共享 Bot 与现有网关资源，第一版面向内网或已有 HTTPS 代理。
 - 增加人工触发的稳定 Tag 双架构镜像与 digest 固定部署包工作流；镜像与部署包的实际发布结果见本版记录，不改变一键脚本默认安装。
@@ -55,7 +55,7 @@
 
 ## TG2Cloud v1.4.11
 
-版本日期：2026-10-26。[v1.4.11 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11) 已正式发布；A／B、main、[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)和实际源码资产核验通过，证据见[本版发布与验收](docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS／用户网关验收仍安排在发布后。
+版本日期：2026-10-26。[v1.4.11 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11) 已正式发布；A／B、main、[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)和实际源码资产核验通过，证据见[本版发布与验收](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS／用户网关验收仍安排在发布后。
 
 - 新监听来源在 Bot 保存目录下按频道／群组名称建目录，并按附件类型归档；去 Emoji、按 30 个全宽汉字等价限长和重名编号处理，事务保留绑定。已有来源不自动改目录，可通过保存目录草稿主动切换；创建失败暂停并可重试，已登记计划和手动转存保留原目录。
 - 监听来源、筛选和下载不再仅凭内容保护标记拦截；保留成员读取权限、管理员身份和附件复核，Telegram 实际拒绝时停止自动重试。添加来源细分无权限、无效链接、授权、限流、网络及持久化错误，不输出敏感异常。
@@ -85,7 +85,7 @@
 - 共用原队列、配额和两个网关提交策略，新增持久化计划、确认前改名／目录／批次，以及显式来源命名反馈。
 - 补充已核对的 v1.4.8 固定升级基线；业务 schema 2 → 3 事务迁移，历史任务默认 Bot 读取身份；独立 Session 纳入可选离线备份覆盖，回退须匹配数据库快照。
 - 发布审计补强长 Unicode 文本分页、登录断开异常时的权限掩码恢复与迁移中断回滚；两 Edition 原生镜像增加默认停用／独立 Session 锁的离线验证。
-- 详细边界、操作和发布门槛见[监听指南](docs/LISTENING.md)。两个入口固定已通过 CI 的真实辅助 A；同标签校验已完成，既有 Tag 与资产不覆盖。发布后步骤见[1.4.9 验收说明](docs/development/V149-ACCEPTANCE.md)。
+- 详细边界、操作和发布门槛见[监听指南](docs/LISTENING.md)。两个入口固定已通过 CI 的真实辅助 A；同标签校验已完成，既有 Tag 与资产不覆盖。发布后步骤见[1.4.9 验收说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V149-ACCEPTANCE.md)。
 
 ## TG2Cloud v1.4.8
 
@@ -100,7 +100,7 @@
 
 ## TG2Cloud v1.4.7
 
-版本日期：2026-10-25。[v1.4.7 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7) 已正式发布。A／B 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)全部通过，实际源码包、SHA256 清单和 GitHub 资产摘要已核验；范围见[维护说明](docs/development/LOCAL-MAINTENANCE.md)，本版实机仍须独立验收。
+版本日期：2026-10-25。[v1.4.7 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.7) 已正式发布。A／B 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)全部通过，实际源码包、SHA256 清单和 GitHub 资产摘要已核验；范围见[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LOCAL-MAINTENANCE.md)，本版实机仍须独立验收。
 
 - 根目录仅保留公网 `install.sh` 与内网 `install-lan.sh`，移除独立 `uninstall.sh`、`install-webdav.sh`；卸载核心与全部清理参数保留，外部 WebDAV 统一从 `tg2cloud` 子菜单按需安装及维护。同步 CI、源码资产与发布预检；API 2 显式标记新布局，历史 API 1／旧 Tag 仍按原清单校验。旧附加工具在用户确认后仅迁移维护代码，不变更账号、路由或数据；不下载未发布业务版本。
 - `tg2cloud` 主菜单增加 **15. 外部 WebDAV**，沿用当前 Edition 与已核验安装目录；安装、检查、配置、启停、用户、升级及卸载统一在子菜单完成，无需额外安装命令。已安装工具核验后离线启动；首次使用经确认下载并校验正式稳定源码，不从 main 或主 helper 的不完整资源包安装。
@@ -112,34 +112,34 @@
 
 ## TG2Cloud v1.4.6
 
-版本日期：2026-10-24。[v1.4.6 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6) 已正式发布。A、B 各五项 CI 与同标签双架构验证全部成功，实际源码资产及校验清单已核验；证据见[本版维护说明](docs/development/LOCAL-MAINTENANCE.md)，不把 v1.4.5 用户验收扩展到本版。
+版本日期：2026-10-24。[v1.4.6 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6) 已正式发布。A、B 各五项 CI 与同标签双架构验证全部成功，实际源码资产及校验清单已核验；证据见[本版维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LOCAL-MAINTENANCE.md)，不把 v1.4.5 用户验收扩展到本版。
 
 - 统一独立外部 WebDAV 的次级页面、刷新与返回；显式子命令保持单次执行，卸载／升级后退出当前进程。
 - 增加只生成审阅计划与候选版本补丁的本地发布准备工具，不修改源码、pin 或远端。
 - 分类四组命名测试，完整保留发现集合；抽离纯代理渲染并保留旧接口，日常与当前 Tag CI 共用验证实现。
 - 补充 v1.4.5 用户提供的 CloudDrive2 ARM64 升级与 WebDAV 验收记录；当前教程精简历史菜单说明，历史记录及链接保留。
 
-本版不新增运行依赖、配置项或数据库迁移；保留两版数据、Session、权限、旧接口和公开命令。本版已按 A／B 流程更新入口，新界面须显式升级对应离线工具后使用。范围与使用方式见[维护开发说明](docs/development/LOCAL-MAINTENANCE.md)。
+本版不新增运行依赖、配置项或数据库迁移；保留两版数据、Session、权限、旧接口和公开命令。本版已按 A／B 流程更新入口，新界面须显式升级对应离线工具后使用。范围与使用方式见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LOCAL-MAINTENANCE.md)。
 
 ## TG2Cloud v1.4.5
 
-版本日期：2026-10-24。[v1.4.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) 已正式发布。辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`、入口 B／Tag `cd9b13722752b1f1663c5ba4cbb91b7c21c7f882` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过；实际源码包、SHA256 清单和 GitHub 资产摘要已核验。完整证据与未执行实机范围见[维护记录](docs/development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)，不改写旧版验收。
+版本日期：2026-10-24。[v1.4.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) 已正式发布。辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`、入口 B／Tag `cd9b13722752b1f1663c5ba4cbb91b7c21c7f882` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过；实际源码包、SHA256 清单和 GitHub 资产摘要已核验。完整证据与未执行实机范围见[维护记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)，不改写旧版验收。
 
 - 统一本地管理次级页面：状态、日志、就绪检查支持停留与刷新；服务状态中文分项显示，日志按来源分组且单源失败不影响另一源；其他页面补齐标题、上下文、返回和结果布局。主菜单编号不变，备份子菜单按实例／共享代理重排，详见待发布说明。
 - 诊断报告复用只读 HTTPS／内网入口检查，按连接、认证、权限、冷却、容量和远端冲突给出固定、脱敏的处理建议；不新增主菜单或自动修复。
 - 增加隔离业务数据库启动／迁移与重启恢复演练，先校验快照，再仅修改临时副本；不加载 Session、环境凭据或启动网关，不是生产 Restore。
 - 恢复预检拒绝声明范围之外的文件及 SQLite 日志旁文件；数据库启动／迁移失败或普通中断时关闭连接，便于安全清理隔离副本。
 - 补充 v1.4.3／v1.4.4 受审阅原提交与两 Edition 载荷摘要，增加本地工作树发布预检；未发布 helper 改动继续阻断准备。本版按 A／B 流程更新三个在线 pin，不降低逐文件一致性校验。
-- 扩充多语言命名样例及两网关重启后避免重复上传的回归，保留现有命名优先级、菜单和转存流程。实机补测矩阵见[维护完善说明](docs/development/MAINTENANCE-NEXT.md)。
+- 扩充多语言命名样例及两网关重启后避免重复上传的回归，保留现有命名优先级、菜单和转存流程。实机补测矩阵见[维护完善说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-NEXT.md)。
 - 开发审计依赖 filelock 4.2.0 → 4.2.1，修复 CI 报告的已知漏洞；由原统一工具生成哈希锁，Bot 运行锁与版本保持不变，不跳过审计。
 
 兼容性：不新增运行依赖、必填环境变量或数据库迁移；保留两 Edition 的配置、Session、任务、历史运行路径和后端策略。开发依赖仅做 filelock 安全补丁。旧版升级仍须备份；更早 schema 的迁移与匹配代码／数据库回退要求不变。更新文档不会替换已安装的离线工具。本版真实 VPS、Telegram、云盘及故障恢复尚未验收。
 
-发布后验收补充：用户已提供 v1.4.5 的 CloudDrive2 ARM64 升级与单独 WebDAV 写入日志，按[记录范围](docs/development/V145-ACCEPTANCE.md)保留；上段未验收说明是发布当时状态，不扩展到本版或其他场景。
+发布后验收补充：用户已提供 v1.4.5 的 CloudDrive2 ARM64 升级与单独 WebDAV 写入日志，按[记录范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V145-ACCEPTANCE.md)保留；上段未验收说明是发布当时状态，不扩展到本版或其他场景。
 
 本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.3 共 34 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
 
-截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
+截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/CHANGELOG.md#tg2cloud-v121) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
@@ -182,7 +182,7 @@
 
 ## TG2Cloud v1.4.4
 
-发布后用户验收补充（2026-10-23）：用户提供两份日志并确认 CloudDrive2 在 Ubuntu 26.04.1／ARM64 与 Debian 13／AMD64 的 v1.4.3 → v1.4.4 升级验收通过。配置保留、数据库备份、运行代码／版本、Bot healthy、本机 HTTPS 和最近业务就绪观察通过；新版信息分类、结果摘要及容量提醒已在日志中展示。WebDAV 写入未执行，真实转存、外网及故障回退等未单独确认，完整范围见[双架构记录](docs/development/V144-ACCEPTANCE.md)。仅补充发布后证据，不改写 Tag、资产或远端 Release 正文。
+发布后用户验收补充（2026-10-23）：用户提供两份日志并确认 CloudDrive2 在 Ubuntu 26.04.1／ARM64 与 Debian 13／AMD64 的 v1.4.3 → v1.4.4 升级验收通过。配置保留、数据库备份、运行代码／版本、Bot healthy、本机 HTTPS 和最近业务就绪观察通过；新版信息分类、结果摘要及容量提醒已在日志中展示。WebDAV 写入未执行，真实转存、外网及故障回退等未单独确认，完整范围见[双架构记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V144-ACCEPTANCE.md)。仅补充发布后证据，不改写 Tag、资产或远端 Release 正文。
 
 版本日期：2026-10-23。[v1.4.4 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.4) 已正式发布，定位为稳定性与用户体验维护版。辅助 A `ea93c95eda0fa68c807b56c41871e09b7a19634b`、入口 B／Tag `6164a237108786c01a7a958ab56e16023df04d79` 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39920070111)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要已核验。 保留 v1.4.3 资产及历史证据，不将自动检查扩大为真实 VPS／Telegram／网盘、ACME 或故障回退验收。
 
@@ -201,12 +201,12 @@
 
 ## TG2Cloud v1.4.3
 
-发布后用户日志补充（2026-10-23）：CloudDrive2 在 Debian 13／AMD64 通过公开入口完成 v1.4.2 → v1.4.3 基础升级，配置保留、候选预检、数据库备份标记、代码／配置、Bot healthy 与本机 HTTPS 检查通过。四类构建／容量提示未阻断流程，见[脱敏记录](docs/development/V143-ACCEPTANCE.md)与[WARNING FAQ](docs/FAQ.md)。本次证据是用户日志，不是维护者重新登录实测；实际转存、WebDAV 写入、外网、回退与可选功能仍待确认。只补充文档，不改写 Tag、发布资产或远端 Release 正文。
+发布后用户日志补充（2026-10-23）：CloudDrive2 在 Debian 13／AMD64 通过公开入口完成 v1.4.2 → v1.4.3 基础升级，配置保留、候选预检、数据库备份标记、代码／配置、Bot healthy 与本机 HTTPS 检查通过。四类构建／容量提示未阻断流程，见[脱敏记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V143-ACCEPTANCE.md)与[WARNING FAQ](docs/FAQ.md)。本次证据是用户日志，不是维护者重新登录实测；实际转存、WebDAV 写入、外网、回退与可选功能仍待确认。只补充文档，不改写 Tag、发布资产或远端 Release 正文。
 
 版本日期：2026-10-23。[v1.4.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3) 已正式发布。辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 不把 CI 通过扩大为 VPS、真实 Telegram／网盘、生产恢复或长期续期验收。
 
 - 修复上传统计遗漏 rclone 总体速度的问题，优先当前平滑速度并安全回退，普通上传采样改为每秒；活动传输缺失／过期数据显示 `--`、空闲显示 0，排除校验／清理旧速度。保留简洁三行速度、不增加上传后缀或家人额外说明，有效健康结果不重复探测；不推算网关到云盘速度，成员仍仅见本人数据。见[测速说明](docs/BOT-USAGE.md#上传速度为-0-或---)。
-- 统一 Linux 编号菜单的数字列与文字列分别左对齐；外部 WebDAV 交互选择网关回车默认 1，首次主账号默认 `tg2-webdav`，修改配置保留已登记账号。保留英文子命令、退出／确认、动态目录及所有账号隔离规则，不更改已有实例凭据。见[附加功能界面说明](docs/external-webdav.md#待发布的界面微调)。
+- 统一 Linux 编号菜单的数字列与文字列分别左对齐；外部 WebDAV 交互选择网关回车默认 1，首次主账号默认 `tg2-webdav`，修改配置保留已登记账号。保留英文子命令、退出／确认、动态目录及所有账号隔离规则，不更改已有实例凭据。见[附加功能界面说明](docs/external-webdav.md#菜单与账号输入)。
 - 新增可选类型/日期分类、持久化管理员通知、家庭成员每日/排队/并发额度与白名单诊断报告。分类/通知默认关闭，成员默认不限额；事务性schema2迁移，保留既有命名、授权和后端策略。见[功能说明](docs/FEATURE-ENHANCEMENTS.md)。
 - 为 v1.3.4／v1.4.0／v1.4.1／v1.4.2 保存两 Edition 的原提交和载荷摘要，旧发布页缺失时仍按可信目录核验；未知版本、文件差异或网关镜像变化继续停止。区分 GitHub 404／403／429 与网络错误。
 - 备份菜单新增实例快照导出与隔离预检，复用 SQLite 一致性快照和原归档检查；维护窗口只停启所选原容器，保留中断记录，不增加生产覆盖恢复。
@@ -214,13 +214,13 @@
 - 扩展外部 Nginx 生命周期测试；隔离集成已通过原生 AMD64／ARM64 CI 与同标签发布。修正换 IP 夹具所需的显式子网，不修改生产网络或删除断言；真实 ACME 和 VPS 仍未执行。
 - 提供无下载／上传的命名预览、选择原因与合成样例集，沿用原命名 API 和规则；同步 host helper、源码清单、测试与文档，更新可信 A／B 入口，不改写历史 pin。
 
-兼容性：业务数据库自动事务迁移到 schema 2，保留任务、Session、配置和历史路径；分类／通知默认关闭，成员默认不限额。升级前保存匹配旧代码的数据库快照；旧 Bot 拒绝打开 schema 2，回退不能只降级镜像，须停止所选 Bot、保留当前副本，再人工核验并恢复旧数据库及代码。无新增必填环境变量；共享代理状态 schema 与业务数据库 schema 相互独立。用法与发布步骤见[开发记录](docs/development/MAINTENANCE-IMPROVEMENTS.md)和[功能说明](docs/FEATURE-ENHANCEMENTS.md)，历史验收结论不回写。
+兼容性：业务数据库自动事务迁移到 schema 2，保留任务、Session、配置和历史路径；分类／通知默认关闭，成员默认不限额。升级前保存匹配旧代码的数据库快照；旧 Bot 拒绝打开 schema 2，回退不能只降级镜像，须停止所选 Bot、保留当前副本，再人工核验并恢复旧数据库及代码。无新增必填环境变量；共享代理状态 schema 与业务数据库 schema 相互独立。用法与发布步骤见[开发记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-IMPROVEMENTS.md)和[功能说明](docs/FEATURE-ENHANCEMENTS.md)，历史验收结论不回写。
 
 ## TG2Cloud v1.4.2
 
 版本日期：2026-10-21。[v1.4.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2) 已正式发布。辅助 A `840472f919409531e99da55c62070ea262ebed6d` 与入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI、[同标签原生 AMD64／ARM64 发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部成功；实际源码包、SHA256 清单与 GitHub 资产摘要已核验。不把 CI 通过当作真实 VPS、ACME、长期续期或迁移验收。
 
-发布后验收补充（2026-10-21）：专用 Debian AMD64 测试机完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，任务／Session／配置保留、健康、只读 WebDAV 和外部 HTTPS 通过。旧版 Release／Tag 已删除，自动向导先停止；核验原不可变提交、备份后调用正式升级核心完成，未修改正式资产或新增绕过参数。实际转存、新代理模式、OpenList、回退与长期续期仍未执行，详见[独立记录](docs/development/V142-ACCEPTANCE.md)。
+发布后验收补充（2026-10-21）：专用 Debian AMD64 测试机完成 CloudDrive2 v1.3.4 → v1.4.2 人工保留配置升级，任务／Session／配置保留、健康、只读 WebDAV 和外部 HTTPS 通过。旧版 Release／Tag 已删除，自动向导先停止；核验原不可变提交、备份后调用正式升级核心完成，未修改正式资产或新增绕过参数。实际转存、新代理模式、OpenList、回退与长期续期仍未执行，详见[独立记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V142-ACCEPTANCE.md)。
 
 - 新增显式授权的 `external_docker` 入口及只读检测／配置导出；保留原 `managed` 模式，不改变已有实例默认模式。
 - 增加持久化挂载与 bridge 网络核验、单层站点渲染、逐文件 CAS／恢复日志、Webroot 签发与证书加载状态。
@@ -232,7 +232,7 @@
 
 ## TG2Cloud v1.4.1
 
-版本日期：2026-10-21。[v1.4.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1) 已正式发布，辅助 A、固定入口 B 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功。实际源码包、SHA256 清单和 GitHub 资产摘要已核验。发布后用户提供 Ubuntu26.04.1／原生ARM64／公网NAT 的 CloudDrive2 首装、本机HTTPS和WebDAV验收结果，详见[独立记录](docs/development/V141-ACCEPTANCE.md)；不扩展到OpenList、升级回退或所有真实转存场景。
+版本日期：2026-10-21。[v1.4.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1) 已正式发布，辅助 A、固定入口 B 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功。实际源码包、SHA256 清单和 GitHub 资产摘要已核验。发布后用户提供 Ubuntu26.04.1／原生ARM64／公网NAT 的 CloudDrive2 首装、本机HTTPS和WebDAV验收结果，详见[独立记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V141-ACCEPTANCE.md)；不扩展到OpenList、升级回退或所有真实转存场景。
 
 - 修复仅能看到私有网卡地址的公网 NAT 主机被误判为 DNS 错误的问题。单一公网 A、AAAA 均匹配本机且端口归属安全时，可在交互向导输入云控制台分配给本机的公网 IPv4，并显式确认映射；确认只在本次操作中使用。安装、管理 HTTPS 修复和独立外部 WebDAV 共用此逻辑。
 - 执行前重新核对 DNS、原有网卡地址和端口归属；地址变化停止，不在写入锁内重新索取确认。错误 AAAA、多 A、未知／其他项目端口、未确认地址仍阻止配置。补充 DNS 和 80／443 分项提示，拒绝用本地执行地址 127.0.0.1 作为公网 DNS 身份；ACME、TLS 自检和失败回退继续执行。
@@ -305,7 +305,7 @@
 - Bot／开发哈希锁文件按 Dockerfile 的 Python 3.12 下限统一生成，补齐较低 Python 版本的条件依赖；宿主 CLI 继续支持 Python 3.10+，不要求安装 Bot 依赖。
 - Linux 渐进式重构：`src/tg2cloud` 为共享源码，拆分 CLI/部署、Telegram 展示、任务阶段、SQLite 迁移和后端策略；Docker/Compose/Shell 资源归入 `packaging/`，依赖由 pyproject 和统一 uv 锁文件维护。Bot 依赖、网关镜像和产品版本不随目录调整升级。
 - 保留旧实例身份、`app/` 外层程序目录、`data/tg115.db`、`bot.session` 及 `app.*` 运维命令；新递归指纹显式使用 v2 协议，历史平铺布局、静态版本读取和 CRLF 校验继续支持。不新增数据库结构变更。
-- 新布局的载荷组装、递归指纹和源码清单检查接入发布；三个在线入口固定到已公开且通过 CI 的辅助提交 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`，业务代码仍只取正式稳定 Release。验收边界见[重构说明](docs/development/LINUX-REFACTOR.md)。
+- 新布局的载荷组装、递归指纹和源码清单检查接入发布；三个在线入口固定到已公开且通过 CI 的辅助提交 `ee6feef5cfd35e50c315cddf91ab0cb35c40a384`，业务代码仍只取正式稳定 Release。验收边界见[重构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LINUX-REFACTOR.md)。
 - 公共仓库停止跟踪冻结的 Windows 部署器、构建依赖、版本资源及桌面专用测试，本地源码和独立 ZIP 保留；全部非桌面回归继续公开运行，Linux 发布不再依赖 Qt／SSH／Windows 构建工具。
 - 贡献／安全文档归入 `.github/`；此前集中到 `scripts/lib/` 的部署模块进一步迁入 `src/tg2cloud/deployment/`，不保留两套业务实现。三个公开 Shell URL 和已部署实例的外层布局保持不变。
 - 视频原名含频道推广与联系方式时，允许使用本条消息的有效说明命名；优先完整长描述、Telegram 引用块和明确标题，合并同段换行，继续排除链接、话题、推广及凭据信息。
@@ -318,11 +318,11 @@
 - 发布前检查三个在线入口的辅助代码 pin，拒绝将旧向导混入新版本；冻结 Windows 资源，保留旧版下载和源码恢复能力。
 - 桌面专用源码和测试已按授权从公共仓库移出，本地恢复归档保留；公共测试不依赖归档。
 
-本版不新增数据库结构迁移或配置项；既有实例保留原预算、配置、Session 和运行数据。真实两 Edition 脚本安装／升级及 NAS 验收范围见[迁移边界及验收门槛](docs/development/SCRIPT-FIRST.md)，不能以自动测试替代。
+本版不新增数据库结构迁移或配置项；既有实例保留原预算、配置、Session 和运行数据。真实两 Edition 脚本安装／升级及 NAS 验收范围见[迁移边界及验收门槛](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/SCRIPT-FIRST.md)，不能以自动测试替代。
 
 ### 发布后验收补充（2026-10-17）
 
-CloudDrive2 旧测试候选经人工核对、授权备份后，使用正式 v1.3.0 原生安装流程迁移成功；用户确认升级后使用验收完成。560 条历史任务、原配置和 Session 授权保留，代码指纹、健康、HTTPS 及只读 WebDAV 通过，在线复检识别为最新版本。OpenList 和共享代理容器未重启；首次安装、无需人工接管的正式版自动升级、故障回退及 NAS 等不包含在本次结论内，见[验收记录](docs/development/V130-ACCEPTANCE.md)。这是文档补充，不修改已发布 Tag、资产或程序版本。
+CloudDrive2 旧测试候选经人工核对、授权备份后，使用正式 v1.3.0 原生安装流程迁移成功；用户确认升级后使用验收完成。560 条历史任务、原配置和 Session 授权保留，代码指纹、健康、HTTPS 及只读 WebDAV 通过，在线复检识别为最新版本。OpenList 和共享代理容器未重启；首次安装、无需人工接管的正式版自动升级、故障回退及 NAS 等不包含在本次结论内，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V130-ACCEPTANCE.md)。这是文档补充，不修改已发布 Tag、资产或程序版本。
 
 ## TG2Cloud v1.2.1
 
@@ -340,7 +340,7 @@ CloudDrive2 旧测试候选经人工核对、授权备份后，使用正式 v1.3
 - 新增可选离线业务快照清单与隔离恢复预检，覆盖标准 Session/配置/DB/网关状态；不提供覆盖生产实例的一键恢复，HTTPS 仍独立备份。
 - 按文件系统分组显示容量、保护新下载预留；固定错误分类与日志脱敏。无新依赖、环境变量、端口或 Compose 权限变更。
 
-版本源统一为 v1.2.1。数据库采用兼容的增量字段，不删除历史任务；升级前备份，回退时使用匹配程序并核对新增恢复信息。详见[恢复指南](docs/RECOVERY.md)与[验收记录及剩余清单](docs/development/RELIABILITY-ACCEPTANCE.md)。专用 VPS 隔离回归通过，CloudDrive2 候选代码已完成保留 465 条历史任务的迁移、启动和只读 WebDAV 检查；真实 Telegram 转存、完整安装脚本升级/回退与 OpenList 实例验收仍待完成。
+版本源统一为 v1.2.1。数据库采用兼容的增量字段，不删除历史任务；升级前备份，回退时使用匹配程序并核对新增恢复信息。详见[恢复指南](docs/RECOVERY.md)与[验收记录及剩余清单](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/RELIABILITY-ACCEPTANCE.md)。专用 VPS 隔离回归通过，CloudDrive2 候选代码已完成保留 465 条历史任务的迁移、启动和只读 WebDAV 检查；真实 Telegram 转存、完整安装脚本升级/回退与 OpenList 实例验收仍待完成。
 
 ### 完整卸载增强
 
@@ -479,7 +479,7 @@ GitHub Release 标签为 `v1.0.1`；程序内部版本为 `1.0.1`。Windows EXE 
 GitHub Release 标签为 `v1.0.0`；程序内部版本为 `1.0.0`。两个 Windows EXE 由 GitHub Actions 从该标签源码构建，并以本次构建实际文件生成 SHA256 校验值。真实 VPS、WebDAV 与 Telegram 端到端验收仍待用户下载 Release 资产后完成。
 
 - 新安装按 Edition 使用独立的 `tg2cloud-*` 安装目录、备份目录、容器和 Docker Network；CloudDrive2 与 OpenList 的内网 WebDAV 主机名同步更新。
-- 识别同 Edition 的旧 TG115 安装目录和已停容器后提示并继续；固定端口或目标新资源冲突时明确停止，不自动覆盖或迁移。手动迁移边界见 `docs/MIGRATION_FROM_TG115.md`。
+- 识别同 Edition 的旧 TG115 安装目录和已停容器后提示并继续；固定端口或目标新资源冲突时明确停止，不自动覆盖或迁移。这是当时的隔离处理行为，当前不提供跨项目迁移教程。
 - 新输出使用 `TG2CLOUD_*` 状态标记，解析器兼容旧 `TG115_*`；保留 SQLite 文件名及必要的兼容环境变量别名。固定 Tunnel 端口和传输核心未改动。
 - 既有 TG2Cloud 重复部署默认在 VPS 内保留完整 `.env`，仅在用户明确勾选时应用本次表单；SQLite、rclone 配置及两种网关的持久化目录继续原位保留。
 - 两版增加只读运行状态区分（运行中、已停、未安装、独立 legacy 提示），`manage.sh update` 仅在全部健康核验通过后输出 `TG2CLOUD_UPDATE=OK`；明确 v1.0.0 不新增 Restore/Uninstall。
@@ -500,69 +500,8 @@ GitHub Release 标签为 `v1.0.0`；程序内部版本为 `1.0.0`。两个 Windo
 - Windows 部署器检测到 SSH 主机密钥变化时，显示当前目标以及旧／新密钥类型和 SHA-256 指纹；用户确认后仅原子替换当前主机与端口的记录，并自动重试原操作一次。取消不会修改记录，身份认证、端口不可达、超时、解析和协议错误会分别提示；首次连接仍保持严格人工核验。
 - CloudDrive2 版的导航、配置卡片和文档模块标题统一使用 `CloudDrive2`，不再把 `115` 与产品名并列为模块名称；115 挂载、路径、验收和配置示例继续保留，实际部署与 WebDAV 逻辑不变。
 
-## 上游 TG115 历史记录（保留用于代码血缘）
+## 上游来源与许可
 
-以下条目属于 TG115 上游历史，不是 TG2Cloud 的版本号或当前发布说明。
+TG2Cloud 源自 [whyhhh20/TG115](https://github.com/whyhhh20/TG115)，保留原作者、MIT 许可证和版权。上游自身的版本记录由上游项目维护，不与 TG2Cloud 的版本号或当前部署能力混用。
 
-### TG115 v1.6.2（2026-09-16）
-
-- Windows 部署器界面迁移到 PySide6，保留 SSH 主机密钥确认、VPS 资源建议、部署前容量复检、固定本机隧道、CloudDrive2 网络修复和 WebDAV 真写验收；新增离线预览、依赖诊断、脱敏日志导出和 Qt 打包自检，并同步构建依赖与回归测试；构建时隔离 DLL 搜索路径，避免环境中其他软件的 ICU 运行库被误打包后导致 QtCore 无法启动。
-- Windows 构建新增 Modern／Classic 双版本：Modern 使用 PySide6 新界面，Classic 保留原 Tkinter 界面；`build.ps1 -Edition All|Modern|Classic` 可选择构建范围，CI 分别自检两个成品。
-- Linux CI 显式使用 Qt offscreen 平台运行 Modern 界面回归，避免无头 Runner 中残留的显示环境变量触发不可用的桌面平台插件。
-- Windows 构建预检不再创建真实 GUI 窗口，打包后 Modern／Classic 自检分别设定超时，避免非交互 Runner 因窗口初始化永久占用作业。
-- Windows CI 构建显式使用 `setup-python` 提供的 Python 3.13，避免 `uv` 自动选用 Python 3.14 后触发 Tcl/Tk zipfs 打包异常，导致 Classic 成品自检挂起。
-- Bot 改用 Telegram 输入框左侧的原生命令菜单，7 项菜单说明统一为 6 个中文字符；新回复不再附带消息下方快捷按钮，队列翻页和带参数任务操作继续使用文字命令；菜单注册失败不阻止服务启动。
-- 系统状态的目的端可访问文案移除“只读检查”和检查时间后缀，后台探测与过期保护逻辑不变。
-
-### TG115 v1.6.1（2026-09-15）
-
-- Windows 部署器固定使用本机 `127.0.0.1:19798` 打开 CloudDrive2 管理页；端口被占用时明确停止并提示释放，不再生成随机端口；
-- 打开浏览器前通过 SSH 隧道执行真实 HTTP 验收，旧隧道失效时自动关闭并重建；SSH 服务拒绝 TCP 转发时显示 `AllowTcpForwarding`／`PermitOpen` 排查提示，不再吞掉异常后误报成功。
-- Bot `/status` 改为单页对齐布局，使用四字字段名集中展示目的端、调度、并发、空间、资源、分阶段速度和任务统计；日常界面不再提示人工确认，历史 `confirmed` 兼容状态并入“Bot 完成”。
-- Bot 帮助、队列、任务详情、诊断和操作结果统一为四字标签单页布局；新增私聊鉴权的快捷按钮、每页 5 项的任务翻页和按状态展示的任务操作。按钮取消采用 5 分钟二次确认，文字命令保持兼容；快捷临时巡检仍为只读，远端遗留文件清理继续要求一次性确认码。
-
-### TG115 v1.6.0（2026-09-15）
-
-- Windows 部署器新增 VPS CPU、内存、目标文件系统、inode、已有占用和 FUSE 的只读探测，提供“均衡／流式优先”实例建议；Phase 3.1 将源码默认统一为 20GB 任务预算／8GB 安全线，应用建议必须由用户主动点击；
-- 正式部署前重新探测并校验所选预算，空间或运行门槛不足时在上传安装文件前停止；远端安装脚本改为检查实际安装目录所在文件系统，不再固定检查根分区；
-- 识别 Docker 实际数据目录；与安装目录分盘时独立检查 Docker 空间和 inode，并在 Docker 启动后、构建镜像前再次复核两个文件系统；
-- 新增只读 `manage.sh backups` 和显式 `prune-backups [1-50]`；部署只报告备份占用，超过 5GB 时提示人工整理，不自动删除任何回退点；
-- 拆分资源采样、远端目录探测和调度心跳；采样过期不启动新传输；
-- 增加仅私聊限制、跨重启暂停／恢复、只读 `/doctor`／`/orphans`、`/watch`、`/retry all`、手动 `/stream` 和批量 `/confirm all`；
-- 增加 `/orphans clean` 一次性确认码、清理前重新扫描和删除后复查，并保护活动任务路径；
-- 将 Bot 命令路由、运维动作和状态展示从传输主模块拆分到 `bot_commands.py`；
-- 用 rclone JSON 统计展示阶段进度，流式上传与普通上传共享上传窗口；
-- 并发增长增加冷却和吞吐收益评估，并考虑本地积压；
-- 增加数据库版本、合法状态迁移图、事务化迁移、状态变更历史和取消意图；
-- 分开持久化远端临时／正式路径，覆盖改名前后恢复与取消失败关闭；
-- 增加隔离构建／配置预检、运行环境／代码指纹核验、一致性数据库快照及失败自动回退；
-- Shell 不再执行 `.env`，安装与管理入口加强路径验证；
-- 预留媒体来源／目的端协议接口，不引入频道用户会话或新的上传依赖；
-- 增加故障回归、真实本地 WebDAV 集成测试和 Linux Python 3.12 CI 测试。
-
-### TG115 v1.5.0
-
-- 单文件超过本地任务预算时自动切换为带背压的流式传输，不再永久排队；
-- 使用 `rclone rcat --size` 直接从 Telegram 写入 CloudDrive2，并继续执行大小校验和安全改名；
-- 修复远端改名与 `/cancel` 竞态导致的远端孤儿文件；
-- 修复本地下载完成改名与数据库提交之间崩溃导致的本地孤儿文件；
-- 修复不存在的保留文件仍占用本地任务额度；
-- CloudDrive2 修复脚本不再把任意占用 19798 端口的容器当作 CloudDrive2；
-- SQLite 旧数据库自动新增传输模式字段；
-- CI 新增 Linux ShellCheck、Compose 校验、Bot 镜像构建、依赖审计和 Windows EXE 自检；
-- 自动化测试增加到 75 项。
-
-### TG115 v1.0.0
-
-首个正式版本。
-
-- 提供 Windows 图形化部署器；
-- 支持 Telegram 私聊文件自动排队与任务恢复；
-- 支持 CloudDrive2 WebDAV 扁平目录写入和远端大小校验；
-- 支持 CPU、内存、磁盘和错误率动态并发控制；
-- 支持 20GB 本地任务预算和磁盘安全线；
-- 区分 Bot 传输完成与 115 官方客户端人工确认；
-- 提供 `/confirm <任务编号>`、`/status`、`/task`、`/retry` 和 `/cancel`；
-- 通过自动化模拟、静态检查、依赖审计和打包自检。
-
-此前本地构建均为内部测试版本，不作为公开发行版本。
+本文保留 TG2Cloud 的全部版本事实；历史上存在过的 EXE 不再作为当前下载或安装方式。旧开发与验收资料通过固定历史提交查阅，不代表当前版本或全部环境已验收。

@@ -1,8 +1,8 @@
 # 备份与恢复边界
 
-v1.4.5 备份子菜单按实例／代理分组：实例快照创建／校验为 2／3，代理创建／查看／校验／清理为 4／5／6／7；主菜单仍为 13，确认及操作范围不变。下文使用新版序号，旧 v1.4.4 工具需升级，见[新版页面说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#6-本地管理次级页面待发布)选择，不与旧编号混用。
+v1.4.5 备份子菜单按实例／代理分组：实例快照创建／校验为 2／3，代理创建／查看／校验／清理为 4／5／6／7；主菜单仍为 13，确认及操作范围不变。下文使用新版序号，旧 v1.4.4 工具需升级，按本页菜单选择，不与旧编号混用。
 
-v1.4.5 增加仅针对临时副本的数据库启动／迁移与重启恢复演练；不加载 Session、不启动网关，不代表完整服务恢复。菜单校验仍只做结构／数据库预检，不自动启动演练；新工具与限制见[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#2-隔离数据库恢复演练)。
+v1.4.5 增加仅针对临时副本的数据库启动／迁移与重启恢复演练；不加载 Session、不启动网关，不代表完整服务恢复。菜单校验仍只做结构／数据库预检，不自动启动演练；新工具与限制见[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-NEXT.md#2-隔离数据库恢复演练)。
 
 先确认备份包含什么、怎样校验，以及哪些数据需要另存。备份包可能含 Token、Session 和证书私钥，只放在自己的受限目录，不公开上传。
 
@@ -106,7 +106,7 @@ sudo /opt/tg2cloud-openlist/manage.sh backups
 
 没有覆盖生产数据的一键 Restore。正式恢复前需核对版本、数据库、Session、网关授权、资源与代理状态，保护当前可用配置，防止新旧 Bot 同时使用同一 Token。
 
-不要把整包直接解压覆盖生产 `/opt`，也不要删除现有证书强迫签发。验收记录只证明各自执行过的范围：[v1.4.4 双架构升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)、[v1.4.2 人工升级与备份核验](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)、[v1.3.3 升级与用户转存](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V133-ACCEPTANCE.md)。它们不等于灾难恢复已通过。
+不要把整包直接解压覆盖生产 `/opt`，也不要删除现有证书强迫签发。验收记录只证明各自执行过的范围：[v1.4.4 双架构升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V144-ACCEPTANCE.md)、[v1.4.2 人工升级与备份核验](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V142-ACCEPTANCE.md)、[v1.3.3 升级与用户转存](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V133-ACCEPTANCE.md)。它们不等于灾难恢复已通过。
 
 ## 私密保存
 

@@ -16,7 +16,7 @@ TG2Cloud 是在该基础上的二次开发版本，继续保留 MIT 许可证和
 
 ## 相关组件
 
-Python、Telethon、SQLite、Docker、rclone 和 OpenList 等组件提供通信、状态持久化、运行与传输能力；CloudDrive2 提供另一种存储网关选择。PySide6 等桌面组件属于已冻结的历史 Windows 部署器。
+Python、Telethon、SQLite、Docker、rclone 和 OpenList 等组件提供通信、状态持久化、运行与传输能力；CloudDrive2 提供另一种存储网关选择。
 
 各组件与云存储服务有自己的许可证、使用条款和信任边界，应分别遵守。TG2Cloud 的 MIT 许可证并不替代第三方服务条款。
 

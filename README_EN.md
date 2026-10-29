@@ -33,7 +33,7 @@ Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are di
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **v1.5.3**, supporting Linux. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3). Windows deployers remain at [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1).
+Current stable version: **v1.5.3**, supporting Linux. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3). Linux is the supported deployment platform.
 
 v1.5.3 provides consistent fresh-install naming and optional Compose HTTPS. See the [release and compatibility notes](docs/development/V153-ACCEPTANCE.md).
 
@@ -97,14 +97,11 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Configuration and backups | [Configuration fields and runtime paths](docs/CONFIGURATION.md) · [Backup scope and restore preflight](docs/BACKUP-RESTORE.md) |
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Optional features | [Classification, notifications and quotas](docs/FEATURE-ENHANCEMENTS.md) · [Existing Nginx reuse](docs/DOCKER-NGINX.md) |
-| Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) · [Maintenance improvements](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| Current maintenance | [v1.5.2 Compose and listener recovery](docs/development/V152-ACCEPTANCE.md) |
-| Historical acceptance | [v1.5.1 release and acceptance](docs/development/V151-ACCEPTANCE.md) |
-| Upgrade acceptance | [v1.4.4 dual-architecture upgrade](docs/development/V144-ACCEPTANCE.md) · [Historical records](docs/README.md) |
-| Uninstall and migration | [Uninstall guide](docs/UNINSTALL.md) · [Migration from TG115](docs/MIGRATION_FROM_TG115.md) |
-| Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux architecture and compatibility](docs/development/LINUX-REFACTOR.md) |
+| Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) |
+| Current maintenance | [v1.5.3 release and compatibility](docs/development/V153-ACCEPTANCE.md) |
+| Uninstall | [Uninstall guide](docs/UNINSTALL.md) |
+| Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux development and tests](docs/development/DEVELOPMENT.md) |
 | Versions and releases | [Complete version history](CHANGELOG.md) · [Current release notes](RELEASE_NOTES.md) |
-| Historical Windows edition | [Historical Windows deployment guide](docs/README-小白使用说明.md) · [Script-first maintenance and desktop freeze](docs/development/SCRIPT-FIRST.md) |
 | Branding and components | [Brand guide](docs/development/BRAND-GUIDE.md) · [Third-party components](docs/第三方组件说明.md) |
 
 ## Boundaries
@@ -112,7 +109,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 - Transfer only content you are authorized to save. Monitoring requires explicit administrator authorization; content protection is respected. 115 is an example, not the only destination.
 - Cloud authentication stays in your own CloudDrive2 / OpenList instance. TG2Cloud has no telemetry or credential callback.
 - WebDAV size verification is not a content hash or an official cloud-provider completion result. Verify important files independently.
-- Never publish tokens, passwords, Sessions, databases, configuration or backups. Back up before upgrading; never overwrite a newer instance with an old EXE. See [Security](.github/SECURITY.md).
+- Never publish tokens, passwords, Sessions, databases, configuration or backups. Back up before upgrading; do not overwrite an instance with an unknown identity. See [Security](.github/SECURITY.md).
 
 ## Acknowledgements and Project Origin
 
@@ -139,7 +136,7 @@ Thanks to **whyhhh20** for creating and publishing the upstream [TG115 project](
 
 TG2Cloud evolved from that project, retains the MIT license, original copyright, and required attribution, and continues to improve the reliability, deployment safety, and operational experience of the Telegram → rclone → CloudDrive2/OpenList → user-owned-cloud path.
 
-Thanks also to Telethon, rclone, Docker, Paramiko, and the other open-source projects involved, and to CloudDrive2 for its WebDAV and cloud-mount features. Each third-party component remains subject to its own license and terms.
+Thanks also to Telethon, rclone, Docker, and the other open-source projects involved, and to CloudDrive2 for its WebDAV and cloud-mount features. Each third-party component remains subject to its own license and terms.
 
 ## License and Disclaimer
 

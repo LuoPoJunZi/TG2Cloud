@@ -40,7 +40,7 @@ https://developers.cloudflare.com/pages/configuration/build-configuration/
 
 打开首页，从侧栏访问 CloudDrive2 / OpenList 页面并刷新，确认深层路径仍可访问。
 
-打开搜索输入 `401`、`SSH`、`备份`，测试主题切换、版本菜单、代码复制与手机导航。GitHub 下载链接指向项目正式 Release，不由文档站托管 EXE。
+打开搜索输入 `401`、`SSH`、`备份`，测试主题切换、版本菜单、代码复制与手机导航。GitHub 下载链接指向项目正式 Release，不由文档站托管软件资产。
 
 ### 4. 补充真实站点地址
 

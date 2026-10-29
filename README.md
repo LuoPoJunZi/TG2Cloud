@@ -33,7 +33,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前稳定版 **v1.5.3**，支持 Linux；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3)。Windows 部署器停留在 [v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
+当前稳定版 **v1.5.3**，支持 Linux；下载见 [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3)。当前仅提供 Linux 部署。
 
 v1.5.3 统一新安装命名，提供可选 Compose HTTPS 向导；[发布与兼容说明](docs/development/V153-ACCEPTANCE.md)。
 
@@ -97,14 +97,11 @@ tg2cloud uninstall --edition all --check
 | 配置与备份 | [配置字段及运行目录](docs/CONFIGURATION.md) · [备份范围与恢复预检](docs/BACKUP-RESTORE.md) |
 | 家庭与手机读取 | [Bot 家人授权](docs/FAMILY-SHARING.md) · [外部 WebDAV 只读入口](docs/external-webdav.md) |
 | 可选功能 | [文件分类、通知与配额](docs/FEATURE-ENHANCEMENTS.md) · [复用已有 Nginx](docs/DOCKER-NGINX.md) |
-| 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) · [维护增强](docs/development/MAINTENANCE-IMPROVEMENTS.md) |
-| 当前维护 | [v1.5.2 Compose 与监听恢复](docs/development/V152-ACCEPTANCE.md) |
-| 历史验收 | [v1.5.1 发布与验收](docs/development/V151-ACCEPTANCE.md) |
-| 升级验收 | [v1.4.4 双架构升级记录](docs/development/V144-ACCEPTANCE.md) · [历史验收目录](docs/README.md) |
-| 卸载与迁移 | [卸载指南](docs/UNINSTALL.md) · [从 TG115 迁移](docs/MIGRATION_FROM_TG115.md) |
-| 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 架构与兼容](docs/development/LINUX-REFACTOR.md) |
+| 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) |
+| 当前维护 | [v1.5.3 发布与兼容](docs/development/V153-ACCEPTANCE.md) |
+| 卸载 | [卸载指南](docs/UNINSTALL.md) |
+| 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 开发与测试](docs/development/DEVELOPMENT.md) |
 | 版本与发布 | [所有版本分别做了什么](CHANGELOG.md) · [当前发布说明](RELEASE_NOTES.md) |
-| 历史 Windows 版 | [历史 Windows 部署说明](docs/README-小白使用说明.md) · [脚本优先与桌面版冻结](docs/development/SCRIPT-FIRST.md) |
 | 品牌与第三方组件 | [品牌使用规范](docs/development/BRAND-GUIDE.md) · [第三方组件说明](docs/第三方组件说明.md) |
 
 ## 使用边界
@@ -112,7 +109,7 @@ tg2cloud uninstall --edition all --check
 - 仅转存你有权保存的内容；监听须管理员显式授权，不绕过内容保护。115 只是示例，不是唯一目标网盘。
 - 云存储登录与授权在你自己的 CloudDrive2 / OpenList 中完成；TG2Cloud 无遥测或凭据回传。
 - WebDAV 大小验证不等于内容哈希校验或云盘官方最终完成；重要文件需自行复核。
-- 不公开 Token、密码、Session、数据库、配置或备份；升级前备份，不用旧 EXE 覆盖新实例。详见[安全政策](.github/SECURITY.md)。
+- 不公开 Token、密码、Session、数据库、配置或备份；升级前备份，不覆盖身份未知的实例。详见[安全政策](.github/SECURITY.md)。
 
 ## 致谢与项目来源
 
@@ -139,7 +136,7 @@ tg2cloud uninstall --edition all --check
 
 TG2Cloud 从该项目演进而来，以原项目代码为基础并保留 MIT 许可证、版权和必要致谢；当前在 Telegram → rclone → CloudDrive2/OpenList → 用户云存储链路上继续完善可靠性、部署安全和运维体验。
 
-同时感谢 Telethon、rclone、Docker、Paramiko 等开源项目，以及 CloudDrive2 提供的 WebDAV 和网盘挂载能力。第三方组件分别受各自许可证与服务条款约束。
+同时感谢 Telethon、rclone、Docker 等开源项目，以及 CloudDrive2 提供的 WebDAV 和网盘挂载能力。第三方组件分别受各自许可证与服务条款约束。
 
 ## 许可证与免责声明
 

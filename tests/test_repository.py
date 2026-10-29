@@ -136,9 +136,9 @@ class RepositoryContractTests(unittest.TestCase):
     def test_document_index_covers_existing_public_guides(self):
         index = (ROOT / "docs/README.md").read_text(encoding="utf-8")
         for guide in (
-            "README-小白使用说明.md", "填写信息清单.md", "VPS-INSTALL.md", "LAN-INSTALL.md",
-            "UNINSTALL.md", "OPERATIONS.md", "MIGRATION_FROM_TG115.md", "第三方组件说明.md",
-            "development/BRAND-GUIDE.md", "development/DOMAIN-HTTPS-ACCEPTANCE.md",
+            "填写信息清单.md", "VPS-INSTALL.md", "LAN-INSTALL.md", "COMPOSE.md",
+            "UNINSTALL.md", "OPERATIONS.md", "CONFIGURATION.md", "第三方组件说明.md",
+            "development/BRAND-GUIDE.md", "development/DEVELOPMENT.md", "development/RELEASE-CHECKLIST.md",
             "development/REPOSITORY.md",
         ):
             with self.subTest(guide=guide):
@@ -261,15 +261,9 @@ class RepositoryContractTests(unittest.TestCase):
 class UserDocumentationTests(unittest.TestCase):
     """Repository guides stand alone and document real public operations."""
 
-    GUIDES = (
-        "README.md", "README_EN.md", "docs/README.md", "docs/BOT-USAGE.md",
-        "docs/STORAGE.md", "docs/OPERATIONS.md", "docs/RECOVERY.md",
-        "docs/VPS-INSTALL.md", "docs/LAN-INSTALL.md", "docs/填写信息清单.md",
-        "docs/README-小白使用说明.md", "docs/development/REPOSITORY.md",
-        "docs/development/SCRIPT-FIRST.md", "docs/development/LINUX-REFACTOR.md",
-        "docs/NAMING.md", "docs/CONFIGURATION.md", "docs/BACKUP-RESTORE.md", "docs/FAQ.md",
-        "docs/FAMILY-SHARING.md", "docs/external-webdav.md", "docs/UNINSTALL.md",
-        "docs/MIGRATION_FROM_TG115.md", "docs/第三方组件说明.md", "docs/development/V133-ACCEPTANCE.md",
+    GUIDES = ("README.md", "README_EN.md", "CHANGELOG.md", "RELEASE_NOTES.md") + tuple(
+        name for name in repository.public_files(ROOT)
+        if name.startswith("docs/") and name.endswith(".md") and not repository.forbidden_reason(name)
     )
 
     def test_all_version_records_remain_indexed_even_without_release_downloads(self):
@@ -290,7 +284,36 @@ class UserDocumentationTests(unittest.TestCase):
                     self.assertEqual(anchor, "tg2cloud-v" + version.replace(".", separator))
                     self.assertTrue(summary.strip())
                 self.assertIn(f"共 {len(versions)} 个版本", text)
-        self.assertIn("## 上游 TG115 历史记录", history)
+        self.assertIn("## 上游来源与许可", history)
+        self.assertIn("https://github.com/whyhhh20/TG115", history)
+
+    def test_current_docs_do_not_recommend_retired_downloads_or_migration(self):
+        for name in self.GUIDES:
+            if name == "CHANGELOG.md":
+                continue  # The changelog retains facts about all past product versions.
+            text = (ROOT / name).read_text(encoding="utf-8")
+            with self.subTest(document=name):
+                self.assertNotRegex(text, r"https://[^)\s]+/releases/download/[^)\s]+\.exe")
+                self.assertNotIn("](MIGRATION_FROM_TG115.md)", text)
+                self.assertNotIn("](README-小白使用说明.md)", text)
+                self.assertNotIn("build.ps1 -Edition", text)
+        for name in ("docs/README-小白使用说明.md", "docs/MIGRATION_FROM_TG115.md"):
+            self.assertFalse((ROOT / name).exists())
+        for name in ("README.md", "README_EN.md"):
+            self.assertIn("whyhhh20/TG115", (ROOT / name).read_text(encoding="utf-8"))
+        self.assertTrue((ROOT / "LICENSE").is_file())
+
+    def test_archived_evidence_links_resolve_to_real_immutable_git_files(self):
+        text = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
+        links = re.findall(r"https://github.com/LuoPoJunZi/TG2Cloud/blob/([0-9a-f]{40})/(docs/development/[^)#\s]+)", text)
+        self.assertTrue(links)
+        for commit in {commit for commit, _ in links}:
+            result = subprocess.run(["git", "ls-tree", "-r", "--name-only", commit, "--", "docs/development"],
+                                    cwd=ROOT, capture_output=True, text=True, check=True)
+            files = set(result.stdout.splitlines())
+            for identity, name in links:
+                if identity == commit:
+                    self.assertIn(name, files)
 
     def test_readmes_and_index_offer_standalone_bot_and_storage_guides(self):
         for name in ("BOT-USAGE.md", "STORAGE.md"):
@@ -443,7 +466,7 @@ class PublicFileTests(unittest.TestCase):
             "src/tg2cloud/deployment/profiles.py", "install.sh", "tests/test_repository.py", ".github/workflows/release.yml",
             ".github/CONTRIBUTING.md", ".github/SECURITY.md", "assets/brand/tg2cloud.ico",
             "website/public/favicon.ico", "docs/填写信息清单.md", "docs/development/BRAND-GUIDE.md",
-            "docs/development/DOMAIN-HTTPS-ACCEPTANCE.md", "LICENSE", "packaging/hooks/clouddrive2/.env.example",
+            "docs/development/DEVELOPMENT.md", "LICENSE", "packaging/hooks/clouddrive2/.env.example",
         ):
             with self.subTest(name=name):
                 self.assertIsNone(repository.forbidden_reason(name))

@@ -6,11 +6,11 @@ v1.4.7 已正式发布统一外部 WebDAV 管理。历史正式 v1.4.6 尚无此
 
 本文说明正式 v1.4.11 的 Linux 管理行为与外部 WebDAV 统一入口。状态、日志和检查结果按所选 Edition 展示；业务数据库、网关和外部附加功能仍分别管理。须显式升级离线工具并重新打开 `tg2cloud` 才能加载新页面。
 
-当前用户升级与 WebDAV 日志见[v1.4.5 验收记录](development/V145-ACCEPTANCE.md)，自动发布证据见[维护说明](development/MAINTENANCE-NEXT.md)。更早版本的编号与验收在[历史维护记录](development/MAINTENANCE-IMPROVEMENTS.md)及[文档目录](README.md)中保留，不用于推断当前所有场景均通过。
+当前用户升级与 WebDAV 日志见[v1.4.5 验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V145-ACCEPTANCE.md)，自动发布证据见[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-NEXT.md)。更早版本的编号与验收在[历史维护记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-IMPROVEMENTS.md)及[文档目录](README.md)中保留，不用于推断当前所有场景均通过。
 
-此前的双架构升级反馈单独保留在[v1.4.4 验收记录](development/V144-ACCEPTANCE.md)。
+此前的双架构升级反馈单独保留在[v1.4.4 验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V144-ACCEPTANCE.md)。
 
-任务恢复见[恢复指南](RECOVERY.md)，配置字段见[配置参考](CONFIGURATION.md)，完整备份与恢复预检见[备份指南](BACKUP-RESTORE.md)。公网 NAT 和 APT 问题见[VPS 指南](VPS-INSTALL.md)；历史图形教程见[旧版教程](README-小白使用说明.md)。
+任务恢复见[恢复指南](RECOVERY.md)，配置字段见[配置参考](CONFIGURATION.md)，完整备份与恢复预检见[备份指南](BACKUP-RESTORE.md)。公网 NAT 和 APT 问题见[VPS 指南](VPS-INSTALL.md)。
 
 
 ## 个人监听账号（v1.4.9 起）
@@ -23,13 +23,13 @@ v1.4.2 的 `external_docker` 使用外部 Nginx、宿主离线续期任务及文
 
 ### 本地管理菜单
 
-**v1.4.5 页面调整**：主菜单 1～14 和功能边界不变；状态、日志和业务就绪页面可选择重新读取／检查，回车默认 0 返回主菜单；执行结果不会立即被主菜单覆盖。服务／凭据／HTTPS／验收／报告／备份等页面统一标题和当前 Edition，操作仍需原确认。备份子菜单已按对象重排，不能再按旧编号盲选，见[新版页面与编号](development/MAINTENANCE-NEXT.md#6-本地管理次级页面待发布)。这些功能随 v1.4.5 源码提供，正式发布状态见[发布说明](../RELEASE_NOTES.md)；v1.4.4 及更旧离线工具需显式升级。
+**v1.4.5 页面调整**：主菜单 1～14 和功能边界不变；状态、日志和业务就绪页面可选择重新读取／检查，回车默认 0 返回主菜单；执行结果不会立即被主菜单覆盖。服务／凭据／HTTPS／验收／报告／备份等页面统一标题和当前 Edition，操作仍需原确认。备份子菜单已按对象重排，不能再按旧编号盲选，见[新版页面与编号](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-NEXT.md#6-本地管理次级页面待发布)。这些功能随 v1.4.5 源码提供，正式发布状态见[发布说明](../RELEASE_NOTES.md)；v1.4.4 及更旧离线工具需显式升级。
 
 **主菜单编号**：1～14 自 v1.4.4 重排后保持不变；文件分类、异常通知各有独立入口，服务启停直接选择六个动作。下表的 **15. 外部 WebDAV 自 v1.4.7 提供，历史正式 v1.4.6 尚无此选项**；旧 v1.4.3 工具采用历史编号。须显式升级离线管理工具后才生效，不会因更新文档而改变 VPS。
 
 直接移除“命名预览”菜单项及菜单分派，不保留隐藏入口；独立命令 `tg2cloud naming-preview`、命名实现和 Bot 自动命名继续保留。新编号 12 是故障诊断报告，不是原预览功能。
 
-旧版 v1.4.3 的菜单编号与独立命名预览入口见[历史维护说明](development/MAINTENANCE-IMPROVEMENTS.md)。当前以本节菜单表为准。
+旧版 v1.4.3 的菜单编号与独立命名预览入口见[历史维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-IMPROVEMENTS.md)。当前以本节菜单表为准。
 
 v1.3.2 默认安装向导在确认计划后创建离线命令；取消、`--check` 和单独查看凭据不会安装。**已有主机不会自动获得管理命令或更新离线代码**，请重新运行对应安装入口并确认计划；同版本无业务升级时，可确认仅安装本地管理命令，不重启容器。
 
@@ -239,13 +239,13 @@ OpenList 使用对应安装路径。单纯 `restart` 不会应用新环境值；
 
 公网实例先运行公开安装入口的 `--edition clouddrive2 --check`（OpenList 改为 `openlist`），核对实际版本、源码和 HTTPS；内网实例使用 `install-lan.sh` 对应参数。命令全文与安装/升级区别见 [VPS 指南](VPS-INSTALL.md)。`--check` 不执行升级，`manage.sh update` 只重建本地已有 payload；两者都不能替代升级后的实际转存检查。
 
-当前源码重构保留已部署的 `app.*` 运维命令、数据库和 Session 路径；新核心由 `app/tg2cloud/` 加载，新递归指纹有显式 v2 前缀，旧实例按历史协议与正式清单核对。目录调整不自动升级运行实例，也不要求迁移数据库。开发检查及发布门槛见[Linux 重构说明](development/LINUX-REFACTOR.md)。
+当前源码重构保留已部署的 `app.*` 运维命令、数据库和 Session 路径；新核心由 `app/tg2cloud/` 加载，新递归指纹有显式 v2 前缀，旧实例按历史协议与正式清单核对。目录调整不自动升级运行实例，也不要求迁移数据库。开发检查及发布门槛见[Linux 重构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LINUX-REFACTOR.md)。
 
 通过 `tg2cloud` → **2. 查看运行状态**区分管理工具来源版本、实际实例版本及容器健康；不要用下载文件名代替运行版本。服务器版本高于 latest 时不自动降级，无法识别官方基线时停止，不把探测失败当作未安装。容器健康仍不代表 WebDAV 写入通过。
 
 ## 部署阶段与失败提示
 
-Linux 向导依次输出源码核验、实例／资源检查、确认计划、基础安装或候选升级、入口检查与独立写入验收等阶段；具体结果标记见 [VPS 指南](VPS-INSTALL.md#https-续做与验收)，没有 Windows 弹窗或猜测百分比。
+Linux 向导依次输出源码核验、实例／资源检查、确认计划、基础安装或候选升级、入口检查与独立写入验收等阶段；具体结果标记见 [VPS 指南](VPS-INSTALL.md#https-续做与验收)，不以猜测百分比代替实际阶段。
 
 先记录“在哪个阶段失败”，再看实际错误。`--check`、基础服务、HTTPS、WebDAV 和真实转存是不同证据；缺工具不一定是 DNS 错，认证失败也不应靠重新签证书解决。中断后先核对当前状态与备份，不假设已自动回滚，也不重复卸载／重装。
 
@@ -292,7 +292,7 @@ Let's Encrypt 已于 2025 年 6 月 4 日停止证书到期提醒邮件；填写
 
 ## 公网检查与验收边界
 
-VPS 本机 HTTPS 自检不能证明公网可访问或后端端口在外部网络不可达。请从独立网络验证 HTTPS、HTTP 跳转、`/dav` 与 `/dav/` 阻断，以及 IP 加管理端口不可达。参见 [HTTPS 验收清单](development/DOMAIN-HTTPS-ACCEPTANCE.md)。测试不得复用生产 Bot 凭据，不得把网关通过当成 Telegram/真实网盘转存全链路通过。
+VPS 本机 HTTPS 自检不能证明公网可访问或后端端口在外部网络不可达。请从独立网络验证 HTTPS、HTTP 跳转、`/dav` 与 `/dav/` 阻断，以及 IP 加管理端口不可达。参见 [HTTPS 验收清单](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md)。测试不得复用生产 Bot 凭据，不得把网关通过当成 Telegram/真实网盘转存全链路通过。
 
 ## 常见问题索引
 
@@ -315,7 +315,7 @@ v1.4.11 监听目录改动与 v1.4.10 有区别，完整说明见[监听目录�
 
 ## v1.5.0：Bot 与管理工具分别验收
 
-本节功能自 v1.5.0 正式提供；旧 v1.4.11 不包含新增的 `--version` 查询与版本汇总。两台用户 Linux 主机的基础升级结果及未完成项见[V1.4.11 实机补充](development/V1411-ACCEPTANCE.md#2026-10-27-用户提供的两台-linux-升级记录)。
+本节功能自 v1.5.0 正式提供；旧 v1.4.11 不包含新增的 `--version` 查询与版本汇总。两台用户 Linux 主机的基础升级结果及未完成项见[V1.4.11 实机补充](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V1411-ACCEPTANCE.md#2026-10-27-用户提供的两台-linux-升级记录)。
 
 从 v1.4.11 或更早工具首次升级到 v1.5.0，请使用[VPS 在线入口](VPS-INSTALL.md)或[内网在线入口](LAN-INSTALL.md)，由新版向导同步更新两个组件。旧 CLI 的菜单本身不会自动加载未来版本的更新逻辑；仅在旧菜单中升级 Bot，不能保证管理工具随之更新。
 

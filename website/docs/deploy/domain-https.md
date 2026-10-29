@@ -105,4 +105,4 @@ dry-run 不替换正式证书，也不证明长期自动续期已通过。它需
 | 本机通过、外网失败 | 检查云安全组、防火墙、DNS 和外部网络 |
 | 管理域名 `/dav` 为 403 | 预期拦截，不是 Bot WebDAV 凭据错误 |
 
-按版本区分的实机记录见[验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md)；发布、隔离测试和用户反馈不互相替代。
+按版本区分的实机记录见[验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/DOMAIN-HTTPS-ACCEPTANCE.md)；发布、隔离测试和用户反馈不互相替代。

@@ -10,7 +10,7 @@
 
 ### 可以自动监听频道吗？
 
-当前不可以。你手动选择文件并转发给自己的私人 Bot，VPS 自动处理之后的步骤。它不自动爬取频道，也不批量读取频道历史。
+可以，由管理员显式授权个人监听账号，在 Bot 的监听管理中添加自己有权读取的频道或群组。默认关闭，只处理启用后的新附件，不读取评论，不默认补抓全部历史；具体规则、确认模式与恢复见[监听指南](/usage/listening/)。
 
 ### 必须开 Telegram Premium 吗？
 
@@ -33,23 +33,15 @@
 | 固定 UID 超出系统账号建议范围 | 不代表创建失败，也不要求改成 root 或放宽权限 |
 | 容量低于推荐 50GB | 不是唯一硬门槛，但必须通过实际容量和保留线校验 |
 
-安装失败、权限拒绝、磁盘不足、TLS 错误或不健康容器需单独处理。详见[升级反馈](/operations/update/#v1-4-4-安装与升级反馈)。[v1.4.3 日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)与[v1.4.4 双架构记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)各有独立范围，不表示任意 WARNING 无害或全部业务已验收。
-
-### Windows 提示未知发布者怎么办？
-
-已发布 EXE 未提供商业代码签名。核对正式 Release、文件名和 SHA-256，不要直接关闭全局安全防护。[下载与校验](/download/)。
-
-### 没有 Windows 电脑能安装吗？
-
-可以。v1.3.0 起以 Linux 单行向导为主要入口，先检查、收集信息并确认，再复用 Docker 安装资源；已有可核验的受管实例走保留配置升级，业务代码只取正式稳定 Release。CloudDrive2 本次旧候选人工迁移及用户使用验收已完成，OpenList 脚本实机验收暂缓；Windows EXE 停留在 v1.2.1。详见 [下载页的 VPS 入口](/download/)。
+安装失败、权限拒绝、磁盘不足、TLS 错误或不健康容器需单独处理。详见[升级反馈](/operations/update/#安装与升级反馈)。当前日志、CI 与实际业务验收应分别核对，不能把常见提醒当作任意 WARNING 无害的保证。
 
 ### VPS 重装后 Host key 不匹配？
 
-先在服务商控制台核对新指纹，确认身份后按所用 SSH 客户端说明，只更新当前主机与端口的记录；Linux 脚本没有该桌面按钮。不要删除所有服务器记录。[SSH 排查](/troubleshooting/ssh/)。
+先在服务商控制台核对新指纹，确认身份后按所用 SSH 客户端说明，只更新当前主机与端口的记录。不要删除所有服务器记录。[SSH 排查](/troubleshooting/ssh/)。
 
 ### ARM64 公网 NAT 首次安装是否有实机记录？
 
-有。用户提供的v1.4.1日志覆盖Ubuntu26.04.1／原生ARM64／公网NAT的CloudDrive2首装、Bot健康、本机HTTPS及WebDAV认证／读写／大小／改名／测试清理，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)。不是OpenList、任意NAS、升级回退、外网手机或长期续期通过的承诺。
+有。用户提供的v1.4.1日志覆盖Ubuntu26.04.1／原生ARM64／公网NAT的CloudDrive2首装、Bot健康、本机HTTPS及WebDAV认证／读写／大小／改名／测试清理，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V141-ACCEPTANCE.md)。不是OpenList、任意NAS、升级回退、外网手机或长期续期通过的承诺。
 
 ### APT 报没有 Release 文件怎么办？
 
@@ -83,7 +75,7 @@
 
 当前 OpenList Bot `/doctor` 会显示实际探测时间与剩余冷却；刷新诊断不会绕过退避，也不会把消息刷新时间冒充新探测结果。
 
-### 修改部署器密码后还是 401？
+### 修改配置中的密码后还是 401？
 
 修改本地记录不等于 VPS 配置变更。重复部署默认保留原 `.env`，单纯 restart 也不应用新配置。按 [修改配置](/operations/update/) 明确应用后再验收。
 
@@ -99,7 +91,7 @@
 
 ### 取消后能再次转存吗？遇到不完整远端文件怎么办？
 
-v1.2.1 支持重新转发已取消文件或 `/restart 编号`，确认后重新排队，保留编号/历史与活动任务去重。远端结果不确定时使用 `/recover 编号` 确认换名重传，不自动覆盖或删除旧文件。旧 v1.2.0 Release 不包含这些功能，详见[命令](/usage/commands/)和[恢复排查](/troubleshooting/transfer/)。
+支持重新转发已取消文件或 `/restart 编号`，确认后重新排队，保留编号/历史与活动任务去重。远端结果不确定时使用 `/recover 编号` 确认换名重传，不自动覆盖或删除旧文件。详见[命令](/usage/commands/)和[恢复排查](/troubleshooting/transfer/)。
 
 ### Bot 一直排队？
 
@@ -117,11 +109,7 @@ v1.2.1 支持重新转发已取消文件或 `/restart 编号`，确认后重新�
 
 不是。它不留完整本地副本，但网关缓存、日志、Docker 和备份仍占用磁盘。
 
-## 升级与迁移
-
-### 下载新版 EXE 后，Bot 还是旧版？
-
-下载不等于更新 VPS。Windows EXE 停留在 v1.2.1；v1.3.0 起请按公网或内网选择对应 Linux 入口，先 `--check` 再确认升级，不用旧 EXE 覆盖较新实例。CloudDrive2 本次升级后使用验收已获用户确认，其他环境和异常路径不自动视为通过，见[升级说明](/operations/update/)。
+## 升级与维护
 
 ### `manage.sh update` 会下载 GitHub 最新源码吗？
 
@@ -129,11 +117,7 @@ v1.2.1 支持重新转发已取消文件或 `/restart 编号`，确认后重新�
 
 ### 出现“现有程序与已发布版本不一致”怎么办？
 
-停止并保留数据，不要改版本号、删除数据库/Session、关闭指纹检查或用旧 EXE 覆盖。本次 CloudDrive2 旧候选是在额外授权、备份和人工核对后迁移，不代表脚本会自动接管任意自定义代码。处理边界及尚未验证项见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。
-
-### TG115 能一键升级 TG2Cloud 吗？
-
-当前 Linux 脚本不提供原地自动迁移或覆盖生产数据的一键 Restore。独立卸载不是迁移或升级步骤，也不会清理旧 TG115。主分支追加的完整清理默认双重确认后删除所选 TG2Cloud 数据与可识别备份；需要保留时明确使用 `--keep-data`。完整清理增强仍待新的实机验收，不能把原保留数据版本的用户验收当作新行为已经通过。详见 [独立卸载说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md) 和 [迁移说明](/operations/migration/)。
+保留当前服务和私有备份，不改版本号、删除数据库／Session 或关闭指纹检查。先核对安装目录、容器身份和受支持的官方源码基线；未知或自定义实例需要单独审阅，不自动接管。见[升级说明](/operations/update/)。
 
 ### CloudDrive2 现在能备份了吗？
 

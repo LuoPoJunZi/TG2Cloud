@@ -5,6 +5,7 @@ import {createHash} from 'node:crypto';
 
 const read=path=>readFile(new URL('../'+path,import.meta.url),'utf8');
 const config=JSON.parse(await read('site.config.json'));
+const currentRecord=`docs/development/V${config.version.replaceAll('.','')}-ACCEPTANCE.md`;
 
 test('documented version and verification date are valid',()=>{
   assert.match(config.version,/^\d+\.\d+\.\d+$/);
@@ -31,16 +32,8 @@ test('package and shared product versions match the documented source',async()=>
 test('downloads point to published assets and source checkout respects release status',async()=>{
   const download=await read('docs/download.md');
   const links=[...download.matchAll(/\]\((https:\/\/[^\s)]+\/releases\/download\/[^\s)]+)\)/g)].map(match=>match[1]);
-  const expected=[
-    'TG2Cloud-CloudDrive2-Deployer.exe',
-    'TG2Cloud-OpenList-Deployer.exe',
-    'SHA256SUMS.txt'
-  ].map(name=>`${config.repo}/releases/download/v1.2.1/${name}`);
-  const [major,minor]=config.publishedVersion.split('.').map(Number);
-  if(major>1 || (major===1 && minor>=3)){
-    expected.push(...[`TG2Cloud-v${config.publishedVersion}-source.tar.gz`,'SHA256SUMS.txt']
-      .map(name=>`${config.repo}/releases/download/v${config.publishedVersion}/${name}`));
-  }
+  const expected=[`TG2Cloud-v${config.publishedVersion}-source.tar.gz`,'SHA256SUMS.txt']
+    .map(name=>`${config.repo}/releases/download/v${config.publishedVersion}/${name}`);
   assert.deepEqual(links.sort(),expected.sort());
   assert.ok(download.includes(`${config.repo}/releases/tag/v${config.publishedVersion}`));
   assert.ok(download.includes(`**TG2Cloud v${config.version}**`));
@@ -49,18 +42,12 @@ test('downloads point to published assets and source checkout respects release s
     assert.ok(!download.includes(`${config.repo}/releases/tag/v${config.version}`));
     assert.ok(!download.includes(`${config.repo}/releases/download/v${config.version}/`));
   }
-  for(const path of ['docs/download.md','docs/reference/development.md']){
-    const content=await read(path);
-    const checkout=path==='docs/download.md'?'v1.2.1':(config.releaseStatus==='released'?`v${config.version}`:'main');
-    const sections=content.split('## 恢复 v1.2.1 历史部署器构建');
-    assert.deepEqual([...sections[0].matchAll(/^git checkout (\S+)\r?$/gm)].map(match=>match[1]),[checkout]);
-    if(path==='docs/reference/development.md'){
-      assert.equal(sections.length,2);
-      assert.deepEqual([...sections[1].matchAll(/^git checkout (\S+)\r?$/gm)].map(match=>match[1]),['v1.2.1']);
-      assert.ok(sections[0].includes('git switch main'));
-      assert.ok(!sections[0].includes('requirements-build.txt'));
-    }
-  }
+  assert.doesNotMatch(download,/releases\/download\/[^)\s]+\.exe|build\.ps1 -Edition/);
+  const development=await read('docs/reference/development.md');
+  const checkout=config.releaseStatus==='released'?`v${config.version}`:'main';
+  assert.deepEqual([...development.matchAll(/^git checkout (\S+)\r?$/gm)].map(match=>match[1]),[checkout]);
+  assert.ok(development.includes('git switch main'));
+  assert.doesNotMatch(development,/requirements-build\.txt|build\.ps1|恢复.*部署器构建/);
 });
 
 test('developer source links follow the public script-only layout',async()=>{
@@ -172,7 +159,8 @@ test('VPS one-line entry is consistent with the root user guide',async()=>{
   const english=await readFile(new URL('../../README_EN.md',import.meta.url),'utf8');
   for(const content of [download,guide,readme,english])assert.ok(content.includes(command));
   assert.ok(download.includes('只读预检'));
-  assert.ok(download.includes('OpenList 脚本实机验收暂缓'));
+  assert.ok(download.includes('真实 VPS'));
+  assert.ok(download.includes(currentRecord));
 });
 
 test('LAN installation and unified uninstall agree with root guides',async()=>{
@@ -185,8 +173,8 @@ test('LAN installation and unified uninstall agree with root guides',async()=>{
     for(const content of [download,readme,english,source])assert.ok(content.includes(command),script);
   }
   assert.ok(download.includes('卸载不是升级步骤'));
-  assert.ok(download.includes('完整清理增强仍待新的实机验收'));
-  assert.ok(download.includes('v1.2.0 Tag'));
+  assert.ok(download.includes('默认完整卸载'));
+  assert.ok(download.includes('确认后清理所选实例数据'));
   assert.ok(download.includes('--keep-data'));
   assert.ok(download.includes('不等于把 VPS 恢复到安装前'));
   const guide=await readFile(new URL('../../docs/UNINSTALL.md',import.meta.url),'utf8');
@@ -213,74 +201,47 @@ test('website brand copies match the canonical repository assets byte for byte',
   }
 });
 
-test('v1.3.0 acceptance separates checked migration, user feedback and untested scenarios',async()=>{
-  const path='docs/development/V130-ACCEPTANCE.md';
-  const record=await readFile(new URL('../../'+path,import.meta.url),'utf8');
-  for(const text of ['2026-10-17','旧测试候选','人工核对','用户确认','OpenList 脚本实机验收暂缓',
-    '不提供强制覆盖参数','回退故障注入','下载目录为空','WebDAV 大小校验不等于内容哈希校验']){
-    assert.ok(record.includes(text),text);
+test('historical acceptance stays traceable through immutable links rather than current tutorials',async()=>{
+  const history=await readFile(new URL('../../CHANGELOG.md',import.meta.url),'utf8');
+  for(const version of ['130','143','144','145']){
+    assert.match(history,new RegExp(`/blob/[0-9a-f]{40}/docs/development/V${version}-ACCEPTANCE\\.md`));
   }
   const index=await readFile(new URL('../../docs/README.md',import.meta.url),'utf8');
-  assert.ok(index.includes('(development/V130-ACCEPTANCE.md)'));
-  const notes=await readFile(new URL('../../RELEASE_NOTES.md',import.meta.url),'utf8');
-  assert.ok(notes.includes(path),'release notes retain the historical acceptance link');
-  for(const name of ['docs/download.md','docs/operations/update.md','docs/changelog.md','docs/reference/sources.md']){
-    assert.ok((await read(name)).includes(`${config.repo}/blob/main/${path}`),name);
-  }
+  assert.ok(index.includes('(../CHANGELOG.md)'));
+  assert.ok(index.includes(`(development/V${config.version.replaceAll('.','')}-ACCEPTANCE.md)`));
+  assert.doesNotMatch(index,/\]\(development\/V(?:130|143|144|145)-ACCEPTANCE\.md\)/);
 });
 
-test('v1.4.3 log review keeps user evidence, warnings and unverified scopes separate',async()=>{
-  const path='docs/development/V143-ACCEPTANCE.md';
-  const record=await readFile(new URL('../../'+path,import.meta.url),'utf8');
-  for(const value of ['证据来源：用户提供的升级日志','没有独立登录','v1.4.2 → v1.4.3',
-    'TG2CLOUD_DATABASE_BACKUP=OK','TG2CLOUD_CODE=OK','TG2CLOUD_BOT_HEALTH=healthy',
-    'TG2CLOUD_RESULT=SUCCESS','Running pip as the','ca-certificates.crt','SYS_UID_MAX',
-    '50GB','尚未确认与仍需验收','独立 SQL 查询'])assert.ok(record.includes(value),value);
-  assert.doesNotMatch(record,/root@|\b(?:\d{1,3}\.){3}\d{1,3}\b/,'do not publish raw host prompts or IP addresses');
-  for(const name of ['CHANGELOG.md','RELEASE_NOTES.md',
-    'docs/README.md','docs/FAQ.md','docs/VPS-INSTALL.md']){
-    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
-    assert.ok(content.includes('V143-ACCEPTANCE.md'),name);
-  }
-  for(const name of ['docs/operations/update.md','docs/faq.md','docs/download.md',
-    'docs/changelog.md','docs/reference/sources.md']){
-    assert.ok((await read(name)).includes(`${config.repo}/blob/main/${path}`),name);
-  }
-});
-
-test('v1.4.4 dual-architecture acceptance keeps upgrade evidence separate from unrun business checks',async()=>{
-  const path='docs/development/V144-ACCEPTANCE.md';
-  const record=await readFile(new URL('../../'+path,import.meta.url),'utf8');
-  for(const value of ['2026-10-23','证据来源：用户提供的两份升级日志','两份升级测试验收已通过',
-    '没有独立登录','Ubuntu 26.04.1 LTS','Debian GNU/Linux 13','linux/arm64','linux/amd64',
-    'v1.4.3 → v1.4.4','TG2CLOUD_CONFIG=PRESERVED','TG2CLOUD_DATABASE_BACKUP=OK',
-    'TG2CLOUD_CODE=OK','TG2CLOUD_VERSION=1.4.4','TG2CLOUD_BOT_HEALTH=healthy',
-    'TG2CLOUD_RESULT=SUCCESS','最近业务就绪观察','原 .env 保留：通过','50GB','[提醒]','CACHED',
-    'WebDAV 写入与大小复验：未执行','实际 Telegram 转存：待人工验收','公网访问：待外部网络验收',
-    '独立 SQL 查询','OpenList','不修改 v1.4.4 Tag'])assert.ok(record.includes(value),value);
-  assert.doesNotMatch(record,/root@|\b(?:\d{1,3}\.){3}\d{1,3}\b|config-[A-Za-z0-9]{8,}\.tar\.gz/,
-    'do not publish raw host prompts, IP addresses or private backup names');
-  for(const name of ['README.md','README_EN.md','CHANGELOG.md','RELEASE_NOTES.md','docs/README.md',
-    'docs/VPS-INSTALL.md','docs/OPERATIONS.md','docs/FAQ.md','docs/ARCHITECTURES.md',
-    'docs/development/DOMAIN-HTTPS-ACCEPTANCE.md']){
-    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
-    assert.ok(content.includes('V144-ACCEPTANCE.md'),name);
-  }
-  for(const name of ['docs/operations/update.md','docs/faq.md','docs/download.md',
-    'docs/changelog.md','docs/reference/sources.md']){
-    assert.ok((await read(name)).includes(`${config.repo}/blob/main/${path}`),name);
-  }
-  assert.ok((await read('README.md')).includes('../'+path));
-  assert.ok((await read('THIRD_PARTY_NOTICES.md')).includes(`${config.repo}/blob/main/${path}`));
-});
-
-test('v1.4.5 user acceptance is scoped, redacted and linked separately from unpublished work',async()=>{
-  const record=await readFile(new URL('../../docs/development/V145-ACCEPTANCE.md',import.meta.url),'utf8');
-  for(const text of ['2026-10-24','Ubuntu 26.04.1','ARM64','v1.4.4 → v1.4.5','WebDAV',
-    '大小复验','OpenList','外部只读 WebDAV','没有独立的 Telegram 转存任务结果'])assert.ok(record.includes(text),text);
+test('current release evidence separates actual CI and assets from unrun real services',async()=>{
+  const record=await readFile(new URL('../../'+currentRecord,import.meta.url),'utf8');
+  for(const value of ['同标签原生双架构','真实用户 VPS','尚未执行','SHA256','schema 3',
+    `TG2Cloud-v${config.version}-source.tar.gz`,`TG2Cloud-v${config.version}-compose-clouddrive2.tar.gz`,
+    `TG2Cloud-v${config.version}-compose-openlist.tar.gz` ])assert.ok(record.includes(value),value);
+  assert.match(record,/actions\/runs\/\d+/);
+  assert.match(record,/ghcr\.io\/luopojunzi\/tg2cloud@sha256:[0-9a-f]{64}/);
   assert.doesNotMatch(record,/root@|\b(?:\d{1,3}\.){3}\d{1,3}\b|config-[A-Za-z0-9]{8,}\.tar\.gz/);
-  assert.ok((await read('docs/operations/update.md')).includes('V145-ACCEPTANCE.md'));
-  assert.ok((await read('docs/deploy/external-webdav.md')).includes('LOCAL-MAINTENANCE.md'));
+});
+
+test('current configuration retains existing databases and private Sessions without offering cross-project migration',async()=>{
+  const configGuide=await readFile(new URL('../../docs/CONFIGURATION.md',import.meta.url),'utf8');
+  const backup=await readFile(new URL('../../docs/BACKUP-RESTORE.md',import.meta.url),'utf8');
+  for(const text of ['tg2cloud.db','tg115.db','Session','备份']){
+    assert.ok(configGuide.includes(text),text);
+    assert.ok(backup.includes(text),text);
+  }
+  assert.ok(backup.includes('不等于服务已恢复'));
+  assert.ok(backup.includes('不能只降级镜像'));
+  const article=await read('docs/reference/config.md');
+  assert.ok(article.includes('tg115.db'));
+  assert.ok(!config.navigation.flatMap(group=>group.items).some(item=>item.slug==='operations/migration'));
+});
+
+test('current upgrade guide requires independent business acceptance and keeps safe failure behavior',async()=>{
+  const guide=await read('docs/operations/update.md');
+  for(const text of ['原命令退出码','用户中断时不追加读取','20 秒','WebDAV 写入与大小复验：未执行',
+    '实际 Telegram 转存：待人工验收','公网访问：待外部网络验收','不提供强制覆盖选项',
+    'Compose','不能通过改版本号或删数据绕过'])assert.ok(guide.includes(text),text);
+  assert.doesNotMatch(guide,/releases\/download\/[^)\s]+\.exe|build\.ps1|\/operations\/migration\//);
 });
 
 test('current helper identity in installation docs matches every public entry',async()=>{
@@ -313,49 +274,35 @@ test('current helper identity in installation docs matches every public entry',a
   assert.ok(!recovery.includes('尚未进入 v1.3.0 Release'));
 });
 
-test('root READMEs use topic navigation while the documentation index retains acceptance history',async()=>{
+test('root READMEs use current topic navigation and a dedicated current documentation index',async()=>{
   const index=await readFile(new URL('../../docs/README.md',import.meta.url),'utf8');
-  for(const version of ['130','133','141','142','143','144']){
-    assert.ok(index.includes(`(development/V${version}-ACCEPTANCE.md)`),version+': historical record remains discoverable');
+  for(const name of ['VPS-INSTALL','LAN-INSTALL','COMPOSE','BOT-USAGE','STORAGE','LISTENING','BACKUP-RESTORE','UNINSTALL']){
+    assert.ok(index.includes(`](${name}.md)`),name);
   }
   for(const [name,heading] of [['README.md','## 使用文档'],['README_EN.md','## Documentation']]){
     const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
-    const start=content.indexOf(heading);
-    assert.ok(start>=0,name+': documentation section');
+    const start=content.indexOf(heading);assert.ok(start>=0,name);
     const section=content.slice(start+heading.length).split(/\r?\n## /)[0];
     for(const target of ['docs/README.md','RELEASE_NOTES.md','docs/FEATURE-ENHANCEMENTS.md',
-      'docs/DOCKER-NGINX.md','docs/development/MAINTENANCE-IMPROVEMENTS.md',
-      'docs/development/V144-ACCEPTANCE.md']){
-      assert.ok(section.includes('('+target+')'),name+': topic link '+target);
+      'docs/DOCKER-NGINX.md','docs/COMPOSE.md','docs/development/DEVELOPMENT.md',currentRecord]){
+      assert.ok(section.includes('('+target+')'),name+': '+target);
     }
-    const paragraphs=section.split(/\r?\n\s*\r?\n/).map(block=>block.trim())
-      .filter(block=>block&&!block.startsWith('|'));
-    assert.equal(paragraphs.length,1,name+': documentation section has one introduction followed by topic navigation');
-    assert.doesNotMatch(content,/2026-10-23/,name+': dated upgrade evidence belongs in the linked records');
+    const paragraphs=section.split(/\r?\n\s*\r?\n/).map(block=>block.trim()).filter(block=>block&&!block.startsWith('|'));
+    assert.equal(paragraphs.length,1,name+': short introduction then topic navigation');
+    assert.doesNotMatch(section,/MIGRATION_FROM_TG115|README-小白|SCRIPT-FIRST|V144-ACCEPTANCE/);
   }
 });
 
-test('historical Windows guide stays frozen and directs Linux users to maintained guides',async()=>{
-  const path='docs/README-小白使用说明.md';
-  const guide=await readFile(new URL('../../'+path,import.meta.url),'utf8');
-  assert.match(guide,/^# TG2Cloud 历史 Windows 部署说明\r?\n/);
-  for(const text of ['不随 Linux 版本更新','Windows 部署器停更于 **v1.2.1**',
-    '不代表当前版本验收通过','不要用旧 EXE 覆盖已升级实例',
-    'TG2Cloud-CloudDrive2-Deployer.exe','TG2Cloud-OpenList-Deployer.exe',
-    '## 十一、当前验证边界'])assert.ok(guide.includes(text),text);
-  assert.doesNotMatch(guide,/TG2Cloud v1\.1\.1|当前正式支持范围|已完成真实 VPS 全流程验收/);
-  for(const target of ['README.md','VPS-INSTALL.md','LAN-INSTALL.md','STORAGE.md',
-    'BOT-USAGE.md','OPERATIONS.md','FAMILY-SHARING.md','../RELEASE_NOTES.md','../CHANGELOG.md']){
-    assert.ok(guide.includes('('+target+')'),'historical guide: '+target);
-    assert.ok(await readFile(new URL('../../docs/'+target,import.meta.url)),'existing guide: '+target);
+test('retired desktop and migration guides are absent from the public documentation surface',async()=>{
+  for(const path of ['docs/README-小白使用说明.md','docs/MIGRATION_FROM_TG115.md','website/docs/operations/migration.md']){
+    await assert.rejects(readFile(new URL('../../'+path,import.meta.url)),{code:'ENOENT'});
   }
-  const index=await readFile(new URL('../../docs/README.md',import.meta.url),'utf8');
-  assert.ok(index.includes('[历史 Windows 部署说明](README-小白使用说明.md)'));
-  for(const [name,label] of [['README.md','历史 Windows 部署说明'],
-    ['README_EN.md','Historical Windows deployment guide']]){
-    const content=await readFile(new URL('../../'+name,import.meta.url),'utf8');
-    assert.ok(content.includes('['+label+']('+path+')'),name+': stable historical guide path');
-  }
+  const downloads=await read('docs/download.md');
+  assert.doesNotMatch(downloads,/Deployer\.exe|Get-FileHash|build\.ps1/);
+  const credits=await read('docs/reference/credits.md');
+  assert.ok(credits.includes('whyhhh20/TG115'));
+  assert.ok(credits.includes('MIT'));
+  assert.ok(await readFile(new URL('../../LICENSE',import.meta.url)));
 });
 
 test('root READMEs keep repository-first documentation and aligned author cards',async()=>{
@@ -368,8 +315,8 @@ test('root READMEs keep repository-first documentation and aligned author cards'
     assert.ok(content.includes('https://github.com/whyhhh20/TG115'),name+': upstream credit');
     for(const target of ['LICENSE','.github/CONTRIBUTING.md','.github/SECURITY.md',
       'docs/VPS-INSTALL.md','docs/LAN-INSTALL.md','docs/填写信息清单.md','docs/OPERATIONS.md',
-      'docs/RECOVERY.md','docs/UNINSTALL.md','docs/MIGRATION_FROM_TG115.md',
-      'docs/development/REPOSITORY.md','docs/development/LINUX-REFACTOR.md','CHANGELOG.md','RELEASE_NOTES.md']){
+      'docs/RECOVERY.md','docs/UNINSTALL.md','docs/COMPOSE.md',
+      'docs/development/REPOSITORY.md','docs/development/DEVELOPMENT.md','CHANGELOG.md','RELEASE_NOTES.md']){
       assert.ok(content.includes('('+target+')'),name+': direct repository link '+target);
     }
     const attribution=name==='README.md'?'## 致谢与项目来源':'## Acknowledgements and Project Origin';

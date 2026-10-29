@@ -1,6 +1,6 @@
 # 家庭共享（v1.3.3）
 
-v1.5.3 起，全新安装使用 `data/tg2cloud.db`；已有实例若只有 `data/tg115.db`，继续使用原文件，保留任务、授权和恢复记录，不自动改名或创建空库。若两个文件并存会停止并要求核对，不自动合并。备份／隔离恢复识别两种文件名，但每份实例只能有一个业务数据库。不要手动移动正在使用的 SQLite 文件或删除旁文件。
+数据库新旧文件名和 Session 保护见[配置参考](CONFIGURATION.md)与[备份恢复](BACKUP-RESTORE.md)。
 
 
 v1.4.3 支持菜单 10 → 5 的配额／用量，以及家人私聊 `/quota`，默认不限额；见[使用与计量规则](FEATURE-ENHANCEMENTS.md)。已有 Bot 和管理工具需同步升级。
@@ -49,7 +49,7 @@ Bot 成员和外部 WebDAV 是两套独立授权：前者提交文件，后者�
 
 ## 外部 WebDAV 家庭只读账号
 
-先按[外部 WebDAV 指南](external-webdav.md)安装并验收主入口。统一菜单发布并更新本地工具后，使用 `tg2cloud` → 当前 Edition → **15. 外部 WebDAV → 10. 用户管理**；当前正式 v1.4.6 尚无主菜单 15。家人账号功能自 v1.3.3 提供，既有 `tg2cloud-webdav` 菜单及以下显式命令继续兼容，不要求为使用新版统一菜单额外运行安装命令：
+先按[外部 WebDAV 指南](external-webdav.md)安装并验收主入口。统一菜单发布并更新本地工具后，使用 `tg2cloud` → 当前 Edition → **15. 外部 WebDAV → 10. 用户管理**。家人账号功能自 v1.3.3 提供，既有 `tg2cloud-webdav` 菜单及以下显式命令继续兼容，不要求为使用新版统一菜单额外运行安装命令：
 
 ```bash
 tg2cloud-webdav users --edition clouddrive2

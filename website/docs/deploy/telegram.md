@@ -34,7 +34,7 @@ Allowed User 填写你本人的 Telegram **数字 ID**，不是电话号码，�
 
 ## 同一个 Token 只交给一个活动实例
 
-旧 TG115、另一个 Edition 或另一台 VPS 上的 Bot 若仍在使用相同 Token，可能争抢 updates。不要把这种冲突误判为“Bot 偶尔失灵”。
+其他 Edition 或另一台主机上的 Bot 若仍在使用相同 Token，可能争抢 updates。不要把这种冲突误判为“Bot 偶尔失灵”。
 
 切换实例前应在自己的维护计划中停止旧实例，或给新实例创建独立 Bot。部署器不会扫描整个网络来替你查找 Token 冲突。
 

@@ -2,7 +2,7 @@
 
 本页对应已发布的 v1.4.2：辅助 A／固定入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际下载的源码包、SHA256 和 GitHub 摘要已核验。正式在线入口已固定经过验证的辅助代码，不使用 moving-main 业务源码；external_docker 的真实 VPS 接入、ACME、长期续期和迁移仍须独立验收。
 
-2026-10-21 的[CloudDrive2 v1.4.2 人工升级检查](development/V142-ACCEPTANCE.md)保留原 managed／schema 2，确认数据、只读 WebDAV 与管理 HTTPS 正常；没有切换或验证本页的 external_docker 新模式，两项结论分开记录。
+2026-10-21 的[CloudDrive2 v1.4.2 人工升级检查](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V142-ACCEPTANCE.md)保留原 managed／schema 2，确认数据、只读 WebDAV 与管理 HTTPS 正常；没有切换或验证本页的 external_docker 新模式，两项结论分开记录。
 
 ## 两种入口模式
 
@@ -15,7 +15,7 @@
 
 ## 支持条件
 
-v1.4.3 新增的密码轮换、证书加载、后端换 IP 与路由移除隔离用例已通过原生双架构及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)。换 IP 测试补齐显式子网，不改生产网络。范围见[生命周期回归](development/MAINTENANCE-IMPROVEMENTS.md#4-nginx-生命周期回归与实机门槛)；真实 ACME、生产网关与迁移仍需独立验收。下文旧 A／B 是 v1.4.2 的历史记录。
+v1.4.3 新增的密码轮换、证书加载、后端换 IP 与路由移除隔离用例已通过原生双架构及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)。换 IP 测试补齐显式子网，不改生产网络。范围见[生命周期回归](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-IMPROVEMENTS.md#4-nginx-生命周期回归与实机门槛)；真实 ACME、生产网关与迁移仍需独立验收。下文旧 A／B 是 v1.4.2 的历史记录。
 
 - Debian / Ubuntu、Python 3.10+、原生 AMD64 / ARM64、本机默认 rootful Docker daemon；不使用 QEMU、远端 daemon、rootless 或用户命名空间重映射。
 - 普通 Nginx，有真实 master 进程和标准 `nginx -T` 输出；需完整配置检查及 `nginx -s reload`。
@@ -63,7 +63,7 @@ bridge 模式只调整 TG2Cloud 自己的规范 Compose：网关额外加入选�
 
 新站点使用 `tg2cloud-clouddrive2.conf`、`tg2cloud-openlist.conf`、`tg2cloud-webdav-*.conf` 及归属头；不改 `nginx.conf`、`default.conf` 或他人站点。资产目录为所选挂载下的 `tg2cloud-assets`，包含持久化 Webroot、认证哈希和本功能管理的证书。密码文件是目录挂载内的原子替换，不会因文件 inode 绑定继续使用旧密码。
 
-共享状态 `/opt/tg2cloud-proxy/state/domains.json` 使用 **schema 3**，保存外部身份、站点摘要、网络、证书责任及加载记录；版本 1/2 继续用于 managed。未知状态拒绝覆盖。旧维护端遇到 schema 3 会拒绝操作；不要用旧 EXE、旧离线 runtime 或固定旧 helper 维护新入口。
+共享状态 `/opt/tg2cloud-proxy/state/domains.json` 使用 **schema 3**，保存外部身份、站点摘要、网络、证书责任及加载记录；版本 1/2 继续用于 managed。未知状态拒绝覆盖。旧维护端遇到 schema 3 会拒绝操作；不要用不支持当前状态版本的旧 runtime 或 helper 维护新入口。
 
 基础安装后 HTTPS 失败时，私密 `external-pending-<edition>.json` 保留明确的网络计划，使后续源码基线核验能识别已授权的 Compose 变体。不删除数据库、Session 或重新创建实例来掩盖失败。
 
@@ -124,23 +124,6 @@ tg2cloud proxy migrate --edition clouddrive2 --nginx-container edge-nginx --yes 
 
 主卸载仍先阻止删除有 WebDAV 依赖的网关；请先独立停用并卸载附加路由。删除一个 Edition 只移除其管理站点，其他路由保留。删除最后一个路由后撤掉 TG2Cloud 的续期任务，但不停止或删除外部 Nginx、外部 Compose 或网络。证书、私密状态和恢复材料默认保留，离线管理命令因此也保守保留；这与 managed 模式最后实例完整清理的规则不同。未实现自动彻底清理外部证书，需另行逐项确认归属和引用，不以主卸载参数强行删除。
 
-## 发布与实机门槛
+## 验证与实机边界
 
-本轮本地验证（2026-10-21）：完整 unittest 949 项，921 执行成功、28 因 Windows／未启用 Docker 等环境条件跳过；参数边界收尾后，Python 3.10 标准库环境的 52 项新增测试、55 项附加功能和 1 项 HTTP 回归再次通过。Ruff、Bandit、compileall、仓库清单、Shell 语法、两 Edition 载荷组装及网站构建／19 项测试／内部引用检查通过。完整回归不以 skip 掩盖失败，具体模拟边界见测试代码。
-
-```bash
-python3 -B -m unittest discover -s tests -p 'test*.py' -q
-python3 -B -m unittest discover -s tests -p test_external_proxy.py -v
-python3 -B .github/scripts/check_repository.py
-python3 -B .github/scripts/prepare_bootstrap.py
-```
-
-已添加仅操作独立网络、临时容器与测试证书的真实 Nginx 用例，显式开启方式如下；本机无 Docker，但辅助 A 已在[原生 AMD64／ARM64 CI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39591006899)执行通过，覆盖单层代理、原站保留、nginx -t 失败及 reload，不代替真实 ACME、用户网关或迁移验收。
-
-```bash
-TG2CLOUD_TEST_EXTERNAL_NGINX_DOCKER=1 python3 -B -m unittest discover -s tests -p test_external_nginx_docker.py -v
-```
-
-代码清单已纳入 bootstrap/runtime manifest；已公开且通过五项 CI 的辅助 A 为 `840472f919409531e99da55c62070ea262ebed6d`。入口 B／Tag 为 `42e2c372823a085c36a7a7597ce775441598aaf9`，逐文件清单与 A 一致；B 的五项 CI 和同标签双架构发布均通过，源码资产已实际下载核验。后续维护继续执行先 A 后 B 的流程，不能填写伪 SHA 或回退 moving main。
-
-尚需专用测试环境覆盖：host/bridge 与 named volume、两 Edition 和 WebDAV 共存、实际证书签发/续期/加载、容器重建及网关 IP 变化、原网站与 WebSocket、迁移维护窗口、完整升级回退及安全卸载。离线测试和配置渲染不能代替这些验收。
+模式、身份、事务与隔离 Nginx 的自动检查不等于真实站点接入、ACME 或长期续期验收。先备份原站点，明确证书责任和回退计划，再按专用测试环境逐项验收；不自动重启其他项目代理。实际发布证据见[当前记录](development/V153-ACCEPTANCE.md)。

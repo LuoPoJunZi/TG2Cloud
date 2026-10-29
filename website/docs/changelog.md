@@ -12,7 +12,7 @@
 
 ## TG2Cloud v1.5.2
 
-版本日期：2026-10-28。[v1.5.2 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2) 已发布；A／B、同标签双架构、共享镜像和两 Edition Compose 资产已核验。真实 VPS、NAS、Telegram 与网关转存仍待用户验收，详见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
+版本日期：2026-10-28。[v1.5.2 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.2) 已发布；A／B、同标签双架构、共享镜像和两 Edition Compose 资产已核验。真实 VPS、NAS、Telegram 与网关转存仍待用户验收，详见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V152-ACCEPTANCE.md)。
 
 - 临时网络／服务器异常保留监听启用状态并退避重连，失效授权和不安全 Session 继续停止。
 - 修复系统启动不足 60 秒时首条监听通知被误抑制，保留后续 60 秒限流。
@@ -88,7 +88,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.11
 
-2026-10-26，[v1.4.11 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11) 已正式发布；[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)、main 与实际源码资产已核验。新监听来源按来源名称／媒体类型归档，去表情并限制名称长度，重名保留独立绑定；已有来源与手动转存不自动改目录。创建失败保留暂停记录并可重试，实际 Telegram 读取拒绝仍安全停止。补齐返回状态按钮、细分添加失败提示和 v1.4.10 升级基线；schema 3 无新 DDL、依赖或必填配置。详见[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[发布验收说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS 验收安排在发布后。
+2026-10-26，[v1.4.11 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.11) 已正式发布；[同标签双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40318301764)、main 与实际源码资产已核验。新监听来源按来源名称／媒体类型归档，去表情并限制名称长度，重名保留独立绑定；已有来源与手动转存不自动改目录。创建失败保留暂停记录并可重试，实际 Telegram 读取拒绝仍安全停止。补齐返回状态按钮、细分添加失败提示和 v1.4.10 升级基线；schema 3 无新 DDL、依赖或必填配置。详见[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[发布验收说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V1411-ACCEPTANCE.md)。真实 Telegram／VPS 验收安排在发布后。
 
 ## TG2Cloud v1.4.10
 
@@ -119,7 +119,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.6
 
-2026-10-24，[v1.4.6 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6) 已正式发布。A、B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089991036)和实际源码资产核验通过；本版实机仍需独立验收。详情见[仓库完整记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[本版维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。
+2026-10-24，[v1.4.6 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.6) 已正式发布。A、B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40089991036)和实际源码资产核验通过；本版实机仍需独立验收。详情见[仓库完整记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)和[本版维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LOCAL-MAINTENANCE.md)。
 
 - 外部 WebDAV 状态／连接结果可刷新和返回；用户管理统一上下文，卸载／升级后退出旧进程。
 - 生成发布审阅计划与候选补丁，保留正式 A／B 和同标签验证流程。
@@ -128,7 +128,7 @@ v1.2.1 是最后一个 Windows 版，v1.0.2 仅保留历史变更记录，不再
 
 ## TG2Cloud v1.4.5
 
-[v1.4.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) 已正式发布。辅助 A、入口 B 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验。详细范围见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)与[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md)。
+[v1.4.5 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.5) 已正式发布。辅助 A、入口 B 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码包、SHA256 清单及 GitHub 资产摘要已核验。详细范围见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)与[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-NEXT.md)。
 
 - 状态、日志和业务就绪页面可停留刷新；其他次级页面统一上下文、分组与返回，主菜单编号不变。
 - 备份子菜单按实例 1～3、代理 4～7 分组，保持原确认与数据保护。
@@ -149,19 +149,19 @@ GitHub 自动检查和资产核验已完成；本版真实 VPS、Telegram／用�
 - 移除命名预览菜单，不保留隐藏入口；独立命令和 Bot 命名不变。无新增数据库迁移、依赖或必填配置，不重写传输核心。
 - 须显式升级匹配的离线管理工具，详见[维护](/operations/maintenance/)和[升级反馈](/operations/update/)。本版已有用户确认的双架构 CloudDrive2 升级记录；真实 Telegram 转存、ACME／回退及其他场景未由本次日志确认，历史验收不外推本版。
 
-发布后用户验收补充（2026-10-23）：用户确认 Ubuntu 26.04.1 ARM64、Debian 13 AMD64 两次 CloudDrive2 v1.4.3 → v1.4.4 升级通过。两日志显示配置保留、数据库备份、运行代码／版本、Bot healthy、本机 HTTPS 与最近业务就绪观察通过；信息分级与摘要已展示，Debian 的容量提醒未阻断升级。WebDAV 写入未执行，实际转存与公网仍待单独验收，详见[双架构用户记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)。不修改 Tag、资产或远端 Release 正文。
+发布后用户验收补充（2026-10-23）：用户确认 Ubuntu 26.04.1 ARM64、Debian 13 AMD64 两次 CloudDrive2 v1.4.3 → v1.4.4 升级通过。两日志显示配置保留、数据库备份、运行代码／版本、Bot healthy、本机 HTTPS 与最近业务就绪观察通过；信息分级与摘要已展示，Debian 的容量提醒未阻断升级。WebDAV 写入未执行，实际转存与公网仍待单独验收，详见[双架构用户记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V144-ACCEPTANCE.md)。不修改 Tag、资产或远端 Release 正文。
 
 ## TG2Cloud v1.4.3
 
-2026-10-23，[v1.4.3 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3)。辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 新增可选分类、管理员通知、成员配额及脱敏报告，修复测速、保留简洁首页，统一编号菜单和外部 WebDAV 默认值。业务数据库迁移到 schema 2，升级前备份；范围见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。本版已收到限定的[用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)；真实转存、外网访问和故障回退尚未确认。
+2026-10-23，[v1.4.3 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.3)。辅助 A `cace622ffbbcecd28db7b00a29c26901e8fa139d`、入口 B／Tag `5aaf6a9b158d785ffa2fee52750c022fb8654810` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)全部通过，实际源码包、SHA256 清单与 GitHub 资产摘要核验通过。 新增可选分类、管理员通知、成员配额及脱敏报告，修复测速、保留简洁首页，统一编号菜单和外部 WebDAV 默认值。业务数据库迁移到 schema 2，升级前备份；范围见[仓库更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。本版已收到限定的[用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V143-ACCEPTANCE.md)；真实转存、外网访问和故障回退尚未确认。
 
-本版还包括四个旧版可信基线、实例快照／隔离预检、业务就绪观察、Nginx 生命周期回归与命名预览；延续实例身份、历史路径、命名优先级与冷却保护，不增加生产覆盖恢复。开发阶段记录与发布核验见[维护增强](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md)，不回写旧版已发布资产。
+本版还包括四个旧版可信基线、实例快照／隔离预检、业务就绪观察、Nginx 生命周期回归与命名预览；延续实例身份、历史路径、命名优先级与冷却保护，不增加生产覆盖恢复。开发阶段记录与发布核验见[维护增强](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-IMPROVEMENTS.md)，不回写旧版已发布资产。
 
 ## TG2Cloud v1.4.2
 
 2026-10-21，[v1.4.2 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)。辅助 A、固定入口 B 各五项 CI 及[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部成功，实际源码资产、SHA256 和 GitHub 摘要核验通过。完整范围见[仓库变更](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，不将 CI 扩大为 VPS、ACME 或迁移实机验收。
 
-发布后同日另完成 CloudDrive2 v1.3.4 → v1.4.2 的授权人工升级：原 Release／Tag 已删除，先核验原提交并备份，再调用正式升级核心。数据保留、Bot 健康、只读 WebDAV、外部电脑 HTTPS 与升级后在线复检通过，继续使用 managed。自动缺失基线处理尚未改进，真实转存和新代理模式未验收，详见[本次记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V142-ACCEPTANCE.md)。这只是发布后文档补充，不改写正式资产。
+发布后同日另完成 CloudDrive2 v1.3.4 → v1.4.2 的授权人工升级：原 Release／Tag 已删除，先核验原提交并备份，再调用正式升级核心。数据保留、Bot 健康、只读 WebDAV、外部电脑 HTTPS 与升级后在线复检通过，继续使用 managed。自动缺失基线处理尚未改进，真实转存和新代理模式未验收，详见[本次记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V142-ACCEPTANCE.md)。这只是发布后文档补充，不改写正式资产。
 
 - 新增显式授权的 external_docker 模式，不关闭外部 Nginx，不增加第二层代理，不修改外部 Compose；默认 managed 模式与 Bot 流程不变。
 - 核验端口真实归属、持久化配置和稳定网络别名；使用逐文件事务、私密备份、nginx -t、reload 和实际 TLS／后端检查。
@@ -172,7 +172,7 @@ GitHub 自动检查和资产核验已完成；本版真实 VPS、Telegram／用�
 
 发布审计发现的开发依赖漏洞通过更新 uv 0.13.4、certifi 2026.10.19 并统一重生成哈希锁修复；Bot 运行依赖和网关镜像不变，保留安全审计。
 
-版本日期：2026-10-21，[v1.4.1 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)。单一公网 A、已核对本机 AAAA 且端口归属安全的 NAT 场景增加云控制台公网 IPv4 人工确认，确认仅本次有效，执行前重新比对。错误记录、端口占用和拒绝确认仍会停止；ACME、TLS 和失败回退继续执行。新增 DNS／80／443 分项错误提示和回环地址保护。辅助 A／固定入口 B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)及实际资产校验通过。发布后用户确认Ubuntu26.04.1／ARM64／公网NAT的CloudDrive2首装、本机HTTPS与WebDAV通过，见[验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V141-ACCEPTANCE.md)；OpenList、外网手机、升级回退与长期续期不外推。此为文档证据补充，不改已发布资产。完整改动见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，环境要求见[部署前准备](/guide/prerequisites/)。
+版本日期：2026-10-21，[v1.4.1 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)。单一公网 A、已核对本机 AAAA 且端口归属安全的 NAT 场景增加云控制台公网 IPv4 人工确认，确认仅本次有效，执行前重新比对。错误记录、端口占用和拒绝确认仍会停止；ACME、TLS 和失败回退继续执行。新增 DNS／80／443 分项错误提示和回环地址保护。辅助 A／固定入口 B 各五项 CI、[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)及实际资产校验通过。发布后用户确认Ubuntu26.04.1／ARM64／公网NAT的CloudDrive2首装、本机HTTPS与WebDAV通过，见[验收范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V141-ACCEPTANCE.md)；OpenList、外网手机、升级回退与长期续期不外推。此为文档证据补充，不改已发布资产。完整改动见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，环境要求见[部署前准备](/guide/prerequisites/)。
 
 ## TG2Cloud v1.4.0
 
@@ -206,7 +206,7 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 视频命名增量增强 Unicode 多语言、混合随机 ID、广告域名与元数据过滤，同条消息及本组说明共用候选评分；可靠原名、扩展名、媒体组指定名称、无说明回退及既有去重保留。识别异常不阻止接收，不抓评论／频道，不增依赖。示例与限制见[第一次转存](/usage/first-transfer/)；真实 Telegram 或网关验收仍需独立完成。
 
-资源页移除文件系统容量清单，后台磁盘采样与安全保护不变。新增回归与既有恢复、权限、转存检查共同运行；自动检查不代替[历史实机记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)之外的新验收。
+资源页移除文件系统容量清单，后台磁盘采样与安全保护不变。新增回归与既有恢复、权限、转存检查共同运行；自动检查不代替[历史实机记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V130-ACCEPTANCE.md)之外的新验收。
 
 发布后补充（2026-10-19）：用户确认 CloudDrive2 v1.3.3 升级后的实际转存验收完成；不扩大为 OpenList、家庭共享或所有异常路径的验收。
 
@@ -244,11 +244,11 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 
 新布局已通过 Linux 全量回归、宿主 Python 3.10/3.13、两 Edition 非 root 镜像和隔离 LAN 网关检查。[发布工作流](https://github.com/LuoPoJunZi/TG2Cloud/actions/workflows/release.yml) 已从同一 Tag 验证、打包并发布源码包与实际 SHA256。
 
-发布后补充（2026-10-17）：CloudDrive2 旧测试候选经授权备份、人工核对后，使用正式 v1.3.0 原生流程迁移成功，用户确认升级后使用验收完成。历史任务、配置与 Session 授权保留，健康、指纹、HTTPS、只读 WebDAV 和在线入口复检通过；OpenList 与共享代理容器未重启。这不是任意候选代码可被自动覆盖的证明，也不替代首次安装、故障回退、NAS 及全部异常传输验证，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V130-ACCEPTANCE.md)。
+发布后补充（2026-10-17）：CloudDrive2 旧测试候选经授权备份、人工核对后，使用正式 v1.3.0 原生流程迁移成功，用户确认升级后使用验收完成。历史任务、配置与 Session 授权保留，健康、指纹、HTTPS、只读 WebDAV 和在线入口复检通过；OpenList 与共享代理容器未重启。这不是任意候选代码可被自动覆盖的证明，也不替代首次安装、故障回退、NAS 及全部异常传输验证，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V130-ACCEPTANCE.md)。
 
 ## TG2Cloud v1.2.1
 
-本节对应 v1.2.1 正式版本，详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.2.1/CHANGELOG.md)与 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.1)。
+本节对应 v1.2.1 正式版本，详见[源码更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/v1.2.1/CHANGELOG.md)与 [v1.2.1 Release](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/CHANGELOG.md#tg2cloud-v121)。
 
 - 视频数字/默认名称从同条说明提取标题，过滤链接、话题与常见推广；不获取评论区资源。
 - 整组图片/视频可共用本组说明标题并分别编号；没有说明的单个视频保留原名，不回查频道。
@@ -259,7 +259,7 @@ TG2Cloud 与上游 TG115 分别记录版本。以下是仓库 CHANGELOG 和发�
 - 遗留扫描增量读取并显示完整性，删除范围和数量保护不变。
 - 大小验证记录、CloudDrive2 安全回退、离线备份预检、多文件系统容量诊断与错误脱敏。
 
-发布日期与内容核对日期：2026-10-15。两个 EXE 已由同标签 Actions 构建、自检和发布，实际 SHA256SUMS 已核对。包含主分支此前的 OpenList DB 快照/digest 回退修复。CloudDrive2 候选已完成保留历史任务的迁移、健康启动与只读 WebDAV 检查，真实 Telegram 转存、完整安装升级、OpenList 实机和灾难恢复仍待验收；正式下载为 v1.2.1。见[源码验收清单](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/RELIABILITY-ACCEPTANCE.md)。
+发布日期与内容核对日期：2026-10-15。两个 EXE 已由同标签 Actions 构建、自检和发布，实际 SHA256SUMS 已核对。包含主分支此前的 OpenList DB 快照/digest 回退修复。CloudDrive2 候选已完成保留历史任务的迁移、健康启动与只读 WebDAV 检查，真实 Telegram 转存、完整安装升级、OpenList 实机和灾难恢复仍待验收；正式下载为 v1.2.1。见[源码验收清单](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/RELIABILITY-ACCEPTANCE.md)。
 
 ## TG2Cloud v1.2.0
 
@@ -416,14 +416,12 @@ CloudDrive2 与 OpenList 已在真实 VPS 完成受管部署、证书签发/复�
 
 正式构建不再包含 Classic/Tkinter 部署器。
 
-## 与上游 TG115 的关系
+## 上游来源与许可
 
-TG115 v1.6.2 等记录属于代码演进历史，并不是 TG2Cloud 自身的版本。历史入口可查看 [仓库完整 CHANGELOG](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+TG2Cloud 基于 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保留原作者、MIT 版权和许可证。上游自己的版本由上游维护，不作为 TG2Cloud 的安装或升级路线。
 
-本导航中的历史版本条目是更新日志入口，不是各旧版文档的完整快照。下载历史产物前，应自行核对对应 Release 是否存在及其具体资产。
+历史版本条目是更新记录，不是旧版文档快照；旧部署器不再作为当前下载方式。历史验收使用固定源码提交链接，不随旧 Release 或 Tag 的删除而变成当前教程。
 
 ## 当前仍然存在的限制
 
-没有覆盖生产数据的一键 Restore；实例快照与共享代理备份已分别提供，但校验和隔离解包不等于完整服务恢复。独立卸载只处理可核验标准受管资源，不把旧验收扩大到所有清理情形；没有旧 TG115 状态/队列的自动原地迁移，没有跨实例 Token 分布式锁；Windows EXE 已冻结，历史文件未提供商业代码签名。
-
-使用前查看 [备份边界](/operations/backup/) 与 [迁移说明](/operations/migration/)。
+没有覆盖生产数据的一键 Restore；实例快照和共享代理备份校验不等于完整服务恢复。不同部署方式不相互接管，不提供跨实例 Token 分布式锁。真实 VPS、Telegram、网关、证书签发与长期续期均按实际版本和范围验收，见[备份边界](/operations/backup/)与[当前发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。

@@ -48,4 +48,4 @@ CloudDrive2 与 OpenList 在这里充当“存储网关”：TG2Cloud 面向网�
 
 ## 应该从哪里开始
 
-新用户先看 [版本选择](/guide/editions/) 和 [从零开始部署](/guide/quick-start/)。已有 TG115 的用户先看 [迁移说明](/operations/migration/)，不要直接覆盖旧目录。
+新用户先看 [版本选择](/guide/editions/) 和 [从零开始部署](/guide/quick-start/)。已有 TG2Cloud 实例按原部署方式升级，不覆盖身份未知的目录。

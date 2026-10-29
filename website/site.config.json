@@ -101,7 +101,7 @@
       ]
     },
     {
-      "title": "运维与迁移",
+      "title": "运维与升级",
       "items": [
         {
           "title": "状态、日志与重启",
@@ -114,10 +114,6 @@
         {
           "title": "备份与恢复边界",
           "slug": "operations/backup"
-        },
-        {
-          "title": "从 TG115 迁移",
-          "slug": "operations/migration"
         }
       ]
     },

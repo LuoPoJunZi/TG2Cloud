@@ -1,38 +1,10 @@
 # TG2Cloud 卸载指南
 
-v1.5.3 入口固定已公开辅助代码 A `9dbae452c81c170fe74e03a4a52afecb6e60d721`，包含 67 个标准库宿主 helper；入口 B 同步版本和清单，不自指。发布状态与实际验收范围见[本版记录](development/V153-ACCEPTANCE.md)。
+通过 `tg2cloud` 菜单卸载当前 Edition，或使用对应安装入口进入已有实例管理。卸载前先做范围预检并备份；**默认完整清理会在确认后删除所选实例的配置、数据库、Session、下载及可识别备份**，需要保留时明确使用 `--keep-data`。
 
-v1.5.2 入口固定已公开并通过五项 CI 的辅助 A `fa91d616ed03b1ad3f8d8442e92d2d803487ac90`；入口 B 不自指，66 个 helper 清单保持一致。正式业务源码仍来自稳定 Release；发布与实机范围见[本版记录](development/V152-ACCEPTANCE.md)。以下旧版 pin 保留为历史记录。
+只清理核验属于 TG2Cloud 的所选资源，不删除云端文件，不卸载系统 Docker / Nginx，不接管其他项目或独立 Compose。另一 Edition、共享代理和外部 WebDAV 的依赖必须先处理。完整卸载不等于还原整个 Linux 系统。
 
-v1.5.1 入口固定已公开并通过五项 CI 的辅助 A `f17076544a28efc48c952f1114aea442ad809c00`；入口 B 不自指，66 个公开 helper 文件已逐字节核验。正式业务源码仍取稳定 Release；本版发布与实机边界见[发布记录](development/V151-ACCEPTANCE.md)。下方旧版 pin 保留为历史记录。
-
-v1.4.11 发布入口固定已通过五项 CI 的辅助 A `7b115e1eef244ee2db7c7c08bb51d0ed3eaf045a`；入口 B 不自指。main／Tag 双架构与实际资产核验已通过，正式发布结果见[本版验收记录](development/V1411-ACCEPTANCE.md)。下方旧版本 pin 仅保留历史上下文。
-
-v1.4.10 已正式发布：在线入口固定辅助 A `cff370d597f1fd78dc7b081ae95300beb27cd974`，入口 B／Tag 为 `39386ce8c4901727362e7d22ff4676922ad25052`；A／B、main 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)及实际资产核验通过。以下旧版结果保持历史范围，真实 VPS／Telegram 和两网关转存仍须用户验收。
-
-v1.4.9 已正式发布。两个在线入口固定辅助 A `80258deec5fc8979329cb1dbaa2c6d6c0b391e15`，入口 B／Tag 为 `8a2f7a1be42c1f229530cde16f5fa63650a0c17a`；A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)及实际下载资产核验通过。真实 Telegram 登录、VPS 与两种网关转存尚待用户验收；下方历史记录保留原范围。
-
-v1.4.8 已正式发布。两个在线入口固定辅助 A `f2c089aeccc1de1c17c43654dad35249236e6e14`，入口 B／Tag 为 `e24cddfa77fe76b90ea63ee9e7d88008066cb0a3`；A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)及实际源码资产核验全部通过。旧离线管理工具须显式更新，外部 WebDAV 另在子菜单 8 升级；下方历史记录保留原范围。
-
-v1.4.7 已正式发布：两个在线安装入口固定辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`，入口 B／Tag 为 `322ae065d6cb6a7330f78b8cc0ee60c4c3c53cdb`。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验全部通过。业务只使用正式稳定 Release；主菜单 14／15 保留卸载与外部 WebDAV 管理，下方历史记录按原版本理解。
-
-v1.4.7 将卸载统一到 `tg2cloud`，从主分支移除 `uninstall.sh` 和 `install-webdav.sh`；卸载核心、只读预检、全 Edition 和数据保留参数均保留。v1.4.6 的历史文件仍在原 Tag，以下历史版本记录不外推为本版实机验收。
-
-历史 v1.4.6 已正式发布：当时的三个在线入口固定已公开且五项 CI 通过的辅助 A `56e5115e729356c40a10912bb7d7c000969e40df`，完整验证与使用范围见[本版说明](development/LOCAL-MAINTENANCE.md)。业务仍只使用正式稳定 Release；下方 v1.4.5 及更早发布信息按历史范围保留。
-
-v1.4.5 已正式发布：当前入口固定辅助 A `cff0d37ee0a7840ae8d9babd2edea1ca939c3558`，A／入口 B 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)全部通过，实际源码资产已核验。菜单仍为 14，只整理展示，不更改卸载核心、依赖保护或数据保留选项；本版没有执行真实卸载。详见[发布范围](development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。
-
-v1.4.2 已发布：三个入口固定已通过五项 CI 的辅助 A `840472f919409531e99da55c62070ea262ebed6d`，入口 B 和[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)亦通过，实际资产已核验。新增 external_docker 依赖与事务保护，不删除外部代理／Compose／网络；外部证书、恢复材料及离线工具默认保留。真实卸载仍须独立验收。
-
-历史 v1.4.1 已正式发布：三个主入口 B 固定辅助提交 A `3d222b90599f777d7646ff14ccebe466b25ad7eb`，A／B 各五项 CI、同标签双架构发布与实际资产校验通过。本轮修复 HTTPS NAT 预检及开发审计，卸载逻辑和依赖保护不变；真实卸载仍须独立验收。
-
-v1.4.0 维护入口固定到已通过五项 CI 的辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414`，使用统一原生平台检查；卸载范围、资源归属、外部 WebDAV 依赖与保留数据规则不变。Oracle／真实 VPS 卸载仍须独立验收，不把 CI 作为生产清理授权。
-
-CloudDrive2 / OpenList、公网 HTTPS 与内网入口共用 `src/tg2cloud/deployment/uninstall.py`。`tg2cloud` 的 14. 卸载当前实例只选择当前 Edition；`tg2cloud uninstall` 支持显式选择 Edition 或 all、只读预检及原数据保留参数，调用同一核心，不复制删除逻辑。
-
-> 完整清理增强自 v1.2.1 纳入，v1.3.2 增加管理代码收尾；历史 v1.4.2 入口固定 辅助源码 `840472f919409531e99da55c62070ea262ebed6d`，A／B 五项 CI、正式双架构发布和资产校验通过。更新卸载助手不等于更新 Bot；原 v1.2.0 Tag 与历史 EXE 行为不变。用户原保留数据卸载反馈不能替代本版完整清理或 external_docker 的实机验收，也不扩大到两 Edition、NAS 或新删除行为。
-
-历史 v1.3.3 向导固定提交为 `ea43d845b7f4c7185166a7474ef30e44ba2af8df`；不改写旧 Tag，不用旧助手覆盖较新共享代理状态。
+当前在线入口固定辅助 A `9dbae452c81c170fe74e03a4a52afecb6e60d721`；不另设卸载 Shell 下载命令。核验依据见[当前发布记录](development/V153-ACCEPTANCE.md)。
 
 ## v1.3.2 统一菜单与最后实例清理
 
@@ -40,7 +12,7 @@ v1.4.2 的[外部 Docker Nginx 模式](DOCKER-NGINX.md)有额外保护：未恢�
 
 公网／内网安装入口不带参数时，可进入已安装 Edition 的管理菜单。当前选择 **14. 卸载当前实例**，复用同一卸载核心、依赖保护和删除确认，仅作用于所选 Edition，不会自动选择 all。另一 Edition 的容器和数据继续保留，仍使用的共享路由受到保护。
 
-历史菜单编号见[历史维护说明](development/MAINTENANCE-IMPROVEMENTS.md)。操作前始终核对菜单文字和当前 Edition，不按旧教程盲输编号。
+历史菜单编号见[历史维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-IMPROVEMENTS.md)。操作前始终核对菜单文字和当前 Edition，不按旧教程盲输编号。
 
 最后一套默认完整清理后，重新核对 Docker、两个 Edition（包括停止/部分状态）、保留数据/备份、LAN 与附加路由、挂载和管理代码归属；无依赖时删除受管 `/usr/local/bin/tg2cloud` 及 `/opt/tg2cloud-cli` 中全部已核验代码，随后退出菜单。`--keep-data`、保留备份或其他实例仍在用时保留工具；未知同名命令/文件、忙碌或清理异常时不强删，返回 `TG2CLOUD_UNINSTALL_RESULT=PARTIAL` 和非零退出码，明确业务资源可能已移除而管理代码尚未确认清完，不自动重新安装。仅删除核验过的代码文件及空目录，不递归清空推算出的父路径。锁元数据保留以避免替换正在锁定的 inode，系统应用、镜像缓存和云端文件仍不删除。
 
@@ -50,7 +22,7 @@ v1.4.7 不再保留主分支的独立卸载脚本。命令缺失或损坏时，�
 
 外部 WebDAV 安装后，先在外部管理菜单卸载附加入口，解除对应网关依赖，再主卸载；仅停用不解除依赖。v1.4.7 统一入口为 `tg2cloud` → 当前 Edition → **15. 外部 WebDAV → 7. 卸载外部 WebDAV**，历史 v1.4.6 尚无主菜单 15；既有 `tg2cloud-webdav uninstall --edition openlist`（或 `clouddrive2`）仍兼容。附加卸载不删除云端数据或人工原生账号，见[独立功能指南](external-webdav.md)。
 
-源码的本地帮助入口为 `python3 scripts/run_source.py uninstall --help`，业务位于公共 `deployment/uninstall.py`。公网／内网在线 URL 不变，两个退役脚本的旧 main URL 不再提供；helper pin 已更新到 CI 验证的新布局提交；确认、归属检查、保留数据和共享资源保护不因目录整理改变。本轮未执行真实卸载。详见[Linux 重构说明](development/LINUX-REFACTOR.md)。
+源码的本地帮助入口为 `python3 scripts/run_source.py uninstall --help`，业务位于公共 `deployment/uninstall.py`。公网／内网在线 URL 不变，两个退役脚本的旧 main URL 不再提供；helper pin 已更新到 CI 验证的新布局提交；确认、归属检查、保留数据和共享资源保护不因目录整理改变。本轮未执行真实卸载。详见[Linux 重构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LINUX-REFACTOR.md)。
 
 安装后运行统一管理命令，或先以显式子命令只读查看所有实例的清理范围：
 
@@ -142,7 +114,7 @@ python3 scripts/run_source.py uninstall --edition all --purge-data
 - 移除单个 HTTPS 路由复用现有事务和剩余路由自检。另一 Edition 的自检失败时恢复原路由，并在移除 Bot / 云网关前停止。
 - CloudDrive2 数据目录可能包含真实云盘 FUSE 挂载。数据删除预检和删除前都会检查挂载；发现挂载即拒绝递归删除，也不会执行强制 / lazy 卸载。可先明确使用 `--keep-data` 移除运行资源，再确认挂载已释放后重新预检完整清理。仅去掉 `--purge-data` 已不再表示保留数据。
 - 不删除云端文件，不读取 / 显示 `.env`、`rclone.conf`、密码或容器环境变量；异常原始输出不回显。
-- 与一键安装 / 升级使用相同 Edition 锁，并使用共享 HTTPS 事务锁。**不能同时通过 EXE 或其他终端操作相同实例**；EXE 基础部署没有这个 CLI 锁。
+- 与一键安装 / 升级使用相同 Edition 锁，并使用共享 HTTPS 事务锁。**不要在另一终端并发操作相同实例，也不要使用无法协同锁的旧工具**。
 - 失败、取消或连接中断可能部分完成。不会自动重装、删除更多数据或假装回滚全部容器；重新运行 `--check` 核对，确认剩余范围后再执行。
 - `--keep-data` 保留的安装目录不能当作全新目录被安装器覆盖；如需全新安装，可在明确备份后使用本脚本清理可识别的标准残留，再运行安装向导。未知残留停止并要求人工核对。即使原容器已卸载，可识别的备份也可再次预检清理。
 

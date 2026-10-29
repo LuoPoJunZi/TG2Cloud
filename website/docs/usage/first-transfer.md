@@ -16,7 +16,7 @@
 
 ## 视频名称优化（v1.2.1）
 
-v1.4.3 的本机工具 `tg2cloud naming-preview` 可模拟单媒体说明与原名选择，显示最终名称和原因；不下载、上传、查询远端重名或修改历史任务。预览与 Bot 共用规则，不新增 Telegram 命令，也不获取隐藏实体、评论或媒体组。样例见[维护增强](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-IMPROVEMENTS.md)。
+v1.4.3 的本机工具 `tg2cloud naming-preview` 可模拟单媒体说明与原名选择，显示最终名称和原因；不下载、上传、查询远端重名或修改历史任务。预览与 Bot 共用规则，不新增 Telegram 命令，也不获取隐藏实体、评论或媒体组。样例见[维护增强](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-IMPROVEMENTS.md)。
 
 v1.3.0 起，宣传式原名可用有效说明替换，优先明确标题、长描述和 Telegram 引用块，媒体组选择更完整的说明。以下保留 v1.2.1 的基础规则；v1.3.3 增强单列于后，不会批量改名旧任务或远端数据。
 

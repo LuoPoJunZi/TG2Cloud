@@ -1,20 +1,8 @@
 # Linux 部署与兼容性
 
-2026-10-24，v1.4.5 的辅助 A、入口 B 以及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40073091331)均通过原生 AMD64／ARM64 验证，实际源码资产已核验；证据见[本版记录](development/MAINTENANCE-NEXT.md#7-v145-发布核验2026-10-24)。不新增架构或运行依赖，不改变固定镜像；仅开发审计依赖 filelock 安全更新。下方用户实机验收按旧版和原范围保留，不推断本版 VPS 或云盘已通过。
+TG2Cloud 维护 Linux 一键脚本和 Docker Compose。下表区分已实现的平台检查、CI 与真实环境验收；同一架构上的构建通过不代表任意发行版、NAS 或实际网盘都已通过。
 
-2026-10-23 用户提供两份日志并确认 CloudDrive2 v1.4.3 → v1.4.4 升级验收通过：Ubuntu 26.04.1／原生 ARM64 与 Debian 13／原生 AMD64。配置保留、数据库备份、Bot 健康、运行代码与版本、本机 HTTPS 及最近业务就绪观察均通过，见[v1.4.4 双架构记录](development/V144-ACCEPTANCE.md)。不是跨 CPU 迁移、维护者重新登录实测或 OpenList／NAS 的验收；WebDAV 写入、真实转存、外网和故障回退等仍待独立检查。日志中的 Ubuntu 宿主 Python 3.14.3 是单机环境事实，不改变现有 CI 矩阵或 Bot Python 3.12。
-
-以下按各自版本保留历史发布和实机证据，不能把旧版“尚未验收”误读为否定上面的 v1.4.4 限定升级结果。
-
-2026-10-21：[v1.4.2 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2) 已发布。辅助 A `840472f919409531e99da55c62070ea262ebed6d`、入口 B／Tag `42e2c372823a085c36a7a7597ce775441598aaf9` 各五项 CI 与[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部成功，实际源码包与 SHA256／GitHub 摘要已核验。新增复用 Docker Nginx 的隔离用例在两种架构执行通过；支持平台、固定镜像和 Bot 依赖不变，不等同 Oracle／用户 VPS、真实 ACME、迁移或长期续期通过。下列 v1.4.1／v1.4.0 内容保留各自历史范围。
-
-发布后另完成专用 Debian13／原生 AMD64 的 CloudDrive2 v1.3.4 → v1.4.2 人工升级，数据保留、Bot 健康、只读 WebDAV 和外部 HTTPS 通过，见[v1.4.2 独立记录](development/V142-ACCEPTANCE.md)。原 Release／Tag 已删除的自动升级路径仍会停止；本次不是 ARM64 升级、新代理模式或实际文件转存验收。
-
-2026-10-21：[v1.4.1 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)，修复下述公网 NAT 的 HTTPS 预检；支持范围、镜像和 Bot 依赖不变。辅助 A `3d222b90599f777d7646ff14ccebe466b25ad7eb`、入口 B／Tag `dde550bc7fa6047ddcc945ef82131962611fec05` 各五项 CI 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39525213331)全部成功，不能替代真实 Oracle 入站、ACME 或转存验收。
-
-发布后补充：用户已确认 CloudDrive2 在 Ubuntu 26.04.1／原生 ARM64／公网 NAT 环境完成首次安装、Bot 健康、本机 HTTPS 与 WebDAV 验收。该结果来自用户提供的实机日志，不是 CI 推断；完整边界及 APT 排查见[v1.4.1 验收记录](development/V141-ACCEPTANCE.md)。以下 v1.4.0 统计保留当时状态，不能替代本次独立记录。
-
-2026-10-20：[v1.4.0 已正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.0)。辅助提交 A `1480fd60ad94bd841961a4932a3b03e4cfde4414` 与固定入口 B `8bd4cf1fd7180f31579f5fe702d2c2d07c3b13f8` 各五项 CI、同标签双架构发布均通过，实际源码包与公开资产摘要已核验。业务只取正式稳定 Release，不下载 main 业务源码代替；Oracle／真实 VPS 验收由用户发布后执行。
+当前发布的源码、共享镜像与两版部署包证据见[本版记录](development/V153-ACCEPTANCE.md)。
 
 ## 支持范围
 
@@ -61,7 +49,7 @@ CloudDrive2 保留 `/dev/fuse`、privileged、host PID 与挂载传播权限；O
 
 ## Oracle Ampere A1 准备与验收
 
-2026-10-21 实机反馈：原生 ARM64 环境检测已通过，但在只有私有网卡地址的公网 NAT 主机上，v1.4.0 的 HTTPS 预检会误报 DNS／端口问题。该反馈不代表安装或转存已验收。修复已进入 v1.4.1 正式包与匹配 helper，新增严格条件下的控制台公网 IPv4 人工确认；仍须通过 ACME、TLS 与用户实机验收，见[VPS 指南](VPS-INSTALL.md#公网-nat-的已知限制与待发布修复)。
+2026-10-21 实机反馈：原生 ARM64 环境检测已通过，但在只有私有网卡地址的公网 NAT 主机上，v1.4.0 的 HTTPS 预检会误报 DNS／端口问题。该反馈不代表安装或转存已验收。修复已进入 v1.4.1 正式包与匹配 helper，新增严格条件下的控制台公网 IPv4 人工确认；仍须通过 ACME、TLS 与用户实机验收，见[VPS 指南](VPS-INSTALL.md#公网-nat-与域名检查)。
 
 新源码在严格候选条件下允许用户独立输入并确认云控制台的公网 IPv4；不自动查询出口 IP，不改网卡、DNS、防火墙或代理所有权。确认仅存于内存，绑定本次域名、DNS 和原有网卡地址，增加受管 Docker 网桥不使它失效，地址移除／DNS 或域名改变则停止复用。错误 AAAA、多 A、其他公网 IPv4 网卡和不安全端口不能走此分支；无交互确认仍按原规则拒绝。helper 与正式包已发布核验，用户本次 CloudDrive2 首装及证书流程通过；OpenList 及其他主机仍须单独验收。
 
@@ -84,7 +72,7 @@ ARM64 应为 aarch64/arm64、64、arm64、Linux arm64 daemon。尚未安装 Dock
 
 确认 CPU 原生、资源足够、DNS A/AAAA 指向正确公网地址、80/443 可达。脚本不为本次兼容改动自动调整 Oracle 安全组、系统防火墙或服务商网络。
 
-包含本次改动的正式稳定版及匹配 helper 发布后，安装命令仍相同：
+使用当前正式稳定版的安装命令：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition clouddrive2 --check
@@ -93,54 +81,10 @@ bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/ins
 
 OpenList 将 edition 换为 `openlist`。`--check` 仅预检，不部署；正式向导完成后，核对实际管理 HTTPS、Bot 健康、存储挂载、专用 WebDAV 写入和小文件转存，再按[恢复与验证](RECOVERY.md)测试大文件、流式、取消和重启。最终在云盘官方客户端确认文件。隔离 HTTP smoke 不覆盖真实网盘挂载传播、账号、ACME、手机或升级回退。
 
-内网仍使用 `install-lan.sh`，填写本机私有 IPv4；外部只读功能在待发布版本中通过 `tg2cloud` → 15. 外部 WebDAV 管理，不进入主安装向导。不改变 HTTPS、只读权限和凭据边界。
+内网仍使用 `install-lan.sh`，填写本机私有 IPv4；外部只读功能通过 `tg2cloud` → 15. 外部 WebDAV 管理，不进入主安装向导。不改变 HTTPS、只读权限和凭据边界。
 
-## 本地验证与发布门槛
+## 验证与发布门槛
 
-可先在完整源码中执行标准库帮助和离线回归；在目标原生 Linux 上可运行架构诊断：
+CI 使用原生 AMD64、ARM64 Linux Runner，分别验证 CLI Python 3.10 / 3.13、共享 Bot、镜像平台、网关 HTTP／FUSE 和隔离代理。Release 从同一 Tag 验证源码，再发布相匹配的共享多架构镜像与 Compose 部署包。
 
-```bash
-python3 scripts/run_source.py install --help
-PYTHONPATH=src python3 -B -m tg2cloud.deployment.architecture host
-PYTHONPATH=src python3 -B -m unittest discover -s tests -p test_architecture.py -v
-```
-
-原生隔离 Docker CI 使用 `ubuntu-24.04` 与 `ubuntu-24.04-arm`，不设置 QEMU。完整 Bot／传输回归、两 Edition 非 root 候选、网关 HTTP／FUSE、Nginx／Certbot、外部 DAV Range 及 LAN 入口均在各自原生 runner 执行；CLI Python 3.10/3.13 亦覆盖两个 runner。网关 smoke 仅用随机命名的新容器与空卷，不登录网盘；FUSE 共享挂载的真实读写另行验收。条件缺失必须失败或明确未运行，不写成实机通过。
-
-Release 等待两个原生 job 成功，但只生成和上传一次与 CPU 无关的源码包。历史 immutable Tag 按当时能力仅重跑 AMD64，不改写历史 ARM 支持事实。
-
-### v1.4.1 实际验证（2026-10-21）
-
-- 本地完整894项：867成功、27环境条件跳过、0失败；Python3.10宿主／NAT专项21项全部成功，无Bot依赖的CLI帮助通过。仓库48项、发布包11项、网站19项与33HTML／3655内部引用、ShellCheck、Ruff、compileall和Bandit通过。
-- 首轮辅助 CI 检出两项开发依赖漏洞；仅更新 uv0.13.4、certifi2026.10.19，统一生成哈希锁，Bot锁无差异。两个锁文件的 pip-audit 无已知漏洞，不忽略或关闭审计。
-- 最终辅助 A 的[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524547503)与[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524551589)、入口 B 的[双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524969669)与[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39524969765)全部成功，A／B各自仓库、文档和网站也成功。同标签发布的两个原生验证与release job全部成功；含隔离LAN、外部DAV／Range、两Edition候选及网关HTTP／FUSE，不使用QEMU或真实用户目录。
-- 实际下载 `TG2Cloud-v1.4.1-source.tar.gz` 的 SHA256：`2f0f75f11c7e1ad4debc4bf3221732e26c4f2d213863cd0a875a9672db509249`；清单摘要 `d2928cd3a1f604d8ea06f5441f3a4e1087808e5211d22627888f9c78248c7945`。`source_release.py verify`、同次清单与GitHub公开digest一致；只有这两项正式资产，没有EXE。校验和不是数字签名。
-- 发布自动检查没有连接或修改用户VPS、没有创建真实Session或写入用户网盘。其后用户自行完成 Ubuntu26.04.1／ARM64／公网NAT 的 CloudDrive2 首装、本机HTTPS及WebDAV验收，见[独立实机记录](development/V141-ACCEPTANCE.md)。NAT人工确认仍不是自动公网证明；其他系统／Edition、独立外网、真实Telegram任务细项、手机、长期续期和故障回退不在本次证据范围。
-
-### v1.4.0 历史验证（2026-10-20）
-
-本机为 Windows，下面不属于原生 Linux／ARM64 验收：
-
-| 检查 | 实际结果 |
-| --- | --- |
-| Python 3.13 `check_python.py all` | 880 项，853 执行成功／27 环境或显式集成条件跳过／0 失败；公共文件、Ruff、compileall 通过 |
-| Python 3.10 CLI 标准库回归 | 408 项，396 执行成功／12 环境条件跳过／0 失败；最终新增架构 15 项另行复验通过 |
-| Shell | 四个现有入口、三个候选入口、两版 hooks 的 ShellCheck／Bash 语法和 21 项部署回归通过 |
-| 载荷／发布基础 | 两 Edition 各 84 个源码模块与当前清单逐字节一致、共享指纹一致；版本、Release Notes 格式、候选 bootstrap 与 Bandit 通过 |
-| 网站 | Node.js 22 构建、19 项测试、33 HTML 页面／3652 内部引用检查通过 |
-| 原生 CI | 辅助 A、入口 B 与同标签的 AMD64／ARM64 Bot 构建、原生扩展／rclone、两网关 HTTP／FUSE 和外部 DAV／Range 均通过；A／B 四组 CLI、仓库、网站及文档也通过 |
-
-本地 Windows 没有 Docker daemon／Linux rclone，27 项跳过如实保留；对应的原生集成在 GitHub 两个原生 runner 上另行通过。首轮新测试的空命名卷 copy-up 重置属主问题已修正，只调整隔离卷的 volume-nocopy，不修改生产权限或跳过测试。Oracle Ubuntu 24.04／26.04 与 Debian ARM64、真实 Telegram／云存储、挂载传播读写、HTTPS ACME、外部手机及升级回退仍未实机验收。
-
-### 正式发布核验
-
-- 辅助 A 的[双架构运行](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39424410971)、入口 B 的[双架构运行](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39425830276)与[四组 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39425830192)均成功；另三项仓库／文档／网站检查也成功。
-- [v1.4.0 同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39426176679)的两个原生 job 和发布 job 均成功；只在 AMD64 job 打包一次平台无关源码，不发布 EXE。
-- 正式 `TG2Cloud-v1.4.0-source.tar.gz` 实际 SHA256：`5e701f3a61dc99cd9e8ce996958ce019954aff5b4ae1eee10b3a92d116734302`。实际下载核验通过 `source_release.py verify`、同次 SHA256 清单与 GitHub digest；校验和不等于数字签名。Windows 本地重打包只作候选检查，不拿其校验值替代 Actions 产物。
-- 三个入口固定真实 A 的 SHA 与匹配清单，严格 pin 校验通过；外部 WebDAV 从正式稳定资产加载新模块。未覆盖历史 Tag／Release、未连接真实 VPS、未创建新 Session 或迁移数据库。
-
-后续发布仍须先公开并验证辅助 A，再生成固定 A 的入口 B，待 B 和同标签检查成功才发布；不使用伪造、自指 pin 或 moving main。用户将执行 Oracle Ubuntu 24.04／26.04、Debian ARM64 及真实云存储安装／升级／转存验收，结果另行记录。
-
-已有 AMD64 的目录、`.env`、`data/tg115.db`、`bot.session`、rclone 配置、容器身份、备份和升级回退保留，不新增数据库迁移或用户环境变量。此前使用远端 context／强制异平台镜像的环境将被明确拒绝，不视为受支持的旧实例。不能通过把磁盘或数据库复制到另一架构直接宣称完成跨 CPU 迁移。
-
-参考：[GitHub 原生 runner](https://docs.github.com/en/actions/reference/runners/github-hosted-runners)、[Docker Ubuntu 安装](https://docs.docker.com/engine/install/ubuntu/)、[镜像索引检查](https://docs.docker.com/reference/cli/docker/buildx/imagetools/inspect/)、[cryptg 固定版本](https://pypi.org/project/cryptg/0.6.0/)、[psutil 固定版本](https://pypi.org/project/psutil/7.2.2/)。
+自动检查不能代替真实 DNS／ACME、Telegram、网盘上传、NAS、长期续期或灾难恢复。当前检查结果和未执行清单见[发布记录](development/V153-ACCEPTANCE.md)，维护命令见[开发指南](development/DEVELOPMENT.md)。

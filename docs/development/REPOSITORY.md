@@ -1,92 +1,61 @@
 # 仓库结构与维护规范
 
-公共仓库以 Linux 一键脚本、共享 Telegram Bot、两 Edition Docker 资源和文档站为主。目录整理不改变现有 VPS 安装目录、数据库、配置或公开的一键命令 URL；历史 Tag 的布局保持不变。
+当前公共仓库面向 Linux 一键脚本、独立 Docker Compose、共享 Telegram Bot 和两种存储网关。主分支只维护当前产品文档，不提供桌面部署器下载、构建和跨项目迁移教程。
 
 ## 目录职责
 
-| 路径 | 职责与维护边界 |
+| 路径 | 职责 |
 | --- | --- |
-| `install.sh`、`install-lan.sh` | 保留公网、内网安装与管理入口；卸载由 `tg2cloud` 菜单／子命令调用公共核心 |
-| `src/tg2cloud/addons/external_webdav/` | 独立只读附加功能，从 `tg2cloud` 菜单按需管理，不加入主安装或 Bot 菜单 |
-| `src/tg2cloud/` | 共享 Bot、CLI、公共部署、存储、持久化及监测 |
-| `scripts/run_source.py` | 不依赖当前目录或 Bot 依赖的受控源码入口 |
-| `src/tg2cloud/compose/` | 独立 Compose 的离线初始化、发布包组装和可选宿主 HTTPS；复用公共代理，不接管脚本实例 |
-| `packaging/` | 共用 Dockerfile、两版 Compose、Shell 钩子和 `app.*` 兼容入口 |
-| `requirements/`、`pyproject.toml` | 包元数据、依赖分组及同一 uv 工具生成的哈希锁文件 |
-| `assets/brand/` | 正式 Logo／Icon 唯一来源，不自动重绘或覆盖 |
-| `tests/` | Bot、Linux、资源、Docker、网关、备份和协议兼容回归 |
-| `.github/` | Workflow、检查工具、Dependabot、贡献指南和安全政策 |
-| `docs/` | 用户指南与公开开发规范，入口见[文档目录](../README.md) |
-| `website/` | 独立静态文档站，沿用现有 Node 构建与部署方式 |
+| `install.sh`、`install-lan.sh` | 公网、可信内网安装与管理；保留公开 URL 和受支持参数 |
+| `src/tg2cloud/` | 共享 Bot、CLI、部署、传输、存储、持久化和监测 |
+| `src/tg2cloud/compose/` | 独立 Compose 初始化、离线包和可选宿主 HTTPS |
+| `src/tg2cloud/addons/external_webdav/` | 统一菜单内按需管理的只读附加功能 |
+| `scripts/run_source.py` | 不依赖当前目录或 Bot 依赖的源码入口 |
+| `packaging/` | Dockerfile、两 Edition Compose、部署钩子和必要薄入口 |
+| `requirements/`、`pyproject.toml` | 唯一依赖定义、统一工具生成的锁文件及 Ruff 配置 |
+| `tests/` | Bot、CLI、任务、恢复、资源、Docker、网关和协议回归 |
+| `docs/` | 当前安装、使用、运维和开发教程 |
+| `website/` | 独立静态文档站源码、文章及测试 |
+| `assets/brand/` | 正式品牌资源唯一来源 |
+| `.github/` | 工作流、检查工具、Dependabot、贡献与安全政策 |
 
-根目录只保留标准配置、README／英文版、许可证、版本记录及轻量 Shell 入口；附加入口不复制主安装逻辑。目录整理不迁移运行数据或提升版本；兼容及未公开 helper 的发布步骤见[Linux 重构说明](LINUX-REFACTOR.md)。
+根目录保留标准配置、README、许可证、版本记录和轻量入口；不为了目录美观移动稳定核心。两种部署方式互不接管，源码整理不迁移安装目录、容器、网络、数据库或 Session。
 
-v1.4.2 的外部 Docker Nginx 复用集中在 `deployment/proxy/docker_nginx.py`（只读检测）、`external_config.py`（严格模型与渲染）、`external_transaction.py`（逐文件 CAS／恢复日志）、`external_entry.py`（证书、续期与生命周期），CLI 在 `cli/proxy.py`。现有 manager 只做模式分派，Bot 不依赖新 CLI。源码清单同步 bootstrap/runtime manifest；新增 helper 必须先公开辅助提交 A，再更新入口 B 的 pin，候选入口仅写入忽略的 build 目录。
+## 开发和测试
 
-## 桌面源码只在本地保留
+开发环境、模块边界、载荷组装、指纹和测试命令见[开发指南](DEVELOPMENT.md)，贡献要求见[贡献指南](../../.github/CONTRIBUTING.md)。不恢复桌面依赖，不引入无必要的大型框架；公共构建不能依赖维护者本地文件。
 
-Windows EXE 停留在 v1.2.1。main 不再跟踪旧部署器、PySide6 界面、桌面 SSH／Tunnel、Windows 资源、打包脚本或专用测试，公共 CI 不再安装 Qt、Paramiko、PyInstaller。
+`pyproject.toml` 的 `[tool.ruff]` 统一配置，保留 Python 3.10 目标及原规则。`.editorconfig` 管编辑器，`.gitattributes` 管 Git 换行，两者职责不同。保留 Markdown 语义空白和品牌二进制，不做无关格式化。
 
-维护者本地的 `legacy/` 和独立恢复 ZIP 由 `.git/info/exclude` 排除，不作为公共依赖。恢复请使用完整备份或 [v1.2.1 Tag](https://github.com/LuoPoJunZi/TG2Cloud/tree/v1.2.1)，在新目录中校验和构建，不覆盖当前工作树。历史 Release、EXE、SHA256 和 Git 历史不重写。
+`.github/scripts/check_repository.py` 枚举 tracked／未被忽略的新文件，检查公共输入、禁止产物和文档索引。强制跟踪的配置、数据库、Session 及旁文件即使被 ignore 仍应拒绝；检查不是完整秘密内容或 Git 历史扫描。完整回归使用干净公共副本，不依赖本地归档。
 
-混合测试中的非桌面检查必须保留。历史配置输出使用仅含合成数据的 `tests/fixtures/deployment-config.json` 固定协议快照回归，不再导入旧 GUI；载荷组装直接测试公开 Linux 接口。旧完整测试与代码保存在本地恢复归档，不能把本地专用测试算作当前公共 CI 已执行。
+## 文档分工
 
-## 编辑与检查规范
+README 保持简洁，详细导航指向[仓库文档目录](../README.md)。仓库文档应能独立阅读，网站也可覆盖同主题，不为跨入口去重删掉必要教程。
 
-`.editorconfig` 约定编辑器保存时的编码、缩进和空白；`.gitattributes` 控制 Git 的文本换行和二进制处理，两者职责不同，均需保留。不自动重绘品牌资源或破坏 Markdown 有语义的末尾空格。现有中英文文档不做无关批量重命名；新用户文档加入[文档目录](../README.md)。
-
-Ruff 配置集中在 `pyproject.toml` 的 `[tool.ruff]`：保留原有隐式默认规则、Git ignore 与 `website/` 排除，并明确以 Python 3.10 为目标，不另建重复配置。统一检查入口为 `.github/scripts/check_python.py`；环境准备见[贡献指南](../../.github/CONTRIBUTING.md)。`all` 依次运行公共文件检查、unittest、Ruff、compileall，不安装依赖、不构建 EXE、不部署或推送。CLI 范围继续在 Python 3.10／3.13 下只用标准库运行。
-
-`.github/scripts/check_repository.py` 使用 Git 枚举 tracked／未被忽略的新文件，禁止构建产物、缓存、私有配置、内部记录及本地桌面归档进入公共集合。已跟踪文件不能仅通过 ignore 移除，必须取消跟踪。它不读取或显示凭据内容，不是完整 Secret／历史扫描。
-
-输入检查保留两个安装入口、卸载／附加功能核心、Linux 共用模块、两 Edition 资源及品牌资源，以 AST 读取 `src/tg2cloud/deployment/profiles.py` 静态清单并检查递归源码，不执行模块。公开 `docs/` Markdown 必须有有效索引链接；它不是动态依赖解析器，也不验证公网。公共检查需要完整 Git checkout；源码 ZIP 可运行测试和语法检查，但不能推断跟踪状态。
-
-完整回归还应在不含本地 `legacy/` 的干净副本运行，确保新克隆可独立工作。缺少 Bash、rclone 或显式 Docker 条件时如实记录跳过；不增加 skip 来掩盖失败。
-
-## 仓库文档与网站的维护边界
-
-根 README 和英文版作为简洁项目首页，保留品牌、简介、核心脚本入口、简短使用流程、安全边界与原有致谢／许可展示。文档分类导航直接链接仓库中的 Markdown 文档，文档网站作为补充入口，不用网站源码路径替代用户指南。完整教程、命令表、故障排查和历史 Windows 流程放在 `docs/` 与文档站。helper 精确提交号在 VPS/卸载完整指南核对，不在首页重复维护。
-
-`docs/` 与 `website/` 是独立阅读入口，可重复覆盖相同主题；不要为了跨入口去重而删除网站内容，也不要要求仓库读者到网站源码中寻找必要说明。README 精简时先检查 `docs/` 的实际覆盖，缺项迁入对应指南，同一仓库主题采用单一正文与交叉链接。安装／升级在 VPS 和 LAN 指南，网关在 STORAGE，Bot 命令在 BOT-USAGE，维护在 OPERATIONS，任务恢复在 RECOVERY；命名在 NAMING、配置在 CONFIGURATION、备份在 BACKUP-RESTORE，FAQ 提供排查导航，不复制完整操作手册。
-
-RECOVERY 等旧入口中已被外部链接的标题保留作简短导航，详细正文迁移后应更新新链接，但不轻易删除原锚点。新指南必须加入 docs/README.md，并纳入文档链接／锚点回归。历史验收记录只追加新的独立记录，不回写旧版本已执行的结论。
-
-| 事实来源 | 需要同步审阅的网页文章 |
+| 主题 | 当前正文 |
 | --- | --- |
-| README、VPS 安装指南 | 下载、快速开始、升级 |
-| 内网与卸载指南 | 下载页中的命令及安全边界 |
-| 运维与恢复指南 | 维护、备份、升级及故障排查 |
-| TG115 迁移指南 | 网站迁移文章 |
-| 唯一版本源、CHANGELOG、RELEASE_NOTES | 网站版本、发布状态、下载与来源 |
-| `assets/brand/` | 网站实际静态图标副本 |
+| 公网、内网、Compose 部署 | VPS-INSTALL、LAN-INSTALL、COMPOSE |
+| 网关与首次转存 | STORAGE、BOT-USAGE |
+| 命名、监听、家庭与可选设置 | NAMING、LISTENING、FAMILY-SHARING、FEATURE-ENHANCEMENTS |
+| 维护、配置、故障恢复与备份 | OPERATIONS、CONFIGURATION、RECOVERY、BACKUP-RESTORE |
+| HTTPS、外部只读入口与卸载 | DOCKER-NGINX、external-webdav、UNINSTALL |
+| 版本事实、当前验证与发布步骤 | CHANGELOG、当前发布记录、RELEASE-CHECKLIST |
 
-上表用于相关事实变化时提醒独立审阅，不要求两套文章逐段同步或互相替代。网站仍执行 `npm run build` 和 `npm test`，不更改主题、导航、搜索或部署方式。文章可有不同篇幅，但命令、边界和发布事实必须一致。main 待发布行为与稳定 Release 必须区分。自动检查不替代浏览器、VPS／NAS 或真实网盘验收。
+当前教程不逐版追加旧 pin、历史测试统计或旧 UI；更新实际步骤并保留必要兼容说明。TG2Cloud 的全版本功能记录保留在 CHANGELOG，旧验收证据使用固定历史提交链接，不能把它们当作当前版本验收。
 
-## 本地资料与发布边界
+删除或合并文章时，同步 README、文档索引、网站导航、来源映射、站内链接与测试。仍有效的书签可映射到对应当前章节，不保留指向已删除资源的下载按钮。新增公开 `docs/` Markdown 必须进入文档目录。
 
-`build/`、`dist/`、`website/dist/`、测试缓存是可重建输出；`.venv/`、个人 AI 指令、内部审计、工作记录及恢复 ZIP 不属于可随意删除的垃圾。本地独有资料优先使用 `.git/info/exclude`，不作为公共文档；通用产物和秘密由 `.gitignore` 排除。
+## 用户数据、品牌与许可
 
-目录标准化不提升版本、不创建 Tag、不替换已有 Release。在线入口的下载白名单、包结构和不可变 helper pin 必须配套：先在隔离分支提交辅助代码并验证，再把两个入口固定到通过的同一提交。正式业务 payload 仍来自稳定 Release，不改用 main／RC。
+新装 `data/tg2cloud.db`；已有唯一 `data/tg115.db` 继续使用。旧变量只作兼容读取，不由文档整理自动重命名、迁移或删除。数据库、Session、网关账号和云端文件保护优先于命名统一。
 
-Release 继续从同一 Tag 验证并打包源码一次，发布 Job 复用 artifact 和实际 SHA256。历史 Tag 的重试按历史布局验证，不要求本地桌面资料。更多边界见[脚本优先说明](SCRIPT-FIRST.md)。
+保留 MIT 许可证、原版权与上游 TG115 致谢；移除旧产品教程不等于移除来源说明。正式 Logo／Icon 使用 `assets/brand/`，不重绘或覆盖。
 
-## 已完成的目录整理
+本地 `.venv/`、私有配置、内部审计、工作记录、legacy 和恢复 ZIP 不作为公共依赖，也不作为清理目标。构建输出写入忽略的 `build/`、`website/dist/`，不提交用户数据或测试秘密。
 
-当前公共仓库仅保留 `install.sh`、`install-lan.sh` 两个根目录 Shell 入口。卸载和外部 WebDAV 在 `tg2cloud` 菜单及公共 Python 核心维护，两个独立 Shell 文件移除；历史版本文件继续存在于原提交／Tag，不改写历史资产。四组命名回归集中到 `tests/naming/`，原夹具和混合测试按实际依赖保留；迁移须核对完整测试发现集合。代理纯渲染集中在 `deployment/proxy/rendering.py`，旧 manager 接口继续导出。共享 CI 和只生成候选的发布准备工具见[维护开发说明](LOCAL-MAINTENANCE.md)。不删除历史运行路径、归档或用户数据。
+## 发布边界
 
-## 平台称呼与整理结论
+版本唯一来源、helper A／入口 B、源码资产、原生多架构镜像、两版 Compose 包和实际下载核验按[发布检查清单](RELEASE-CHECKLIST.md)执行。正式业务仍只取稳定 Release，不改为 moving main；不移动历史 Tag 或替换发布资产。
 
-项目首页、安装介绍和文档导航统一称为 **Linux**。CPU 架构仅在兼容说明、镜像平台标识、环境诊断、CI 矩阵和具体历史验收中注明；保留真实的 amd64／arm64 检测与校验，不将名称精简理解成支持所有 Linux 发行版或 CPU。
-
-当前根目录已按职责分为源码、部署资源、测试、文档和网站，无需大范围移动稳定模块。两个 Shell 入口、requirements 锁文件、pyproject.toml、编辑器和 Git 配置职责不同，继续保留；历史运行名称、兼容入口、验收记录、本地归档和用户数据不作为冗余文件删除。网站维护 README 只保留构建与维护说明及记录导航。
-
-Telegram Session 是 SQLite 文件，其 .session-shm、.session-wal、.session-journal 也可能含授权数据：Git ignore 与公共文件检查均禁止误提交。已跟踪文件仍须由公共文件检查拒绝，不能仅通过 ignore 隐藏；检查不等同于完整凭据或历史扫描。
-
-
-## 独立 Compose 部署
-
-`src/tg2cloud/compose/` 承担短期初始化、离线配置检查和候选部署包生成，不进入 Bot 任务流程。生成器复用 `packaging/compose/` 的网关／Bot安全配置，不维护第二套网关模板。新增模块进入递归 runtime 清单；在线 helper pin 保持原有效提交，发布前按 A/B 流程处理实际变更。
-
-`.github/scripts/compose_release.py` 生成两 Edition 部署归档及校验清单；`.github/workflows/compose-images.yml` 只允许人工选择已正式发布的稳定 Tag，分别在两种原生 Linux Runner 构建、验证并推送同核心镜像，最后创建／复核版本 index。用户包固定实际 digest；源码 Release 的两个原资产保持不变，另附 Compose 两包与独立校验清单。GitHub 默认包可见性需要发布管理员确认；匿名检查失败不发布用户包。
-
-直接 Compose 实例通过独立标记和容器标签识别，一键升级和卸载遇到该方式会停止并指向[Compose 指南](../COMPOSE.md)，不静默转为脚本受管实例。当前不提供完整主菜单接管、自动证书和监听终端授权等价支持，不能把本地候选描述为已经发布。
+文档更新不代表已经更新用户 VPS 或上线网站。未经本轮明确授权，不提交、推送、创建 Tag、发布镜像或连接真实实例。缺少 Linux／Docker／网关条件时如实列出未执行项。

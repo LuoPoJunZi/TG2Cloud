@@ -25,7 +25,7 @@ export function renderPage({config:c, page, body='', headings=[], previous, next
     'usage/commands':'docs/BOT-USAGE.md', 'usage/status':'docs/BOT-USAGE.md',
     'usage/first-transfer':'docs/NAMING.md', 'usage/streaming':'docs/BOT-USAGE.md',
     'operations/maintenance':'docs/OPERATIONS.md', 'operations/update':'docs/VPS-INSTALL.md',
-    'operations/backup':'docs/BACKUP-RESTORE.md', 'operations/migration':'docs/MIGRATION_FROM_TG115.md',
+    'operations/backup':'docs/BACKUP-RESTORE.md',
     'faq':'docs/FAQ.md', 'troubleshooting/ssh':'docs/OPERATIONS.md',
     'troubleshooting/webdav':'docs/STORAGE.md', 'troubleshooting/transfer':'docs/RECOVERY.md',
     'reference/config':'src/tg2cloud/deployment/profiles.py', 'reference/security':'.github/SECURITY.md',

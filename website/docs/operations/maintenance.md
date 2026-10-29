@@ -53,7 +53,7 @@ python3 /path/to/TG2Cloud/scripts/run_source.py manage
 
 ## 查看实际运行版本与日志
 
-v1.4.5 的 2／3／10 页面可停留、刷新和明确返回；1 重新检查／读取，0 或回车返回主菜单。状态用中文分项，停止容器不复用旧健康成功；日志按服务分组，单源失败不遮住另一源。其余次级页面统一标题与对象，通知参数逐行显示，诊断终端与 Markdown 导出分开渲染；原确认与权限不变。旧离线工具需显式升级，见[完整页面说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md#6-本地管理次级页面待发布)。
+v1.4.5 的 2／3／10 页面可停留、刷新和明确返回；1 重新检查／读取，0 或回车返回主菜单。状态用中文分项，停止容器不复用旧健康成功；日志按服务分组，单源失败不遮住另一源。其余次级页面统一标题与对象，通知参数逐行显示，诊断终端与 Markdown 导出分开渲染；原确认与权限不变。旧离线工具需显式升级，按本页当前菜单操作。
 
 **2. 查看运行状态** 核对所选实例；不能把下载脚本显示的目标版本当成失败后实际运行版本。
 
@@ -121,11 +121,11 @@ Bot `/doctor` 显示最近实际探测时间、错误分类和剩余冷却，不
 
 **12. 故障诊断报告** 只读汇总白名单版本、资源、状态和最近失败分类；未知项显示“未检查”，不读取原始聊天、文件名或完整凭据。先展示，确认后在本机私密保存，不自动上传。
 
-v1.4.5 诊断补充只读入口结果及认证、权限、冷却、容量和远端冲突的处理建议；不自动修复或重启，历史失败分类不等于当前故障。旧 v1.4.4 工具需升级，见[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/MAINTENANCE-NEXT.md)。
+v1.4.5 诊断补充只读入口结果及认证、权限、冷却、容量和远端冲突的处理建议；不自动修复或重启，历史失败分类不等于当前故障。旧 v1.4.4 工具需升级，见[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-NEXT.md)。
 
 **13. 数据备份管理** 分别处理实例回退点、实例快照与共享代理备份；快照有服务暂停影响，隔离预检不等于生产恢复。完整范围见[备份说明](/operations/backup/)。
 
-安装 / 升级日志分级及验收摘要见[升级反馈](/operations/update/#v1-4-4-安装与升级反馈)，不把摘要中未执行项标为通过。
+安装 / 升级日志分级及验收摘要见[升级反馈](/operations/update/#安装与升级反馈)，不把摘要中未执行项标为通过。
 
 ## 卸载当前实例
 
@@ -134,10 +134,6 @@ v1.4.5 诊断补充只读入口结果及认证、权限、冷却、容量和远�
 最后一套完整卸载后，只有无保留实例、数据 / 备份或附加依赖且归属可核验，才删除 `tg2cloud` 与受管代码。系统 Docker / Nginx、镜像缓存、锁元数据等不承诺恢复原状。
 
 卸载不是升级步骤；保留数据需使用相应保留模式，见[卸载指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/UNINSTALL.md)。
-
-## 发现旧 TG115
-
-发现对应旧 TG115 而无完整 TG2Cloud 时停止，不接管、改名或删除旧实例。不要关闭指纹保护或用旧 EXE 绕过检查，迁移见[说明](/operations/migration/)。
 
 ## 提交问题前
 
@@ -151,4 +147,4 @@ v1.5.0 将 Bot 和宿主 CLI 分开核验：离线工具来自目标正式 Relea
 
 升级后可用 `tg2cloud --version` 查看 CLI，`tg2cloud listen --help` 检查监听入口；这些命令不执行 Telegram 登录。Bot 的运行代码／版本和 CLI 的可用性分别判定，缺少证据时明确未核实。监听登录兼容在线向导标准输入被重定向的控制终端，2FA 继续隐藏。
 
-用户已提供两台 Linux 的 v1.4.11 基础升级记录，Bot、备份和本机 HTTPS 通过，但 CLI 版本未单独核验、监听登录未完成。真实转存等范围见[实机补充](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V1411-ACCEPTANCE.md)，本版修复的实机验收尚未执行。
+用户已提供两台 Linux 的 v1.4.11 基础升级记录，Bot、备份和本机 HTTPS 通过，但 CLI 版本未单独核验、监听登录未完成。真实转存等范围见[实机补充](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V1411-ACCEPTANCE.md)，本版修复的实机验收尚未执行。

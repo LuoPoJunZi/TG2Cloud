@@ -170,4 +170,4 @@ uninstall 只移除本功能路由、活动哈希和记录，不删云文件、B
 
 ## v1.4.6 界面维护
 
-v1.4.6 已统一状态／连接检查页面的停留、刷新和返回，以及用户管理中的 Edition／版本与返回提示。需独立升级附加功能并重新打开命令；主安装和 Bot 流程保持原行为。维护者源码体验和发布门槛见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/LOCAL-MAINTENANCE.md)。外部只读账号、目录隔离、HTTPS 和人工后台权限确认仍须按本文执行。
+v1.4.6 已统一状态／连接检查页面的停留、刷新和返回，以及用户管理中的 Edition／版本与返回提示。需独立升级附加功能并重新打开命令；主安装和 Bot 流程保持原行为。维护者源码体验和发布门槛见[维护开发说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LOCAL-MAINTENANCE.md)。外部只读账号、目录隔离、HTTPS 和人工后台权限确认仍须按本文执行。

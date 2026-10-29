@@ -1,26 +1,6 @@
 # 来源、致谢与素材说明
 
-**TG2Cloud v1.5.3** 已正式发布，资料核对日期：2026-10-29。同标签原生双架构、实际源码包、镜像及两版 Compose 资产已核验；真实 VPS、DNS／ACME、Telegram 与网关转存仍待用户验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。
-
-**TG2Cloud v1.5.2** 已正式发布；资料核对日期：2026-10-28。同标签双架构、源码与两版 Compose 资产已核验；真实用户环境仍待验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V152-ACCEPTANCE.md)。
-
-TG2Cloud v1.5.1 已正式发布（2026-10-28）；不新增第三方依赖、品牌素材或许可，历史记录保留。
-
-TG2Cloud v1.5.0 已正式发布，资料核对日期 2026-10-27；本版不增加第三方运行依赖、品牌资源或许可证，下面历史来源与原许可保留。
-
-
-TG2Cloud v1.4.10 已正式发布；资料核对日期：2026-10-26。A／B、main、同标签双架构和实际源码资产核验通过；新增监听交互与维护恢复，不新增依赖或品牌资源。真实 Telegram／VPS 验收尚未执行，下面历史结果保持原范围。
-TG2Cloud v1.4.9 已正式发布；资料核对日期：2026-10-26。A／B、同标签 AMD64／ARM64 CI 和实际资产核验通过；真实 VPS／Telegram／两网关转存尚待验收。本版不新增运行依赖、品牌资源或许可证。
-
-TG2Cloud v1.4.7 资料核对日期：2026-10-25，已正式发布。同标签双架构与实际源码资产核验通过；本轮不新增运行依赖或变更品牌、上游及许可，历史来源记录保留。
-
-TG2Cloud v1.4.6 资料核对日期：2026-10-24，已正式发布；同标签双架构及实际源码资产核验通过。本文保留下面的历史来源与许可；本版不新增第三方依赖，不更换品牌资源或许可证。
-
-TG2Cloud v1.4.5 资料核对日期：2026-10-24。本版已正式发布，A／B 和同标签原生双架构门禁均通过，实际源码资产与校验清单已核验。本次不新增运行依赖，开发审计依赖 filelock 安全更新至 4.2.1；不改变固定镜像、品牌或上游许可，不借用历史实机结论。
-
-2026-10-23 另收到[用户升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V143-ACCEPTANCE.md)：仅证明 CloudDrive2 AMD64 的 v1.4.2 → v1.4.3 基础升级、Bot 健康与本机 HTTPS；实际转存、外网与回退未确认。以脱敏记录区分用户反馈与开发者／CI 测试，不发布私人部署信息或原始日志。
-
-2026-10-23 另收到两份 [v1.4.4 双架构升级日志](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V144-ACCEPTANCE.md)，用户确认 CloudDrive2 在 Ubuntu ARM64 与 Debian AMD64 的 v1.4.3 → v1.4.4 升级验收通过。只记录用户日志证据；WebDAV 写入、真实转存、外网、回退和其他 Edition 不由本次结论覆盖，不发布原始日志或私人部署信息。
+**TG2Cloud v1.5.3**，资料核对日期：2026-10-29。文档整理不新增第三方依赖、品牌资源或许可证；原版权与上游致谢继续保留。
 
 ## 主项目与上游
 
@@ -33,12 +13,11 @@ TG2Cloud 的公开 LICENSE 为 MIT，版权行为 `Copyright (c) 2026 TG115 Cont
 
 主要技术资料：
 - README：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md
-- v1.2.0 Release：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.2.0
+- 当前正式发布：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3
 - 运行维护：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md
 - VPS 单行脚本：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md
 - CHANGELOG：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md
 - 产品参数：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/src/tg2cloud/deployment/profiles.py
-- 迁移说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/MIGRATION_FROM_TG115.md
 - 安全说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/SECURITY.md
 - 贡献说明：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/.github/CONTRIBUTING.md
 

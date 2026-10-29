@@ -190,7 +190,7 @@ v1.4.9 已按辅助 A、入口 B、同标签原生双架构和实际资产校验
 设计参考 [Reelay](https://github.com/Derrors/reelay) 的来源配置与审批流程（MIT，Copyright 2026 Derrors），未复制其源码或增加运行依赖。Telegram 接口遵循 [Telethon 1.45 文档](https://docs.telethon.dev/en/stable/modules/client.html)；不承诺超出实际权限的能力。
 
 
-完整版本与发布后验收步骤见[仓库验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V149-ACCEPTANCE.md)。
+完整版本与发布后验收步骤见[仓库验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V149-ACCEPTANCE.md)。
 
 ## v1.5.1：监听调度与维护优化
 

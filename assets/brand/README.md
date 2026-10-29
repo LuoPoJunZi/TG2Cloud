@@ -24,10 +24,10 @@ assets/brand/
 - `tg2cloud-logo.svg`：README、官网、About、文档横版 Logo。
 - `tg2cloud-logo-preview.png`：最终 Logo 的原始透明 PNG 预览。
 - `tg2cloud-icon.svg`：UI 中可缩放的图标资源。
-- `tg2cloud-icon.png` / `tg2cloud-icon-512.png`：PySide6 主图标、高分辨率场景。
+- `tg2cloud-icon.png` / `tg2cloud-icon-512.png`：高分辨率图标展示。
 - `tg2cloud-icon-32.png` / `64.png`：小尺寸 UI、网页图标。
 - `tg2cloud-icon-128.png` / `256.png`：应用界面、发布页、快捷方式。
-- `tg2cloud.ico`：Windows EXE / PyInstaller 图标。
+- `tg2cloud.ico`：网站 favicon 兼容资源。
 
 ## 品牌名称
 

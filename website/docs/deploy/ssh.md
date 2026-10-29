@@ -31,7 +31,7 @@ sudo ssh-keygen -lf /etc/ssh/ssh_host_rsa_key.pub -E sha256
 
 核实后，只按所用 SSH 客户端的说明更新这一个主机和端口对应的记录，不清空全部 `known_hosts`，不关闭主机身份校验。身份确认后仍提示认证失败，再检查用户名、密码、私钥或口令。
 
-当前 Linux 脚本没有内置 SSH 客户端或私有主机记录库；记录位置由你使用的 SSH 客户端决定。历史 Windows 部署器的 `%APPDATA%\\TG2Cloud-Deployer\\known_hosts` 不适用于 Linux 安装流程。
+当前 Linux 脚本没有内置 SSH 客户端或私有主机记录库；记录位置由你使用的 SSH 客户端决定。
 
 ## SSH 与管理页面是两条入口
 

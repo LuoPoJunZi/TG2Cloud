@@ -1,30 +1,14 @@
-# 局域网 / NAS 独立安装脚本
+# 局域网 / NAS 安装与升级
 
-v1.5.2 入口固定已公开并通过五项 CI 的辅助 A `fa91d616ed03b1ad3f8d8442e92d2d803487ac90`；入口 B 不自指，66 个 helper 清单保持一致。正式业务源码仍来自稳定 Release；发布与实机范围见[本版记录](development/V152-ACCEPTANCE.md)。以下旧版 pin 保留为历史记录。
+在运行服务的 Linux 主机上执行 `install-lan.sh`，填写该主机实际拥有的私有 IPv4；无需域名或证书。公网主机使用[VPS 入口](VPS-INSTALL.md)，自己维护容器的用户使用[Compose 教程](COMPOSE.md)。
 
-v1.5.1 入口固定已公开并通过五项 CI 的辅助 A `f17076544a28efc48c952f1114aea442ad809c00`；入口 B 不自指，66 个公开 helper 文件已逐字节核验。正式业务源码仍取稳定 Release；本版发布与实机边界见[发布记录](development/V151-ACCEPTANCE.md)。下方旧版 pin 保留为历史记录。
-
-v1.4.11 发布入口固定已通过五项 CI 的辅助 A `7b115e1eef244ee2db7c7c08bb51d0ed3eaf045a`；入口 B 不自指。main／Tag 双架构与实际资产核验已通过，正式发布结果见[本版验收记录](development/V1411-ACCEPTANCE.md)。下方旧版本 pin 仅保留历史上下文。
-
-v1.4.11 正式发布与安装验收见[本版说明](development/V1411-ACCEPTANCE.md)，可使用固定版本命令；下方 v1.4.10 及更早记录保留原范围。
-
-v1.4.10 已正式发布：在线入口固定辅助 A `cff370d597f1fd78dc7b081ae95300beb27cd974`，入口 B／Tag 为 `39386ce8c4901727362e7d22ff4676922ad25052`；A／B、main 与[同标签双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40287434283)及实际资产核验通过。以下旧版结果保持历史范围，真实 VPS／Telegram 和两网关转存仍须用户验收。
-
-v1.4.9 已正式发布。两个在线入口固定辅助 A `80258deec5fc8979329cb1dbaa2c6d6c0b391e15`，入口 B／Tag 为 `8a2f7a1be42c1f229530cde16f5fa63650a0c17a`；A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40268795680)及实际下载资产核验通过。真实 Telegram 登录、VPS 与两种网关转存尚待用户验收；下方历史记录保留原范围。
-
-v1.4.8 已正式发布。两个在线入口固定辅助 A `f2c089aeccc1de1c17c43654dad35249236e6e14`，入口 B／Tag 为 `e24cddfa77fe76b90ea63ee9e7d88008066cb0a3`；A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40175950235)及实际源码资产核验全部通过。旧离线管理工具须显式更新，外部 WebDAV 另在子菜单 8 升级；下方历史记录保留原范围。
-
-v1.4.7 已正式发布：两个在线安装入口固定辅助 A `85595a83f40371caabfa3f9a2dfeaf7dc756edc1`，入口 B／Tag 为 `322ae065d6cb6a7330f78b8cc0ee60c4c3c53cdb`。A／B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40160704507)及实际源码资产核验全部通过。业务只使用正式稳定 Release；主菜单 14／15 保留卸载与外部 WebDAV 管理，下方历史记录按原版本理解。
-
-TG2Cloud 后续以 Linux 脚本为主要维护入口，Windows 部署器停留在 v1.2.1。公网 VPS 使用 `install.sh` 和强制 HTTPS。本入口单独使用 `install-lan.sh`：手填运行脚本的 Linux 内网 IPv4，用内网 HTTP 管理网关，不收集域名、不申请证书，也不修改原部署器或 VPS 向导。
-
-> 当前正式版本为 v1.4.7，内网模式仍需按环境验收。此前收到过 CloudDrive2 在内网 Debian 实机首次部署和 WebDAV 验收通过的日志；本版流程、OpenList 实机、不同 NAS 系统、跨版本升级与回退仍需单独验收。公开一行入口固定下载经过 CI 验证的不可变源码 commit，不直接运行 moving main 中的依赖；业务 payload 仍只取最新正式稳定 Release。历史 PySide6 部署器停留在 v1.2.1，公网 VPS 继续使用强制 HTTPS。
+本入口只在可信内网提供 HTTP 管理，不能转发到公网。已有实例按原部署方式升级；系统、Docker 和网关的实际要求见下文。安装后仍须独立验证局域网访问、WebDAV 写入和实际转存。
 
 ## 支持范围与边界
 
 v1.4.4 源码在确认执行后补充内网安装／升级摘要、日志分级和一次只读业务就绪观察；公网 HTTPS 明确不适用，局域网其他设备访问和真实转存仍须人工验收。沿用原 WebDAV 确认，不新增写入或网络探测，不改内网模式和下面的支持范围。旧 v1.4.3 入口与工具不包含这些新增反馈，见[结果与验收说明](OPERATIONS.md#安装日志与结果摘要v144)。
 
-当前源码入口为 `python3 scripts/run_source.py lan --help`；公共在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交。CLI 与 VPS 入口共享部署模块，不导入另一个向导；内网 IP 收集和 HTTPS 边界不变。见[Linux 重构说明](development/LINUX-REFACTOR.md)。
+当前源码入口为 `python3 scripts/run_source.py lan --help`；公共在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交。CLI 与 VPS 入口共享部署模块，不导入另一个向导；内网 IP 收集和 HTTPS 边界不变。见[Linux 开发说明](development/DEVELOPMENT.md)。
 
 - Debian/Ubuntu、64 位原生用户态、root、Python 3.10+、Bash、curl（在线入口）、iproute2、CA 证书、时区数据库及可交互终端。正式 v1.4.1 支持原生 AMD64 / ARM64；匹配稳定包和 helper 已发布，原生隔离 CI 通过，NAS 实机仍需独立验收，见[双架构说明](ARCHITECTURES.md)。
 - 本机默认 rootful Docker Engine 28+、Compose v2；不支持远端 Docker、rootless 或外部 Compose 覆盖。Docker 尚未安装时，由原安装器在最终确认后安装；已安装的旧引擎需要人工升级，脚本不会为此重启 NAS 上的其他容器。
@@ -102,7 +86,7 @@ bash ./install-lan.sh --edition clouddrive2
 
 首次安装会要求输入内网地址；也可以提前通过 `--lan-ip` 指定。向导随后收集 Telegram 和专用 WebDAV 信息、检查容量、展示 HTTP 风险和安装计划。最终确认默认 **N**：确认前不安装软件、不写入实例或内网模式记录。
 
-首次 `--check` 使用默认 20GB 任务预算与 8GB 最低剩余空间，不收集秘密。v1.3.0 交互向导提供流式优先、均衡和手动预算，复用 VPS 推荐算法，执行前重新校验；已有实例升级保留原值。见[切换说明](development/SCRIPT-FIRST.md)。安装目录使用 Edition 的标准 `/opt` 路径，不提供自定义目录或迁移功能。
+首次 `--check` 使用默认 20GB 任务预算与 8GB 最低剩余空间，不收集秘密。v1.3.0 交互向导提供流式优先、均衡和手动预算，复用 VPS 推荐算法，执行前重新校验；已有实例升级保留原值。见[切换说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/SCRIPT-FIRST.md)。安装目录使用 Edition 的标准 `/opt` 路径，不提供自定义目录或迁移功能。
 
 OpenList 对应命令：
 
@@ -126,11 +110,11 @@ bash ./install-lan.sh --edition openlist
 
 升级保留 `.env` 原始字节、Telegram Session、SQLite、下载和网关持久化数据，复用原安装器备份与有限回退。可能更新基础 APT 软件包，所选 Bot 可能短暂停止；不会主动升级已有 Docker 引擎。另一 Edition 不会被重启或修改。
 
-最新版本且入口健康时，不重建、不重启。入口故障需要重新预检和明确确认，只恢复经核对的受管入口。当前版本高于 latest 时不降级。公网 VPS/EXE 创建的实例、TG115、部分容器、外部同名容器、手改配置都停止，不自动接管；**不要用本脚本把已有 HTTPS 实例改成 HTTP**。
+最新版本且入口健康时，不重建、不重启。入口故障需要重新预检和明确确认，只恢复经核对的受管入口。当前版本高于 latest 时不降级。其他访问模式创建的实例、TG115、部分容器、外部同名容器、手改配置都停止，不自动接管；**不要用本脚本把已有 HTTPS 实例改成 HTTP**。
 
 内网模式存放在 `/opt/tg2cloud-lan/<edition>/`，与原 `/opt/tg2cloud-clouddrive2`、`/opt/tg2cloud-openlist` 分开。升级复用已保存的 IP，不能用 `--lan-ip` 隐式换地址。建议预先设置 DHCP 地址保留或静态 IP；地址失效时停止并提示，不尝试切换到公网模式。
 
-原 payload 备份不包含这个独立目录。备份运行实例时应另行保留对应内网模式目录；安装入口不提供内网模式转换或地址迁移。卸载由 [独立卸载脚本](UNINSTALL.md) 处理，包含所选 LAN 管理容器与入口配置。当前主分支及在线完整清理会在双重确认后删除所选业务数据及可识别备份，需要保留时明确加 `--keep-data`；在线只固定到审查并通过 CI 的增强源码，旧 Tag/EXE 不变。用户已反馈原卸载在其 VPS 通过，不据此推定 NAS 或完整清理已验收。不要并发用 EXE、原 VPS 脚本或另一终端操作同一实例，EXE 的 HTTPS 管理流程不会因本功能改变。
+原 payload 备份不包含这个独立目录。备份运行实例时应另行保留对应内网模式目录；安装入口不提供内网模式转换或地址迁移。卸载由 [统一卸载入口](UNINSTALL.md) 处理，包含所选 LAN 管理容器与入口配置。当前主分支及在线完整清理会在双重确认后删除所选业务数据及可识别备份，需要保留时明确加 `--keep-data`。入口固定已核验辅助代码，不并发操作同一实例；验收应以实际版本为准。
 
 ## 管理页、WebDAV 与实际转存分别验收
 
