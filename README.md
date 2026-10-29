@@ -91,7 +91,7 @@ tg2cloud uninstall --edition all --check
 | 主题 | 仓库文档 |
 | --- | --- |
 | 安装与配置 | [公网 VPS 安装 / 升级](docs/VPS-INSTALL.md) · [局域网 / NAS 安装](docs/LAN-INSTALL.md) · [填写信息清单](docs/填写信息清单.md) |
-| Docker Compose | [新手分步部署、初始化与备份](docs/COMPOSE.md) · [可选 HTTPS 向导（待发布）](docs/COMPOSE.md#待发布可选-https-配置向导) |
+| Docker Compose | [新手分步部署、初始化与备份](docs/COMPOSE.md) · [可选 HTTPS 向导](docs/COMPOSE.md#可选-https-配置向导) |
 | 网关与首次转存 | [CloudDrive2 / OpenList 配置与验收](docs/STORAGE.md) · [Bot 使用、菜单与命令](docs/BOT-USAGE.md) |
 | 命名与常见问题 | [视频、说明及媒体组命名](docs/NAMING.md) · [FAQ](docs/FAQ.md) |
 | 配置与备份 | [配置字段及运行目录](docs/CONFIGURATION.md) · [备份范围与恢复预检](docs/BACKUP-RESTORE.md) |

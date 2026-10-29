@@ -91,7 +91,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Topic | Repository documents |
 | --- | --- |
 | Installation and configuration | [Public VPS installation / upgrade](docs/VPS-INSTALL.md) · [LAN / NAS installation](docs/LAN-INSTALL.md) · [Information checklist](docs/填写信息清单.md) |
-| Docker Compose | [Step-by-step deployment, setup and backups](docs/COMPOSE.md) · [Optional HTTPS wizard (unreleased)](docs/COMPOSE.md#待发布可选-https-配置向导) |
+| Docker Compose | [Step-by-step deployment, setup and backups](docs/COMPOSE.md) · [Optional HTTPS wizard](docs/COMPOSE.md#可选-https-配置向导) |
 | Gateway and first transfer | [CloudDrive2 / OpenList configuration and verification](docs/STORAGE.md) · [Bot usage, menus and commands](docs/BOT-USAGE.md) |
 | Naming and common questions | [Video, caption and album naming](docs/NAMING.md) · [FAQ](docs/FAQ.md) |
 | Configuration and backups | [Configuration fields and runtime paths](docs/CONFIGURATION.md) · [Backup scope and restore preflight](docs/BACKUP-RESTORE.md) |

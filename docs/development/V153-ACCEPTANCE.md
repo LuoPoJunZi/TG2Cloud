@@ -74,3 +74,7 @@ Compose 使用自己的初始化标记、容器标签和部署目录；一键升
 入口 B 将两个入口固定到真实 A，清单扩展为 67 个 helper，并同步 installer_version 为 1.5.3。所有 helper 文件与 A 逐字节（换行正规化）相同；版本元数据回归已在本地通过。没有降低校验门槛；B 的完整 CI 全部通过后才创建正式 Tag。
 
 A 的实际执行：[完整回归](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820012181)、[宿主 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820012227)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820012195)。A 的失败记录按原样保留，不记为通过。
+
+入口 B：`b098fb6d36cc39a7dcd555ce8faafbb23a4385c9`。版本元数据回归修复后，[完整双架构 CI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413412)、[宿主 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413413)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413382)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413422)和[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820413432)五项全部通过，包含原生 Docker／隔离 WebDAV 与 Nginx 测试；不等于真实用户 VPS 或网关验收。
+
+正式 Tag 前另同步随 Compose 包分发的教程：下载命令对应 v1.5.3、列出完整 HTTPS 工具，并保留旧锚点；业务 helper 和 Docker 配置不变。实际 Tag／资产提交另行记录。
