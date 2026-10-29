@@ -251,6 +251,14 @@ class RepositoryContractTests(unittest.TestCase):
         for text in ("paths:", "paths-ignore:", "build.ps1", "contents: write", "pip install", "git push"):
             self.assertNotIn(text, workflow)
 
+    def test_document_history_checks_checkout_full_git_history(self):
+        for name in ("docs.yml", "repository.yml"):
+            text = (ROOT / ".github/workflows" / name).read_text(encoding="utf-8")
+            checkout = text.split("      - name: Checkout\n", 1)[1].split("\n      - ", 1)[0]
+            with self.subTest(workflow=name):
+                self.assertRegex(checkout, r"(?m)^          fetch-depth: 0$")
+                self.assertIn("-p test_repository.py", text)
+
     def test_release_checks_public_inputs_before_any_build(self):
         release = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         prepare, downstream = release.split("  linux-validation:\n", 1)
