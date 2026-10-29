@@ -58,8 +58,8 @@ root = Path(sys.argv[1])
 api = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 # Update this pin only after the helper revision passes its CI and review.
 # It is independent of the target Release, which need not contain the CLI.
-installer_commit = "fa91d616ed03b1ad3f8d8442e92d2d803487ac90"
-installer_version = "1.5.2"
+installer_commit = "9dbae452c81c170fe74e03a4a52afecb6e60d721"
+installer_version = "1.5.3"
 
 def validate_url(url):
     parsed = urllib.parse.urlsplit(url)
@@ -167,6 +167,7 @@ try:
         'src/tg2cloud/persistence/__init__.py',
         'src/tg2cloud/persistence/backup.py',
         'src/tg2cloud/persistence/bundle.py',
+        'src/tg2cloud/persistence/paths.py',
         'src/tg2cloud/version.py',
     )
     for name in files:

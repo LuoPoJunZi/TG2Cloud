@@ -1,5 +1,7 @@
 # VPS 安装与升级脚本
 
+v1.5.3 入口固定已公开辅助代码 A `9dbae452c81c170fe74e03a4a52afecb6e60d721`，包含 67 个标准库宿主 helper；入口 B 同步版本和清单，不自指。发布状态与实际验收范围见[本版记录](development/V153-ACCEPTANCE.md)。
+
 v1.5.2 入口固定已公开并通过五项 CI 的辅助 A `fa91d616ed03b1ad3f8d8442e92d2d803487ac90`；入口 B 不自指，66 个 helper 清单保持一致。正式业务源码仍来自稳定 Release；发布与实机范围见[本版记录](development/V152-ACCEPTANCE.md)。以下旧版 pin 保留为历史记录。
 
 v1.5.1 入口固定已公开并通过五项 CI 的辅助 A `f17076544a28efc48c952f1114aea442ad809c00`；入口 B 不自指，66 个公开 helper 文件已逐字节核验。正式业务源码仍取稳定 Release；本版发布与实机边界见[发布记录](development/V151-ACCEPTANCE.md)。下方旧版 pin 保留为历史记录。

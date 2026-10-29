@@ -66,3 +66,11 @@ Compose 使用自己的初始化标记、容器标签和部署目录；一键升
 - 在隔离目录验证两种数据库文件名的备份和恢复；不要通过生产数据库恢复测试回退。
 
 操作指南：[Compose](../COMPOSE.md)、[一键脚本](../VPS-INSTALL.md)、[备份恢复](../BACKUP-RESTORE.md)。
+
+## 辅助 A 与入口 B
+
+辅助代码 A：`9dbae452c81c170fe74e03a4a52afecb6e60d721`，已公开至 main；不创建额外远端分支。A 保持线上入口的旧版本标识与旧 pin，以免切换未发布入口。宿主 CLI 四组及文档／仓库／网站检查通过；双架构完整回归各有 4 项版本元数据错误，原因是入口标识仍为 1.5.2，而源码为 1.5.3。该过渡状态不用于正式 Tag。
+
+入口 B 将两个入口固定到真实 A，清单扩展为 67 个 helper，并同步 installer_version 为 1.5.3。所有 helper 文件与 A 逐字节（换行正规化）相同；版本元数据回归已在本地通过。没有降低校验门槛；B 的完整 CI 全部通过后才创建正式 Tag。
+
+A 的实际执行：[完整回归](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820012181)、[宿主 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820012227)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40820012195)。A 的失败记录按原样保留，不记为通过。
