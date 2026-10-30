@@ -18,4 +18,8 @@
 
 ## 验证范围
 
-本地完整检查 1537 项：1501 通过、36 条件跳过、0 失败；网站 37 项通过。跳过项涉及缺少原生 Linux、Docker 或 rclone 的环境条件。远端同标签 CI、镜像与实际资产结果见[发布记录](docs/development/V154-ACCEPTANCE.md)。修复后的真实用户 VPS、Telegram 下载、两网关转存与长期稳定性尚未执行，不以发布成功替代实机验收。
+本地完整检查 1537 项：1501 通过、36 条件跳过、0 失败；网站 37 项通过。跳过项涉及缺少原生 Linux、Docker 或 rclone 的环境条件。同标签原生双架构 CI、镜像和五份实际资产已核验，结果见[发布记录](docs/development/V154-ACCEPTANCE.md)。修复后的真实用户 VPS、Telegram 下载、两网关转存与长期稳定性尚未执行，不以发布成功替代实机验收。
+
+## Compose 教程提示
+
+随包 README 的下载示例仍引用 v1.5.3；包内程序、镜像与 HTTPS 工具均为 v1.5.4。请使用[当前 Compose 教程](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/COMPOSE.md)中的 v1.5.4 安装和升级命令，不混用旧版部署文件。Tag 与发布资产保持不可变。

@@ -2,7 +2,7 @@
 
 TG2Cloud 维护 Linux 一键脚本和 Docker Compose。下表区分已实现的平台检查、CI 与真实环境验收；同一架构上的构建通过不代表任意发行版、NAS 或实际网盘都已通过。
 
-当前发布的源码、共享镜像与两版部署包证据见[本版记录](development/V153-ACCEPTANCE.md)。
+当前发布的源码、共享镜像与两版部署包证据见[本版记录](development/V154-ACCEPTANCE.md)。
 
 ## 支持范围
 
@@ -87,4 +87,4 @@ OpenList 将 edition 换为 `openlist`。`--check` 仅预检，不部署；正�
 
 CI 使用原生 AMD64、ARM64 Linux Runner，分别验证 CLI Python 3.10 / 3.13、共享 Bot、镜像平台、网关 HTTP／FUSE 和隔离代理。Release 从同一 Tag 验证源码，再发布相匹配的共享多架构镜像与 Compose 部署包。
 
-自动检查不能代替真实 DNS／ACME、Telegram、网盘上传、NAS、长期续期或灾难恢复。当前检查结果和未执行清单见[发布记录](development/V153-ACCEPTANCE.md)，维护命令见[开发指南](development/DEVELOPMENT.md)。
+自动检查不能代替真实 DNS／ACME、Telegram、网盘上传、NAS、长期续期或灾难恢复。当前检查结果和未执行清单见[发布记录](development/V154-ACCEPTANCE.md)，维护命令见[开发指南](development/DEVELOPMENT.md)。

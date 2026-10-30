@@ -2,9 +2,11 @@
 
 这份教程适合第一次使用 Docker Compose 的用户，按“检查环境 → 下载部署包 → 填写信息 → 配置网关 → 启动 Bot → 测试转存”的顺序操作。
 
-示例对应 **v1.5.3**；同版镜像、两份 Compose 包及校验清单已发布并核验。CloudDrive2 和 OpenList 各有一份部署包，两者共用 Bot 核心；**选其中一个路线即可，不要把两套命令混着执行**。实际发布资产及测试范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。
+示例对应 **v1.5.4**；同版镜像、两份 Compose 包及校验清单已发布并核验。CloudDrive2 和 OpenList 各有一份部署包，两者共用 Bot 核心；**选其中一个路线即可，不要把两套命令混着执行**。实际发布资产及测试范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V154-ACCEPTANCE.md)。
 
 如果你已经通过 `install.sh` 或 `install-lan.sh` 安装，并能使用 `tg2cloud` 菜单，请继续按原方式升级。这篇教程用于独立 Compose 部署，不会自动迁移、接管或覆盖原来的实例。
+
+> v1.5.4 资产随包 README 保留了 v1.5.3 的下载示例；安装和升级请使用本在线教程的 v1.5.4 命令。包内程序、镜像与 HTTPS 工具均为已核验的 v1.5.4，不混用旧版部署文件。
 
 ## 适用范围
 
@@ -257,12 +259,12 @@ ip -br -4 addr
 
 ### 4. 选择路线并下载
 
-从[正式 v1.5.3 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3)下载 **Compose 部署包**，不是 `source.tar.gz`。
+从[正式 v1.5.4 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.4)下载 **Compose 部署包**，不是 `source.tar.gz`。
 
 | 选择 | 部署包 | 校验文件 |
 | --- | --- | --- |
-| CloudDrive2 | [TG2Cloud-v1.5.3-compose-clouddrive2.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.3/TG2Cloud-v1.5.3-compose-clouddrive2.tar.gz) | [COMPOSE-SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.3/COMPOSE-SHA256SUMS.txt) |
-| OpenList | [TG2Cloud-v1.5.3-compose-openlist.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.3/TG2Cloud-v1.5.3-compose-openlist.tar.gz) | 使用同一个 Compose 校验文件。 |
+| CloudDrive2 | [TG2Cloud-v1.5.4-compose-clouddrive2.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.4/TG2Cloud-v1.5.4-compose-clouddrive2.tar.gz) | [COMPOSE-SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.4/COMPOSE-SHA256SUMS.txt) |
+| OpenList | [TG2Cloud-v1.5.4-compose-openlist.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.4/TG2Cloud-v1.5.4-compose-openlist.tar.gz) | 使用同一个 Compose 校验文件。 |
 
 下面两段**只执行所选 Edition 的一段**。示例会创建全新的目录，每行末尾的 `&&` 表示前一步成功后才继续；如果目录已存在或任一步报错，就停止核对，不删除旧目录来重装。
 
@@ -271,10 +273,10 @@ CloudDrive2：
 ```bash
 mkdir /opt/tg2cloud-compose-clouddrive2 &&
 cd /opt/tg2cloud-compose-clouddrive2 &&
-curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.3/TG2Cloud-v1.5.3-compose-clouddrive2.tar.gz &&
-curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.3/COMPOSE-SHA256SUMS.txt &&
+curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.4/TG2Cloud-v1.5.4-compose-clouddrive2.tar.gz &&
+curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.4/COMPOSE-SHA256SUMS.txt &&
 sha256sum --ignore-missing -c COMPOSE-SHA256SUMS.txt &&
-tar -xzf TG2Cloud-v1.5.3-compose-clouddrive2.tar.gz --strip-components=1
+tar -xzf TG2Cloud-v1.5.4-compose-clouddrive2.tar.gz --strip-components=1
 ```
 
 OpenList：
@@ -282,10 +284,10 @@ OpenList：
 ```bash
 mkdir /opt/tg2cloud-compose-openlist &&
 cd /opt/tg2cloud-compose-openlist &&
-curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.3/TG2Cloud-v1.5.3-compose-openlist.tar.gz &&
-curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.3/COMPOSE-SHA256SUMS.txt &&
+curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.4/TG2Cloud-v1.5.4-compose-openlist.tar.gz &&
+curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.4/COMPOSE-SHA256SUMS.txt &&
 sha256sum --ignore-missing -c COMPOSE-SHA256SUMS.txt &&
-tar -xzf TG2Cloud-v1.5.3-compose-openlist.tar.gz --strip-components=1
+tar -xzf TG2Cloud-v1.5.4-compose-openlist.tar.gz --strip-components=1
 ```
 
 NAS 用户可以把示例 `/opt/...` 换成自己的**全新、本地、真实数据目录**，同一段中的两处路径一起替换；不要使用已有实例目录、云盘挂载目录或软链接。NFS／SMB 共享目录可能无法提供所需权限，优先使用宿主机的本地受支持文件系统。
@@ -295,7 +297,7 @@ NAS 用户可以把示例 `/opt/...` 换成自己的**全新、本地、真实�
 应看到所选文件显示 `OK`，例如：
 
 ```text
-TG2Cloud-v1.5.3-compose-clouddrive2.tar.gz: OK
+TG2Cloud-v1.5.4-compose-clouddrive2.tar.gz: OK
 ```
 
 只下载一版时，`--ignore-missing` 会略过没有下载的另一 Edition；仍须看到**自己这份包**显示 `OK`。失败或提示没有文件被验证时不要继续。`COMPOSE-SHA256SUMS.txt` 与源码用的 `SHA256SUMS.txt` 不同，不能混用；校验和用于检查完整性，不是数字签名。
@@ -488,7 +490,7 @@ docker compose run --rm setup python -m tg2cloud.compose check
 
 ## 运行后文件放在哪里
 
-以下目录图以 v1.5.3 全新安装为准；已发布的 v1.5.2 使用 `data/tg115.db`，升级后继续使用原文件，不手动改名。
+以下目录图以 v1.5.4 全新安装为准；已发布的 v1.5.2 使用 `data/tg115.db`，升级后继续使用原文件，不手动改名。
 
 下面是初始化和运行后逐步生成的目录示意；CloudDrive2／OpenList 的网关目录只出现所选版本对应的一项：
 
@@ -555,7 +557,7 @@ cd /opt/tg2cloud-compose-openlist
 
 ### 可选 HTTPS 配置向导
 
-v1.5.3 的完整 format 2 包包含 `https.sh` 与全部 `https-tools/`；必须使用同版镜像和清单。历史 v1.5.2 包只有五个公开文件，不包含该向导；不要给旧包只复制一个脚本或混合不同版本的 helper。
+v1.5.4 的完整 format 2 包包含 `https.sh` 与全部 `https-tools/`；必须使用同版镜像和清单。历史 v1.5.2 包只有五个公开文件，不包含该向导；不要给旧包只复制一个脚本或混合不同版本的 helper。
 
 #### 先选访问方式，再配置 HTTPS
 

@@ -13,8 +13,8 @@
 可生成审阅计划，下面的目标版本仅为示例，须高于当前版本：
 
 ```bash
-python -B .github/scripts/prepare_release.py --version 1.5.4 --directory build/release-plan-154
-python -B .github/scripts/maintenance_preflight.py --previous-tag v1.5.2 --json
+python -B .github/scripts/prepare_release.py --version 1.5.5 --directory build/release-plan-155
+python -B .github/scripts/maintenance_preflight.py --previous-tag v1.5.4 --json
 ```
 
 工具不提交、不推送、不创建 Tag，也不安装到 VPS。候选目录必须全新，不为了通过预检放宽规则。
@@ -28,10 +28,10 @@ python -B .github/scripts/maintenance_preflight.py --previous-tag v1.5.2 --json
 
 ```bash
 python -B .github/scripts/prepare_bootstrap.py --directory build/bootstrap-candidate
-python -B .github/scripts/release_metadata.py --tag v1.5.3
+python -B .github/scripts/release_metadata.py --tag v1.5.4
 ```
 
-只生成候选或检查元数据不代表已经发布。当前 helper 身份及实际 A/B 结果见[当前发布记录](V153-ACCEPTANCE.md)。
+只生成候选或检查元数据不代表已经发布。当前 helper 身份及实际 A/B 结果见[当前发布记录](V154-ACCEPTANCE.md)。
 
 ## 3. 源码发布
 

@@ -88,4 +88,4 @@ WebDAV 写入与大小复验：未执行
 5. 向 Bot 转发自有小文件，在目标网盘确认可打开；公网从外部网络、内网从其他局域网设备访问。
 6. 核对共享代理另一 Edition 和只读入口正常，后续再安排续期与隔离恢复演练。
 
-实际版本证据及未运行场景见[当前记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。升级成功不等于云盘官方最终入库或完整灾难恢复通过。
+实际版本证据及未运行场景见[当前记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V154-ACCEPTANCE.md)。升级成功不等于云盘官方最终入库或完整灾难恢复通过。
