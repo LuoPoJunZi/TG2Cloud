@@ -168,6 +168,7 @@ async def _start_downloads(self) -> None:
         return
     self._resource_pause_reason = ""
     available_slots = self.download_window.value - len(self.download_tasks)
+    listener_active = None
     if available_slots <= 0:
         return
     for batch in self._queued_batches(("queued",)):
@@ -188,6 +189,18 @@ async def _start_downloads(self) -> None:
                         or account_state.get("cooldown_until", 0) > time.time()):
                     self.db.set_wait_reason(task_id, "等待监听账号授权、连接或冷却结束；手动任务继续调度", states=("queued",))
                     continue
+                backoff = getattr(listener, "download_backoff", None)
+                if backoff is not None:
+                    allowed = backoff.allowed(self.download_window.value)
+                    if allowed < self.download_window.value:
+                        if listener_active is None:
+                            listener_active = sum(
+                                (self.db.get(active_id) or {}).get("read_identity", "bot") != "bot"
+                                for active_id in self.download_tasks
+                            )
+                        if listener_active >= allowed:
+                            self.db.set_wait_reason(task_id, "监听下载限速，等待并发名额恢复；手动任务继续调度", states=("queued",))
+                            continue
             if ((task.get("transfer_mode") == "stream"
                  or task["file_size"] > self.settings.local_budget_bytes)
                     and len(self.upload_tasks) + self._stream_count() >= self.upload_window.value):
@@ -206,6 +219,8 @@ async def _start_downloads(self) -> None:
                 self._download_one(task_id), name=f"download-{task_id}"
             )
             self.download_tasks[task_id] = async_task
+            if listener_active is not None and task.get("read_identity", "bot") != "bot":
+                listener_active += 1
             async_task.add_done_callback(
                 lambda _, tid=task_id: self.download_tasks.pop(tid, None)
             )

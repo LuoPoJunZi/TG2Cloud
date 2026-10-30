@@ -1,5 +1,9 @@
 # 更新日志
 
+## TG2Cloud v1.5.4
+
+2026-10-30，待发布。修复监听短时间下载限速、临时错误重试、旧账号请求隔离与失败原因保留；增加监听新任务并发退让。schema 3、配置、Session 和两种部署流程保持兼容，实机回归尚未执行。见[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)与[本版发布门槛](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V154-ACCEPTANCE.md)。
+
 ## TG2Cloud v1.5.3
 
 版本日期：2026-10-29。[v1.5.3 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3) 已发布；入口 B、同标签原生双架构检查、源码包、共享镜像和两 Edition Compose 部署包已核验。真实 VPS、DNS／ACME、Telegram 与网关转存仍待用户验收。详见[发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。
@@ -43,12 +47,13 @@
 
 v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊断报告。分类／通知默认关闭，成员默认不限额；涉及业务 schema 2，升级前备份。见[转存](/usage/first-transfer/)、[个人配额](/usage/commands/)、[维护](/operations/maintenance/)和[备份](/operations/backup/)。
 
-这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.5.3 共 34 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.5.4 共 35 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 可下载版本以 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 实际列表为准，不固定“只保留几版”的数量。部分历史发布页和标签已移除，历史说明仍保留；下面的测试结论按当时版本理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.5.4](#tg2cloud-v1-5-4) | 监听下载限速恢复、临时错误有限重试、账号隔离和并发退让；保留脱敏失败原因。 |
 | [v1.5.3](#tg2cloud-v1-5-3) | TG2Cloud 新安装命名统一、数据库兼容与可选 Compose HTTPS；一键脚本流程保持独立。 |
 | [v1.5.2](#tg2cloud-v1-5-2) | 监听断网恢复、分批历史维护、独立 Compose 部署与共享双架构镜像。 |
 | [v1.5.1](#tg2cloud-v1-5-1) | 监听公平轮询、后台维护、数据库／资源热点与上传进度优化。 |

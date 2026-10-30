@@ -1,25 +1,21 @@
-## TG2Cloud v1.5.3 · 项目命名统一与 Compose HTTPS
+## TG2Cloud v1.5.4 · 监听下载可靠性维护
 
-本版统一全新安装的 TG2Cloud 命名，并为独立 Compose 部署增加可选 HTTPS 向导。原有一键安装流程和已有实例数据保持兼容。
+修复监听任务遇 Telegram 下载限速、临时服务异常后反复失败的问题，保留现有手动转存、两种网关与两种部署方式。
 
 ## 本次改动
 
-- 全新安装使用 `data/tg2cloud.db`；已有唯一旧库继续使用，不重命名、不重建。Bot、监听、管理、诊断、备份及恢复统一解析路径；双库、链接和无主旁文件拒绝操作。
-- 新配置不再输出 `TG115_*` 项目变量；兼容读取、旧实例隔离、历史证据、版权和上游致谢保留。日志、验收临时对象与内部 Shell 函数采用 TG2Cloud 命名。
-- 两 Edition 一键升级／回退按实际数据库文件名保护数据；增加 v1.5.2 的真实不可变升级基线。
-- Compose 初始化增加可选访问方案；完整 format 2 部署包提供离线宿主 HTTPS 向导，复用 Nginx／Certbot、共享锁、续期与备份。已有其他代理只导出候选，不自动修改原站点。
-- Compose 保持独立初始化与容器标识，不给公网／内网一键安装增加步骤，不接管已有脚本实例；共享代理的写入、迁移和卸载检查 Compose 依赖。
+- 识别 `FLOOD_PREMIUM_WAIT`：短等待后继续当前下载分片，最多等待 5 次、累计 60 秒；长等待和普通限流继续持久化冷却，不绕过 Telegram 限制。
+- 监听限速时减少新任务并发，连续安静后逐步恢复；不取消在途任务，不改动手动任务的共享资源窗口。
+- 旧请求的授权／权限错误处理前核对原账号和客户端，避免误停新登录。真实授权失效仍停止；临时服务错误、连接失败与超时使用有界重试。
+- 普通下载和流式重试耗尽均保留最后一次脱敏原因，不把原始异常或凭据写入日志。
+- 增加 v1.5.3 真实不可变升级基线，同步源码清单；不增加依赖、环境变量或数据库迁移。
 
-## 使用与兼容
+## 升级与兼容
 
-使用步骤见 [Compose 指南](docs/COMPOSE.md)、[一键安装](docs/VPS-INSTALL.md)及[发布与兼容记录](docs/development/V153-ACCEPTANCE.md)。在线安装仍只使用正式稳定 Release；Compose 请使用同版镜像、完整 format 2 部署包及校验清单，不混用旧版资源。v1.5.2 历史资产不替换。
+业务 schema 3、数据库文件、Bot Session、个人监听 Session、配置及历史任务保持兼容。先备份，按原部署方式升级：一键脚本使用原入口，Compose 使用同版部署包与镜像；两种方式互不接管。升级不会自动重试历史失败任务，检查失败原因与远端状态后按任务手动重试。
 
-沿用业务 schema 3，不增加必填环境变量或依赖，不清理数据库、Session、凭据、下载及云端文件。已有唯一旧库保留原名；全新实例使用新名，旧版本可能无法识别，禁止直接换旧镜像造成空库。回退应使用匹配的一致性备份，在隔离目录验证后再规划恢复。
+限速恢复只延续当前进程中的分片，不承诺跨重启字节级续传。WebDAV 接收与大小复验不等于云盘官方最终入库或内容哈希验证。回退应使用匹配程序与一致性备份，先在隔离目录核验，不删除现有任务或 Session。
 
-## 验证状态
+## 验证范围
 
-本地完整检查退出 0：1508 项中 1473 通过、35 条件跳过、0 失败；Python 3.10 宿主 CLI 共 845 项（833 通过、12 条件跳过），网站 37 项通过。详细命令及范围见[发布与兼容记录](docs/development/V153-ACCEPTANCE.md)。[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40844895202)及[镜像与部署包发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/40845397585)通过；五份实际下载资产的 SHA256、源码与 Tag、两版部署包与镜像摘要已核验，详细证据见发布记录。真实 DNS／ACME、Telegram、两网关转存和生产恢复仍需发布后验收。
-
-入口固定真实辅助 A `9dbae452c81c170fe74e03a4a52afecb6e60d721`；正式 Tag 对应 `2e6f06f09e1e2ac9fe8ae2d9c6e1d83cc7a3bee1`。不移动历史 Tag、不覆盖旧 Release，不自动连接或升级 VPS。
-
-历史验收范围保留：[v1.3.0](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V130-ACCEPTANCE.md)、[v1.4.3](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V143-ACCEPTANCE.md)、[v1.4.4](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V144-ACCEPTANCE.md)、[v1.4.5](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V145-ACCEPTANCE.md)、[v1.5.1](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V151-ACCEPTANCE.md)、[v1.5.2](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V152-ACCEPTANCE.md)。它们不代表本版实机验收。
+本地完整检查 1537 项：1501 通过、36 条件跳过、0 失败；网站 37 项通过。跳过项涉及缺少原生 Linux、Docker 或 rclone 的环境条件。远端同标签 CI、镜像与实际资产结果见[发布记录](docs/development/V154-ACCEPTANCE.md)。修复后的真实用户 VPS、Telegram 下载、两网关转存与长期稳定性尚未执行，不以发布成功替代实机验收。

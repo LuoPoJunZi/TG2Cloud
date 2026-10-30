@@ -7,9 +7,11 @@ import time
 from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 
+from tg2cloud.domain.errors import SourceTemporaryError
 from tg2cloud.domain.planning import PlanningError, fields, name_plan
 from tg2cloud.domain.source_directories import media_directory
 from tg2cloud.listening import account, rules
+from tg2cloud.listening.transport import FLOOD_WAITS, DownloadBackoff, download_scope
 from tg2cloud.persistence.plans import Plans
 
 BATCH = 100
@@ -48,6 +50,12 @@ async def connected_identity(client):
 
 class ListenerReadError(RuntimeError):
     """Authorization/content failures require review, not automatic identity fallback."""
+    failure_kind = "source_access"
+
+
+class ListenerRateLimited(ListenerReadError):
+    """A bounded wait ended; preserve the cooldown without blaming permissions."""
+    failure_kind = "rate_limited"
 
 
 AUTH_ERRORS = {"AuthKeyUnregisteredError", "SessionRevokedError", "SessionExpiredError",
@@ -55,9 +63,7 @@ AUTH_ERRORS = {"AuthKeyUnregisteredError", "SessionRevokedError", "SessionExpire
 
 
 def source_error(exc):
-    from telethon.errors import FloodWaitError
-
-    if isinstance(exc, FloodWaitError):
+    if isinstance(exc, FLOOD_WAITS):
         return f"Telegram 限流，请等待 {max(5, exc.seconds)} 秒后重试；账号冷却期间不会接收新任务"
     name = type(exc).__name__
     if name in AUTH_ERRORS:
@@ -150,7 +156,7 @@ class CheckedSource:
         except ListenerReadError:
             raise
         except Exception as exc:
-            await self.classify_error(source, exc)
+            await self.classify_error(source, exc, client=client)
             if isinstance(exc, (OSError, asyncio.TimeoutError)):
                 raise
             raise ListenerReadError("监听来源不可访问，请检查来源或账号状态") from None
@@ -168,22 +174,47 @@ class CheckedSource:
         client, _ = self._identity()
         if message is None or message is not self.message or client is not self._client:
             raise ListenerReadError("未核验的监听附件不能下载")
+        def validate():
+            if self._identity()[0] is not client or self._client is not client:
+                raise ListenerReadError("监听连接已变化；停止下载，不切换读取身份")
+            current = self.listener.db.get(self.task["id"])
+            if not current or current.get("cancel_requested"):
+                raise ListenerReadError("任务已取消；停止监听下载")
+
+        def waiting(seconds):
+            self.listener.download_limited()
+            current = account.state(self.listener.db)
+            account.write_state(
+                self.listener.db, expected=current, status="Telegram 下载限速冷却",
+                cooldown_until=max(current.get("cooldown_until", 0), time.time() + seconds),
+            )
+            self.listener.owner.log.info(
+                "任务 #%s Telegram 下载限速，等待 %s 秒后继续当前分片",
+                self.task["id"], seconds,
+            )
+
         try:
-            return await client.download_media(message, **options)
+            validate()
+            with download_scope(validate, waiting):
+                return await client.download_media(message, **options)
         except Exception as exc:
             source = self.listener.plans.source(
                 self.listener.admin, self.task["source_id"]
             )
-            await self.classify_error(source, exc)
+            await self.classify_error(source, exc, client=client)
             raise
 
-    async def classify_error(self, source, exc):
-        from telethon.errors import FloodWaitError
-
-        if isinstance(exc, FloodWaitError):
+    async def classify_error(self, source, exc, *, client):
+        # Every delayed error belongs to the client which issued the request.
+        # In particular, an old authorization error must not revoke a new login.
+        if self._identity()[0] is not client:
+            raise ListenerReadError("监听连接已变化；忽略旧请求错误，请重新核验任务")
+        if isinstance(exc, FLOOD_WAITS):
+            self.listener.download_limited()
             await self.listener.source_failure(source, exc)
-            raise ListenerReadError(
-                "Telegram 限流，已记录冷却；结束冷却后可手动重试本任务"
+            raise ListenerRateLimited(
+                f"Telegram 限流，需等待至少 {max(5, exc.seconds)} 秒；"
+                "已记录账号冷却，结束后可手动重试本任务"
             ) from None
         if type(exc).__name__ in AUTH_ERRORS | {
             "ChannelPrivateError",
@@ -194,6 +225,14 @@ class CheckedSource:
             raise ListenerReadError(
                 source_error(exc)
             ) from None
+        from telethon.errors import ServerError, TimedOutError
+
+        if isinstance(exc, (TimeoutError, TimedOutError)):
+            raise SourceTemporaryError("network") from None
+        if isinstance(exc, ServerError):
+            raise SourceTemporaryError("server") from None
+        if isinstance(exc, OSError) and not isinstance(exc, (PermissionError, FileNotFoundError)):
+            raise SourceTemporaryError("network") from None
 
 
 def task_source(owner, task):
@@ -242,6 +281,12 @@ class Listener:
         self._next_maintenance_at = None
         self._maintenance_warning = False
         self._connect_failures = 0
+        self.download_backoff = DownloadBackoff()
+
+    def download_limited(self):
+        # Keep this signal separate from the resource window shared by manual tasks.
+        window = getattr(self.owner, "download_window", None)
+        self.download_backoff.limited(getattr(window, "value", 1))
 
     def require_admin(self, actor):
         self.plans.authorize(actor, admin=True)
@@ -267,6 +312,9 @@ class Listener:
             return False
         if self.client:
             if self.client.is_connected():
+                if (value.get("cooldown_until", 0) <= time.time()
+                        and value.get("status") in {"Telegram 限流冷却", "Telegram 下载限速冷却"}):
+                    account.write_state(self.db, expected=value, status="正常监听", cooldown_until=0)
                 return True
             await self.close()  # Telethon may have exhausted its reconnect attempts.
         stack = ExitStack()
@@ -306,8 +354,7 @@ class Listener:
         try:
             entity, latest = await self._resolve(reference)
         except Exception as exc:  # noqa: BLE001 - map private Telegram exceptions to fixed safe messages
-            from telethon.errors import FloodWaitError
-            if isinstance(exc, FloodWaitError) or type(exc).__name__ in AUTH_ERRORS:
+            if isinstance(exc, FLOOD_WAITS) or type(exc).__name__ in AUTH_ERRORS:
                 await self.source_failure(None, exc)
             raise ListenerReadError(source_error(exc)) from None
         from telethon.utils import get_peer_id
@@ -581,13 +628,14 @@ class Listener:
 
     async def source_failure(self, source, exc):
         """Return false when the account needs to cool down or be reauthorized."""
-        from telethon.errors import FloodWaitError
 
-        if isinstance(exc, FloodWaitError):
+        if isinstance(exc, FLOOD_WAITS):
+            current = account.state(self.db)
             account.write_state(
-                self.db,
+                self.db, expected=current,
                 status="Telegram 限流冷却",
-                cooldown_until=time.time() + max(5, exc.seconds),
+                cooldown_until=max(current.get("cooldown_until", 0),
+                                   time.time() + max(5, exc.seconds)),
             )
             return False
         if type(exc).__name__ in AUTH_ERRORS:
@@ -696,11 +744,10 @@ class Listener:
                         await self._poll_sources()
                 except Exception as exc:  # noqa: BLE001 - private boundary must not expose credentials
                     await self.close()
-                    from telethon.errors import FloodWaitError
 
                     if self.owner._stop.is_set() or account.state(self.db) != value:
                         continue  # Do not overwrite disable, re-login or account changes.
-                    if isinstance(exc, FloodWaitError):
+                    if isinstance(exc, FLOOD_WAITS):
                         account.write_state(
                             self.db, expected=value, status="Telegram 限流冷却",
                             cooldown_until=time.time() + max(5, exc.seconds),

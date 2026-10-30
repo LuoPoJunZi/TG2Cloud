@@ -4,16 +4,33 @@ from __future__ import annotations
 
 from tg2cloud.domain.models import STAGING_PATTERN, StagingScan
 
-__all__ = ["STAGING_PATTERN", "RemoteReviewRequired", "StagingScan", "failure_kind", "needs_review", "redact_text", "safe_failure"]
+__all__ = ["STAGING_PATTERN", "RemoteReviewRequired", "SourceTemporaryError", "StagingScan", "failure_kind", "needs_review", "redact_text", "safe_failure"]
 
 import re
+from typing import ClassVar
 from urllib.parse import quote
 
 
 class RemoteReviewRequired(RuntimeError):
     """The recorded object must be kept until the owner chooses a recovery action."""
 
+class SourceTemporaryError(ConnectionError):
+    """A fixed, safe source error that retains the existing bounded retries."""
+    MESSAGES: ClassVar[dict[str, str]] = {
+        "server": "Telegram 服务端暂时异常；已保留任务信息供有限重试",
+        "network": "Telegram 连接失败或请求超时；已保留任务信息供有限重试",
+    }
+
+    def __init__(self, kind: str):
+        if kind not in self.MESSAGES:
+            raise ValueError("未知临时来源错误类别")
+        self.kind = kind
+        super().__init__(self.MESSAGES[kind])
+
+
 def failure_kind(error: BaseException | str) -> str:
+    if isinstance(error, SourceTemporaryError):
+        return error.kind
     text = str(error)
     if isinstance(error, RemoteReviewRequired) or text.startswith(("REMOTE_REVIEW:", "MOVE_UNCERTAIN:")):
         return "remote_conflict"
@@ -42,6 +59,8 @@ FAILURE_MESSAGES = {
 
 def safe_failure(error: BaseException | str) -> str:
     """Never persist/forward external stderr, URLs, tokens or passwords."""
+    if isinstance(error, SourceTemporaryError):
+        return SourceTemporaryError.MESSAGES[error.kind]
     kind = failure_kind(error)
     prefix = "REMOTE_REVIEW: " if kind == "remote_conflict" else ""
     return prefix + FAILURE_MESSAGES[kind]

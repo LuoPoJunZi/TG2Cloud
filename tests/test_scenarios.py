@@ -421,6 +421,60 @@ class EndToEndSimulationTests(unittest.TestCase):
             self.assertEqual(recovered["download_retries"], 1)
             db.close()
 
+    def test_exhausted_download_keeps_safe_cause_and_never_logs_raw_exception(self) -> None:
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        settings = make_settings(Path(temp.name))
+        db = TaskDB(settings.data_dir / "tasks.db")
+        self.addCleanup(db.close)
+        task, _ = db.create_task(chat_id=1, message_id=12,
+            sender_id=settings.allowed_user_id, file_name="synthetic.mp4", file_size=100)
+        db.update(task["id"], state="reserved")
+        service = make_service(settings, db)
+        service.client = SimpleNamespace(get_messages=AsyncMock(return_value=SimpleNamespace(media=True)),
+            download_media=AsyncMock(side_effect=TimeoutError("PRIVATE_TOKEN https://private.invalid/file.mp4")))
+        service._notify = AsyncMock()
+        with patch("tg2cloud.transfer.download.asyncio.sleep", new=AsyncMock()):
+            asyncio.run(service._download_one(task["id"]))
+        saved = db.get(task["id"])
+        self.assertEqual(saved["state"], "download_failed")
+        self.assertEqual(saved["failure_kind"], "network")
+        self.assertIn("下载重试次数已经用完；", saved["error"])
+        self.assertIn("传输连接", saved["error"])
+        self.assertNotIn("PRIVATE_TOKEN", saved["error"])
+        self.assertNotIn("PRIVATE_TOKEN", str(service.log.warning.call_args_list))
+        self.assertNotIn("private.invalid", str(service.log.warning.call_args_list))
+        self.assertEqual(service.client.download_media.await_count, settings.max_retries)
+
+
+    def test_stream_exhaustion_preserves_safe_destination_cause_and_recorded_path(self) -> None:
+        from tg2cloud.storage.rclone import RcloneError
+        temp = tempfile.TemporaryDirectory()
+        self.addCleanup(temp.cleanup)
+        settings = make_settings(Path(temp.name))
+        db = TaskDB(settings.data_dir / "tasks.db")
+        self.addCleanup(db.close)
+        task, _ = db.create_task(chat_id=1, message_id=13,
+            sender_id=settings.allowed_user_id, file_name="synthetic.mp4", file_size=100)
+        db.update(task["id"], state="reserved", transfer_mode="stream")
+        service = make_service(settings, db)
+        service.client = SimpleNamespace(get_messages=AsyncMock(return_value=SimpleNamespace(media=True)))
+        service._notify = AsyncMock()
+        service.rclone = FakeRclone()
+        service.rclone.open_upload_stream = AsyncMock(side_effect=RcloneError(
+            "503 PRIVATE_TOKEN https://private.invalid/secret"))
+        with patch("tg2cloud.transfer.streaming.asyncio.sleep", new=AsyncMock()):
+            asyncio.run(service._download_one(task["id"]))
+        saved = db.get(task["id"])
+        self.assertEqual(saved["state"], "download_failed")
+        self.assertEqual(saved["failure_kind"], "server")
+        self.assertIn("存储服务暂时异常", saved["error"])
+        self.assertNotIn("PRIVATE_TOKEN", saved["error"])
+        self.assertNotIn("private.invalid", str(service.log.warning.call_args_list))
+        self.assertTrue(saved["remote_path"])
+        self.assertEqual(service.rclone.removed, [])
+        self.assertEqual(service.rclone.open_upload_stream.await_count, settings.max_retries)
+
     def test_unauthorized_sender_cannot_create_task(self) -> None:
         service = TransferService.__new__(TransferService)
         service.settings = SimpleNamespace(allowed_user_id=123)

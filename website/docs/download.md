@@ -1,5 +1,7 @@
 # 安装、下载与校验
 
+**TG2Cloud v1.5.4** 待发布；本页下载仍指向已发布的 v1.5.3，待新资产核验后更新。见[本版发布准备](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V154-ACCEPTANCE.md)。
+
 **TG2Cloud v1.5.3** 已正式发布，资料核对日期：2026-10-29。同标签原生双架构、实际源码包、镜像及两版 Compose 资产已核验；真实 VPS、DNS／ACME、Telegram 与网关转存仍待用户验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V153-ACCEPTANCE.md)。
 
 当前正式稳定版为 **TG2Cloud v1.5.3**。源码、镜像和部署包须使用同版资源；已有实例先备份，再按原部署方式升级。

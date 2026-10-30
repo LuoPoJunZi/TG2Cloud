@@ -1875,6 +1875,349 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.repo.source(self.admin, self.source["id"])["cursor"], 100)
 
 
+    async def test_premium_wait_is_classified_at_metadata_boundary_and_preserves_longer_cooldown(self):
+        from telethon.errors import FloodPremiumWaitError
+
+        from tg2cloud.listening.service import source_error
+        await self.listener.receive(self.source, message())
+        plan = self.repo.pending(self.admin)[0]
+        task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+        error = FloodPremiumWaitError(request=None, capture=4)
+        self.assertIn("限流", source_error(error))
+        account.write_state(self.db, cooldown_until=time.time() + 90)
+        deadline = account.state(self.db)["cooldown_until"]
+        self.listener.client.get_messages.side_effect = error
+        with self.assertRaises(ListenerReadError):
+            await CheckedSource(self.listener, task).get_messages(-1001, ids=1)
+        self.assertEqual(account.state(self.db)["cooldown_until"], deadline)
+        self.assertTrue(account.state(self.db)["enabled"])
+        self.assertTrue(self.repo.source(self.admin, self.source["id"])["enabled"])
+
+    async def test_premium_wait_fallback_stops_once_for_local_stream_and_both_gateways(self):
+        from telethon.errors import FloodPremiumWaitError
+        for backend in ("clouddrive2", "openlist"):
+            for mode in ("local", "stream"):
+                with self.subTest(backend=backend, mode=mode):
+                    self.owner.settings = replace(self.settings, storage_backend=backend)
+                    mid = 400 + (10 if backend == "openlist" else 0) + (mode == "stream")
+                    m = message(mid)
+                    await self.listener.receive(self.source, m)
+                    plan = self.repo.pending(self.admin)[0]
+                    task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+                    self.db.update(task["id"], state="reserved", transfer_mode=mode)
+                    self.listener.client.get_messages.return_value = m
+                    self.listener.client.download_media = AsyncMock(side_effect=FloodPremiumWaitError(request=None, capture=90))
+                    self.owner.rclone = FakeRclone()
+                    self.owner._notify = AsyncMock()
+                    await self.owner._download_one(task["id"])
+                    saved = self.db.get(task["id"])
+                    self.assertEqual(saved["state"], "download_failed")
+                    self.assertEqual(saved["failure_kind"], "rate_limited")
+                    self.assertIn("Telegram 限流", saved["error"])
+                    self.listener.client.download_media.assert_awaited_once()
+                    self.assertGreater(account.state(self.db)["cooldown_until"], time.time() + 85)
+                    self.assertEqual(saved["download_retries"], 0)
+                    self.assertTrue(self.repo.source(self.admin, self.source["id"])["enabled"])
+
+    async def test_short_premium_wait_keeps_one_transfer_for_both_gateways_and_modes(self):
+        from telethon import TelegramClient
+        from telethon.errors import FloodPremiumWaitError
+        from test_listening_transport import client, request
+        self.owner.download_window = NS(value=8)
+        for backend in ("clouddrive2", "openlist"):
+            for mode in ("local", "stream"):
+                with self.subTest(backend=backend, mode=mode):
+                    self.owner.settings = replace(self.settings, storage_backend=backend)
+                    mid = 500 + (10 if backend == "openlist" else 0) + (mode == "stream")
+                    m = message(mid)
+                    await self.listener.receive(self.source, m)
+                    plan = self.repo.pending(self.admin)[0]
+                    task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+                    self.db.update(task["id"], state="reserved", transfer_mode=mode)
+                    self.listener.client.get_messages.return_value = m
+                    sdk = client()
+                    async def download(msg, *, file, progress_callback, sdk=sdk):
+                        if isinstance(file, str):
+                            Path(file).write_bytes(b"x" * 50)
+                        else:
+                            await file.write(b"x" * 50)
+                        await sdk._call(sdk._sender, request())
+                        if isinstance(file, str):
+                            Path(file).write_bytes(Path(file).read_bytes() + b"x" * 50)
+                        else:
+                            await file.write(b"x" * 50)
+                        progress_callback(100, 100)
+                        return file
+                    self.listener.client.download_media = AsyncMock(side_effect=download)
+                    self.owner.rclone = FakeRclone()
+                    parent = AsyncMock(side_effect=[FloodPremiumWaitError(request=None, capture=3), object()])
+                    with patch.object(TelegramClient, "_call", parent), patch(
+                            "tg2cloud.listening.transport.asyncio.sleep", new=AsyncMock()), patch(
+                            "tg2cloud.listening.transport.monotonic", return_value=0):
+                        await self.owner._download_one(task["id"])
+                        if mode == "local":
+                            await self.owner._upload_one(task["id"])
+                    saved = self.db.get(task["id"])
+                    self.assertEqual(saved["state"], "completed")
+                    self.assertEqual(saved["download_retries"], 0)
+                    self.assertIsNone(saved["error"])
+                    self.assertEqual(saved["verification_method"], "size")
+                    self.listener.client.download_media.assert_awaited_once()
+                    self.assertEqual(self.owner.rclone.files[saved["remote_path"]], b"x" * 100)
+                    self.assertEqual(self.listener.download_backoff.cap, 4)
+                    self.assertEqual(self.owner.download_window.value, 8)
+
+    async def test_expired_rate_limit_status_returns_to_normal_but_future_wait_stays(self):
+        self.listener.client.is_connected = lambda: True
+        for deadline, expected in ((time.time() - 1, "正常监听"),
+                                   (time.time() + 90, "Telegram 下载限速冷却")):
+            account.write_state(self.db, status="Telegram 下载限速冷却", cooldown_until=deadline)
+            await self.listener.connect()
+            self.assertEqual(account.state(self.db)["status"], expected)
+            self.assertEqual(account.state(self.db)["cooldown_until"], 0 if expected == "正常监听" else deadline)
+
+    async def test_old_premium_rpc_cannot_change_replacement_account(self):
+        from telethon.errors import FloodPremiumWaitError
+        await self.listener.receive(self.source, message())
+        plan = self.repo.pending(self.admin)[0]
+        task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+        self.listener.client.get_messages.return_value = message()
+        reader = CheckedSource(self.listener, task)
+        m = await reader.get_messages(-1001, ids=1)
+        async def stale(*args, **kwargs):
+            account.write_state(self.db, account=999, status="replacement")
+            raise FloodPremiumWaitError(request=None, capture=90)
+        self.listener.client.download_media.side_effect = stale
+        with self.assertRaises(ListenerReadError):
+            await reader.download_media(m, file="unused")
+        saved = account.state(self.db)
+        self.assertEqual(saved["account"], 999)
+        self.assertEqual(saved["status"], "replacement")
+        self.assertEqual(saved.get("cooldown_until", 0), 0)
+
+
+    async def test_delayed_errors_cannot_revoke_or_pause_replacement_account_or_client(self):
+        from telethon.errors import (
+            AuthKeyUnregisteredError,
+            ChannelPrivateError,
+            SessionRevokedError,
+        )
+        mid = 700
+        for phase in ("permissions", "metadata", "download"):
+            for change in ("account", "client", "both"):
+                for error_type in (AuthKeyUnregisteredError, SessionRevokedError, ChannelPrivateError):
+                    with self.subTest(phase=phase, change=change, error=error_type.__name__):
+                        mid += 1
+                        account.write_state(self.db, account=42, enabled=True, status="synthetic")
+                        original = NS(get_messages=AsyncMock(return_value=message(mid)),
+                                      download_media=AsyncMock(), disconnect=AsyncMock())
+                        self.listener.client = original
+                        await self.listener.receive(self.source, message(mid))
+                        plan = self.repo.pending(self.admin)[0]
+                        task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+                        reader = CheckedSource(self.listener, task)
+                        replacement = NS(disconnect=AsyncMock())
+                        observed = {}
+                        async def late_error(*args, change=change, error_type=error_type,
+                                             replacement=replacement, observed=observed, **kwargs):
+                            if change in {"account", "both"}:
+                                account.write_state(self.db, account=999, enabled=True, status="replacement")
+                            if change in {"client", "both"}:
+                                self.listener.client = replacement
+                            observed["account"] = account.state(self.db)
+                            observed["client"] = self.listener.client
+                            observed["source"] = self.repo.source(self.admin, self.source["id"])
+                            raise error_type(request=None)
+                        if phase == "download":
+                            media = await reader.get_messages(-1001, ids=mid)
+                            original.download_media.side_effect = late_error
+                            with self.assertRaises(ListenerReadError):
+                                await reader.download_media(media, file="unused")
+                        elif phase == "metadata":
+                            original.get_messages.side_effect = late_error
+                            with self.assertRaises(ListenerReadError):
+                                await reader.get_messages(-1001, ids=mid)
+                        else:
+                            with patch("tg2cloud.listening.service.verified_chat", side_effect=late_error), self.assertRaises(ListenerReadError):
+                                await reader.get_messages(-1001, ids=mid)
+                        self.assertEqual(account.state(self.db), observed["account"])
+                        self.assertIs(self.listener.client, observed["client"])
+                        self.assertEqual(self.repo.source(self.admin, self.source["id"]), observed["source"])
+                        original.disconnect.assert_not_awaited()
+                        replacement.disconnect.assert_not_awaited()
+
+    async def test_current_authorization_and_permission_denials_still_stop_safely(self):
+        from telethon.errors import AuthKeyUnregisteredError, ChannelPrivateError
+        for mid, error_type in enumerate((AuthKeyUnregisteredError, ChannelPrivateError), 800):
+            with self.subTest(error=error_type.__name__):
+                account.write_state(self.db, account=42, enabled=True, status="synthetic")
+                original = NS(get_messages=AsyncMock(side_effect=error_type(request=None)),
+                              disconnect=AsyncMock())
+                self.listener.client = original
+                await self.listener.receive(self.source, message(mid))
+                plan = self.repo.pending(self.admin)[0]
+                task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+                with self.assertRaises(ListenerReadError):
+                    await CheckedSource(self.listener, task).get_messages(-1001, ids=mid)
+                if error_type is AuthKeyUnregisteredError:
+                    self.assertFalse(account.state(self.db)["enabled"])
+                    self.assertIsNone(self.listener.client)
+                    original.disconnect.assert_awaited_once()
+                else:
+                    self.assertFalse(self.repo.source(self.admin, self.source["id"])["enabled"])
+                    self.assertTrue(account.state(self.db)["enabled"])
+                    original.disconnect.assert_not_awaited()
+
+    async def test_temporary_metadata_failures_retry_for_both_gateways_and_modes(self):
+        from telethon.errors import ServerError, TimedOutError
+        async def download(msg, *, file, progress_callback):
+            if isinstance(file, str):
+                Path(file).write_bytes(b"x" * 100)
+            else:
+                await file.write(b"x" * 100)
+            progress_callback(100, 100)
+            return file
+        mid = 900
+        for backend in ("clouddrive2", "openlist"):
+            for mode in ("local", "stream"):
+                for phase in ("permissions", "metadata"):
+                    for error in (ServerError(request=None, message="PRIVATE_DETAIL", code=500),
+                                  TimedOutError(request=None, message="TIMEOUT"), ConnectionError("PRIVATE_DETAIL")):
+                        with self.subTest(backend=backend, mode=mode, phase=phase, error=type(error).__name__):
+                            mid += 1
+                            self.owner.settings = replace(self.settings, storage_backend=backend)
+                            m = message(mid)
+                            await self.listener.receive(self.source, m)
+                            plan = self.repo.pending(self.admin)[0]
+                            task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+                            self.db.update(task["id"], state="reserved", transfer_mode=mode)
+                            self.owner.rclone = FakeRclone()
+                            self.listener.client.get_messages = AsyncMock(return_value=m)
+                            self.listener.client.download_media = AsyncMock(side_effect=download)
+                            if phase == "metadata":
+                                self.listener.client.get_messages.side_effect = [error, m]
+                            verify = AsyncMock(side_effect=[error, NS()] if phase == "permissions" else [NS(), NS()])
+                            with patch("tg2cloud.listening.service.verified_chat", verify), patch(
+                                    "tg2cloud.transfer.download.asyncio.sleep", new=AsyncMock()):
+                                await self.owner._download_one(task["id"])
+                                if mode == "local":
+                                    await self.owner._upload_one(task["id"])
+                            saved = self.db.get(task["id"])
+                            self.assertEqual(saved["state"], "completed")
+                            self.assertEqual(saved["download_retries"], 1)
+                            self.assertIsNone(saved["failure_kind"])
+                            self.assertIsNone(saved["error"])
+                            self.assertEqual(verify.await_count, 2)
+                            self.listener.client.download_media.assert_awaited_once()
+                            self.assertTrue(account.state(self.db)["enabled"])
+                            self.assertTrue(self.repo.source(self.admin, self.source["id"])["enabled"])
+                            self.assertIsNone(self.listener.download_backoff.cap)
+
+    async def test_persistent_metadata_error_keeps_safe_source_cause_with_bounded_retries(self):
+        from telethon.errors import ServerError
+        for mid, mode in enumerate(("local", "stream"), 1000):
+            with self.subTest(mode=mode):
+                await self.listener.receive(self.source, message(mid))
+                plan = self.repo.pending(self.admin)[0]
+                task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+                self.db.update(task["id"], state="reserved", transfer_mode=mode)
+                self.owner.rclone = FakeRclone()
+                self.listener.client.get_messages = AsyncMock(side_effect=ServerError(
+                    request=None, message="PRIVATE_TOKEN https://private.invalid/secret", code=500))
+                self.listener.client.download_media = AsyncMock()
+                with patch("tg2cloud.transfer.download.asyncio.sleep", new=AsyncMock()):
+                    await self.owner._download_one(task["id"])
+                saved = self.db.get(task["id"])
+                self.assertEqual(saved["state"], "download_failed")
+                self.assertEqual(saved["failure_kind"], "server")
+                self.assertIn("Telegram 服务端暂时异常", saved["error"])
+                self.assertNotIn("PRIVATE_TOKEN", saved["error"])
+                self.assertNotIn("private.invalid", str(self.owner.log.warning.call_args_list))
+                self.assertEqual(self.listener.client.get_messages.await_count, self.settings.max_retries)
+                self.assertEqual(saved["download_retries"], self.settings.max_retries)
+                self.listener.client.download_media.assert_not_awaited()
+                self.assertTrue(self.repo.source(self.admin, self.source["id"])["enabled"])
+
+    async def test_listener_backoff_admission_recovers_gradually_and_keeps_manual_window(self):
+        watched = []
+        for mid in range(1100, 1104):
+            await self.listener.receive(self.source, message(mid))
+            p = self.repo.pending(self.admin)[0]
+            task, _ = self.repo.submit(self.admin, p["id"], p["revision"])
+            watched.append(task["id"])
+        manual, _ = self.db.create_task(chat_id=self.admin, message_id=1200, sender_id=self.admin,
+                                       file_name="manual.mp4", file_size=100)
+        self.owner.destination_healthy = True
+        self.owner._sample_fresh = lambda: True
+        self.owner._destination_ready = lambda: True
+        self.owner.snapshot = NS(filesystems=[], disk_free=100 * 1024**3)
+        self.owner.download_window = NS(value=4)
+        self.owner.upload_window = NS(value=4)
+        release = asyncio.Event()
+        async def hold(task_id):
+            await release.wait()
+        self.owner._download_one = hold
+        try:
+            with patch("tg2cloud.listening.transport.monotonic", return_value=0), patch(
+                    "tg2cloud.transfer.scheduler.shutil.disk_usage", return_value=NS(free=100 * 1024**3)):
+                self.listener.download_limited()
+                await self.owner._start_downloads()
+                await asyncio.sleep(0)
+                self.assertIn(manual["id"], self.owner.download_tasks)
+                self.assertEqual(len(set(watched) & self.owner.download_tasks.keys()), 2)
+                self.assertEqual(self.owner.download_window.value, 4)
+                for task_id in watched[2:]:
+                    self.assertEqual(self.db.get(task_id)["state"], "queued")
+                    self.assertIn("监听下载限速", self.db.get(task_id)["wait_reason"])
+                running = dict(self.owner.download_tasks)
+                await self.owner._start_downloads()
+                self.assertEqual(self.owner.download_tasks, running)
+                self.assertFalse(any(task.cancelled() for task in running.values()))
+            with patch("tg2cloud.listening.transport.monotonic", return_value=60), patch(
+                    "tg2cloud.transfer.scheduler.shutil.disk_usage", return_value=NS(free=100 * 1024**3)):
+                await self.owner._start_downloads()
+                self.assertEqual(len(set(watched) & self.owner.download_tasks.keys()), 3)
+                self.assertEqual(self.owner.download_window.value, 4)
+        finally:
+            release.set()
+            await asyncio.gather(*list(self.owner.download_tasks.values()))
+
+    async def test_new_backoff_does_not_cancel_running_listeners_or_block_manual_task(self):
+        self.owner.destination_healthy = True
+        self.owner._sample_fresh = lambda: True
+        self.owner._destination_ready = lambda: True
+        self.owner.snapshot = NS(filesystems=[], disk_free=100 * 1024**3)
+        self.owner.download_window = NS(value=4)
+        self.owner.upload_window = NS(value=4)
+        release = asyncio.Event()
+        async def hold(task_id):
+            await release.wait()
+        self.owner._download_one = hold
+        try:
+            with patch("tg2cloud.transfer.scheduler.shutil.disk_usage", return_value=NS(free=100 * 1024**3)):
+                for mid in range(1300, 1303):
+                    await self.listener.receive(self.source, message(mid))
+                    p = self.repo.pending(self.admin)[0]
+                    self.repo.submit(self.admin, p["id"], p["revision"])
+                await self.owner._start_downloads()
+                await asyncio.sleep(0)
+                running = dict(self.owner.download_tasks)
+                self.listener.download_limited()
+                await self.listener.receive(self.source, message(1303))
+                p = self.repo.pending(self.admin)[0]
+                deferred, _ = self.repo.submit(self.admin, p["id"], p["revision"])
+                manual, _ = self.db.create_task(chat_id=self.admin, message_id=1400, sender_id=self.admin,
+                                               file_name="manual.mp4", file_size=100)
+                await self.owner._start_downloads()
+                self.assertIn(manual["id"], self.owner.download_tasks)
+                self.assertNotIn(deferred["id"], self.owner.download_tasks)
+                self.assertFalse(any(task.cancelled() for task in running.values()))
+                self.assertEqual(len(self.owner.download_tasks), 4)
+        finally:
+            release.set()
+            await asyncio.gather(*list(self.owner.download_tasks.values()))
+
+
 class AccountPermissionsTests(unittest.TestCase):
     @unittest.skipUnless(os.name == "posix", "fcntl and UID permissions require Linux")
     def test_session_lock_permissions_and_independent_files(self):

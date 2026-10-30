@@ -1,5 +1,17 @@
 # 更新记录
 
+## TG2Cloud v1.5.4
+
+版本日期：2026-10-30。待发布：监听下载可靠性维护；本地回归通过，远端 CI、发布资产及修复后的实机验收分别记录于[本版记录](docs/development/V154-ACCEPTANCE.md)。
+
+- 修复监听遗漏 Telegram `FLOOD_PREMIUM_WAIT` 下载限速：短等待后继续原分片，避免三次整文件重试后失败；普通限流与超限仍保留账号冷却及人工恢复。
+- 统一监听添加、轮询、连接和下载的两类限流识别；保留更长冷却，恢复后清除过期状态，等待中继续核对身份及取消。
+- 下载失败保留脱敏原因和分类，避免原始异常进入日志；无数据库、配置、依赖或安装入口变更。尚未发布或部署修复后的实机版本。
+
+- 补修旧下载请求迟到的授权／权限错误，处理前同时核对账号与客户端，避免误停新登录；临时 Telegram 服务端错误与超时进入原有有界重试。
+- 新增仅面向监听新任务的并发退让：遇限速减半、同批反馈去重，连续安静后逐步恢复；不取消正在传输的任务、不改变手动任务的资源窗口。
+- 流式重试耗尽保留最后脱敏原因，与普通下载一致；无新增配置、依赖或数据库变更。
+
 ## TG2Cloud v1.5.3
 
 版本日期：2026-10-29。[v1.5.3 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.3) 已发布；入口 B、同标签原生双架构检查、源码包、共享镜像和两 Edition Compose 部署包已核验。真实 VPS、DNS／ACME、Telegram 与网关转存仍待用户验收。见[发布与兼容记录](docs/development/V153-ACCEPTANCE.md)。
@@ -137,12 +149,13 @@
 
 发布后验收补充：用户已提供 v1.4.5 的 CloudDrive2 ARM64 升级与单独 WebDAV 写入日志，按[记录范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V145-ACCEPTANCE.md)保留；上段未验收说明是发布当时状态，不扩展到本版或其他场景。
 
-本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.3 共 34 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
+本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.4 共 35 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
 
 截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/CHANGELOG.md#tg2cloud-v121) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.5.4](#tg2cloud-v154) | 监听下载限速恢复、临时错误有限重试、账号隔离和并发退让；保留脱敏失败原因。 |
 | [v1.5.3](#tg2cloud-v153) | TG2Cloud 新安装命名统一、数据库兼容与可选 Compose HTTPS；一键脚本流程保持独立。 |
 | [v1.5.2](#tg2cloud-v152) | 监听断网恢复、分批历史维护、独立 Compose 部署与共享双架构镜像。 |
 | [v1.5.1](#tg2cloud-v151) | 监听公平轮询、后台维护、数据库／资源热点与上传进度优化。 |

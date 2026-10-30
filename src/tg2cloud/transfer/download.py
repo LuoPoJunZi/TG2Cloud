@@ -6,6 +6,7 @@ import time
 
 from tg2cloud.domain.actors import task_actor
 from tg2cloud.domain.errors import (
+    failure_kind,
     safe_failure,
 )
 from tg2cloud.domain.naming import (
@@ -25,6 +26,7 @@ async def _download_one(self, task_id: int) -> None:
     final_name = f"{task_id}-{safe_file_name(task['file_name'], str(task_id))}"
     final_path = self.settings.download_dir / final_name
     last_progress_at = 0.0
+    last_failure = None
 
     def progress(received: int, total: int) -> None:
         nonlocal last_progress_at
@@ -96,20 +98,25 @@ async def _download_one(self, task_id: int) -> None:
                 raise
             except ListenerReadError as exc:
                 self.db.transition(task_id, "download_failed", local_path=None,
-                                   error=str(exc), failure_kind="source_access")
+                                   error=str(exc), failure_kind=exc.failure_kind)
                 if part_path.exists():
                     part_path.unlink()
-                await self._notify(f"任务 #{task_id} 需要检查监听授权或来源；未切换读取身份。")
+                if exc.failure_kind == "rate_limited":
+                    await self._notify(f"⏳ 任务 #{task_id} 暂停：{exc}")
+                else:
+                    await self._notify(f"任务 #{task_id} 需要检查监听授权或来源；未切换读取身份。")
                 return
             except Exception as exc:  # noqa: BLE001 - retry external I/O
                 self.recent_download_errors.append(time.time())
                 self.log.warning(
-                    "任务 #%s 下载第 %s 次失败：%s", task_id, attempt + 1, exc
+                    "任务 #%s 下载第 %s 次失败：%s (%s)",
+                    task_id, attempt + 1, type(exc).__name__, safe_failure(exc)
                 )
+                last_failure = safe_failure(exc)
                 self.db.update(
                     task_id,
                     download_retries=attempt + 1,
-                    error=safe_failure(exc),
+                    error=last_failure, failure_kind=failure_kind(exc),
                 )
                 if attempt + 1 < self.settings.max_retries:
                     await asyncio.sleep(min(60, 2 ** (attempt + 1)))
@@ -119,7 +126,7 @@ async def _download_one(self, task_id: int) -> None:
             task_id,
             "download_failed",
             local_path=None,
-            error="下载重试次数已经用完",
+            error="下载重试次数已经用完" + ("；" + last_failure if last_failure else ""),
             wait_reason=None,
         )
         await self._notify(

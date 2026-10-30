@@ -80,6 +80,7 @@
     "src/tg2cloud/listening/account.py",
     "src/tg2cloud/listening/rules.py",
     "src/tg2cloud/listening/service.py",
+    "src/tg2cloud/listening/transport.py",
     "src/tg2cloud/logging_setup.py",
     "src/tg2cloud/monitoring/__init__.py",
     "src/tg2cloud/monitoring/diagnostics.py",

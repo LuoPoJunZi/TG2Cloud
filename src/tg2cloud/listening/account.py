@@ -94,9 +94,9 @@ def session_lock(settings):
 
 
 def client(settings, path):
-    from telethon import TelegramClient
+    from tg2cloud.listening.transport import ListeningClient
 
-    return TelegramClient(
+    return ListeningClient(
         str(path),
         settings.api_id,
         settings.api_hash,

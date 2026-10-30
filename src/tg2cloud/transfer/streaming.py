@@ -92,6 +92,7 @@ async def _stream_one(self, task_id: int) -> None:
     safe_name = safe_file_name(task["file_name"], f"task-{task_id}.bin")
     remote_temp = self.db.staging_name(task_id, safe_name)
     stream = None
+    last_failure = None
     try:
         from tg2cloud.listening.service import ListenerReadError, task_source
         source = task_source(self, task)
@@ -163,8 +164,11 @@ async def _stream_one(self, task_id: int) -> None:
                 if stream is not None:
                     await stream.abort()
                 self.db.transition(task_id, "download_failed", local_path=None,
-                                   error=str(exc), failure_kind="source_access")
-                await self._notify(f"任务 #{task_id} 需要检查监听授权或来源；保留远端现场，不切换身份。")
+                                   error=str(exc), failure_kind=exc.failure_kind)
+                if exc.failure_kind == "rate_limited":
+                    await self._notify(f"⏳ 任务 #{task_id} 暂停：{exc}")
+                else:
+                    await self._notify(f"任务 #{task_id} 需要检查监听授权或来源；保留远端现场，不切换身份。")
                 return
             except MoveUncertainError as exc:
                 if stream is not None:
@@ -195,10 +199,11 @@ async def _stream_one(self, task_id: int) -> None:
                     attempt + 1,
                     safe_failure(exc),
                 )
+                last_failure = safe_failure(exc)
                 self.db.update(
                     task_id,
                     download_retries=attempt + 1,
-                    error=safe_failure(exc), failure_kind=failure_kind(exc),
+                    error=last_failure, failure_kind=failure_kind(exc),
                 )
                 if attempt + 1 < self.settings.max_retries:
                     await asyncio.sleep(min(120, 3 ** (attempt + 1)))
@@ -209,7 +214,9 @@ async def _stream_one(self, task_id: int) -> None:
             "download_failed",
             local_path=None,
             remote_path=retained_remote or None,
-            error="流式传输重试次数已经用完；使用 /retry 可重新开始",
+            error="流式传输重试次数已经用完"
+                  + ("；" + last_failure if last_failure else "")
+                  + "；使用 /retry 可重新开始",
             wait_reason=None,
         )
         await self._notify(
