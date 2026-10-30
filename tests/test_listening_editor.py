@@ -144,6 +144,26 @@ class EditorTests(unittest.IsolatedAsyncioTestCase):
                                        source_allowed=True)[0])
         self.assertEqual(self.repo.source(self.admin, old_source["id"]), old_source)
 
+    async def test_exclusion_scope_is_editable_without_changing_inclusion_scope(self):
+        await self.click("排除关键词")
+        await self.click("排除匹配范围")
+        await self.click("文件名")
+        await self.click("返回排除关键词")
+        await self.click("返回编辑")
+        await self.click("保存修改")
+        self.assertEqual(self.config()["rules"]["exclude_scope"], "name")
+        self.assertEqual(self.config()["rules"]["scope"], "both")
+
+    async def test_restoring_exclusion_scope_removes_optional_field_for_old_readers(self):
+        await self.click("排除关键词")
+        await self.click("排除匹配范围")
+        await self.click("文件名")
+        await self.click("沿用文字范围")
+        await self.click("返回排除关键词")
+        await self.click("返回编辑")
+        await self.click("保存修改")
+        self.assertNotIn("exclude_scope", self.config()["rules"])
+
     async def test_cancel_and_cancel_input_do_not_write(self):
         original = copy.deepcopy(self.config())
         await self.click("包含关键词")

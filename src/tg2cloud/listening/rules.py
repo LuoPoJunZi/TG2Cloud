@@ -40,6 +40,7 @@ def validate(value: dict) -> dict:
         "max_bytes",
         "scope",
         "all_attachments",
+        "exclude_scope",
     }:
         raise PlanningError("未知筛选规则字段")
     if len(json.dumps(value, ensure_ascii=False)) > 8192:
@@ -63,6 +64,9 @@ def validate(value: dict) -> dict:
             raise PlanningError("大小必须是有效字节数")
     if result["max_bytes"] and result["min_bytes"] > result["max_bytes"]:
         raise PlanningError("最小大小不能超过最大大小")
+    if (not isinstance(result.get("exclude_scope", "same"), str)
+            or result.get("exclude_scope", "same") not in {"same", "name", "caption", "both"}):
+        raise PlanningError("排除词匹配范围无效")
     strings(result["exclude"])
     if not isinstance(result["groups"], list) or len(result["groups"]) > 8:
         raise PlanningError("最多允许 8 个 OR 规则组")
@@ -181,7 +185,9 @@ def evaluate(config: dict, item: dict, *, source_allowed: bool) -> tuple[bool, s
         if config["scope"] == "caption"
         else name + "\n" + norm(item["caption"])
     )
-    if any(norm(s) in text for s in config["exclude"]):
+    exclude_scope = config.get("exclude_scope", "same")
+    excluded_text = name if exclude_scope == "name" else norm(item["caption"]) if exclude_scope == "caption" else name + "\n" + norm(item["caption"]) if exclude_scope == "both" else text
+    if any(norm(s) in excluded_text for s in config["exclude"]):
         return False, "排除关键词命中"
     if size < config["min_bytes"] or config["max_bytes"] and size > config["max_bytes"]:
         return False, "大小不符"
@@ -211,3 +217,28 @@ def evaluate(config: dict, item: dict, *, source_allowed: bool) -> tuple[bool, s
         if config["all_attachments"] and not config["groups"]
         else (False, "类型、名称或关键词不符")
     )
+
+
+
+def explain(config: dict, item: dict, *, source_allowed: bool) -> tuple[bool, str]:
+    """Explain the same decision without changing stable journal reason codes."""
+    matched, reason = evaluate(config, item, source_allowed=source_allowed)
+    config = validate(config)
+    if reason == "大小不符":
+        size = item["size"]
+        actual = f"{size / 1024**2:.2f} MB（{size} 字节）"
+        minimum, maximum = config["min_bytes"], config["max_bytes"]
+        required = f"至少 {minimum / 1024**2:.2f} MB" if size < minimum else f"最多 {maximum / 1024**2:.2f} MB"
+        return False, f"大小不符：实际 {actual}，要求{required}"
+    if reason == "排除关键词命中":
+        scope = config.get("exclude_scope", "same")
+        scope = config["scope"] if scope == "same" else scope
+        for field, label in (("original", "文件名"), ("caption", "说明")):
+            if scope == "name" and field != "original" or scope == "caption" and field != "caption":
+                continue
+            word = next((s for s in config["exclude"] if norm(s) in norm(item[field])), None)
+            if word:
+                return False, f"排除关键词命中：{label}中包含“{word}”"
+    if reason == "类型、名称或关键词不符":
+        return False, reason + f"；实际类型：{item['kind']}，后缀：{item['extension'] or '无'}；请核对条件组的类型、后缀、文件名和关键词"
+    return matched, reason

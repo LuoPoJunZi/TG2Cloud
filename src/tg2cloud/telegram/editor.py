@@ -159,6 +159,7 @@ def rule_summary(value, *, compact=False):
         + (format_bytes(config["max_bytes"]) if config["max_bytes"] else "不限上限")
         + "\n文字范围："
         + SCOPES[config["scope"]]
+        + ("\n排除范围：" + SCOPES[config["exclude_scope"]] if config.get("exclude_scope", "same") != "same" else "")
     )
 
 
@@ -377,6 +378,8 @@ async def show(owner, event, d, page, notice=""):
                     ),
                 ]
             ]
+        if key == "exclude":
+            rows += [[b("排除匹配范围", "page", "exclude-scope")]]
         if key == "names":
             rows += [
                 [b(label, "choice", "name_mode", mode)] for mode, label in NAMES.items()
@@ -424,6 +427,11 @@ async def show(owner, event, d, page, notice=""):
         rows = [[b(label, "choice", "scope", key)] for key, label in SCOPES.items()] + [
             [b("返回规则", "page", "rules")]
         ]
+        footer = []
+    elif page == "exclude-scope":
+        text = title + "排除词匹配范围；只改排除词，不改变包含条件的文字范围。"
+        rows = [[b(label, "choice", "exclude_scope", key)] for key, label in {"same": "沿用文字范围", **SCOPES}.items()]
+        rows += [[b("返回排除关键词", "list", "exclude")]]
         footer = []
     elif page == "groups":
         text = (
@@ -780,6 +788,7 @@ async def callback(owner, event, args):
             key, value = values
             allowed = {
                 "scope": SCOPES,
+                "exclude_scope": {"same", *SCOPES},
                 "mode": MODES,
                 "keyword_mode": {"any", "all"},
                 "name_mode": NAMES,
@@ -794,6 +803,8 @@ async def callback(owner, event, args):
                 page = "naming"
             elif key == "confirmation":
                 d.config[key] = value
+            elif key == "exclude_scope" and value == "same":
+                d.config["rules"].pop(key, None)
             else:
                 d.config["rules"][key] = value
         elif operation in {"group", "drop-group"}:
@@ -895,7 +906,7 @@ async def callback(owner, event, args):
             )
             text = "命名预览：" + result["file_name"] + "\n依据：" + result["basis"]
             if "rules" in d.config:
-                matched, reason = rules.evaluate(
+                matched, reason = rules.explain(
                     d.config["rules"],
                     sample
                     | {
@@ -909,13 +920,14 @@ async def callback(owner, event, args):
             await show(owner, event, d, "sample", text)
             return
         elif operation == "recent":
+            from tg2cloud.telegram.listening_tools import test_result
             results = await owner.listener.test(
                 actor, d.source, config=copy.deepcopy(d.config)
             )
             require(owner, identity, version)
             text = "草稿最近消息测试（只读，不登记任务）\n" + (
                 "\n".join(
-                    f"#{mid} {'匹配' if matched else '跳过'}：{reason}\n{naming['file_name']}"
+                    test_result(mid, matched, reason, naming)
                     for mid, matched, reason, naming in results
                 )
                 or "没有可测试的最近消息。"

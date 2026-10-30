@@ -131,6 +131,53 @@ def _random_identifier(stem: str) -> bool:
     return False
 
 
+# A contact token at a filename edge is an advertisement, not title metadata.
+# Accept the common underscore substitution for a domain dot and Unicode handles.
+_AFFIX_CONTACT = re.compile(
+    r"(?:(?:https?://|www\.)?(?:[A-Za-z\d-]+\.)*[A-Za-z\d-]+[._])(?P<tld>[A-Za-z]{2,24})"
+    r"@(?P<account>[^\W_]{1,64}(?:_[A-Za-z\d]{1,32}){0,4})", re.IGNORECASE,
+)
+_AFFIX_SEPARATORS = " _-—|·"
+_AFFIX_BRACKETS = {"[": "]", "【": "】", "(": ")", "（": "）"}
+
+
+def clean_promotional_affixes(name: str, *, filename=True) -> str:
+    """Remove only evidenced edge contacts; never guess where a title ends."""
+    if not isinstance(name, str):
+        return ""
+    if "@" not in name or not re.search(r"[._][A-Za-z]{2,24}@", name):
+        return name
+    name = unicodedata.normalize("NFC", name[:4096])
+    suffix = Path(name).suffix if filename else ""
+    if not re.fullmatch(r"\.[A-Za-z\d]{1,12}", suffix):
+        suffix = ""
+    stem = name[:-len(suffix)] if suffix else name
+    for _ in range(4):
+        previous = stem
+        for match in _AFFIX_CONTACT.finditer(stem):
+            if match["tld"].casefold() not in _TLDS:
+                continue
+            before, after = stem[:match.start()], stem[match.end():]
+            opening = before.strip(_AFFIX_SEPARATORS)
+            if opening in _AFFIX_BRACKETS and after.startswith(_AFFIX_BRACKETS[opening]):
+                after = after[1:]
+                before = ""
+            closing = after.strip(_AFFIX_SEPARATORS)
+            if closing in _AFFIX_BRACKETS.values() and before.endswith(
+                    next(k for k, v in _AFFIX_BRACKETS.items() if v == closing)):
+                before = before[:-1]
+                after = ""
+            if not before.strip(_AFFIX_SEPARATORS):
+                stem = after.lstrip(_AFFIX_SEPARATORS)
+                break
+            if not after.strip(_AFFIX_SEPARATORS):
+                stem = before.rstrip(_AFFIX_SEPARATORS)
+                break
+        if stem == previous:
+            break
+    return stem + suffix if stem else ""
+
+
 def _promotional_name(name: str) -> bool:
     """Recognize contact/URL pollution, not ordinary descriptive topic titles."""
     stem = unicodedata.normalize("NFKC", Path(name).stem[:1024])
@@ -170,12 +217,13 @@ def explain_media_name(name: str, caption: str, fallback: str, entities=(), *, m
     Do not infer content, follow URLs, or rename an already descriptive filename.
     Telegram entity offsets are UTF-16 code units, not Python character indexes.
     """
-    original = safe_file_name(name, fallback)
+    cleaned_name = clean_promotional_affixes(name)
+    original = safe_file_name(cleaned_name, fallback)
     suffix = video_extension(original, media_extension, Path(fallback).suffix)
     if isinstance(media_extension, str) and media_extension.casefold() in _VIDEO_EXTENSIONS and suffix != Path(original).suffix:
         original = safe_file_name(Path(original).stem + suffix, fallback)
     stem = Path(original).stem
-    weak = not name or _promotional_name(name) or _random_identifier(stem) or bool(re.fullmatch(
+    weak = not cleaned_name or _promotional_name(cleaned_name) or _random_identifier(stem) or bool(re.fullmatch(
         r"(?:[\d\W_]+|[a-f\d]{16,}|[a-f\d]{8}(?:-[a-f\d]{4}){3}-[a-f\d]{12}"
         r"|(?:video|vid|file|telegram|document|clip|processed|photo|image|img)(?:[\W_]+[\da-f]+|\d+)*)",
         stem, re.IGNORECASE,
@@ -184,14 +232,18 @@ def explain_media_name(name: str, caption: str, fallback: str, entities=(), *, m
         return {"file_name": value, "source": source, "reason": reason}
 
     if not weak:
-        return result(original, "original", "meaningful_original")
+        return result(original, "original", "promotional_affixes_removed" if cleaned_name != name else "meaningful_original")
     if not caption:
+        if cleaned_name != name:
+            return result(safe_file_name(Path(fallback).stem + suffix, fallback), "fallback", "promotion_without_title")
         return result(original, "original" if name else "fallback", "no_caption")
     title = caption_title(caption, entities)
     title = _CAPTION_SUFFIX.sub("", title)
     if title and suffix and title.lower().endswith(suffix.lower()):
         title = title[:-len(suffix)]
     if not title:
+        if cleaned_name != name:
+            return result(safe_file_name(Path(fallback).stem + suffix, fallback), "fallback", "promotion_without_title")
         return result(original, "original" if name else "fallback", "no_valid_title")
     candidate = safe_file_name(_title_path_separators(title) + suffix, original)
     # A hostile title ending in '/..' or '/.' must not collapse to a basename
@@ -381,6 +433,7 @@ def _description_candidates(text: str, *, quoted: bool = False) -> list[tuple[st
             flush()
             adjacent_title = None
             continue
+        line = clean_promotional_affixes(line, filename=False)
         line = re.sub(r"!?\[[^\]]*\]\([^)]*\)", " ", line)
         line = re.sub(r"[a-z][a-z\d+.-]{0,31}://[^\s<>\u3000]+", " ", line, flags=re.IGNORECASE)
         line = re.sub(r"\b[\w.+-]+@(?:[\w-]+\.)+[\w-]+\b", " ", line)

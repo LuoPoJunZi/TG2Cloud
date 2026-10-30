@@ -12,6 +12,7 @@ from tg2cloud.domain.actors import current_user, user_event
 from tg2cloud.domain.naming import (
     album_file_name,
     caption_candidate,
+    clean_promotional_affixes,
     media_file_name,
     safe_file_name,
     video_extension,
@@ -195,7 +196,7 @@ class TelegramHandlers:
             await event.reply("磁盘空间触及安全线，暂不接收新文件。请释放空间后重新转发；已有任务记录保留。")
             return
         fallback = f"telegram-{message.id}{message.file.ext or '.bin'}"
-        file_name = safe_file_name(message.file.name or "", fallback)
+        file_name = safe_file_name(clean_promotional_affixes(message.file.name or ""), fallback)
         kind = self._media_kind(message)
         if kind:
             try:

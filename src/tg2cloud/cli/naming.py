@@ -8,6 +8,8 @@ from pathlib import Path
 from tg2cloud.domain.naming import caption_candidate, explain_media_name
 
 REASONS = {"meaningful_original": "原名具有可读语义，保留原名",
+           "promotional_affixes_removed": "清理明确的推广前后缀，保留有效原名",
+           "promotion_without_title": "纯推广原名没有可靠标题，使用安全兜底名",
            "no_caption": "没有说明文字，沿用原名／默认名",
            "no_valid_title": "说明中没有可靠标题，回退原命名",
            "caption_replaced_weak_name": "以清理后的说明替换数字／默认／推广原名",

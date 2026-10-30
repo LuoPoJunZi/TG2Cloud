@@ -31,6 +31,13 @@ class PreviewTests(unittest.TestCase):
                                  media_extension=value.get("media_extension", "")))
                 self.assertFalse(result["writes"])
 
+    def test_affix_cleaning_preview_uses_same_name_and_has_human_readable_reason(self):
+        for name in ("489155_com@示例账号【作品】城市旅行.mp4", "489155_com@示例账号.mp4"):
+            result = naming.preview({"file_name": name, "caption": ""})
+            self.assertNotIn("489155_com", result["file_name"])
+            self.assertTrue(result["reason_text"])
+            self.assertFalse(result["writes"])
+
     def test_selection_reasons_distinguish_original_caption_and_fallback(self):
         self.assertEqual(explain_media_name("River Walk.mp4", "旅行", "fallback.mp4")["reason"], "meaningful_original")
         self.assertEqual(explain_media_name("123.mp4", "河边旅行", "fallback.mp4")["source"], "caption")

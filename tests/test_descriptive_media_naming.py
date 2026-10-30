@@ -28,11 +28,11 @@ class PollutedOriginalTests(unittest.TestCase):
                 self.assertEqual(video_file_name(original, caption, "telegram-1.mp4"),
                                  "城市夜景长镜头记录雨后街道和沿途风景" + Path(original).suffix)
 
-    def test_url_pollution_without_a_reliable_caption_keeps_original(self):
+    def test_edge_contact_without_reliable_caption_uses_safe_fallback(self):
         original = "processed_www.Example.test@城市夜景_9c2c.mp4"
         for caption in ("", "#旅行 @sample https://example.test", "关注频道 @sample"):
             with self.subTest(caption=caption):
-                self.assertEqual(video_file_name(original, caption, "telegram-1.mp4"), original)
+                self.assertEqual(video_file_name(original, caption, "telegram-1.mp4"), "telegram-1.mp4")
 
     def test_semantic_originals_and_technical_domain_topics_stay_original(self):
         for original in ("城市夜景2026.mp4", "Processed Memories.mp4", "Node.js 教程.mp4",
@@ -82,6 +82,22 @@ class DescriptiveMediaIngestionTests(unittest.IsolatedAsyncioTestCase):
         return SimpleNamespace(sender_id=self.settings.allowed_user_id, chat_id=self.settings.allowed_user_id,
                                is_private=True, grouped_id=messages[0].grouped_id, messages=messages,
                                reply=AsyncMock())
+
+    async def test_new_contact_affixes_clean_both_editions_without_rewriting_original_audit(self):
+        for backend, offset in (("clouddrive2", 0), ("openlist", 10)):
+            self.service.settings = replace(self.settings, storage_backend=backend)
+            for i, kind, suffix in ((1, "video", ".MP4"), (2, "photo", ".jpg"), (3, "document", ".pdf")):
+                original = "489155_com@示例账号【作品】城市旅行_123_net@sample" + suffix
+                item = self.message(offset + i, kind, name=original)
+                if kind == "document":
+                    item.file.mime_type = "application/pdf"
+                await self.service._on_message(self.event(item))
+                task = self.db.list_recent(limit=1)[0]
+                self.assertEqual(task["file_name"], "【作品】城市旅行" + suffix)
+                self.assertEqual(task["original_file_name"], original)
+                prior = self.db.counts()
+                await self.service._on_message(self.event(item))
+                self.assertEqual(self.db.counts(), prior)
 
     async def test_single_photo_uses_its_own_caption_in_both_editions(self):
         for ident, backend in enumerate(("clouddrive2", "openlist"), 1):

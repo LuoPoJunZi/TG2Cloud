@@ -287,6 +287,11 @@ class TaskViews:
             f"文件大小：{format_bytes(task['file_size'])}\n"
             f"当前状态：{label}"
         )
+        listener = getattr(self, "listener", None)
+        if listener and hasattr(listener, "wait_summary"):
+            wait_summary = listener.wait_summary(task_id=task["id"])
+            if wait_summary:
+                text += "\n" + wait_summary
         reason = task.get("wait_reason")
         error = task.get("error")
         if reason:

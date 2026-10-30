@@ -11,6 +11,13 @@ from tg2cloud.deployment.payload import payload_sources
 from tg2cloud.deployment.profiles import PRODUCTS
 
 CATALOG = {
+    "v1.5.4": {
+        "commit": "7d3a56ff3cb7b9d9f8d994930904c1749677c69b",
+        "payloads": {
+            "clouddrive2": "608129c305f2e0e86fd5e5e961667b83ad3d620148c3ff4dbfae4d0d8fdaef5c",
+            "openlist": "e862ae992233d67a36754114bb70c0ff5167f7af090138fb6955a7c9fcdd3d68",
+        },
+    },
     "v1.5.3": {
         "commit": "2e6f06f09e1e2ac9fe8ae2d9c6e1d83cc7a3bee1",
         "payloads": {

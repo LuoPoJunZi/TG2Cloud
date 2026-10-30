@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections import OrderedDict
 from contextlib import ExitStack
 from datetime import datetime, timedelta, timezone
 
@@ -188,10 +189,12 @@ class CheckedSource:
                 self.listener.db, expected=current, status="Telegram 下载限速冷却",
                 cooldown_until=max(current.get("cooldown_until", 0), time.time() + seconds),
             )
-            self.listener.owner.log.info(
-                "任务 #%s Telegram 下载限速，等待 %s 秒后继续当前分片",
-                self.task["id"], seconds,
-            )
+            should_log = self.listener.record_wait(self.task, seconds)
+            if should_log:
+                self.listener.owner.log.info(
+                    "任务 #%s Telegram 下载限速，等待 %s 秒；后续等待按任务汇总",
+                    self.task["id"], seconds,
+                )
 
         try:
             validate()
@@ -203,6 +206,8 @@ class CheckedSource:
             )
             await self.classify_error(source, exc, client=client)
             raise
+        finally:
+            self.listener.finish_wait(self.task["id"])
 
     async def classify_error(self, source, exc, *, client):
         # Every delayed error belongs to the client which issued the request.
@@ -282,6 +287,39 @@ class Listener:
         self._maintenance_warning = False
         self._connect_failures = 0
         self.download_backoff = DownloadBackoff()
+        self.wait_records = OrderedDict()
+
+    def record_wait(self, task, seconds):
+        now = time.monotonic()
+        record = self.wait_records.setdefault(task["id"], {"source": task["source_id"], "count": 0,
+                                                       "seconds": 0, "until": 0, "logged": None})
+        self.wait_records.move_to_end(task["id"])
+        while len(self.wait_records) > 64:
+            self.wait_records.popitem(last=False)
+        record["count"] += 1
+        record["seconds"] += seconds
+        record["until"] = max(record["until"], now + seconds)
+        due = record["logged"] is None or now - record["logged"] >= 60
+        if due:
+            record["logged"] = now
+        return due
+
+    def finish_wait(self, task_id):
+        record = self.wait_records.get(task_id)
+        if record:
+            record["until"] = 0
+            self.owner.log.info("任务 #%s 本次下载等待结束；本进程累计 %s 次、约 %s 秒，结果见任务状态",
+                                task_id, record["count"], record["seconds"])
+
+    def wait_summary(self, *, source_id=None, task_id=None):
+        records = [r for key, r in self.wait_records.items()
+                   if (task_id is None or key == task_id) and (source_id is None or r["source"] == source_id)]
+        if not records:
+            return ""
+        count = sum(r["count"] for r in records)
+        seconds = sum(r["seconds"] for r in records)
+        active = sum(r["until"] > time.monotonic() for r in records)
+        return f"Telegram 等待：{count} 次、累计约 {seconds} 秒；" + (f"当前 {active} 项等待" if active else "当前无等待") + "（本次进程最近 64 项任务）"
 
     def download_limited(self):
         # Keep this signal separate from the resource window shared by manual tasks.
@@ -461,6 +499,11 @@ class Listener:
             naming["directory_preview"] = media_directory(source["config"], kind=item["kind"],
                                                          mime=item["mime"], extension=item["extension"],
                                                          base=self.owner.settings.cd2_target)
+            from tg2cloud.listening.management import destination
+            naming["effective_destination"] = destination(self.owner, actor, source, kind=item["kind"], mime=item["mime"], extension=item["extension"])
+            naming["filter_matched"], naming["filter_reason"] = rules.explain(
+                source["config"]["rules"], item, source_allowed=True)
+            naming["admission_reason"] = "未发现重复，实际入队仍须通过权限、额度与资源检查"
             if self.db._conn.execute(
                 "SELECT 1 FROM tasks WHERE sender_id=? AND media_key=?",
                 (actor, rules.facts(m)["media_key"]),
@@ -471,6 +514,8 @@ class Listener:
                 (source["account"], source["chat"], m.id),
             ).fetchone():
                 matched, reason = False, "重复事件（编辑不自动重处理）"
+            if reason.startswith("重复"):
+                naming["admission_reason"] = reason
             result.append((m.id, matched, reason, naming))
         return result
 

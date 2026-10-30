@@ -1,6 +1,6 @@
 # TG2Cloud Docs
 
-**TG2Cloud v1.5.4**，资料核对日期：2026-10-30。本站讲解当前 Linux 项目的安装、使用和维护；当前发布与实机未验收范围见[记录](../docs/development/V154-ACCEPTANCE.md)。
+**TG2Cloud v1.5.5**，资料核对日期：2026-10-30。本站讲解当前 Linux 项目的安装、使用和维护；当前发布与实机未验收范围见[记录](../docs/development/V154-ACCEPTANCE.md)。
 
 这是静态文档网站，部署网站不会部署 TG2Cloud 服务。项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)；上游致谢：[whyhhh20/TG115](https://github.com/whyhhh20/TG115)。完整版本事实见[更新日志](docs/changelog.md)。
 

@@ -1,6 +1,6 @@
 # 安装、下载与校验
 
-**TG2Cloud v1.5.4** 已正式发布，资料核对日期：2026-10-30。同标签原生双架构、实际源码包、镜像及两版 Compose 资产已核验；真实 VPS、DNS／ACME、Telegram 与网关转存仍待用户验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V154-ACCEPTANCE.md)。
+**TG2Cloud v1.5.5** 待发布，资料核对日期：2026-10-30。下列下载仍指向已发布 v1.5.4；真实 VPS、DNS／ACME、Telegram 与网关转存需分别验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V155-ACCEPTANCE.md)。
 
 当前正式稳定版为 **TG2Cloud v1.5.4**。源码、镜像和部署包须使用同版资源；已有实例先备份，再按原部署方式升级。
 
@@ -88,7 +88,7 @@ tg2cloud uninstall --edition all --check
 sha256sum -c SHA256SUMS.txt
 ```
 
-本版源码包 SHA256 为 `46232fe261ba2c13ff076c4f0c69d9e173c30f28fafd8d27f47b670e88d67b68`。校验不一致时停止，不混用其他版本的清单。校验和不是数字签名。
+本版源码包 SHA256 为 `5903e94859102f8a1a322aaf42de231e36e0db1334f8db8961150e6181067dbf`。校验不一致时停止，不混用其他版本的清单。校验和不是数字签名。
 
 [本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.4) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
@@ -100,6 +100,6 @@ sha256sum -c SHA256SUMS.txt
 
 ## 发布与验收范围
 
-源码、镜像和两版 Compose 部署包须使用同一版本；Compose 下载和摘要核对见[完整教程](/deploy/compose/)。完整版本事实见[更新日志](/changelog/)，当前资产和未执行的真实环境项目见[发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V154-ACCEPTANCE.md)。
+源码、镜像和两版 Compose 部署包须使用同一版本；Compose 下载和摘要核对见[完整教程](/deploy/compose/)。完整版本事实见[更新日志](/changelog/)，当前资产和未执行的真实环境项目见[发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V155-ACCEPTANCE.md)。
 
 发布及校验成功不等于真实 VPS、Telegram、DNS／ACME 或网盘转存已验收。测试结论按实际版本和范围理解，不提供 EXE 下载和桌面构建步骤。

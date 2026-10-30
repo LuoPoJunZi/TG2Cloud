@@ -67,7 +67,7 @@ async def output(event, text, buttons=None):
 async def ask(owner, event, action, prompt):
     actor = current_user(owner.settings.allowed_user_id)
     interactions(owner)[actor] = (time.monotonic() + 300, action)
-    back = ("listen",) if action[0] == "add" else ("view", action[1]) if action[0] == "rename" else ("settings",)
+    back = ("source", action[1]) if action[0] == "tools-name" else ("listen",) if action[0] == "add" else ("view", action[1]) if action[0] == "rename" else ("settings",)
     await output(event, prompt + "\n5 分钟内回复文本。发送附件仍正常转存。",
                  [[token_button(owner, actor, "取消填写", ("cancelinput", back))]])
 
@@ -260,6 +260,9 @@ async def source_card(owner, event, source_id):
             token_button(owner, actor, "返回监听管理", ("listen",)),
         ],
     ]
+    buttons += [[token_button(owner, actor, "规则方案", ("listen-tool", "templates", sid)),
+                 token_button(owner, actor, "失败恢复", ("listen-tool", "failures", sid))],
+                [token_button(owner, actor, "历史补拉", ("listen-tool", "history", sid))]]
     if "目录创建未完成" in s["status"]:
         buttons.append([token_button(owner, actor, "重试创建目录", ("source-directory-retry", sid, rev))])
     buttons.append([token_button(owner, actor, "命名规则历史与撤销", ("history", sid))])
@@ -280,12 +283,19 @@ async def source_card(owner, event, source_id):
         "SELECT count(*) FROM transfer_plans WHERE source=? AND status='pending' AND expires>?",
         (sid, time.time()),
     ).fetchone()[0]
+    from tg2cloud.listening.management import destination
+    try:
+        directory_preview = destination(owner, actor, s)
+    except ValueError:
+        directory_preview = "目录绑定待核对，请检查保存目录"
+    wait_summary = owner.listener.wait_summary(source_id=sid)
     summary = f"收到 {counts[0]} · 附件 {counts[1]} · 匹配 {counts[2]} · 跳过 {counts[0] - counts[2]} · 待确认 {waiting} · 入队 {stats.get('已入队', 0)}"
     await output(
         event,
         f"来源 #{sid}：{s['title']}\n启用从当前时点开始，暂停期间不补抓；重启补拉最多 6 小时。\n状态：{s['status']}\n规则版本：{rev}\n模式：{'确认后转存' if s['config']['confirmation'] else '自动转存'}"
-        f"\n目录：{description(s['config'])}\n"
+        f"\n目录：{description(s['config'])}\n视频保存预览：{directory_preview}\n"
         + rule_summary(s['config']['rules'], compact=True) + "\n命名：" + MODES[s['config']['profile']['mode']]
+        + ("\n" + wait_summary if wait_summary else "")
         + f"\n{summary}\n最近接收：" + ("；".join(f"{key} {value}" for key, value in stats.items()) or "暂无记录"),
         buttons,
     )
@@ -359,7 +369,10 @@ async def callback(owner, event):
             "save-feedback",
         }:
             owner.listener.require_admin(actor)
-        if action == "editor":
+        if action == "listen-tool":
+            from tg2cloud.telegram import listening_tools
+            await listening_tools.callback(owner, event, args)
+        elif action == "editor":
             from tg2cloud.telegram import editor
             await editor.callback(owner, event, args)
         elif action == "settings":
@@ -436,17 +449,12 @@ async def callback(owner, event):
             )
         elif action == "test":
             results = await owner.listener.test(actor, args[0])
-            s = repo.source(actor, args[0])
-            directory = (
-                repo.directory(actor, s["config"]["directory"])
-                or s["config"]["profile"]["directory"]
-                or "现有分类/默认目录"
-            )
+            from tg2cloud.telegram.listening_tools import test_result
             await output(
                 event,
                 "规则测试（只读，无任务、额度和进度副作用）\n"
                 + "\n".join(
-                    f"#{mid} {'匹配' if matched else '跳过'}：{reason}\n{name['file_name']} → {name.get('directory_preview') or directory}"
+                    test_result(mid, matched, reason, name)
                     for mid, matched, reason, name in results
                 ),
                 [[token_button(owner, actor, "返回来源", ("source", args[0]))]],
@@ -689,6 +697,10 @@ async def text(owner, event, value):
         )
         if len(value) > 8192:
             raise ValueError("文本过长")
+        if action == "tools-name":
+            from tg2cloud.telegram import listening_tools
+            await listening_tools.name_input(owner, event, args, value)
+            return True
         if action == "add":
             source = await owner.listener.add(
                 actor,

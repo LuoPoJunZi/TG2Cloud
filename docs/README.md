@@ -38,7 +38,8 @@
 - [仓库结构与维护规范](development/REPOSITORY.md)
 - [Linux 开发与测试](development/DEVELOPMENT.md)
 - [发布检查清单](development/RELEASE-CHECKLIST.md)
-- [当前 v1.5.4 发布与兼容记录](development/V154-ACCEPTANCE.md)：监听下载修复、验证边界与升级步骤。
+- [当前 v1.5.5 发布与兼容记录](development/V155-ACCEPTANCE.md)：命名与监听管理增强、发布和实机验收边界。
+- [v1.5.4 发布与兼容记录](development/V154-ACCEPTANCE.md)：监听下载修复、验证边界与升级步骤。
 - [v1.5.3 发布与兼容记录](development/V153-ACCEPTANCE.md)：实际 CI、资产摘要与尚未执行的实机清单。
 - [所有 TG2Cloud 版本分别做了什么](../CHANGELOG.md)：保留版本事实；旧验收资料以固定历史提交链接查阅，不作为当前教程。
 - [当前发布说明](../RELEASE_NOTES.md)

@@ -35,7 +35,7 @@ Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are di
 
 Current stable version: **v1.5.4**, supporting Linux. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.4). Linux is the supported deployment platform.
 
-v1.5.4 improves listening download rate-limit recovery, retries and account isolation; see the [release and compatibility notes](docs/development/V154-ACCEPTANCE.md).
+v1.5.4 improves listening download rate-limit recovery, retries and account isolation; see the [release and compatibility notes](docs/development/V155-ACCEPTANCE.md).
 
 ## Getting started
 
@@ -98,7 +98,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Optional features | [Classification, notifications and quotas](docs/FEATURE-ENHANCEMENTS.md) · [Existing Nginx reuse](docs/DOCKER-NGINX.md) |
 | Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) |
-| Current maintenance | [v1.5.4 release and compatibility](docs/development/V154-ACCEPTANCE.md) |
+| Current maintenance | [v1.5.5 release preparation and compatibility](docs/development/V155-ACCEPTANCE.md) |
 | Uninstall | [Uninstall guide](docs/UNINSTALL.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux development and tests](docs/development/DEVELOPMENT.md) |
 | Versions and releases | [Complete version history](CHANGELOG.md) · [Current release notes](RELEASE_NOTES.md) |

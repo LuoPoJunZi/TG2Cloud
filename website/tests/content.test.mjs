@@ -217,8 +217,15 @@ test('current release evidence separates actual CI and assets from unrun real se
   for(const value of ['同标签原生双架构','真实用户 VPS','尚未执行','SHA256','schema 3',
     `TG2Cloud-v${config.version}-source.tar.gz`,`TG2Cloud-v${config.version}-compose-clouddrive2.tar.gz`,
     `TG2Cloud-v${config.version}-compose-openlist.tar.gz` ])assert.ok(record.includes(value),value);
-  assert.match(record,/actions\/runs\/\d+/);
-  assert.match(record,/ghcr\.io\/luopojunzi\/tg2cloud@sha256:[0-9a-f]{64}/);
+  if(config.releaseStatus==='released'){
+    assert.match(record,/actions\/runs\/\d+/);
+    assert.match(record,/ghcr\.io\/luopojunzi\/tg2cloud@sha256:[0-9a-f]{64}/);
+  }else{
+    assert.ok(record.includes('待发布'));
+    assert.ok(record.includes('当前未生成'));
+    assert.ok(record.includes('不填写虚构摘要'));
+    assert.doesNotMatch(record,/状态：[^\n]*(?:已正式发布|已发布完成)/);
+  }
   assert.doesNotMatch(record,/root@|\b(?:\d{1,3}\.){3}\d{1,3}\b|config-[A-Za-z0-9]{8,}\.tar\.gz/);
 });
 

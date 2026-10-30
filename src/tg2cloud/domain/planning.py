@@ -9,6 +9,7 @@ from pathlib import Path
 from tg2cloud.domain.classification import safe_directory
 from tg2cloud.domain.naming import (
     caption_title,
+    clean_promotional_affixes,
     media_file_name,
     safe_file_name,
     video_file_name,
@@ -134,7 +135,7 @@ def name_plan(
         cleaned = "\n".join(line.removeprefix(prefix) for line in cleaned.splitlines())
     for suffix in options["suffixes"]:
         cleaned = "\n".join(line.removesuffix(suffix) for line in cleaned.splitlines())
-    clean_original = original
+    clean_original = clean_promotional_affixes(original)
     for prefix in options["prefixes"]:
         clean_original = clean_original.removeprefix(prefix)
     for suffix in options["suffixes"]:
@@ -142,7 +143,7 @@ def name_plan(
         clean_original = stem.removesuffix(suffix) + ext
     if clean_original != original or cleaned != caption:
         compatible = (video_file_name if kind == "视频" else media_file_name)(
-            clean_original, cleaned, fallback, (), media_extension=extension
+            clean_original, cleaned, fallback, entities if cleaned == caption else (), media_extension=extension
         )
     title = caption_title(cleaned, entities if cleaned == caption else ())
     data = fields((original or "") + "\n" + cleaned)
