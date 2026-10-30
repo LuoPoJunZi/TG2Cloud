@@ -31,7 +31,7 @@ python -B .github/scripts/prepare_bootstrap.py --directory build/bootstrap-candi
 python -B .github/scripts/release_metadata.py --tag v1.5.4
 ```
 
-只生成候选或检查元数据不代表已经发布。当前 helper 身份及实际 A/B 结果见[当前发布记录](V154-ACCEPTANCE.md)。
+只生成候选或检查元数据不代表已经发布。当前 helper 身份及实际 A/B 结果见[当前发布记录](V155-ACCEPTANCE.md)。
 
 ## 3. 源码发布
 

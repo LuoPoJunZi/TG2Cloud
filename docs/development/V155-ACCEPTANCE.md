@@ -14,11 +14,11 @@
 
 复核管理员鉴权、私聊／一次性确认、来源与连接修订核验、任务 CAS 与事务、重复事件、配额／磁盘、后端恢复边界和打包清单。发现并修复“只清理原名时丢失未变化说明的链接实体标记”；回归先复现失败，修正后通过。历史预览异步状态变化继续拒绝，不创建任务或推进游标。
 
-本地 `python -B .github/scripts/check_python.py all` 1573 项：1537 通过、36 条件跳过、0 失败，331.591 秒；仓库输入、Ruff、compileall 通过。固定 Ruff 0.17.0、定向 Bandit、Bash／ShellCheck、Python 3.10 无 site-packages 命名预览 6 项及帮助入口通过；网站构建与 37 项测试通过。真实 Linux Docker／rclone、Telegram 与网关、远端 CI 和长期运行不能由本机模拟推定通过。
+本地 `python -B .github/scripts/check_python.py all` 1573 项：1537 通过、36 条件跳过、0 失败，331.591 秒；仓库输入、Ruff、compileall 通过。固定 Ruff 0.17.0、定向 Bandit、Bash／ShellCheck、Python 3.10 无 site-packages 命名预览 6 项及帮助入口通过；网站构建与 37 项测试通过。另从纯 Git 导出副本运行 34 项新增相关回归通过，不依赖本地私有资料。真实 Linux Docker／rclone、Telegram 与网关、远端 CI 和长期运行不能由本机模拟推定通过。
 
 ## 发布链与资产
 
-待公开、验证辅助 A 后再更新两入口的真实 pin，入口 B 通过 CI 才建立 v1.5.5 Tag。源码和镜像／两版 Compose 必须来自同一 Tag。实际下载校验清单、GitHub 摘要与包内身份一致后才更新网站已发布状态；不移动历史 Tag、不替换已有资产。
+辅助 A：`d064ced682396c579b21b36e94c7c7502132c13a`，PR #20 的五组检查全部通过：[原生运行](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41046375782)、[CLI 矩阵](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41046376033)、[仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41046375806)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41046375878)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41046375778)。两入口 B 固定该 A；B 的完整 CI 通过后才建立 v1.5.5 Tag。源码和镜像／两版 Compose 必须来自同一 Tag。实际下载校验清单、GitHub 摘要与包内身份一致后才更新网站已发布状态；不移动历史 Tag、不替换已有资产。
 
 发布后将核验以下实际资产及 SHA256；当前未生成，不填写虚构摘要或镜像 digest：
 

@@ -126,4 +126,4 @@ tg2cloud proxy migrate --edition clouddrive2 --nginx-container edge-nginx --yes 
 
 ## 验证与实机边界
 
-模式、身份、事务与隔离 Nginx 的自动检查不等于真实站点接入、ACME 或长期续期验收。先备份原站点，明确证书责任和回退计划，再按专用测试环境逐项验收；不自动重启其他项目代理。实际发布证据见[当前记录](development/V154-ACCEPTANCE.md)。
+模式、身份、事务与隔离 Nginx 的自动检查不等于真实站点接入、ACME 或长期续期验收。先备份原站点，明确证书责任和回退计划，再按专用测试环境逐项验收；不自动重启其他项目代理。实际发布证据见[当前记录](development/V155-ACCEPTANCE.md)。
