@@ -119,6 +119,31 @@ class EditorTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(g["keyword_mode"], "all")
         self.assertNotIn(self.admin, editor.drafts(self.owner))
 
+    async def test_new_default_exclusions_and_size_remain_editable(self):
+        old_source = copy.deepcopy(self.source)
+        self.source = self.repo.save_source(
+            self.admin, account=42, chat=-1002, title="新默认来源", cursor=0,
+            config={"rules": rules.defaults()},
+        )
+        await self.open("rules")
+        self.assertIn("排除：广告、内部群、搜索引擎", self.text)
+        self.assertIn("大小：50.00MB 至 不限上限", self.text)
+        await self.click("排除关键词")
+        await self.click("清空列表")
+        await self.click("返回编辑")
+        await self.click("文件大小")
+        await self.click("修改最小值")
+        await self.type("0")
+        await self.click("返回规则")
+        self.assertEqual(self.config()["rules"], rules.defaults())
+        await self.click("保存修改")
+        saved = self.config()["rules"]
+        self.assertEqual(saved["exclude"], [])
+        self.assertEqual(saved["min_bytes"], 0)
+        self.assertTrue(rules.evaluate(saved, rules.facts(message(caption="广告", size=1)),
+                                       source_allowed=True)[0])
+        self.assertEqual(self.repo.source(self.admin, old_source["id"]), old_source)
+
     async def test_cancel_and_cancel_input_do_not_write(self):
         original = copy.deepcopy(self.config())
         await self.click("包含关键词")

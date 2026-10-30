@@ -163,6 +163,30 @@ class SourceDirectoryTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(self.repo.directories(self.admin), {})
         self.assertEqual(self.listener.client.get_messages.await_count, 1)
 
+    async def test_bot_add_uses_new_filter_defaults_and_preserves_existing_source(self):
+        existing = self.source(new=False)
+        with (
+            user_scope(self.admin),
+            patch.object(self.listener, "_resolve", new=AsyncMock(
+                return_value=(NS(title="合成新频道"), [message(9, chat=-1002)]))),
+            patch("telethon.utils.get_peer_id", return_value=-1002),
+        ):
+            incoming = event(self.admin)
+            planning.interactions(self.owner)[self.admin] = (time.monotonic() + 300, ("add",))
+            self.assertTrue(await planning.text(self.owner, incoming, "@fixture"))
+        source = next(s for s in self.repo.sources(self.admin) if s["chat"] == -1002)
+        self.assertEqual(source["config"]["rules"], rules.defaults())
+        self.assertFalse(source["enabled"])
+        self.assertTrue(source["config"]["confirmation"])
+        self.assertEqual(self.repo.source(self.admin, existing["id"]), existing)
+        self.assertNotIn(self.admin, planning.interactions(self.owner))
+        shown = "\n".join(c.args[0] for c in incoming.reply.await_args_list)
+        self.assertIn("排除：广告、内部群、搜索引擎", shown)
+        self.assertIn("大小：50.00MB 至 不限上限", shown)
+        self.assertIn("文字范围：文件名和说明", shown)
+        self.listener.client.download_media.assert_not_awaited()
+        self.assertEqual(self.db.counts(), {})
+
     async def test_mkdir_failure_retains_paused_registration_and_can_retry(self):
         self.owner.rclone.ensure_directory.side_effect = RuntimeError("private-token")
         with (

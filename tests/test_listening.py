@@ -89,6 +89,44 @@ def event(actor, msg=None, text=""):
 
 
 class RuleTests(unittest.TestCase):
+    def test_new_source_defaults_filter_size_type_and_exclusions(self):
+        config = rules.defaults()
+        threshold = 50 * 1024**2
+        item = rules.facts(message(size=threshold))
+        self.assertTrue(rules.evaluate(config, item, source_allowed=True)[0])
+        self.assertTrue(rules.evaluate(config, item | {"size": 10 * 1024**3}, source_allowed=True)[0])
+        for size in (threshold - 1, 1):
+            with self.subTest(size=size):
+                self.assertEqual(rules.evaluate(config, item | {"size": size}, source_allowed=True),
+                                 (False, "大小不符"))
+        for word in ("广告", "内部群", "搜索引擎"):
+            for field in ("original", "caption"):
+                with self.subTest(word=word, field=field):
+                    self.assertEqual(rules.evaluate(config, item | {field: word}, source_allowed=True),
+                                     (False, "排除关键词命中"))
+        for kind in ("图片", "音频", "文档", "压缩包", "其他文件"):
+            with self.subTest(kind=kind):
+                self.assertFalse(rules.evaluate(config, item | {"kind": kind}, source_allowed=True)[0])
+
+    def test_new_defaults_do_not_leak_between_sources_or_reinterpret_old_rules(self):
+        changed = rules.defaults()
+        changed["groups"][0]["types"].append("图片")
+        changed["exclude"].clear()
+        changed["min_bytes"] = 0
+        fresh = rules.defaults()
+        self.assertEqual(fresh["groups"][0]["types"], ["视频"])
+        self.assertEqual(fresh["exclude"], ["广告", "内部群", "搜索引擎"])
+        self.assertEqual(fresh["min_bytes"], 50 * 1024**2)
+        self.assertEqual(fresh["max_bytes"], 0)
+        self.assertEqual(fresh["scope"], "both")
+        self.assertFalse(fresh["all_attachments"])
+        # Validation of existing/custom rules does not silently inject new defaults.
+        old = rules.validate({"groups": [{"types": ["视频"]}]})
+        self.assertEqual(old["exclude"], [])
+        self.assertEqual(old["min_bytes"], 0)
+        self.assertTrue(rules.evaluate(old, rules.facts(message(caption="广告", size=1)),
+                                       source_allowed=True)[0])
+
     def match(self, config, **changes):
         item = rules.facts(message()) | changes
         return rules.evaluate(config, item, source_allowed=True)

@@ -386,7 +386,7 @@ async def callback(owner, event):
                 owner,
                 event,
                 ("add",),
-                "发送已加入来源的 @用户名、聊天 ID 或链接；自动创建来源目录，按类型归档。添加后暂停，默认仅视频、确认后转存。",
+                "发送已加入来源的 @用户名、聊天 ID 或链接；自动创建来源目录，按类型归档。添加后暂停、确认后转存。默认仅视频、至少 50 MB，排除广告、内部群、搜索引擎。",
             )
         elif action == "source":
             await source_card(owner, event, args[0])
@@ -693,7 +693,7 @@ async def text(owner, event, value):
             source = await owner.listener.add(
                 actor,
                 value,
-                {"rules": {"groups": [{"types": ["视频"]}]}, "confirmation": True},
+                {"rules": rules.defaults(), "confirmation": True},
             )
             interactions(owner).pop(actor, None)
             await source_card(owner, event, source["id"])

@@ -111,6 +111,17 @@ def validate(value: dict) -> dict:
     return result
 
 
+def defaults() -> dict:
+    """Fresh rules for a newly added source; saved rules retain their own values."""
+    return validate({
+        "groups": [{"types": ["视频"]}],
+        "exclude": ["广告", "内部群", "搜索引擎"],
+        "min_bytes": 50 * 1024**2,
+        "max_bytes": 0,
+        "scope": "both",
+    })
+
+
 def facts(message, caption: str | None = None) -> dict:
     file = getattr(message, "file", None)
     document = getattr(message, "document", None)
