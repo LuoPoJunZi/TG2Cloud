@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.5.5
 
-2026-10-30，待发布。清理新文件名推广前后缀，保留链接文字屏蔽；管理员监听增加规则解释、可选排除范围、规则方案、有限失败恢复与受控历史预览。保留 schema 3、Session、已有任务及两种部署方式；回退可选字段要求见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V155-ACCEPTANCE.md)。[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。实机验收安排在正式发布后。
+2026-10-30，[v1.5.5 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.5) 已发布，同标签原生双架构与实际资产核验通过。清理新文件名推广前后缀，保留链接文字屏蔽；管理员监听增加规则解释、可选排除范围、规则方案、有限失败恢复与受控历史预览。保留 schema 3、Session、已有任务及两种部署方式；回退可选字段要求见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V155-ACCEPTANCE.md)。[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。测试 VPS 的实际验收与未执行范围见本版记录。
 
 ## TG2Cloud v1.5.4
 

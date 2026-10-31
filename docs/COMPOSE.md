@@ -2,7 +2,7 @@
 
 这份教程适合第一次使用 Docker Compose 的用户，按“检查环境 → 下载部署包 → 填写信息 → 配置网关 → 启动 Bot → 测试转存”的顺序操作。
 
-示例对应 **v1.5.5**；当前待发布；同版镜像、两份 Compose 包及校验清单须在发布完成后再下载核验。CloudDrive2 和 OpenList 各有一份部署包，两者共用 Bot 核心；**选其中一个路线即可，不要把两套命令混着执行**。实际发布资产及测试范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V155-ACCEPTANCE.md)。
+示例对应 **v1.5.5**；同版镜像、两份 Compose 包及校验清单已发布并核验。CloudDrive2 和 OpenList 各有一份部署包，两者共用 Bot 核心；**选其中一个路线即可，不要把两套命令混着执行**。实际发布资产及测试范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V155-ACCEPTANCE.md)。
 
 如果你已经通过 `install.sh` 或 `install-lan.sh` 安装，并能使用 `tg2cloud` 菜单，请继续按原方式升级。这篇教程用于独立 Compose 部署，不会自动迁移、接管或覆盖原来的实例。
 

@@ -1,8 +1,8 @@
 # 安装、下载与校验
 
-**TG2Cloud v1.5.5** 待发布，资料核对日期：2026-10-30。下列下载仍指向已发布 v1.5.4；真实 VPS、DNS／ACME、Telegram 与网关转存需分别验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V155-ACCEPTANCE.md)。
+**TG2Cloud v1.5.5** 已正式发布，资料核对日期：2026-10-31。同标签原生双架构、源码、镜像与两份 Compose 包已核验；测试 VPS 结果与未执行项见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V155-ACCEPTANCE.md)。
 
-当前正式稳定版为 **TG2Cloud v1.5.4**。源码、镜像和部署包须使用同版资源；已有实例先备份，再按原部署方式升级。
+当前正式稳定版为 **TG2Cloud v1.5.5**。源码、镜像和部署包须使用同版资源；已有实例先备份，再按原部署方式升级。
 
 业务部署只使用正式稳定源码，部署平台为 Linux。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
 
@@ -79,8 +79,8 @@ tg2cloud uninstall --edition all --check
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.5.4-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.4/TG2Cloud-v1.5.4-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.4/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.5.5-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.5/TG2Cloud-v1.5.5-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.5/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -88,9 +88,9 @@ tg2cloud uninstall --edition all --check
 sha256sum -c SHA256SUMS.txt
 ```
 
-本版源码包 SHA256 为 `5903e94859102f8a1a322aaf42de231e36e0db1334f8db8961150e6181067dbf`。校验不一致时停止，不混用其他版本的清单。校验和不是数字签名。
+本版源码包 SHA256 为 `0f7033c1b0e4ab2f90b7eaa6f443f0c6b686b8a4f6d3a3ffb0574aa27b87eca4`。校验不一致时停止，不混用其他版本的清单。校验和不是数字签名。
 
-[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.4) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.5) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 ### 在线入口与源码资产的区别
 

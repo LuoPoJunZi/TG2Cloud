@@ -11,7 +11,7 @@ TG2Cloud 以 Linux、Python 主体和 Bash 轻量入口维护。两 Edition 共�
 ```bash
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.5.5
 git rev-parse HEAD
 ```
 
