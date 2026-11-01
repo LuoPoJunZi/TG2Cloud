@@ -16,7 +16,7 @@ rclone 凭据标准输入及私有候选配置，Bot Session／业务库权限�
 
 ## A／B、CI 与发布资产
 
-沿用辅助提交 A 公开并验证、入口 B 固定真实 A 的流程；目前尚未生成本版公开 A／B，不填写虚构 SHA。正式 Tag 不移动。
+辅助 A `201e64fe789c981b47a611e643e8b3340b746bf5` 已公开并逐文件核对远端 Git 树及 raw 版本字节；[原生运行／Docker／网关与依赖审计](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41274869480)、[CLI 四组合](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41274869476)及仓库／文档／网站五组全部通过。入口 B 将固定此 A；B 的公开提交与结果仅在完成后补录，正式 Tag 不移动。
 
 预期资产：`TG2Cloud-v1.5.6-source.tar.gz`、`SHA256SUMS.txt`、`TG2Cloud-v1.5.6-compose-clouddrive2.tar.gz`、`TG2Cloud-v1.5.6-compose-openlist.tar.gz`、`COMPOSE-SHA256SUMS.txt`。当前未生成正式摘要，不填写虚构摘要；实际下载后比对 SHA256、GitHub digest、不可变 Tag、包内文件与匿名镜像 index。校验和不是数字签名。
 
