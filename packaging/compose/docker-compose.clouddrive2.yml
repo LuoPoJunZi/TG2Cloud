@@ -1,6 +1,6 @@
 services:
   clouddrive2:
-    image: cloudnas/clouddrive2@sha256:5491c21fb14a5774576515f8483ecdbe2780bf525985f426785b99488e7cc09d
+    image: cloudnas/clouddrive2@sha256:12984fd22925d45b56027dea0ecff8655fe4b8d53eb631e779df5b534be9bc7d
     container_name: tg2cloud-clouddrive2
     environment:
       TZ: ${TZ:-Asia/Shanghai}
