@@ -11,6 +11,11 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from tg2cloud.deployment import readiness, runtime
+from tg2cloud.deployment.readiness import (
+    EVENT_LABELS,
+    listener_line,
+    validate_events,
+)
 
 FAILURES = {"authentication": "认证失败", "permission": "权限不足", "rate_limited": "限流", "server": "服务端异常",
             "remote_conflict": "远端待复核", "local_missing": "本地文件不可读", "network": "网络或校验异常", "other": "其他", "unchecked": "未检查"}
@@ -48,7 +53,7 @@ def inspect_entry(instance, session) -> tuple[str, str]:
 
 
 def recommendations(checks: dict, failures: dict, configuration: str, containers: dict,
-                    entry_state: str) -> list[str]:
+                    entry_state: str, listener=None) -> list[str]:
     """Actionable fixed text only; inputs must already pass the report whitelist."""
     tips = []
     if any(value not in {"running / healthy", "running / none"} for value in containers.values()):
@@ -81,6 +86,12 @@ def recommendations(checks: dict, failures: dict, configuration: str, containers
         tips.append("在“HTTPS 与管理”核对入口、证书及续期提醒；不要停掉其他项目的代理，公网或局域网访问还需另一设备验证。")
     if not checks or "unknown" in checks.values() or "unchecked" in failures:
         tips.append("部分诊断未核实：确认实际 Bot 与离线工具版本及观察时间；未核实不是通过，不因诊断缺失自动重装。")
+    listener = readiness.validate_listener(listener)
+    if listener and listener["enabled"]:
+        if listener["state"] == "cooldown":
+            tips.append("个人监听处于冷却：等待记录的冷却结束，不反复登录、测试规则或重启绕过。")
+        elif listener["state"] in {"connecting", "stale", "partial"}:
+            tips.append("个人监听待核对：在监听管理检查账号连接、来源权限与最近轮询；有缺口时先只读预览历史，不删除 Session 或盲目批量重试。")
     if not tips:
         tips.append("本次未发现明确处理项；仍需按需完成 WebDAV 写入验收及自有小文件转存，不把只读诊断当作完整验收。")
     return tips
@@ -98,7 +109,7 @@ def collect(instance, session) -> str:
         value = output.strip()
         lines.append(label + "：" + (value if not code and re.fullmatch(r"v?\d+\.\d+\.\d+(?:[-+][a-zA-Z0-9.-]+)?", value) else "未检查"))
     containers = {}
-    checks, failures, configuration = {}, {}, "unknown"
+    checks, failures, configuration, listener = {}, {}, "unknown", None
     for label, name in (("Bot", instance.product.bot_container), ("网关", instance.product.storage_container)):
         code, output = session.run("docker inspect --format " + shlex.quote('{{.State.Status}} {{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}') + " " + shlex.quote(name), timeout=10)
         fields = output.strip().split()
@@ -127,6 +138,18 @@ def collect(instance, session) -> str:
         checks, failures, configuration = value["checks"], value["failures"], value["configuration"]
         lines += ["实际 Bot 版本：" + value["version"], "Bot Python：" + value["python"],
                   "配置必填项：" + ("存在（不代表凭据有效）" if value["configuration"] == "present" else "不完整")]
+        listener = readiness.validate_listener(value.get("listener"))
+        lines.append(listener_line(listener))
+        observed = validate_events(value.get("observations"))
+        if observed is not None:
+            lines += ["", "## 最近24小时本进程临时异常观察",
+                      "每类最多保留64次；重启后重新计数，未包含 SDK 内部全部日志。当前状态与历史观察分别判断。"]
+            for kind, item in sorted(observed.items()):
+                lines.append(EVENT_LABELS[kind] + "：" + ("至少 " if item["bounded"] else "") + str(item["count"]) + " 次")
+            if not observed:
+                lines.append("当前快照无临时异常观察；不代表历史上从未发生。")
+        else:
+            lines.append("临时异常观察：未核实（旧快照、记录缺失或过期）")
         for key, label in readiness.LABELS.items():
             lines.append(label + "：" + readiness.STATES[value["checks"][key]])
         for key, label in (("disk_free_bytes", "已检查目录最小可用空间"), ("budget_bytes", "任务暂存额度")):
@@ -143,7 +166,7 @@ def collect(instance, session) -> str:
               "入口检查不含公网／其他客户端验收，不执行签发、续期或配置修复。",
               "", "## 建议处理顺序"]
     lines.extend(f"{number}. {tip}" for number, tip in enumerate(
-        recommendations(checks, failures, configuration, containers, entry_state), 1))
+        recommendations(checks, failures, configuration, containers, entry_state, listener), 1))
     lines += ["",
               "日志摘要：不读取原始容器日志，仅输出上面的白名单错误分类。",
               "未执行 WebDAV 写入、服务重启或软件安装。目录可读不代表可写或云盘官方最终完成。", ""]

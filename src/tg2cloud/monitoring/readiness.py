@@ -12,6 +12,7 @@ import tempfile
 import time
 from pathlib import Path
 
+from tg2cloud.monitoring import observations
 from tg2cloud.version import VERSION
 
 CHECKS = ("heartbeat", "telegram", "destination", "queue", "capacity")
@@ -41,7 +42,9 @@ def publish(service, counts, *, used_local_bytes: int | None = None) -> None:
              "sampled_at": time.time(), "ttl": min(300, max(15, settings.control_interval * 3)),
              "checks": checks, "cooldown_seconds": cooldown,
              "queued": int(counts.get("queued", 0)),
-             "active": len(service.download_tasks) + len(service.upload_tasks)}
+             "active": len(service.download_tasks) + len(service.upload_tasks),
+             "listener": observations.listener_observation(service),
+             "observations": observations.recent_events(service)}
     descriptor, name = tempfile.mkstemp(prefix=".readiness-", dir=settings.data_dir)
     temporary = Path(name)
     try:
@@ -63,7 +66,8 @@ def read(data_dir: Path, *, now: float, started_at: float = 0) -> dict:
         except OSError:
             checks["heartbeat"] = "failed"
     result = {"schema": 1, "checks": checks, "ready": False, "version": VERSION,
-              "queued": 0, "active": 0, "cooldown_seconds": 0}
+              "queued": 0, "active": 0, "cooldown_seconds": 0,
+              "listener": observations.unknown_listener(), "observations": None}
     try:
         path = data_dir / "readiness.json"
         if path.is_symlink() or path.stat().st_size > 16384:
@@ -84,6 +88,8 @@ def read(data_dir: Path, *, now: float, started_at: float = 0) -> dict:
             return result
         checks.update(raw["checks"])
         result.update({key: raw[key] for key in ("edition", "queued", "active", "cooldown_seconds")})
+        result["listener"] = observations.validate_listener(raw.get("listener")) or observations.unknown_listener()
+        result["observations"] = observations.validate_events(raw.get("observations"))
         result["ready"] = all(state == "ok" for state in checks.values())
     except (OSError, ValueError, TypeError, KeyError):
         pass

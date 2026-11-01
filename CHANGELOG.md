@@ -1,5 +1,15 @@
 # 更新记录
 
+## TG2Cloud v1.5.6
+
+版本日期：2026-11-01。运行安全与诊断维护版，发布准备中；实际 CI、资产和未执行项目见[本版记录](docs/development/V156-ACCEPTANCE.md)。
+
+- WebDAV 密码通过 rclone 标准输入处理；配置以私有临时文件生成并替换，失败或并发变化保留原配置。混淆不是加密。
+- 两 Edition、一键脚本／独立 Compose 以及受管共享代理配置容器日志轮转；不修改 Docker daemon，不操作其他项目日志。
+- 启动时收紧当前运行用户拥有的 Bot Session、业务数据库及已有 SQLite 旁文件权限；不改名、不清除或重建授权与任务数据。
+- 独立记录个人监听连接、循环与来源轮询新鲜度、冷却和缺口；诊断增加有界临时异常观察，保留原 Bot 基础就绪含义及首页样式。
+- 增加原 v1.5.5 不可变提交的可信升级基线；无新依赖、环境变量或数据库迁移。线上入口按辅助 A／入口 B 流程发布。
+
 ## TG2Cloud v1.5.5
 
 版本日期：2026-10-30。[v1.5.5 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.5) 已发布；命名与监听管理增强，同标签 CI 与实际资产已核验。测试 VPS 结果和边界见[本版记录](docs/development/V155-ACCEPTANCE.md)。
@@ -161,12 +171,13 @@
 
 发布后验收补充：用户已提供 v1.4.5 的 CloudDrive2 ARM64 升级与单独 WebDAV 写入日志，按[记录范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V145-ACCEPTANCE.md)保留；上段未验收说明是发布当时状态，不扩展到本版或其他场景。
 
-本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.5 共 36 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
+本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.6 共 37 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
 
 截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/CHANGELOG.md#tg2cloud-v121) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.5.6](#tg2cloud-v156) | 凭据标准输入、私密文件权限、容器日志轮转与独立监听健康诊断。 |
 | [v1.5.5](#tg2cloud-v155) | 推广前后缀清理、规则解释与方案、小批失败恢复和受控历史补拉。 |
 | [v1.5.4](#tg2cloud-v154) | 监听下载限速恢复、临时错误有限重试、账号隔离和并发退让；保留脱敏失败原因。 |
 | [v1.5.3](#tg2cloud-v153) | TG2Cloud 新安装命名统一、数据库兼容与可选 Compose HTTPS；一键脚本流程保持独立。 |

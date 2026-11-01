@@ -33,9 +33,9 @@ Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are di
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **v1.5.5**, supporting Linux. Download from the [Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.5). Linux is the supported deployment platform.
+Source version: **v1.5.6**, for Linux. See the [release record](docs/development/V156-ACCEPTANCE.md) for progress and use the [latest published Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) for installation.
 
-v1.5.5 improves promotional filename cleanup, listening rule templates, small-batch recovery and historical previews; see the [release and compatibility notes](docs/development/V155-ACCEPTANCE.md).
+v1.5.6 hardens credentials, private files and log rotation, with independent listening diagnostics; see the [release and compatibility notes](docs/development/V156-ACCEPTANCE.md).
 
 ## Getting started
 
@@ -98,7 +98,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Optional features | [Classification, notifications and quotas](docs/FEATURE-ENHANCEMENTS.md) · [Existing Nginx reuse](docs/DOCKER-NGINX.md) |
 | Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) |
-| Current maintenance | [v1.5.5 release and compatibility](docs/development/V155-ACCEPTANCE.md) |
+| Current maintenance | [v1.5.6 release and compatibility](docs/development/V156-ACCEPTANCE.md) |
 | Uninstall | [Uninstall guide](docs/UNINSTALL.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux development and tests](docs/development/DEVELOPMENT.md) |
 | Versions and releases | [Complete version history](CHANGELOG.md) · [Current release notes](RELEASE_NOTES.md) |

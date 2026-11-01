@@ -13,6 +13,7 @@ from tg2cloud.domain.planning import PlanningError, fields, name_plan
 from tg2cloud.domain.source_directories import media_directory
 from tg2cloud.listening import account, rules
 from tg2cloud.listening.transport import FLOOD_WAITS, DownloadBackoff, download_scope
+from tg2cloud.monitoring.observations import record_event
 from tg2cloud.persistence.plans import Plans
 
 BATCH = 100
@@ -233,10 +234,13 @@ class CheckedSource:
         from telethon.errors import ServerError, TimedOutError
 
         if isinstance(exc, (TimeoutError, TimedOutError)):
+            record_event(self.listener.owner, "listener_network")
             raise SourceTemporaryError("network") from None
         if isinstance(exc, ServerError):
+            record_event(self.listener.owner, "listener_server")
             raise SourceTemporaryError("server") from None
         if isinstance(exc, OSError) and not isinstance(exc, (PermissionError, FileNotFoundError)):
+            record_event(self.listener.owner, "listener_network")
             raise SourceTemporaryError("network") from None
 
 
@@ -290,6 +294,7 @@ class Listener:
         self.wait_records = OrderedDict()
 
     def record_wait(self, task, seconds):
+        record_event(self.owner, "listener_wait")
         now = time.monotonic()
         record = self.wait_records.setdefault(task["id"], {"source": task["source_id"], "count": 0,
                                                        "seconds": 0, "until": 0, "logged": None})
@@ -774,6 +779,7 @@ class Listener:
     async def run(self):
         try:
             while not self.owner._stop.is_set():
+                self._last_loop_at = time.monotonic()
                 self._maintain_if_due()
                 value = account.state(self.db)
                 try:

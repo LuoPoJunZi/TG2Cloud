@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 import asyncio
+import configparser
+import io
 import json
 import logging
 import math
 import os
 import posixpath
 import re
+import tempfile
 from collections.abc import Callable
 from pathlib import Path
 
 from tg2cloud.config import Settings
 from tg2cloud.domain.errors import STAGING_PATTERN, StagingScan, safe_failure
+from tg2cloud.persistence.private import private_file
 from tg2cloud.transfer.ports import DestinationProbe
 
 
@@ -190,7 +194,10 @@ class RcloneClient:
         timeout: float | None = None,
         check: bool = True,
         progress: Callable[[int, float | None], None] | None = None,
+        input_data: bytes | None = None,
     ) -> tuple[int, str, str]:
+        if input_data is not None and progress is not None:
+            raise ValueError("凭据标准输入不能与传输进度通道混用")
         command = [
             "rclone",
             "--config",
@@ -200,13 +207,15 @@ class RcloneClient:
         self.log.debug("运行 rclone：%s", " ".join(self._redact(command)))
         process = await asyncio.create_subprocess_exec(
             *command,
+            **({"stdin": asyncio.subprocess.PIPE} if input_data is not None else {}),
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
         readers: list[asyncio.Task[str]] = []
         try:
             if progress is None:
-                stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=timeout)
+                pending = process.communicate(input_data) if input_data is not None else process.communicate()
+                stdout, stderr = await asyncio.wait_for(pending, timeout=timeout)
                 out = stdout.decode("utf-8", errors="replace").strip()
                 err = stderr.decode("utf-8", errors="replace").strip()
             else:
@@ -268,42 +277,46 @@ class RcloneClient:
                 return
             path = self.settings.rclone_config_path
             path.parent.mkdir(parents=True, exist_ok=True)
-            common = (
-                "url",
-                self.settings.cd2_url,
-                "vendor",
-                "other",
-                "user",
-                self.settings.cd2_user,
-                "pass",
-                self.settings.cd2_password,
-                "--obscure",
-                "--non-interactive",
-            )
-            updated = False
-            if path.exists() and path.stat().st_size > 0:
-                code, _, _ = await self._run(
-                    "config",
-                    "update",
-                    self.remote_name,
-                    *common,
-                    timeout=30,
-                    check=False,
-                )
-                updated = code == 0
-            if not updated:
-                await self._run(
-                    "config",
-                    "create",
-                    self.remote_name,
-                    "webdav",
-                    *common,
-                    timeout=30,
-                )
+            values = {"type": "webdav", "url": self.settings.cd2_url,
+                      "vendor": "other", "user": self.settings.cd2_user}
+            if any(any(c in value for c in "\r\n\0") for value in (*values.values(), self.settings.cd2_password)):
+                raise RcloneError("WebDAV 配置不能含换行或空字符")
+            private_file(path)
+            parser = configparser.RawConfigParser(interpolation=None)
+            parser.optionxform = str
+            original = path.read_bytes() if path.exists() else None
             try:
-                os.chmod(path, 0o600)
-            except OSError:
-                self.log.warning("无法把 rclone 配置权限设置为 600")
+                if original:
+                    parser.read_string(original.decode("utf-8-sig"))
+            except (UnicodeError, configparser.Error):
+                raise RcloneError("rclone 配置无法安全读取；保留原文件") from None
+            # Official rclone stdin input: neither plaintext nor reversible
+            # obscured credentials enter argv. Obscuring is not encryption.
+            code, obscured, _ = await self._run(
+                "obscure", "-", input_data=(self.settings.cd2_password + "\n").encode("utf-8"),
+                timeout=30, check=False,
+            )
+            if code or not re.fullmatch(r"[A-Za-z0-9_-]{22,}", obscured):
+                raise RcloneError("rclone 凭据处理失败；保留原配置")
+            if not parser.has_section(self.remote_name):
+                parser.add_section(self.remote_name)
+            for key, value in (values | {"pass": obscured}).items():
+                parser.set(self.remote_name, key, value)
+            buffer = io.StringIO()
+            parser.write(buffer)
+            descriptor, name = tempfile.mkstemp(prefix=".rclone-", dir=path.parent)
+            candidate = Path(name)
+            try:
+                with os.fdopen(descriptor, "w", encoding="utf-8", newline="\n") as writer:
+                    writer.write(buffer.getvalue())
+                    writer.flush()
+                    os.fsync(writer.fileno())
+                private_file(path)
+                if (path.read_bytes() if path.exists() else None) != original:
+                    raise RcloneError("rclone 配置已变化；保留现有文件并稍后重试")
+                os.replace(candidate, path)
+            finally:
+                candidate.unlink(missing_ok=True)
             self._config_ready = True
 
     def remote(self, relative_path: str = "") -> str:

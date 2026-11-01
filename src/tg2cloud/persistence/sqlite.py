@@ -19,12 +19,14 @@ from tg2cloud.domain.states import (
     can_transition,
 )
 from tg2cloud.persistence.migrations import SCHEMA_VERSION, migrate
+from tg2cloud.persistence.private import private_sqlite
 
 
 class TaskDB:
     def __init__(self, path: Path):
         self.path = path
         self._lock = threading.RLock()
+        private_sqlite(path, create=True)
         self._conn = sqlite3.connect(
             path, timeout=30, check_same_thread=False, isolation_level=None
         )

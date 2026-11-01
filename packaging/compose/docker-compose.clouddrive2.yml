@@ -14,6 +14,11 @@ services:
       - /dev/fuse:/dev/fuse
     privileged: true
     pid: host
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
     networks:
       - tg2cloud-clouddrive2-net
@@ -46,6 +51,11 @@ services:
     read_only: true
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
     stop_grace_period: 45s
     healthcheck:

@@ -978,19 +978,23 @@ class RcloneConfigTests(unittest.TestCase):
                 *args: str,
                 timeout: float | None = None,
                 check: bool = True,
+                input_data: bytes | None = None,
             ) -> tuple[int, str, str]:
                 calls.append(args)
-                return 0, "", ""
+                self.assertEqual(input_data, b"new-password\n")
+                return 0, "A" * 32, ""
 
             client._run = fake_run  # type: ignore[method-assign]
             asyncio.run(client.ensure_config())
 
             self.assertTrue(calls)
             flattened = [item for call in calls for item in call]
-            self.assertIn("update", flattened)
-            self.assertIn("http://new.example/dav", flattened)
-            self.assertIn("new-user", flattened)
-            self.assertIn("new-password", flattened)
+            self.assertEqual(flattened, ["obscure", "-"])
+            self.assertNotIn("new-password", flattened)
+            updated = config_path.read_text(encoding="utf-8")
+            self.assertIn("url = http://new.example/dav", updated)
+            self.assertIn("user = new-user", updated)
+            self.assertNotIn("new-password", updated)
 
     def test_exists_distinguishes_missing_from_remote_failure(self) -> None:
         settings = SimpleNamespace(
@@ -1421,6 +1425,7 @@ class PayloadTests(unittest.TestCase):
         )
         with patch("tg2cloud.app.setup_logging"), patch("tg2cloud.transfer.service.logging.getLogger") as get_logger, \
                 patch("tg2cloud.app.TaskDB") as database, patch("tg2cloud.telegram.client.TelegramClient") as telegram, \
+                patch("tg2cloud.telegram.client.private_sqlite"), \
                 patch("tg2cloud.app.RcloneClient"), patch("tg2cloud.app.ResourceMonitor"), \
                 patch("tg2cloud.transfer.service.AdaptiveWindow"), patch.object(TransferService, "_register_handlers"):
             TransferService(settings)

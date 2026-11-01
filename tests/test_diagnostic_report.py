@@ -140,3 +140,16 @@ class ReportTests(unittest.TestCase):
             report = host.collect(instance, session)
         self.assertIn("部分诊断未核实", report)
         self.assertNotIn("认证失败：在", report)
+
+    def test_listener_warning_has_specific_advice_without_failing_manual_bot_checks(self):
+        value,instance,session=self.report_fixture()
+        value["listener"]=host.readiness.unknown_listener() | {
+            "state":"stale","enabled":True,"sources":1,"stale_sources":1,
+            "poll_age_seconds":300,"loop_age_seconds":2}
+        value["observations"]={"destination_network":{"count":2,"last_at":1000,"bounded":False}}
+        with patch.object(host,"inspect_entry",return_value=("HTTPS 管理入口","本机检查通过")):
+            report=host.collect(instance,session)
+        self.assertIn("个人监听待核对",report)
+        self.assertIn("WebDAV 探测连接异常：2 次",report)
+        self.assertNotIn("本次未发现明确处理项",report)
+        self.assertIn("当前无此范围内的失败任务",report)

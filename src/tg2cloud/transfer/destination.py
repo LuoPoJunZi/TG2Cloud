@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import time
 
+from tg2cloud.monitoring.observations import record_event
 from tg2cloud.storage.policies import policy_for
 from tg2cloud.transfer.ports import DestinationProbe
 
@@ -44,6 +45,10 @@ async def _probe_destination_once(self) -> None:
             self.log.exception("目的端探测异常")
         self.destination_last_checked = time.time()
         self.destination_failure_kind = failure_kind
+        if not self.destination_healthy:
+            kind = "authentication" if failure_kind == "unauthorized" else failure_kind
+            kind = kind if kind in {"authentication", "permission", "rate_limited", "server"} else "network"
+            record_event(self, "destination_" + kind)
         if openlist:
             if failure_kind == "rate_limited":
                 failures = min(5, getattr(self, "_destination_rate_limit_failures", 0) + 1)

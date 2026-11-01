@@ -84,6 +84,11 @@ def render(root: Path, edition: str, image: str) -> str:
     volumes:
       - ./:/workspace
       - ./backups:/backups
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: "no"
 
 """

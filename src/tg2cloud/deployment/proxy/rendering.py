@@ -64,6 +64,11 @@ def render_compose(active_domains: tuple[str, ...] = (), *, external_auth: bool 
     image: {NGINX_IMAGE}
     container_name: {PROXY_NGINX_CONTAINER}
     network_mode: host
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -96,6 +101,11 @@ def render_compose(active_domains: tuple[str, ...] = (), *, external_auth: bool 
   certbot:
     image: {CERTBOT_IMAGE}
     container_name: {PROXY_CERTBOT_CONTAINER}
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     restart: unless-stopped
     read_only: true
     tmpfs:

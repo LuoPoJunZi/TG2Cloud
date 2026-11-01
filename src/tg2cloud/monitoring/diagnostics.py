@@ -19,9 +19,11 @@ KINDS = {"authentication", "permission", "rate_limited", "server", "remote_confl
 
 def collect(data_dir: Path, *, environment=None, started_at: float = 0) -> dict:
     environment = os.environ if environment is None else environment
+    snapshot = readiness.read(data_dir, now=time.time(), started_at=started_at)
     report = {"schema": 1, "version": VERSION, "edition": environment.get("TG2CLOUD_STORAGE_BACKEND", "unknown"),
               "python": platform.python_version(), "architecture": platform.machine(),
-              "checks": readiness.read(data_dir, now=time.time(), started_at=started_at)["checks"], "failures": {},
+              "checks": snapshot["checks"], "listener": snapshot["listener"],
+              "observations": snapshot["observations"], "failures": {},
               "disk_free_bytes": None, "budget_bytes": None, "configuration": "incomplete",
               "logs": "未读取原始日志；仅统计任务中白名单错误分类（最近7天）"}
     if report["edition"] not in {"clouddrive2", "openlist"}:
