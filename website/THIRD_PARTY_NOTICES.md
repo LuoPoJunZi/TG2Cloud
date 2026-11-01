@@ -1,6 +1,6 @@
 # 来源、致谢与素材说明
 
-**TG2Cloud v1.5.6（发布准备中）**，资料核对日期：2026-11-01。文档整理不新增第三方依赖、品牌资源或许可证；原版权与上游致谢继续保留。
+**TG2Cloud v1.5.6**，资料核对日期：2026-11-01。文档整理不新增第三方依赖、品牌资源或许可证；原版权与上游致谢继续保留。
 
 ## 主项目与上游
 
@@ -13,7 +13,7 @@ TG2Cloud 的公开 LICENSE 为 MIT，版权行为 `Copyright (c) 2026 TG115 Cont
 
 主要技术资料：
 - README：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md
-- 当前正式发布：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.5
+- 当前正式发布：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.6
 - 运行维护：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md
 - VPS 单行脚本：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md
 - CHANGELOG：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md

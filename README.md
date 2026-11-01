@@ -33,7 +33,7 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-源码版本 **v1.5.6**，支持 Linux；发布状态见[本版记录](docs/development/V156-ACCEPTANCE.md)，可安装版本以[最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest)为准。
+当前稳定版 **[v1.5.6](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.6)**，支持 Linux；发布与兼容范围见[本版记录](docs/development/V156-ACCEPTANCE.md)。
 
 v1.5.6 加固凭据、私密文件权限和日志轮转，补充监听健康诊断；[发布与兼容说明](docs/development/V156-ACCEPTANCE.md)。
 

@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.5.6
 
-2026-11-01，待发布。凭据标准输入、私密文件权限、容器日志轮转和独立监听诊断维护；保留 schema 3、原 Session、任务及并发策略。实际发布准备、CI 和未执行的实机项目见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V156-ACCEPTANCE.md)和[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+2026-11-01，[v1.5.6 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.6) 已发布；同标签原生双架构与源码／镜像／Compose 资产已核验。凭据标准输入、私密文件权限、容器日志轮转和独立监听诊断维护；保留 schema 3、原 Session、任务及并发策略。含 pyasn1 0.6.5 限定安全修复；实际 CI 和未执行的实机项目见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V156-ACCEPTANCE.md)和[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 ## TG2Cloud v1.5.5
 

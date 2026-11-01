@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.5.6
 
-版本日期：2026-11-01。运行安全与诊断维护版，发布准备中；实际 CI、资产和未执行项目见[本版记录](docs/development/V156-ACCEPTANCE.md)。
+版本日期：2026-11-01。[v1.5.6 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.6) 已发布，运行安全与诊断维护版；实际 CI、资产和未执行项目见[本版记录](docs/development/V156-ACCEPTANCE.md)。
 
 - WebDAV 密码通过 rclone 标准输入处理；配置以私有临时文件生成并替换，失败或并发变化保留原配置。混淆不是加密。
 - 两 Edition、一键脚本／独立 Compose 以及受管共享代理配置容器日志轮转；不修改 Docker daemon，不操作其他项目日志。
