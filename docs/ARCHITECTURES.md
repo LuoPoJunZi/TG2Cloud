@@ -2,7 +2,7 @@
 
 TG2Cloud 维护 Linux 一键脚本和 Docker Compose。下表区分已实现的平台检查、CI 与真实环境验收；同一架构上的构建通过不代表任意发行版、NAS 或实际网盘都已通过。
 
-当前发布的源码、共享镜像与两版部署包证据见[本版记录](development/V155-ACCEPTANCE.md)。
+当前发布的源码、共享镜像与两版部署包证据见[本版记录](development/V157-ACCEPTANCE.md)。
 
 ## 支持范围
 
@@ -19,29 +19,29 @@ TG2Cloud 维护 Linux 一键脚本和 Docker Compose。下表区分已实现的�
 
 ## 现用镜像证据
 
-2026-10-20 直接查询 Docker Hub Registry v2：核验索引、两个子 manifest 与 config 的 SHA256 和 `linux/architecture`。没有拉取镜像层或运行容器。
+2026-11-04 通过 Docker Hub 官方 Registry 只读复核更新后的 Python 固定索引及两个 Linux 子 manifest 的 SHA256，并在 PR #29 的原生双架构 CI 验证运行；两个网关和代理条目保留此前已核验的稳定引用。以下为当前 main 源码引用，正式版本以其不可变 Tag 和发布记录为准；本轮维护不改写 v1.5.7 已发布镜像与部署包。
 
 | 用途 | 当前引用 | 核验结果 |
 | --- | --- | --- |
-| Bot Python | `python:3.12-slim-trixie@sha256:a6e34c598f2467ed0e9a8d349809fcd8b5c603269512df273a0bb1784edc11b1` | OCI 索引含 amd64、arm64/v8 |
+| Bot Python | `python:3.12-slim-trixie@sha256:aa943ce411423c7582288f18707ff66eddcbaeb510502d747a72aeb34f30d159` | OCI 索引含 amd64、arm64/v8 |
 | CloudDrive2 | `cloudnas/clouddrive2@sha256:5491c21fb14a5774576515f8483ecdbe2780bf525985f426785b99488e7cc09d` | OCI 索引含 amd64、arm64 |
 | OpenList | `openlistteam/openlist@sha256:c555c6e1c8af2aead38ed12ec761ac077fdf046d19cf033414be8e056aec6b64` | OCI 索引含 amd64、arm64 |
 | HTTPS / LAN Nginx | `nginx:1.30.5-alpine` | 当前标签索引含 amd64、arm64/v8 |
 | Certbot | `certbot/certbot:v5.8.0` | 当前标签索引含 amd64、arm64/v8 |
 
-前三个固定 digest 不变；后两个沿用既有版本标签，并非新增 digest 固定。没有改成 latest、升级镜像或降低原有固定摘要保护。Nginx 标签本次解析为 `sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94`，Certbot 为 `sha256:f70ad0adbb7e117f0fe42a63c553f28ea451edabc0148757b6efcd9735acaa20`；标签仍可能被上游重建，实际部署必须重新检查本机原生镜像。
+前三个引用继续固定到摘要；本轮仅维护 Python 3.12 基础镜像摘要，两个网关保持原样。后两个沿用既有版本标签，并非新增 digest 固定，没有改成 latest 或降低固定摘要保护。初验时 Nginx 标签解析为 `sha256:0985e772fb9f729e6fa0980da05fca5d9c468e870eed43071545afa9d2e27d94`，Certbot 为 `sha256:f70ad0adbb7e117f0fe42a63c553f28ea451edabc0148757b6efcd9735acaa20`；标签仍可能被上游重建，实际部署必须重新检查本机原生镜像。
 
 三组固定镜像的原生子 manifest：
 
 | 镜像 | amd64 | arm64 |
 | --- | --- | --- |
-| Python | `sha256:2b4f19dae3a777dfc3b76730bda1e82e1f66ab2a2686fa93ca78edbfb4f04ffe` | `sha256:16bf2b5c59a08523519d3c8589deca849285dee1d62a3653e124c3dba340f15e` |
+| Python | `sha256:1148dbb014615300fa7e713b2f94f550c0d1c69780c0805f84f093ceee34dd0b` | `sha256:b224e2fe306f9d303251ada22961635e5b52a69c0414a0050611be31c59f5f5b` |
 | CloudDrive2 | `sha256:d9d1d97d886e0628df54b9ca67596e288d4a9beadccdb6dfb77e0d6ace6293f5` | `sha256:ae3e82d11d68e7f3a49645ff8f6a4692899a31ffae011f3d0ae5582189930cbb` |
 | OpenList | `sha256:c942c98018ae219aeed5bff38e7f638964febe0eddccc68e856b1aeb17a16d2e` | `sha256:e259dcf7300d65cc6ae404cd78d660b08bd39f62ea594ae71d5d28b7fff51f91` |
 
 ## 依赖与权限
 
-宿主 CLI 仍仅使用标准库。Bot Python 3.12、Telethon 1.45.0、cryptg 0.6.0、psutil 7.2.2 及两个哈希锁文件不变。PyPI 已核实 Telethon 通用 wheel、cryptg CPython 3.12 manylinux x86_64/aarch64 wheel、psutil CPython abi3 manylinux x86_64/aarch64 wheel；这些 wheel 的 SHA256 已包含在 Bot 锁文件。wheel 存在不是安装／运行验收。
+宿主 CLI 仍仅使用标准库。Bot Python 3.12、Telethon 1.45.0、cryptg 0.6.0、psutil 7.2.2 及 Bot 哈希锁文件不变；开发锁文件只进行已审阅的工具维护更新。PyPI 已核实 Telethon 通用 wheel、cryptg CPython 3.12 manylinux x86_64/aarch64 wheel、psutil CPython abi3 manylinux x86_64/aarch64 wheel；这些 wheel 的 SHA256 已包含在 Bot 锁文件。wheel 存在不是安装／运行验收。
 
 镜像内 rclone、tini、CA 证书沿用 Debian 原生 APT；CloudDrive2 宿主 fuse3、kmod 亦按 `dpkg` 架构安装。不下载硬编码的 x86 二进制。两个原生 CI runner 已实际构建镜像并通过 cryptg 加解密、psutil、Telethon 导入、rclone version 检查。
 
