@@ -165,6 +165,17 @@ class RepositoryContractTests(unittest.TestCase):
         self.assertIn('extend-exclude = ["website"]', sections[0])
         self.assertNotRegex(config, r"(?m)^\s*(?:select|ignore|extend-select|extend-ignore)\s*=")
 
+    def test_current_cli_linter_pin_matches_the_declared_and_locked_tool(self):
+        project = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+        versions = re.findall(r'"ruff==([0-9.]+)"', project)
+        self.assertEqual(len(versions), 1)
+        locked = (ROOT / "requirements/dev.lock.txt").read_text(encoding="utf-8")
+        self.assertEqual(re.findall(r"(?m)^ruff==([0-9.]+)", locked), versions)
+        for name in (".github/workflows/vps-installer.yml", ".github/CONTRIBUTING.md"):
+            text = (ROOT / name).read_text(encoding="utf-8")
+            with self.subTest(path=name):
+                self.assertEqual(re.findall(r"ruff==([0-9.]+)", text), versions)
+
     def test_ruff_has_no_parallel_root_configuration(self):
         for name in (".ruff.toml", "ruff.toml"):
             with self.subTest(name=name):

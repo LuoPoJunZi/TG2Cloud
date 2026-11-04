@@ -46,7 +46,7 @@ python .github/scripts/check_python.py all
 独立 Linux 向导的标准库边界检查使用 Python 3.10 / 3.13，只需要现有 Ruff 工具，不要求 Bot 依赖：
 
 ```bash
-uv run --no-project --with ruff==0.17.0 python .github/scripts/check_python.py all --scope cli
+uv run --no-project --with ruff==0.17.3 python .github/scripts/check_python.py all --scope cli
 ```
 
 `pyproject.toml` 的 `[tool.ruff]` 统一 lint 配置：保持原有隐式默认规则、Git ignore 和 `website/` 排除，目标版本为 Python 3.10。全范围自动发现 Python 文件，CLI 范围集中在检查入口；无需另建 Ruff 配置文件。不要用 `ruff format .` 或 `--fix` 对稳定源码进行无关批量改写。
