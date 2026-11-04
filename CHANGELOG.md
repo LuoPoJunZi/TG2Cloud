@@ -1,5 +1,12 @@
 # 更新记录
 
+## 待发布
+
+- CI 的 actions/setup-python 更新至官方 v7.1.0 固定提交；Bot Python 3.12 slim trixie 基础摘要经过原生双架构验证后更新，两个网关镜像保持原样。
+- 合并开发工具维护更新：pytest 9.2.0、Ruff 0.17.3、uv 0.13.6，以及仅用于开发审计的 pip 26.2.2／msgpack 1.2.4。统一工具生成锁文件，Bot 运行依赖保持原样。
+- 同步宿主 CLI 检查与贡献指南的 Ruff 版本，增加声明、锁文件及 CLI 测试工具一致性回归；不降低检查规则。
+- 已发布 v1.5.7 的 Tag、源码、镜像和 Compose 资产保持不变；这些 main 维护更新留待后续版本，不自动升级 VPS。
+
 ## TG2Cloud v1.5.7
 
 版本日期：2026-11-04。[v1.5.7 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7) 已发布；监听下载恢复与诊断维护版，实际 CI 和资产结果见[本版记录](docs/development/V157-ACCEPTANCE.md)。真实 Telegram、VPS 与两网关验收尚未执行。
