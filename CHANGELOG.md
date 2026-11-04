@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.5.7
 
-版本日期：2026-11-04。发布准备中；监听下载恢复与诊断维护版，CI 和资产结果将记录于[本版记录](docs/development/V157-ACCEPTANCE.md)。真实 Telegram、VPS 与两网关验收尚未执行。
+版本日期：2026-11-04。[v1.5.7 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7) 已发布；监听下载恢复与诊断维护版，实际 CI 和资产结果见[本版记录](docs/development/V157-ACCEPTANCE.md)。真实 Telegram、VPS 与两网关验收尚未执行。
 
 - 短限流在原文件分片等待，普通监听下载增加有上限的持久冷却恢复；保留授权、取消、资源和远端现场保护，重启不重置恢复次数。
 - 来源空附件响应最多复核一次，展示准确失败原因；诊断正确识别 `source_access`。

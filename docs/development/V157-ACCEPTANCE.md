@@ -1,6 +1,6 @@
 # v1.5.7 发布与兼容记录
 
-状态：2026-11-04，待发布，发布准备中。以下区分本地验证、远端 CI、发布资产和真实环境，不把计划写成已完成。
+状态：2026-11-04，v1.5.7 已正式发布。同标签原生双架构、源码、共享镜像及两份 Compose 部署包已核验；真实用户 VPS 升级与转存尚未执行。
 
 ## 改动与兼容
 
@@ -16,11 +16,28 @@
 
 网站37项与34HTML构建、固定 Ruff0.17、Bandit、Bash／ShellCheck、Python3.10无 Bot 依赖入口及17项宿主回归、干净公共副本24项恢复／传输回归通过。5项真实本机 rclone 回环 WebDAV 通过，后端为隔离协议夹具，不是用户网关。
 
-新增20项回归覆盖普通／高级等待、重启、并发 CAS、取消／账号撤销／来源删除、精确错误分类与日志配置。原生 Docker LogConfig 检查已接入现有显式 opt-in 双架构 CI，结果待运行后记录。版本与基线同步后完整检查1610项、1580通过、30既有环境跳过、0失败，368.699秒；Ruff、compileall、395个公共文件、网站37项和构建通过，两份依赖审计均未发现已知漏洞。
+新增20项回归覆盖普通／高级等待、重启、并发 CAS、取消／账号撤销／来源删除、精确错误分类与日志配置。原生 Docker LogConfig 检查已在现有显式 opt-in 双架构 CI 通过；两 Edition 非 root、网关 HTTP／FUSE、共享／复用代理和外部只读 Range 在隔离原生资源中通过，不代表用户网关或 VPS 验收。版本与基线同步后完整检查1610项、1580通过、30既有环境跳过、0失败，368.699秒；Ruff、compileall、395个公共文件、网站37项和构建通过，两份依赖审计均未发现已知漏洞。
 
 ## A／B 与发布资产
 
-辅助 A：`8a4d9b3b561a92d01a3597b513f5044086ea89eb`，67个宿主 helper 的远端 Git blob 与关键匿名 raw 字节核对一致；五组 CI 全通过，包括[原生运行检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41786267274)和[CLI 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41786267041)。入口 B 已生成并固定此 A，B 的远端 CI、正式 Tag、同标签原生双架构发布、源码包、共享镜像和两份 Compose 包尚未完成。目标资产 `TG2Cloud-v1.5.7-source.tar.gz`、`TG2Cloud-v1.5.7-compose-clouddrive2.tar.gz`、`TG2Cloud-v1.5.7-compose-openlist.tar.gz` 当前未生成；SHA256 当前未生成，不填写虚构摘要。B 候选已固定上述 A；main 稳定入口在合并前保持原版，业务部署只接受正式稳定 Release。
+- 辅助 A：`8a4d9b3b561a92d01a3597b513f5044086ea89eb`。67个宿主 helper 远端 Git blob 和关键匿名 raw 字节一致；五组 CI 全通过，包括[tests](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41786267274)与[VPS installer checks](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41786267041)。
+- 入口 B／正式 Tag commit：`0c71f9ee3f626510f00999ab2770beecf48cc029`。两个公开入口均固定 A，五组 B CI 全通过，包括[tests](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41787326517)与[VPS installer checks](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41787326428)；PR #31 快进合入 main。main 五组复核通过，包括[tests](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41787774204)。
+- [同标签源码发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41787774081)与[原生镜像／Compose 发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41788284296)成功。源码395个文件逐字节匹配不可变 Tag；两份 Compose 包逐文件匹配同标签生成器。五资产 SHA256、GitHub digest 和清单一致，匿名镜像索引及两平台 digest 已核验；校验和不是数字签名。
+
+| 资产 | 字节数 | SHA256 |
+| --- | ---: | --- |
+| `COMPOSE-SHA256SUMS.txt` | 215 | `47f8bba9cb2fea65d5078cb6168984857b8896f8ee71eca6da63ca87ec77e1ea` |
+| `SHA256SUMS.txt` | 96 | `92c2ed55bf731fce0861e53b478085fa88be084874f03e9f7170966b16822655` |
+| `TG2Cloud-v1.5.7-compose-clouddrive2.tar.gz` | 244438 | `8c1c397ce9c6a1865d3a0de63d95e68875ce0861f943199b82a7941e44271a31` |
+| `TG2Cloud-v1.5.7-compose-openlist.tar.gz` | 244323 | `69db13f54fccc96d05867c5cfb5e139137ff2b11a3958bc7a1280509945d9a9e` |
+| `TG2Cloud-v1.5.7-source.tar.gz` | 3924159 | `1018c0e7c2029d081393916c16347b798436c1b93b807dec186b9871a064915e` |
+
+镜像：`ghcr.io/luopojunzi/tg2cloud@sha256:e194d52aeca50ad1f28d0ed35704c11bc827849d1e30f8272f127f1b30cf40d1`。
+
+- `linux/amd64`：`sha256:d3a7852b03a82c2c1abafcba19802c10faeb537ffbb5371edb4363d70182f695`。
+- `linux/arm64`：`sha256:fa214643dd50ea36e613c5c0f740ab6ab7a6e209d1a8242acc2a80e7653d599f`。
+
+不可变源码包中的文档保留发布前准备状态；main 补录实际发布结论及下载入口，不移动 Tag 或替换已发布资产。
 
 ## 发布后验收
 

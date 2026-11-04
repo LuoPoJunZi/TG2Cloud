@@ -255,7 +255,7 @@ cd /opt/tg2cloud-openlist && docker compose down
 
 ## 验证与验收范围
 
-自动检查、历史用户反馈和本次实际业务验收分别记录。新安装、保留配置升级、WebDAV、真实 Telegram 转存、外部网络、续期及回退都要核对自己的环境；当前 CI、资产和待验收清单见[发布记录](development/V156-ACCEPTANCE.md)。
+自动检查、历史用户反馈和本次实际业务验收分别记录。新安装、保留配置升级、WebDAV、真实 Telegram 转存、外部网络、续期及回退都要核对自己的环境；当前 CI、资产和待验收清单见[发布记录](development/V157-ACCEPTANCE.md)。
 
 ## 参数、升级后检查与下一步
 

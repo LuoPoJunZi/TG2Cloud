@@ -13,7 +13,7 @@ TG2Cloud 的公开 LICENSE 为 MIT，版权行为 `Copyright (c) 2026 TG115 Cont
 
 主要技术资料：
 - README：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md
-- 当前正式发布：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.6
+- 当前正式发布：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7
 - 运行维护：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md
 - VPS 单行脚本：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md
 - CHANGELOG：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md

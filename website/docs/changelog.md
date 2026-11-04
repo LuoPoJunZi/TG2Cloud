@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.5.7
 
-2026-11-04，待发布。监听普通下载增加有限冷却恢复、来源空响应复核与准确错误分类；安装升级和诊断检查实际容器日志限额。保留 schema 3、原任务和 Session；不自动重试历史失败或重建旧容器。实际验证范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V157-ACCEPTANCE.md)及[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+2026-11-04，[v1.5.7 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7) 已发布；同标签原生双架构与源码／镜像／Compose 资产已核验。监听普通下载增加有限冷却恢复、来源空响应复核与准确错误分类；安装升级和诊断检查实际容器日志限额。保留 schema 3、原任务和 Session；不自动重试历史失败或重建旧容器。实际验证范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V157-ACCEPTANCE.md)及[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 
 ## TG2Cloud v1.5.6
@@ -445,4 +445,4 @@ TG2Cloud 基于 [whyhhh20/TG115](https://github.com/whyhhh20/TG115) 演进，保
 
 ## 当前仍然存在的限制
 
-没有覆盖生产数据的一键 Restore；实例快照和共享代理备份校验不等于完整服务恢复。不同部署方式不相互接管，不提供跨实例 Token 分布式锁。真实 VPS、Telegram、网关、证书签发与长期续期均按实际版本和范围验收，见[备份边界](/operations/backup/)与[当前发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V154-ACCEPTANCE.md)。
+没有覆盖生产数据的一键 Restore；实例快照和共享代理备份校验不等于完整服务恢复。不同部署方式不相互接管，不提供跨实例 Token 分布式锁。真实 VPS、Telegram、网关、证书签发与长期续期均按实际版本和范围验收，见[备份边界](/operations/backup/)与[当前发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V157-ACCEPTANCE.md)。
