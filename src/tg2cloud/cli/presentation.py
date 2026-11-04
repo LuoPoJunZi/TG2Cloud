@@ -51,6 +51,7 @@ class OperationReport:
     alerts: set[str] = field(default_factory=set)
     readiness: dict[str, str] | None = None
     cli: dict | None = None
+    log_rotation: dict[str, str] | None = None
 
     def observe_line(self, line: str) -> tuple[str, str, str]:
         result = classify_install_line(line, base=self.stage == "基础安装与升级")
@@ -109,6 +110,8 @@ class OperationReport:
                          + ("本次未阻断基础步骤，不代表后续验收均通过。" if confirmed else "基础步骤未确认通过，不能判作本次无害。"))
         if "unknown" in self.alerts:
             lines.append("[待核对] 有未识别的 WARNING，请核对上方脱敏原文。")
+        from tg2cloud.deployment.diagnostics import log_rotation_lines
+        lines += ["\n── 容器日志轮转 ──\n", *log_rotation_lines(self.log_rotation)]
         lines += ["\n── 转存验收 ──\n"]
         if self.readiness is None:
             lines.append("业务就绪：未核实（无本次有效观察；可稍后在管理菜单重新检查）")

@@ -37,7 +37,11 @@ async def _download_one(self, task_id: int) -> None:
             last_progress_at = now
 
     try:
-        from tg2cloud.listening.service import ListenerReadError, task_source
+        from tg2cloud.listening.service import (
+            ListenerRateLimited,
+            ListenerReadError,
+            task_source,
+        )
         source = task_source(self, task)
         for attempt in range(
             int(task["download_retries"]), self.settings.max_retries
@@ -97,14 +101,34 @@ async def _download_one(self, task_id: int) -> None:
             except asyncio.CancelledError:
                 raise
             except ListenerReadError as exc:
+                current = self.db.get(task_id)
+                if not current or current["cancel_requested"] or current["state"] not in {"reserved", "downloading"}:
+                    return
+                if isinstance(exc, ListenerRateLimited) and self.db.defer_listener_download(
+                    task_id, sender_id=task["sender_id"], expected_updated_at=current["updated_at"],
+                    retry_after_seconds=exc.retry_after_seconds,
+                    maximum_attempts=min(3, self.settings.max_retries),
+                ):
+                    # Persist retry count/time first. A restart cannot reset the
+                    # recovery budget; the next attempt starts from byte zero.
+                    try:
+                        part_path.unlink(missing_ok=True)
+                    except OSError:
+                        self.log.warning("任务 #%s 冷却已登记；不完整文件清理待下次核对", task_id)
+                    await self._notify(f"⏳ 任务 #{task_id} 等待 Telegram 冷却结束后自动恢复；最多两次自动恢复，仍需通过资源与身份检查。")
+                    return
+                live = self.db.get(task_id)
+                if (not live or live["cancel_requested"] or live["updated_at"] != current["updated_at"]
+                        or live["state"] not in {"reserved", "downloading"}):
+                    return
                 self.db.transition(task_id, "download_failed", local_path=None,
                                    error=str(exc), failure_kind=exc.failure_kind)
                 if part_path.exists():
                     part_path.unlink()
                 if exc.failure_kind == "rate_limited":
-                    await self._notify(f"⏳ 任务 #{task_id} 暂停：{exc}")
+                    await self._notify(f"⏳ 任务 #{task_id}：{exc}；本次自动恢复未执行或已达上限，请在冷却后核对重试。")
                 else:
-                    await self._notify(f"任务 #{task_id} 需要检查监听授权或来源；未切换读取身份。")
+                    await self._notify(f"⚠️ 任务 #{task_id} 未能读取监听附件：{exc}")
                 return
             except Exception as exc:  # noqa: BLE001 - retry external I/O
                 self.recent_download_errors.append(time.time())

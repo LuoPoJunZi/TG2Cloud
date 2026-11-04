@@ -34,6 +34,23 @@ class ReportTests(unittest.TestCase):
         self.assertEqual(self.db.get(task["id"]), before)
         self.assertEqual(value["configuration"], "incomplete")
 
+    def test_source_access_is_named_not_other_and_report_remains_readonly(self):
+        task, _ = self.db.create_task(chat_id=1, sender_id=1, message_id=1,
+                                     file_name="SYNTHETIC_PRIVATE.mp4", file_size=5)
+        self.db.update(task["id"], state="download_failed", failure_kind="source_access", error="PRIVATE_DETAIL")
+        before = self.db.get(task["id"])
+        result = collect(self.root, environment={"TG2CLOUD_STORAGE_BACKEND": "clouddrive2"})
+        self.assertEqual(result["failures"], {"source_access": 1})
+        self.assertNotIn("PRIVATE", json.dumps(result))
+        self.assertEqual(self.db.get(task["id"]), before)
+        value, instance, session = self.report_fixture("clouddrive2")
+        value["failures"] = {"source_access": 1}
+        with patch.object(host, "inspect_entry", return_value=("HTTPS 管理入口", "本机检查通过")):
+            report = host.collect(instance, session)
+        self.assertIn("监听来源或附件不可读：1", report)
+        self.assertIn("原消息可能已删除", report)
+        self.assertNotIn("其他：1", report)
+
     def test_hostile_subprocess_output_not_echoed_and_unknown_does_not_pass(self):
         session = SimpleNamespace(run=lambda *a, **k: (0, "PRIVATE_TOKEN_AND_PATH"))
         instance = SimpleNamespace(product=PRODUCTS["openlist"])

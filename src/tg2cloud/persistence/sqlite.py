@@ -240,6 +240,53 @@ class TaskDB:
                 self._conn.execute("ROLLBACK")
                 raise
 
+    def defer_listener_download(self, task_id: int, *, sender_id: int, expected_updated_at: float,
+                                retry_after_seconds: int, maximum_attempts: int) -> bool:
+        """CAS a local pre-upload attempt into its existing durable cooldown queue."""
+        if (type(retry_after_seconds) is not int or not 5 <= retry_after_seconds <= 60
+                or type(maximum_attempts) is not int or not 1 <= maximum_attempts <= 3):
+            return False
+        with self._lock:
+            self._conn.execute("BEGIN IMMEDIATE")
+            try:
+                row = self._conn.execute("SELECT * FROM tasks WHERE id=?", (task_id,)).fetchone()
+                if (not row or row["state"] not in {"reserved", "downloading"}
+                        or row["transfer_mode"] != "local" or row["cancel_requested"]
+                        or row["sender_id"] != sender_id or row["updated_at"] != expected_updated_at
+                        or not str(row["read_identity"]).startswith("listener:")
+                        or any(row[key] for key in ("remote_path", "remote_temp_path", "remote_final_path"))
+                        or row["download_retries"] + 1 >= maximum_attempts):
+                    self._conn.execute("ROLLBACK")
+                    return False
+                account_row = self._conn.execute("SELECT value FROM service_meta WHERE key='listener_account'").fetchone()
+                try:
+                    account = json.loads(account_row[0]) if account_row and len(account_row[0]) <= 4096 else {}
+                except (ValueError, TypeError):
+                    account = {}
+                source = self._conn.execute(
+                    "SELECT account,chat,deleted FROM listener_sources WHERE id=?", (row["source_id"],),
+                ).fetchone()
+                if (not isinstance(account, dict) or account.get("enabled") is not True
+                        or type(account.get("account")) is not int
+                        or row["read_identity"] != "listener:" + str(account["account"])
+                        or not source or source["deleted"] or source["account"] != account["account"]
+                        or source["chat"] != row["chat_id"]):
+                    self._conn.execute("ROLLBACK")
+                    return False
+                now = time.time()
+                self._conn.execute(
+                    """UPDATE tasks SET state='queued',local_path=NULL,downloaded_bytes=0,
+                    download_retries=download_retries+1,error=NULL,failure_kind='rate_limited',
+                    wait_reason='Telegram 下载限流，等待冷却后有限恢复',next_retry_at=?,updated_at=?
+                    WHERE id=?""", (now + retry_after_seconds, now, task_id),
+                )
+                # Existing triggers record the state event and release active quota.
+                self._conn.execute("COMMIT")
+                return True
+            except BaseException:
+                self._conn.execute("ROLLBACK")
+                raise
+
     def search(self, *, sender_id: int, query: str = "", state: str = "", after_id: int = 0,
                limit: int = 6) -> list[dict[str, Any]]:
         if state and state not in STATE_LABELS and state != "failed":
@@ -533,7 +580,8 @@ class TaskDB:
                 task = self._conn.execute(
                     "SELECT * FROM tasks WHERE id = ?", (task_id,)
                 ).fetchone()
-                if task is None or task["state"] != "queued" or task["cancel_requested"]:
+                if (task is None or task["state"] != "queued" or task["cancel_requested"]
+                        or task["next_retry_at"] > time.time()):
                     self._conn.execute("ROLLBACK")
                     return False, "任务状态已经改变"
                 from tg2cloud.persistence.quotas import slot_available
@@ -563,7 +611,7 @@ class TaskDB:
                         """
                         UPDATE tasks
                         SET state = 'reserved', transfer_mode = 'stream',
-                            wait_reason = NULL, error = NULL, updated_at = ?
+                            wait_reason = NULL, error = NULL, failure_kind=NULL, next_retry_at=0, updated_at = ?
                         WHERE id = ?
                         """,
                         (time.time(), task_id),
@@ -595,7 +643,7 @@ class TaskDB:
                     """
                     UPDATE tasks
                     SET state = 'reserved', transfer_mode = 'local',
-                        wait_reason = NULL, error = NULL, updated_at = ?
+                        wait_reason = NULL, error = NULL, failure_kind=NULL, next_retry_at=0, updated_at = ?
                     WHERE id = ?
                     """,
                     (time.time(), task_id),
@@ -901,7 +949,8 @@ class TaskDB:
                 self._conn.execute(
                     """
                     UPDATE tasks SET state='queued', local_path=NULL,
-                        downloaded_bytes=0, download_retries=0,
+                        downloaded_bytes=0, download_retries=CASE WHEN read_identity LIKE 'listener:%'
+                            THEN download_retries ELSE 0 END,
                         upload_retries=0,
                         wait_reason='本地文件不完整或不存在，服务重启后重新排队',
                         updated_at=?

@@ -59,6 +59,15 @@ class ListenerRateLimited(ListenerReadError):
     """A bounded wait ended; preserve the cooldown without blaming permissions."""
     failure_kind = "rate_limited"
 
+    def __init__(self, message, *, retry_after_seconds=0):
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds
+
+
+class ListenerAttachmentUnavailable(ListenerReadError):
+    def __init__(self):
+        super().__init__("来源消息或附件暂不可读；可能已删除或不再包含附件，请核对原消息")
+
 
 AUTH_ERRORS = {"AuthKeyUnregisteredError", "SessionRevokedError", "SessionExpiredError",
                "UserDeactivatedError", "UserDeactivatedBanError", "AuthKeyDuplicatedError"}
@@ -155,6 +164,18 @@ class CheckedSource:
             message = await client.get_messages(entity, ids=ids)
             if self._identity()[0] is not client:
                 raise ListenerReadError("监听连接已变化；请重新核验附件")
+            if not message or not rules.facts(message)["attachment"]:
+                # One bounded recheck for a transient empty metadata response.
+                # No alternate identity, historical scan or unbounded polling.
+                await asyncio.sleep(1)
+                if self._identity()[0] is not client:
+                    raise ListenerReadError("监听连接已变化；请重新核验附件")
+                await verified_chat(client, entity)
+                if self._identity()[0] is not client:
+                    raise ListenerReadError("监听连接已变化；请重新核验附件")
+                message = await client.get_messages(entity, ids=ids)
+                if self._identity()[0] is not client:
+                    raise ListenerReadError("监听连接已变化；请重新核验附件")
         except ListenerReadError:
             raise
         except Exception as exc:
@@ -166,7 +187,7 @@ class CheckedSource:
             not message
             or not rules.facts(message)["attachment"]
         ):
-            raise ListenerReadError("消息已删除或无可读取的附件；停止下载")
+            raise ListenerAttachmentUnavailable()
         if rules.facts(message)["media_key"] != self.task["media_key"]:
             raise ListenerReadError("来源附件已变化；停止原任务，避免下载错误文件")
         self.message, self._client = message, client
@@ -220,7 +241,8 @@ class CheckedSource:
             await self.listener.source_failure(source, exc)
             raise ListenerRateLimited(
                 f"Telegram 限流，需等待至少 {max(5, exc.seconds)} 秒；"
-                "已记录账号冷却，结束后可手动重试本任务"
+                "已记录账号冷却",
+                retry_after_seconds=max(5, exc.seconds),
             ) from None
         if type(exc).__name__ in AUTH_ERRORS | {
             "ChannelPrivateError",

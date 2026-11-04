@@ -14,7 +14,7 @@ from tg2cloud.monitoring import readiness
 from tg2cloud.persistence.paths import database_path
 from tg2cloud.version import VERSION
 
-KINDS = {"authentication", "permission", "rate_limited", "server", "remote_conflict", "local_missing", "network", "other"}
+KINDS = {"authentication", "permission", "rate_limited", "server", "remote_conflict", "local_missing", "network", "source_access", "other"}
 
 
 def collect(data_dir: Path, *, environment=None, started_at: float = 0) -> dict:

@@ -38,6 +38,7 @@
 - [仓库结构与维护规范](development/REPOSITORY.md)
 - [Linux 开发与测试](development/DEVELOPMENT.md)
 - [发布检查清单](development/RELEASE-CHECKLIST.md)
+- [v1.5.7 发布准备与兼容记录](development/V157-ACCEPTANCE.md)：监听冷却恢复、来源提示与实际日志限额；远端及实机结果分开记录。
 - [当前 v1.5.6 发布与兼容记录](development/V156-ACCEPTANCE.md)：运行安全与诊断维护、发布和未执行的实机验收范围。
 - [v1.5.5 发布记录](development/V155-ACCEPTANCE.md)：前版命名／监听增强及历史验收证据。
 - [v1.5.4 发布与兼容记录](development/V154-ACCEPTANCE.md)：监听下载修复、验证边界与升级步骤。
