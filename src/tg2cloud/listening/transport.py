@@ -1,8 +1,8 @@
 """Narrow adapter for the pinned Telethon download RPC boundary.
 
-Retry the same file-chunk RPC after Telegram's premium wait, so Telethon keeps
-its file reference/CDN handling and the existing output stream never rewinds.
-Other requests and flood types retain the normal durable-cooldown policy.
+Retry scoped file-chunk RPCs after short Telegram waits. Both native flood
+types (including SDK-cached waits) keep the same offset and output stream.
+Metadata and unrelated requests retain the durable-cooldown policy.
 """
 from __future__ import annotations
 
@@ -53,36 +53,38 @@ class ListeningClient(TelegramClient):
         if not scoped:
             return await super()._call(sender, request, ordered=ordered,
                                        flood_sleep_threshold=flood_sleep_threshold)
-        # Telethon caches a premium wait by RPC constructor, then may surface
-        # it to another download as ordinary FloodWaitError. Share only waits
-        # actually observed as premium, before entering that native cache.
+        # Telethon may surface a cached premium wait as ordinary FloodWaitError.
+        # Honour either type only inside an authorized file/CDN download scope;
+        # preserve the server delay and the existing per-chunk wait bounds.
         gates = getattr(self, "_premium_download_gates", None)
         if gates is None:
             gates = self._premium_download_gates = {}
         key = request.CONSTRUCTOR_ID
         waits = waited = 0
         while True:
-            deadline = gates.get(key, 0)
+            deadline, error_type = gates.get(key, (0, FloodPremiumWaitError))
             remaining = max(0, ceil(deadline - monotonic()))
             if waits or remaining:
                 scope.validate()
             if remaining:
                 if waits >= MAX_CHUNK_WAITS or waited + remaining > MAX_CHUNK_WAIT_SECONDS:
-                    raise FloodPremiumWaitError(request=request, capture=remaining)
+                    raise error_type(request=request, capture=remaining)
                 scope.waiting(remaining)
                 waits += 1
                 waited += remaining
                 await asyncio.sleep(remaining)
-                if gates.get(key) == deadline:
+                if gates.get(key) == (deadline, error_type):
                     gates.pop(key, None)  # Never clear a newer, longer wait.
                 continue
             try:
                 return await super()._call(
                     sender, request, ordered=ordered, flood_sleep_threshold=0,
                 )
-            except FloodPremiumWaitError as exc:
+            except FLOOD_WAITS as exc:
                 seconds = max(1, exc.seconds)
-                gates[key] = max(gates.get(key, 0), monotonic() + seconds)
+                candidate = monotonic() + seconds
+                if candidate >= gates.get(key, (0, type(exc)))[0]:
+                    gates[key] = (candidate, type(exc))
                 # Next iteration waits, or leaves the long-wait cooldown to
                 # CheckedSource. No byte or file handle has been rewound.
 

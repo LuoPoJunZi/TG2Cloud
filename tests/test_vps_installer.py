@@ -968,7 +968,20 @@ class InstanceTests(unittest.TestCase):
         with patch.object(tgdep_install, "edition_lock", return_value=nullcontext()), patch.object(tgdep_instances, "docker_inventory", return_value=set()), patch.object(tgdep_instances, "discover", return_value=self.instance), patch.object(tgdep_install, "verify_destination") as verify:
             tgdep_install.execute_plan(plan, RELEASE, ROOT, ROOT, session, self.log, ui)
         manager.configure.assert_called_once_with("files.example.test", "")
-        session.run.assert_called_once_with("docker exec " + self.product.bot_container + " python -B -m tg2cloud.monitoring.readiness", timeout=20)
+        calls = session.run.call_args_list
+        self.assertEqual(len(calls), 5)
+        self.assertEqual(calls[0].args, ("docker exec " + self.product.bot_container + " python -B -m tg2cloud.monitoring.readiness",))
+        self.assertEqual(calls[0].kwargs, {"timeout": 20})
+        expected = (self.product.bot_container, self.product.storage_container,
+                    "tg2cloud-proxy-nginx", "tg2cloud-proxy-certbot")
+        for call, name in zip(calls[1:], expected):
+            args = shlex.split(call.args[0])
+            self.assertEqual(args[:4], ["docker", "container", "inspect", "--format"])
+            self.assertEqual(len(args), 6)
+            self.assertEqual(args[-1], name)
+            self.assertEqual(call.kwargs, {"timeout": 10})
+            self.assertNotIn(".Config.Env", args[4])
+            self.assertNotIn(".Config.Cmd", args[4])
         verify.assert_not_called()
         self.assertEqual(ui.reveal.call_count, 3)
         self.assertEqual(ui.reveal.call_args_list[1].args, ("WebDAV 密码", VALUES["webdav_password"]))

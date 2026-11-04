@@ -18,7 +18,74 @@ from tg2cloud.deployment.readiness import (
 )
 
 FAILURES = {"authentication": "认证失败", "permission": "权限不足", "rate_limited": "限流", "server": "服务端异常",
-            "remote_conflict": "远端待复核", "local_missing": "本地文件不可读", "network": "网络或校验异常", "other": "其他", "unchecked": "未检查"}
+            "remote_conflict": "远端待复核", "local_missing": "本地文件不可读", "network": "网络或校验异常", "source_access": "监听来源或附件不可读", "other": "其他", "unchecked": "未检查"}
+
+
+LOG_CONTAINERS = ("Bot", "网关", "共享 Nginx", "Certbot")
+LOG_STATES = {
+    "ok": "已生效（每份不超过10m，最多3份）",
+    "pending": "未采用项目轮转限额（旧容器需确认更新）",
+    "custom": "已有限额，但与项目设置不同；请核对",
+    "other": "使用其他日志驱动；需核对其保留策略",
+    "unknown": "未核实（未使用、不可读或归属未确认）",
+}
+
+
+def inspect_container_logs(instance, session) -> dict[str, str]:
+    """Inspect actual owned containers, never their env, arguments or log content."""
+    result = dict.fromkeys(LOG_CONTAINERS, "unknown")
+    template = ('{"driver":{{json .HostConfig.LogConfig.Type}},'
+                '"size":{{json (index .HostConfig.LogConfig.Config "max-size")}},'
+                '"files":{{json (index .HostConfig.LogConfig.Config "max-file")}},'
+                '"directory":{{json (index .Config.Labels "com.docker.compose.project.working_dir")}},'
+                '"service":{{json (index .Config.Labels "com.docker.compose.service")}},'
+                '"managed":{{json (index .Config.Labels "com.tg2cloud.managed")}},'
+                '"role":{{json (index .Config.Labels "com.tg2cloud.role")}}}')
+    try:
+        product = instance.product
+        directory = str(instance.directory)
+        owned = (("Bot", product.bot_container, directory, product.bot_service, ""),
+                 ("网关", product.storage_container, directory, product.key, ""),
+                 ("共享 Nginx", "tg2cloud-proxy-nginx", "/opt/tg2cloud-proxy", "nginx", "reverse-proxy"),
+                 ("Certbot", "tg2cloud-proxy-certbot", "/opt/tg2cloud-proxy", "certbot", "certificate-manager"))
+    except AttributeError:
+        return result
+    for label, name, root, service, role in owned:
+        try:
+            code, output = session.run("docker container inspect --format " + shlex.quote(template)
+                                       + " " + shlex.quote(name), timeout=10)
+            if code or len(output) > 8192:
+                continue
+            value = json.loads(output)
+            if (not isinstance(value, dict) or value.get("directory") != root
+                    or value.get("service") != service
+                    or role and (value.get("managed") != "true" or value.get("role") != role)):
+                continue
+            if value.get("driver") != "json-file":
+                result[label] = "other" if isinstance(value.get("driver"), str) else "unknown"
+                continue
+            size = value.get("size")
+            files = value.get("files")
+            match = re.fullmatch(r"([1-9][0-9]{0,12})([kKmMgG]?)(?:[bB])?", size) if isinstance(size, str) else None
+            if not match or not isinstance(files, str) or not re.fullmatch(r"[1-9][0-9]{0,6}", files):
+                result[label] = "pending"
+                continue
+            amount = int(match[1]) * {"": 1, "k": 1024, "m": 1024**2, "g": 1024**3}[match[2].lower()]
+            result[label] = "ok" if amount <= 10 * 1024**2 and int(files) <= 3 else "custom"
+        except (ValueError, TypeError, KeyError, OSError, RuntimeError, TimeoutError):
+            continue
+    return result
+
+
+def log_rotation_lines(value) -> list[str]:
+    if not isinstance(value, dict):
+        return ["容器日志轮转：未核实"]
+    lines = [label + "：" + LOG_STATES.get(value.get(label), LOG_STATES["unknown"])
+             if isinstance(value.get(label), str) else label + "：" + LOG_STATES["unknown"]
+             for label in LOG_CONTAINERS]
+    if any(value.get(label) == "pending" for label in LOG_CONTAINERS):
+        lines.append("修改 Compose 或仅重启不会更新旧容器日志参数；先确认中断影响，再按原部署方式更新创建对应容器。")
+    return lines
 
 
 def inspect_entry(instance, session) -> tuple[str, str]:
@@ -78,6 +145,8 @@ def recommendations(checks: dict, failures: dict, configuration: str, containers
         tips.append("调度已手动暂停：确认暂停原因解决后再恢复；诊断不会自动恢复调度。")
     if failures.get("remote_conflict", 0):
         tips.append("远端冲突：在 Bot 任务详情核对本地保留文件与远端状态，再确认“换名重传”；不要删除或覆盖未知远端文件。")
+    if failures.get("source_access", 0):
+        tips.append("监听来源或附件不可读：在任务详情核对具体原因；原消息可能已删除或没有附件，不因该分类直接要求重新登录，也不无限重试。")
     if failures.get("local_missing", 0):
         tips.append("本地文件不可读：核对任务详情及暂存文件；先排除远端已接收，再对自己的任务选择安全重试。")
     if failures.get("network", 0) or failures.get("server", 0):
@@ -161,6 +230,7 @@ def collect(instance, session) -> str:
             lines.append("当前无此范围内的失败任务；不代表从未发生错误。")
     except (ValueError, TypeError, KeyError):
         lines.append("Bot 诊断快照：未检查（未运行、旧版本或响应不受支持）")
+    lines += ["", "## 容器日志轮转（实际配置）", *log_rotation_lines(inspect_container_logs(instance, session))]
     entry_label, entry_state = inspect_entry(instance, session)
     lines += ["", entry_label + "：" + entry_state,
               "入口检查不含公网／其他客户端验收，不执行签发、续期或配置修复。",

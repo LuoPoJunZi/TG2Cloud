@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import json
+import shlex
 import stat
 import tempfile
 import unittest
@@ -207,7 +208,17 @@ class ExecutionSummaryTests(unittest.TestCase):
                 plan = self.plan()
                 self.run_plan(plan)
                 self.assertEqual(plan.feedback.readiness, dict.fromkeys(readiness.LABELS, "ok"))
-                self.session.run.assert_called_once_with("docker exec " + product.bot_container + " python -B -m tg2cloud.monitoring.readiness", timeout=20)
+                calls = self.session.run.call_args_list
+                self.assertEqual(len(calls), 5)
+                self.assertEqual(calls[0].args, ("docker exec " + product.bot_container + " python -B -m tg2cloud.monitoring.readiness",))
+                self.assertEqual(calls[0].kwargs, {"timeout": 20})
+                self.assertEqual({shlex.split(call.args[0])[-1] for call in calls[1:]},
+                                 {product.bot_container, product.storage_container,
+                                  "tg2cloud-proxy-nginx", "tg2cloud-proxy-certbot"})
+                for call in calls[1:]:
+                    self.assertTrue(call.args[0].startswith("docker container inspect --format "))
+                    self.assertEqual(call.kwargs, {"timeout": 10})
+                    self.assertNotIn(".Config.Env", call.args[0])
                 self.ui.confirm.assert_not_called()
                 self.ui.reveal.assert_not_called()
                 self.assertEqual(plan.feedback.checks["webdav"], "not_run")

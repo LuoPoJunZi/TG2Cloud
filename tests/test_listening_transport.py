@@ -153,6 +153,50 @@ class PremiumWaitTests(unittest.IsolatedAsyncioTestCase):
                 self.assertEqual(parent.await_count, expected_calls)
                 self.assertEqual(sleep.await_count, expected_waits)
 
+    async def test_short_ordinary_wait_keeps_real_download_bytes_and_same_rpc_offset(self):
+        sdk = client()
+        body = b"a" * (128 * 1024) + b"b" * (128 * 1024) + b"tail"
+        media = types.MessageMediaDocument(document=types.Document(
+            id=41, access_hash=42, file_reference=b"synthetic",
+            date=datetime.now(timezone.utc), mime_type="video/mp4", size=len(body),
+            dc_id=2, attributes=[types.DocumentAttributeFilename("synthetic.mp4")]))
+        offsets, delays = [], []
+        clock = [1000.0]
+        def send(query, ordered=False):
+            if isinstance(query, functions.InvokeWithoutUpdatesRequest):
+                query = query.query
+            offsets.append(query.offset)
+            future = asyncio.get_running_loop().create_future()
+            if query.offset == 128 * 1024 and offsets.count(query.offset) == 1:
+                future.set_exception(FloodWaitError(request=query, capture=5))
+            else:
+                future.set_result(types.upload.File(type=types.storage.FileUnknown(), mtime=0,
+                                                   bytes=body[query.offset:query.offset + query.limit]))
+            return future
+        async def sleep(seconds):
+            delays.append(seconds)
+            clock[0] += seconds
+        output = io.BytesIO()
+        with patch.object(sdk._sender, "send", side_effect=send), \
+                patch("telethon.client.users.time.time", side_effect=lambda: clock[0]), \
+                patch("tg2cloud.listening.transport.monotonic", side_effect=lambda: clock[0]), \
+                patch("tg2cloud.listening.transport.asyncio.sleep", side_effect=sleep), \
+                download_scope(Mock(), Mock()):
+            await sdk.download_media(media, file=output)
+        self.assertEqual(output.getvalue(), body)
+        self.assertEqual(offsets, [0, 128 * 1024, 128 * 1024, 256 * 1024])
+        self.assertEqual(delays, [5])
+
+    async def test_ordinary_short_waits_still_exhaust_the_existing_bound(self):
+        sdk = client()
+        parent = AsyncMock(side_effect=FloodWaitError(request=None, capture=3))
+        with patch.object(TelegramClient, "_call", parent), \
+                patch("tg2cloud.listening.transport.asyncio.sleep", new=AsyncMock()) as sleep, \
+                download_scope(Mock(), Mock()), self.assertRaises(FloodWaitError):
+            await sdk._call(sdk._sender, request())
+        self.assertEqual(parent.await_count, MAX_CHUNK_WAITS + 1)
+        self.assertEqual(sleep.await_count, MAX_CHUNK_WAITS)
+
     async def test_ordinary_flood_and_unrelated_requests_keep_durable_policy(self):
         for rpc, error in ((request(), FloodWaitError(request=None, capture=90)),
                            (types.InputPeerSelf(), FloodPremiumWaitError(request=None, capture=3))):

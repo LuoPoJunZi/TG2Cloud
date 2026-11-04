@@ -950,6 +950,33 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(ListenerReadError):
             await reader.get_messages(-1001, ids=1)
 
+    async def test_empty_attachment_rechecks_once_and_can_recover_same_identity(self):
+        await self.listener.receive(self.source, message())
+        plan = self.repo.pending(self.admin)[0]
+        task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+        media = message()
+        self.listener.client.get_messages.side_effect = [None, media]
+        reader = CheckedSource(self.listener, task)
+        with patch("tg2cloud.listening.service.asyncio.sleep", new=AsyncMock()) as sleep:
+            self.assertIs(await reader.get_messages(-1001, ids=1), media)
+        sleep.assert_awaited_once_with(1)
+        self.assertEqual(self.listener.client.get_messages.await_count, 2)
+        self.assertEqual(self.db.get(task["id"])["state"], "queued")
+
+    async def test_empty_attachment_recheck_stops_after_identity_is_revoked(self):
+        await self.listener.receive(self.source, message())
+        plan = self.repo.pending(self.admin)[0]
+        task, _ = self.repo.submit(self.admin, plan["id"], plan["revision"])
+        self.listener.client.get_messages.return_value = None
+        async def revoke(_):
+            account.write_state(self.db, enabled=False)
+        reader = CheckedSource(self.listener, task)
+        with patch("tg2cloud.listening.service.asyncio.sleep", side_effect=revoke), self.assertRaises(ListenerReadError):
+            await reader.get_messages(-1001, ids=1)
+        self.listener.client.get_messages.assert_awaited_once()
+        self.listener.client.download_media.assert_not_awaited()
+        self.assertIsNone(reader.message)
+
     async def test_changed_or_deleted_message_blocks_download(self):
         await self.listener.receive(self.source, message())
         p = self.repo.pending(self.admin)[0]
