@@ -11,6 +11,7 @@ from tg2cloud.cli.presentation import InstallerLog, OperationReport
 from tg2cloud.deployment import (
     architecture,
     configuration,
+    diagnostics,
     instances,
     payload,
     preflight,
@@ -73,6 +74,7 @@ def execution_feedback(plan, release, session, log, *, mode):
         try:
             if feedback.checks.get("entry") == "ok" and not feedback.interrupted:
                 feedback.readiness = readiness.inspect(replace(instance, version=target), session)
+                feedback.log_rotation = diagnostics.inspect_container_logs(instance, session)
         except (KeyboardInterrupt, EOFError):
             feedback.interrupted = True
             feedback.failure_stage = "业务就绪观察读取"

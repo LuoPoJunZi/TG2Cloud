@@ -163,12 +163,15 @@ async def _stream_one(self, task_id: int) -> None:
             except ListenerReadError as exc:
                 if stream is not None:
                     await stream.abort()
+                current = self.db.get(task_id)
+                if not current or current["cancel_requested"] or current["state"] not in {"reserved", "streaming"}:
+                    return
                 self.db.transition(task_id, "download_failed", local_path=None,
                                    error=str(exc), failure_kind=exc.failure_kind)
                 if exc.failure_kind == "rate_limited":
-                    await self._notify(f"⏳ 任务 #{task_id} 暂停：{exc}")
+                    await self._notify(f"⏳ 任务 #{task_id}：{exc}；流式远端现场已保留，请在冷却后核对恢复。")
                 else:
-                    await self._notify(f"任务 #{task_id} 需要检查监听授权或来源；保留远端现场，不切换身份。")
+                    await self._notify(f"⚠️ 任务 #{task_id} 未能读取监听附件：{exc}；已有远端现场保留供核对。")
                 return
             except MoveUncertainError as exc:
                 if stream is not None:

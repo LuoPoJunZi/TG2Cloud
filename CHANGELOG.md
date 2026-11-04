@@ -1,5 +1,14 @@
 # 更新记录
 
+## TG2Cloud v1.5.7
+
+版本日期：2026-11-04。[v1.5.7 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7) 已发布；监听下载恢复与诊断维护版，实际 CI 和资产结果见[本版记录](docs/development/V157-ACCEPTANCE.md)。真实 Telegram、VPS 与两网关验收尚未执行。
+
+- 短限流在原文件分片等待，普通监听下载增加有上限的持久冷却恢复；保留授权、取消、资源和远端现场保护，重启不重置恢复次数。
+- 来源空附件响应最多复核一次，展示准确失败原因；诊断正确识别 `source_access`。
+- 安装升级摘要与诊断核对实际容器日志限额，区分模板配置和旧容器实际生效状态；不自动重建服务。
+- 增加原 v1.5.6 正式提交的两 Edition 可信升级基线；无依赖、配置或 schema 迁移，历史失败不自动批量重试。
+
 ## TG2Cloud v1.5.6
 
 版本日期：2026-11-01。[v1.5.6 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.6) 已发布，运行安全与诊断维护版；实际 CI、资产和未执行项目见[本版记录](docs/development/V156-ACCEPTANCE.md)。
@@ -172,12 +181,13 @@
 
 发布后验收补充：用户已提供 v1.4.5 的 CloudDrive2 ARM64 升级与单独 WebDAV 写入日志，按[记录范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V145-ACCEPTANCE.md)保留；上段未验收说明是发布当时状态，不扩展到本版或其他场景。
 
-本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.6 共 37 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
+本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.6 共 38 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
 
 截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/CHANGELOG.md#tg2cloud-v121) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.5.7](#tg2cloud-v157) | 监听下载有限冷却恢复、来源提示和实际容器日志限额诊断。 |
 | [v1.5.6](#tg2cloud-v156) | 凭据标准输入、私密文件权限、容器日志轮转与独立监听健康诊断。 |
 | [v1.5.5](#tg2cloud-v155) | 推广前后缀清理、规则解释与方案、小批失败恢复和受控历史补拉。 |
 | [v1.5.4](#tg2cloud-v154) | 监听下载限速恢复、临时错误有限重试、账号隔离和并发退让；保留脱敏失败原因。 |

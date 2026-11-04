@@ -3,13 +3,17 @@ from __future__ import annotations
 
 import json
 import os
+import shlex
 import subprocess
 import tempfile
 import unittest
 import uuid
+from dataclasses import replace
 from pathlib import Path
+from types import SimpleNamespace
 
 from tg2cloud.compose.packaging import bundle_files
+from tg2cloud.deployment import diagnostics
 from tg2cloud.deployment.profiles import PRODUCTS
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -48,6 +52,30 @@ class ComposeDockerTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         return result.stdout
 
+    def check_actual_log_template(self, root, product):
+        # Created-only isolated container: no Bot login, data mount or network.
+        identifier = "tg2cloud-log-test-" + uuid.uuid4().hex
+        created = False
+        try:
+            self.run_command(["docker", "create", "--name", identifier, "--network", "none",
+                              "--log-driver", "json-file", "--log-opt", "max-size=10m",
+                              "--log-opt", "max-file=3", "--label",
+                              "com.docker.compose.project.working_dir=" + str(root),
+                              "--label", "com.docker.compose.service=" + product.bot_service,
+                              IMAGE, "python", "--version"])
+            created = True
+            def inspect(command, **kwargs):
+                args = shlex.split(command)
+                if args[-1] != identifier:
+                    return 1, ""  # Never inspect other services in this test.
+                return 0, self.run_command(args)
+            instance = SimpleNamespace(directory=root, product=replace(product, bot_container=identifier))
+            result = diagnostics.inspect_container_logs(instance, SimpleNamespace(run=inspect))
+            self.assertEqual(result["Bot"], "ok")
+        finally:
+            if created:
+                self.run_command(["docker", "rm", identifier])
+
     def test_both_bundles_setup_offline_and_bot_nonroot(self):
         self.assertEqual(os.name, "posix")
         self.run_command(["docker", "info"])
@@ -59,6 +87,8 @@ class ComposeDockerTests(unittest.TestCase):
             setup += "\nimport json;assert json.loads(Path('/workspace/compose-access.json').read_text())['mode']==" + repr(mode)
             with self.subTest(edition=edition, mode=mode), tempfile.TemporaryDirectory(prefix="tg2cloud-compose-ci-") as temp:
                 root = Path(temp)
+                if mode == "local":
+                    self.check_actual_log_template(root, product)
                 for name, data in bundle_files(ROOT, edition, "ghcr.io/luopojunzi/tg2cloud:ci").items():
                     target = root / name
                     target.parent.mkdir(parents=True, exist_ok=True)
