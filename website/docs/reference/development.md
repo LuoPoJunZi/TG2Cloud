@@ -2,7 +2,7 @@
 
 TG2Cloud 以 Linux、Python 主体和 Bash 轻量入口维护。两 Edition 共享 Bot，独立 Compose 与一键脚本分别管理实例；源码构建不依赖本地归档或私有配置。
 
-当前在线入口固定辅助 A `201e64fe789c981b47a611e643e8b3340b746bf5`，67 个宿主 helper；业务取正式稳定 Release。具体 A/B、CI、镜像与资产结果见[当前发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V156-ACCEPTANCE.md)。
+当前在线入口固定辅助 A `8a4d9b3b561a92d01a3597b513f5044086ea89eb`，67 个宿主 helper；业务取正式稳定 Release。具体 A/B、CI、镜像与资产结果见[当前发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V157-ACCEPTANCE.md)。
 
 ## 获取主项目源码
 

@@ -18,6 +18,6 @@
 
 ## 验证与验收
 
-实现阶段本地完整检查1610项：1580通过、30既有环境跳过、0失败；网站37项、Python3.10标准库入口、Ruff、Bandit、Bash／ShellCheck及5项本机 rclone 回环 WebDAV 通过。版本和基线同步后的检查、远端 CI、同标签源码／镜像／Compose 资产核验会按真实结果追加到[本版记录](docs/development/V157-ACCEPTANCE.md)。
+实现阶段本地完整检查1610项：1580通过、30既有环境跳过、0失败；网站37项、Python3.10标准库入口、Ruff、Bandit、Bash／ShellCheck及5项本机 rclone 回环 WebDAV 通过。版本与基线同步后完整检查仍为1610项、1580通过、30原有环境跳过、0失败，网站与两份依赖审计通过；辅助 A 五组 CI 已通过。入口 B、同标签源码／镜像／Compose 资产核验会按真实结果追加到[本版记录](docs/development/V157-ACCEPTANCE.md)。
 
 真实用户 VPS 升级、Telegram 限流恢复、CloudDrive2／OpenList 实际转存、手机、长期运行与灾难恢复尚未执行；不能以自动测试或旧版验收替代。WebDAV 接收及大小复验不等于云存储官方最终入库或内容哈希校验。本轮不自动升级 VPS。

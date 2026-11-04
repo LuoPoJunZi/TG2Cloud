@@ -16,11 +16,11 @@
 
 网站37项与34HTML构建、固定 Ruff0.17、Bandit、Bash／ShellCheck、Python3.10无 Bot 依赖入口及17项宿主回归、干净公共副本24项恢复／传输回归通过。5项真实本机 rclone 回环 WebDAV 通过，后端为隔离协议夹具，不是用户网关。
 
-新增20项回归覆盖普通／高级等待、重启、并发 CAS、取消／账号撤销／来源删除、精确错误分类与日志配置。原生 Docker LogConfig 检查已接入现有显式 opt-in 双架构 CI，结果待运行后记录。版本与基线同步后的最终结果待追加。
+新增20项回归覆盖普通／高级等待、重启、并发 CAS、取消／账号撤销／来源删除、精确错误分类与日志配置。原生 Docker LogConfig 检查已接入现有显式 opt-in 双架构 CI，结果待运行后记录。版本与基线同步后完整检查1610项、1580通过、30既有环境跳过、0失败，368.699秒；Ruff、compileall、395个公共文件、网站37项和构建通过，两份依赖审计均未发现已知漏洞。
 
 ## A／B 与发布资产
 
-辅助提交 A、入口 B、远端 CI、正式 Tag、同标签原生双架构、源码包、共享镜像和两份 Compose 包尚未发布／核验。目标资产 `TG2Cloud-v1.5.7-source.tar.gz`、`TG2Cloud-v1.5.7-compose-clouddrive2.tar.gz`、`TG2Cloud-v1.5.7-compose-openlist.tar.gz` 当前未生成；SHA256 当前未生成，不填写虚构摘要。在线入口仍固定上版有效 helper，业务部署仍只接受正式稳定 Release。
+辅助 A：`8a4d9b3b561a92d01a3597b513f5044086ea89eb`，67个宿主 helper 的远端 Git blob 与关键匿名 raw 字节核对一致；五组 CI 全通过，包括[原生运行检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41786267274)和[CLI 检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/41786267041)。入口 B 已生成并固定此 A，B 的远端 CI、正式 Tag、同标签原生双架构发布、源码包、共享镜像和两份 Compose 包尚未完成。目标资产 `TG2Cloud-v1.5.7-source.tar.gz`、`TG2Cloud-v1.5.7-compose-clouddrive2.tar.gz`、`TG2Cloud-v1.5.7-compose-openlist.tar.gz` 当前未生成；SHA256 当前未生成，不填写虚构摘要。B 候选已固定上述 A；main 稳定入口在合并前保持原版，业务部署只接受正式稳定 Release。
 
 ## 发布后验收
 
