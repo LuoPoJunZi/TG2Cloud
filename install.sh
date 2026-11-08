@@ -58,7 +58,7 @@ root = Path(sys.argv[1])
 api = "https://api.github.com/repos/LuoPoJunZi/TG2Cloud"
 # Update this pin only after the helper revision passes its CI and review.
 # It is independent of the target Release, which need not contain the CLI.
-installer_commit = "8a4d9b3b561a92d01a3597b513f5044086ea89eb"
+installer_commit = "9e103d68f48e36503a76b87770980ff292329e63"
 installer_version = "1.5.8"
 
 def validate_url(url):
@@ -102,6 +102,8 @@ try:
     else:
         raise ValueError("tag recursion")
     files = (
+        'packaging/compose/docker-compose.clouddrive2.yml',
+        'packaging/compose/docker-compose.openlist.yml',
         'scripts/run_source.py',
         'src/tg2cloud/__init__.py',
         'src/tg2cloud/addons/__init__.py',
@@ -126,6 +128,17 @@ try:
         'src/tg2cloud/cli/proxy.py',
         'src/tg2cloud/cli/terminal.py',
         'src/tg2cloud/cli/vps.py',
+        'src/tg2cloud/compose/__init__.py',
+        'src/tg2cloud/compose/__main__.py',
+        'src/tg2cloud/compose/access.py',
+        'src/tg2cloud/compose/https.py',
+        'src/tg2cloud/compose/lifecycle.py',
+        'src/tg2cloud/compose/maintenance.py',
+        'src/tg2cloud/compose/management.py',
+        'src/tg2cloud/compose/packaging.py',
+        'src/tg2cloud/compose/releases.py',
+        'src/tg2cloud/compose/runtime.py',
+        'src/tg2cloud/compose/webdav.py',
         'src/tg2cloud/config.py',
         'src/tg2cloud/deployment/__init__.py',
         'src/tg2cloud/deployment/architecture.py',

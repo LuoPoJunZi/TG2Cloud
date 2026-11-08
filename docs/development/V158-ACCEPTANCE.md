@@ -22,7 +22,11 @@ Compose format 3 新增随包离线 `manage.sh`，共享 Bot 与公共管理服�
 
 ## helper、CI 与发布资产
 
-同标签原生双架构 CI、helper A、入口 B、实际 Tag 提交及远端 Actions 尚待生成／核验；当前未生成发布资产的 SHA256，不填写虚构摘要。完成后补充各项真实提交、CI 链接、五份资产及镜像 digest。真实用户 VPS 验收尚未执行。计划核验资产为 `TG2Cloud-v1.5.8-source.tar.gz`、`TG2Cloud-v1.5.8-compose-clouddrive2.tar.gz`、`TG2Cloud-v1.5.8-compose-openlist.tar.gz` 及两份 SHA256 清单；当前不存在已完成的实机验收结论。
+helper A `9e103d68f48e36503a76b87770980ff292329e63` 已公开，80 个文件的 Git blob 与远端目录树一致，3 个匿名 raw 下载样本与 Git 对象字节一致；入口 B 固定该真实提交。
+
+A 的五组远端检查通过：[原生双架构测试](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474071)、[Python 3.10／3.13 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474202)、[仓库检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474017)、[文档检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474073)、[网站检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474048)。AMD64／ARM64 原生 Compose 初始化、非 root 配置、两 Edition 候选和隔离 WebDAV 等测试通过；这不是用户真实网盘验收。
+
+B、同标签发布 CI、实际 Tag 与资产摘要完成后补录。计划核验 `TG2Cloud-v1.5.8-source.tar.gz`、两 Edition Compose 归档及两份 SHA256 清单，当前不填写未生成摘要。真实用户 VPS 验收尚未执行。
 
 ## 发布后用户验收
 
