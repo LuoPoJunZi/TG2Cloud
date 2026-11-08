@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.5.8
 
-2026-11-08，待发布。Compose 新增离线管理、凭据隔离、资源限额、备份、升级与卸载；共享代码保留一键脚本边界，新增 cgroup 内存与排队诊断。保留 schema 3、配置、任务及两个 Session，网关镜像不变。源码、共享镜像和两版部署包需同版核验，用户实机验收安排在发布之后。见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V158-ACCEPTANCE.md)与[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+2026-11-08，[v1.5.8 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.8)已发布；Compose 增加统一离线管理、凭据隔离与资源保护。共享代码保持两种部署的归属边界，schema 3、现有配置与 Session 保留。同标签原生双架构 CI、源码、共享镜像和两版部署包已核验；真实 VPS、Telegram 与网关转存由用户发布后验收，见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V158-ACCEPTANCE.md)。
 
 ## TG2Cloud v1.5.7
 

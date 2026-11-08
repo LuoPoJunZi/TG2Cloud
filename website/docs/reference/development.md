@@ -11,7 +11,7 @@ v1.5.8 入口固定已公开核验的辅助 A `9e103d68f48e36503a76b87770980ff29
 ```bash
 git clone https://github.com/LuoPoJunZi/TG2Cloud.git
 cd TG2Cloud
-git checkout main
+git checkout v1.5.8
 git rev-parse HEAD
 ```
 

@@ -2,7 +2,7 @@
 
 ## TG2Cloud v1.5.8
 
-版本日期：2026-11-08。Compose 统一管理与部署兼容维护版，正在执行发布检查；源码、共享镜像和两 Edition 部署包核验完成后补录[发布记录](docs/development/V158-ACCEPTANCE.md)。用户 VPS 实机验收安排在发布之后。
+版本日期：2026-11-08。[v1.5.8 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.8)已发布；同标签原生双架构 CI、源码、共享镜像及两 Edition format 3 部署包已核验，详见[发布记录](docs/development/V158-ACCEPTANCE.md)。真实用户 VPS 实机验收尚未执行，由用户在发布后进行。
 
 - Compose 新增随部署包离线运行的管理菜单，复用家人授权、分类通知、监听登录、诊断、WebDAV 验收和外部只读入口；专用升级、备份、资源限额及卸载保持独立归属，不调用一键脚本重新部署。
 - Compose format 3 使用 Bot 配置白名单，隔离 OpenList 首次管理员密码；增加 Bot 默认进程限额和可选 CPU／内存限制，应用后核对容器实际值。保留旧 format 1／2 的原模板核验、配置、任务及两个 Session。

@@ -33,9 +33,9 @@ Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are di
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **[v1.5.7](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7)**, for Linux. See the [release and compatibility record](docs/development/V158-ACCEPTANCE.md).
+Current stable version: **[v1.5.8](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.8)**, for Linux. See the [release and compatibility record](docs/development/V158-ACCEPTANCE.md).
 
-v1.5.8 is being prepared: Compose management, credential isolation and resource diagnostics; see the [release and compatibility notes](docs/development/V158-ACCEPTANCE.md).
+v1.5.8 adds Compose management, credential isolation and resource diagnostics; see the [release and compatibility notes](docs/development/V158-ACCEPTANCE.md).
 
 ## Getting started
 

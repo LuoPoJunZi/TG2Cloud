@@ -1,6 +1,6 @@
 # 安装、下载与校验
 
-本文源码版本为 **TG2Cloud v1.5.8**（待发布），核对日期：2026-11-08。当前正式稳定下载仍为 [v1.5.7](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7)，本页下载链接保持已存在资产。新版本资源及尚未执行的真实 VPS 验收见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V158-ACCEPTANCE.md)；资产齐全并核验后再切换。已有实例先备份，先做只读预检，再按原部署方式升级。
+本文对应 **TG2Cloud v1.5.8**，核对日期：2026-11-08。[正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.8)源码、共享双架构镜像及两版 Compose 包已发布并核验。真实 VPS 验收由用户在发布后进行，范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V158-ACCEPTANCE.md)。已有实例先备份，按原部署方式升级。
 
 业务部署只使用正式稳定源码，部署平台为 Linux。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
 
@@ -77,8 +77,8 @@ tg2cloud uninstall --edition all --check
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.5.7-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.7/TG2Cloud-v1.5.7-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.7/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.5.8-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.8/TG2Cloud-v1.5.8-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.8/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -88,7 +88,7 @@ sha256sum -c SHA256SUMS.txt
 
 本版源码包 SHA256 为 `1018c0e7c2029d081393916c16347b798436c1b93b807dec186b9871a064915e`。校验不一致时停止，不混用其他版本的清单。校验和不是数字签名。
 
-[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.8) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 ### 在线入口与源码资产的区别
 

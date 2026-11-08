@@ -1,6 +1,6 @@
 # v1.5.8 发布与兼容记录
 
-状态：2026-11-08，待发布。用户已授权提交、推送、正式 Tag、源码、共享镜像和两份 Compose 部署包；真实 VPS 验收由用户在发布后执行。
+状态：2026-11-08，v1.5.8 已正式发布。源码、共享镜像和两份 Compose 部署包均完成下载核验；真实用户 VPS 验收尚未执行，由用户在发布后进行。
 
 ## 改动与数据兼容
 
@@ -18,7 +18,7 @@ Compose format 3 新增随包离线 `manage.sh`，共享 Bot 与公共管理服�
 
 宿主 GnuPG 口令参数隔离与失败不发布副本的模拟通过；本机 Windows Git GnuPG 因 agent 不可用未完成真实加密回读，Linux 实际回读尚待验收。没有把模拟结果写成真实网关或 VPS 通过。
 
-版本、基线同步后的检查及远端结果在完成后补录。CI 条件下的隔离 Docker、模拟 WebDAV／网关不等于用户真实云盘、DNS 或长期运行验收。
+版本、基线与入口同步后再次执行完整检查：1648项，1612通过、36条件跳过、0失败，Ruff和语法通过；网站37项全通过，35个HTML页面／4631个本地链接资源锚点核验通过。CI 条件下的隔离 Docker、模拟 WebDAV／网关不等于用户真实云盘、DNS 或长期运行验收。
 
 ## helper、CI 与发布资产
 
@@ -26,7 +26,24 @@ helper A `9e103d68f48e36503a76b87770980ff292329e63` 已公开，80 个文件的 
 
 A 的五组远端检查通过：[原生双架构测试](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474071)、[Python 3.10／3.13 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474202)、[仓库检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474017)、[文档检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474073)、[网站检查](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42473474048)。AMD64／ARM64 原生 Compose 初始化、非 root 配置、两 Edition 候选和隔离 WebDAV 等测试通过；这不是用户真实网盘验收。
 
-B、同标签原生双架构发布 CI、实际 Tag 与资产摘要完成后补录。计划核验 `TG2Cloud-v1.5.8-source.tar.gz`、`TG2Cloud-v1.5.8-compose-clouddrive2.tar.gz`、`TG2Cloud-v1.5.8-compose-openlist.tar.gz` 及两份 SHA256 清单；当前未生成发布资产，不填写虚构摘要。真实用户 VPS 验收尚未执行。
+入口 B `dff554cae2c5c34bd1e37aa1c95f6db318b403a0` 固定 A；教程同步后最终提交／Tag 指向 `142176eb6a88e152cd2c54591af139fbe6be24fb`。[PR #33](https://github.com/LuoPoJunZi/TG2Cloud/pull/33)保留 A/B 历史并快进合入 main，不移动旧 Tag。第二轮[原生测试](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42474186531)、[CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42474186324)、文档／网站／仓库检查全部通过；同提交 main 检查通过。
+
+[同标签原生双架构与源码发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42474533809)、[Compose 原生镜像与部署包发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/42474819902)均成功。下载实际五份资产，核对 GitHub 资产 digest、两份清单和 SHA256；源码 406 个文件与 Tag 的 Git blob 逐字节一致。两版 format 3 包逐文件匹配同标签生成器，含 manage.sh／https.sh、80 个 helper 与两版资源；包内版本／提交、清单哈希和共享镜像一致。匿名读取 GHCR index、两份子 manifest 和配置，核对 Linux 架构、版本与 revision。
+
+共享镜像：`ghcr.io/luopojunzi/tg2cloud@sha256:ef15acbbb9420a3d2a9426363d8ace85291fe59450446335b5903906ffa1e2b8`。
+
+| 资产 | SHA256 |
+| --- | --- |
+| `COMPOSE-SHA256SUMS.txt` | `dea10ec4d44ba1cb026557b34cb1769cc6da9437a176638833705b8ce9bb2e05` |
+| `SHA256SUMS.txt` | `731787896e2c34d8b34526b8dbb87d7e5af9212e0b29ddceecb159959074bf04` |
+| `TG2Cloud-v1.5.8-compose-clouddrive2.tar.gz` | `f6b7f41819507d9c9b9d4a0cc009db62440b8a306046298e9aaf36aab1a00e34` |
+| `TG2Cloud-v1.5.8-compose-openlist.tar.gz` | `050b2ff3b7154ab9e924c773dc1dc111a4a0bfd8c044aaddae44d5a15655e701` |
+| `TG2Cloud-v1.5.8-source.tar.gz` | `944649eae13ad8a637da7d0097200242405523ed7a098d74bdfe898951894ce8` |
+
+- Linux AMD64 子镜像：`sha256:ecfb76f5b9fc45142cec9740bff32caccde4f0120c7eda8551969adaf0b286ad`。
+- Linux ARM64 子镜像：`sha256:be0e10f4c2ba484b8cf8a95bc173c6781a5bc6fef5f10c6880e36ac220ee4404`。
+
+这些是自动化与实际发布资产验证，不是用户真实云盘或 VPS 验收。真实用户 VPS、Telegram、DNS／ACME、两网关实际转存、Linux 加密回读与长期运行尚未执行。
 
 ## 发布后用户验收
 

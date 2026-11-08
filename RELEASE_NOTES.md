@@ -13,7 +13,7 @@
 
 ## 安装、升级与兼容
 
-源码、一键脚本 helper、共享镜像和两 Edition Compose 包按同版发布。资产完整前请等待，不把 main 的单个脚本复制进旧包；实际状态见[本版记录](docs/development/V158-ACCEPTANCE.md)。
+源码、一键脚本 helper、共享镜像和两 Edition Compose 包已按 v1.5.8 发布并核验。不把 main 的单个脚本复制进旧包；实际结果见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V158-ACCEPTANCE.md)。
 
 一键脚本按原公网／内网方式显式选择 v1.5.8，先备份，保留原配置、任务、数据库和两个 Session。业务 schema 3 不变，无数据库迁移，也没有新的一键脚本必填配置。Compose 的三个可选资源变量只作用于 Compose。
 
@@ -23,6 +23,6 @@ v1.5.7 format 2 用户先在 Bot 发送 /pause 并等待活动任务结束，核
 
 ## 验证与发布后验收
 
-本地完整回归、Python 3.10、干净载荷组装、静态与语法、Bash／ShellCheck、Bandit 和网站检查通过；远端 CI、实际下载与资产核验结果完成后补录。校验和不是数字签名。
+本地完整检查1648项，1612通过、36项既有条件跳过；Python 3.10、静态检查、Bash／ShellCheck与网站检查通过。两轮 PR、main 及同标签原生双架构 CI 通过，源码、共享镜像和两个 Compose 包均已下载核验版本、提交、清单与 SHA256。校验和不是数字签名。
 
 真实用户 VPS 新装／升级、Telegram、两网关实际转存、DNS／ACME、手机 Range、Linux 加密回读与长期运行由用户在发布后验收，当前尚未执行。WebDAV 接收和大小复验不等于云存储官方最终入库或内容哈希验证。本轮不自动操作 VPS。
