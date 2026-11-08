@@ -1,6 +1,6 @@
 # 资料来源与验证边界
 
-当前正式稳定版为 **v1.5.7**（[Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7)），核对日期 **2026 年 11 月 4 日**；源码、镜像和 Compose 包已核验。实际 CI、SHA256 与尚未执行的真实环境项目见[当前发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V157-ACCEPTANCE.md)。
+本文源码版本为 **v1.5.8**（待发布），核对日期 **2026 年 11 月 8 日**；当前正式下载仍为 [v1.5.7](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7)。新版本的 CI、SHA256、镜像及未执行的真实环境项目见[当前发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V158-ACCEPTANCE.md)，不以准备完成代替发布和实机验收。
 
 ## 主要来源
 
@@ -9,6 +9,7 @@
 | 安装与升级 | [公网](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md)、[内网](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LAN-INSTALL.md)、[Compose](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/COMPOSE.md) |
 | 网关和使用 | [存储](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/STORAGE.md)、[Bot](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/BOT-USAGE.md)、[监听](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/LISTENING.md) |
 | 维护与数据 | [运维](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md)、[配置](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/CONFIGURATION.md)、[备份](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/BACKUP-RESTORE.md) |
+| Compose 管理增强 | [Compose 安全维护](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/COMPOSE-MANAGEMENT.md)；发布状态另见本版记录，文档不代替实机验收 |
 | 开发与发布 | [开发指南](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/DEVELOPMENT.md)、[发布清单](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/RELEASE-CHECKLIST.md) |
 | 版本事实 | [完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)；旧验收资料使用固定历史提交链接，不作为当前教程 |
 

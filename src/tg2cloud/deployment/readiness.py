@@ -118,10 +118,52 @@ def listener_line(value):
             line += f"；冷却剩余 {value['cooldown_seconds']} 秒"
     return line
 
+BLOCKER_LABELS = {"memory": "可用内存低于保护门槛", "disk": "文件系统安全线", "budget": "暂存额度",
+                  "destination": "目的端未就绪", "paused": "调度暂停", "download_window": "下载窗口未放行"}
+
+
+def validated_admission(value):
+    keys = {"download_window", "upload_window", "memory_available_bytes", "memory_hard_min_bytes", "memory_limit_bytes", "blocked_by"}
+    if not isinstance(value, dict) or set(value) != keys:
+        return None
+    if any(value[key] is not None and (type(value[key]) is not int or not 0 <= value[key] <= 2**63)
+           for key in keys - {"blocked_by"}):
+        return None
+    blocked = value["blocked_by"]
+    if not isinstance(blocked, list) or len(blocked) > len(BLOCKER_LABELS) or any(type(item) is not str or item not in BLOCKER_LABELS for item in blocked):
+        return None
+    return value
+
+
+def admission_lines(value):
+    value = validated_admission(value)
+    if value is None:
+        return ["下载放行细节：未核实（旧版或缺少新观察）"]
+    memory, minimum = value["memory_available_bytes"], value["memory_hard_min_bytes"]
+    lines = []
+    if memory is not None and minimum is not None:
+        lines.append(f"有效可用内存：{memory / 1024**2:.1f} MiB；下载保护门槛：{minimum / 1024**2:.1f} MiB")
+    limit = value["memory_limit_bytes"]
+    lines.append("容器内存上限：" + (f"{limit / 1024**2:.1f} MiB" if limit is not None else "未观察到有效硬限制"))
+    lines.append(f"实际并发窗口：下载 {value['download_window']}，上传 {value['upload_window']}")
+    lines.append("全局等待原因：" + ("、".join(BLOCKER_LABELS[key] for key in value["blocked_by"]) or "未发现；单任务仍须通过预留、重试和个人额度检查"))
+    return lines
+
+
 LABELS = {"heartbeat": "运行心跳", "telegram": "Telegram 连接", "destination": "WebDAV 最近目录探测",
-          "queue": "调度开关", "capacity": "新下载空间"}
+          "queue": "调度开关", "capacity": "下载资源保护"}
 STATES = {"ok": "通过", "failed": "未通过", "unknown": "未核实／记录过期",
           "partial": "仅账号根目录可读，目标目录未确认", "paused": "手动暂停", "cooldown": "冷却中，不追加请求"}
+
+WAIT_LABELS = {"retry": "等待重试时间", "member": "等待个人并发额度", "budget": "等待暂存额度",
+               "disk": "等待真实磁盘空间", "other": "等待其他放行条件"}
+
+
+def waiting_lines(value):
+    if (not isinstance(value, dict) or set(value) - WAIT_LABELS.keys()
+            or any(type(count) is not int or not 0 <= count <= 10**12 for count in value.values())):
+        return ["排队任务分类：未核实"]
+    return ["排队任务分类：" + ("；".join(WAIT_LABELS[key] + " " + str(value[key]) for key in WAIT_LABELS if value.get(key)) or "无排队任务")]
 
 
 def inspect(instance, session, *, details=False) -> dict | None:
@@ -154,6 +196,8 @@ def check(instance, session, log) -> bool:
     for key, label in LABELS.items():
         log(label + "：" + STATES[checks[key]])
     log(listener_line(report.get("listener")))
+    for line in admission_lines(report.get("admission")):
+        log(line)
     ready = all(value == "ok" for value in checks.values())
     log("业务就绪：" + ("基础条件通过" if ready else "尚未全部确认")
         + "；以上为 Bot 基础条件，个人监听单独观察；不额外请求 Telegram/WebDAV，不代表实际转存完成。")

@@ -863,6 +863,30 @@ class InstanceTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "CRLF"):
             self.discover(bot, gateway)
 
+    def test_compose_bot_or_gateway_is_rejected_before_config_or_commands(self):
+        for product in PRODUCTS.values():
+            for side in (0, 1):
+                with self.subTest(edition=product.key, side=side):
+                    containers = self.containers()
+                    containers[side]["labels"]["com.tg2cloud.install-mode"] = "compose"
+                    session = Mock()
+                    with patch.object(tgdep_configuration, "checked_directory", return_value=self.directory), patch.object(
+                        tgdep_instances, "inspect_container", side_effect=containers
+                    ), patch.object(tgdep_configuration, "regular_private") as config, self.assertRaisesRegex(ValueError, "独立 Docker Compose"):
+                        tgdep_instances.discover(product, {product.bot_container, product.storage_container}, session, self.log)
+                    session.run.assert_not_called()
+                    config.assert_not_called()
+
+    def test_script_instance_does_not_adopt_compose_markers(self):
+        for name in ("compose-bundle.json", "tg2cloud-compose.json"):
+            with self.subTest(marker=name):
+                path = self.directory / name
+                path.write_text("{}")
+                with self.assertRaisesRegex(ValueError, "归属标记"):
+                    self.discover(*self.containers())
+                self.assertEqual(path.read_text(), "{}")
+                path.unlink()  # Only this test's synthetic marker.
+
     def test_running_code_fingerprint_is_required(self):
         bot, gateway = self.containers()
         bot["running"] = True

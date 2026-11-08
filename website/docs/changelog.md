@@ -1,5 +1,9 @@
 # 更新日志
 
+## TG2Cloud v1.5.8
+
+2026-11-08，待发布。Compose 新增离线管理、凭据隔离、资源限额、备份、升级与卸载；共享代码保留一键脚本边界，新增 cgroup 内存与排队诊断。保留 schema 3、配置、任务及两个 Session，网关镜像不变。源码、共享镜像和两版部署包需同版核验，用户实机验收安排在发布之后。见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V158-ACCEPTANCE.md)与[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+
 ## TG2Cloud v1.5.7
 
 2026-11-04，[v1.5.7 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7) 已发布；同标签原生双架构与源码／镜像／Compose 资产已核验。监听普通下载增加有限冷却恢复、来源空响应复核与准确错误分类；安装升级和诊断检查实际容器日志限额。保留 schema 3、原任务和 Session；不自动重试历史失败或重建旧容器。实际验证范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V157-ACCEPTANCE.md)及[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
@@ -60,12 +64,13 @@
 
 v1.4.3 新增可选分类、管理员通知、家庭成员配额和白名单诊断报告。分类／通知默认关闭，成员默认不限额；涉及业务 schema 2，升级前备份。见[转存](/usage/first-transfer/)、[个人配额](/usage/commands/)、[维护](/operations/maintenance/)和[备份](/operations/backup/)。
 
-这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.5.6 共 38 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
+这里记录 TG2Cloud **全部历史版本**做了什么，而非仅列出目前还能下载的 Release。v1.0.0 至 v1.5.8 共 39 个版本，逐版说明如下；更细的修复与兼容记录见[仓库完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)。
 
 可下载版本以 [GitHub Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases) 实际列表为准，不固定“只保留几版”的数量。部分历史发布页和标签已移除，历史说明仍保留；下面的测试结论按当时版本理解，不表示今日仍能下载，也不替代当前环境验收。当前安装与下载见[下载与校验](/download/)。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.5.8](#tg2cloud-v1-5-8) | Compose 统一管理、凭据隔离、资源诊断及两种部署的安全升级边界。 |
 | [v1.5.7](#tg2cloud-v1-5-7) | 监听下载有限冷却恢复、来源提示和实际容器日志限额诊断。 |
 | [v1.5.6](#tg2cloud-v1-5-6) | 凭据、私密文件与容器日志加固，独立监听健康及有界异常诊断。 |
 | [v1.5.5](#tg2cloud-v1-5-5) | 推广前后缀清理、监听规则方案与解释、小批恢复和受控历史补拉。 |

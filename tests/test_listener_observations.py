@@ -1,6 +1,7 @@
 """Listener diagnostics remain independent, bounded and safe under old snapshots."""
 
 import json
+import os
 import tempfile
 import time
 import unittest
@@ -166,9 +167,10 @@ class ObservationTests(unittest.TestCase):
             control_interval=3,
             min_free_disk_bytes=100,
             local_budget_bytes=1000,
+            memory_hard_min_bytes=100,
         )
         self.service.client = SimpleNamespace(is_connected=lambda: True)
-        self.service.snapshot = SimpleNamespace(disk_free=10000, filesystems=())
+        self.service.snapshot = SimpleNamespace(disk_free=10000, filesystems=(), memory_available=10000)
         self.service.destination_scope = "root"
         self.service.destination_last_checked = self.now
         self.service._destination_ready = lambda: True
@@ -176,7 +178,9 @@ class ObservationTests(unittest.TestCase):
         self.service.upload_tasks = {}
         self.listener._last_loop_at = time.monotonic() - 200
         for name in ("heartbeat", "resource-heartbeat"):
-            (self.root / name).touch()
+            path = self.root / name
+            path.touch()
+            os.utime(path, (self.now - 1, self.now - 1))
         readiness.publish(self.service, {})
         value = readiness.read(self.root, now=time.time())
         self.assertTrue(value["ready"])

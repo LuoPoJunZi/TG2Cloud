@@ -35,7 +35,7 @@ def regular(root: Path, name: str) -> Path:
     return path
 
 
-def metadata(root: Path) -> dict:
+def metadata(root: Path, *, expected_version: str = VERSION) -> dict:
     regular(root, "docker-compose.yml")
     path = regular(root, "compose-bundle.json")
     if path.stat().st_size > 8192:
@@ -44,13 +44,13 @@ def metadata(root: Path) -> dict:
     if not isinstance(value, dict):
         raise ComposeError("部署包元数据不是对象")
     fields = {"format", "mode", "edition", "version", "image", "commit"}
-    modern = type(value.get("format")) is int and value["format"] == 2
+    modern = type(value.get("format")) is int and value["format"] in {2, 3}
     if modern:
         fields.add("https_tools")
     if (not isinstance(value, dict) or set(value) != fields or type(value.get("format")) is not int
-            or value["format"] not in {1, 2} or (modern and (type(value.get("https_tools")) is not int or value["https_tools"] != 1))
+            or value["format"] not in {1, 2, 3} or (modern and (type(value.get("https_tools")) is not int or value["https_tools"] != 1))
             or value.get("mode") != "compose"
-            or value.get("edition") not in PRODUCTS or value.get("version") != VERSION):
+            or value.get("edition") not in PRODUCTS or value.get("version") != expected_version):
         raise ComposeError("部署包与运行工具版本不匹配，请使用同一正式版本")
     return value
 
@@ -118,6 +118,8 @@ def environment(config):
 
 
 def validate_config(root, config, edition):
+    from tg2cloud.compose.maintenance import validate_resources
+    validate_resources(config)
     if (config.get("TG2CLOUD_INSTALL_MODE") != "compose"
             or config.get("TG2CLOUD_STORAGE_BACKEND") != edition):
         raise ComposeError("配置不属于此 Compose Edition，停止")
@@ -187,6 +189,10 @@ def setup(root, ui):
         raise ComposeError("发现未关联完整实例的访问方案；保留文件，请核对")
     for name in ("app", "remote_install.sh", "manage.sh", "tg2cloud-release.json"):
         if (root / name).exists() or (root / name).is_symlink():
+            if name == "manage.sh" and info["format"] == 3:
+                from tg2cloud.compose.releases import verify_tools
+                verify_tools(root)
+                continue
             raise ComposeError("发现脚本安装或未知部署文件；不自动接管")
     allowed = {"data", "downloads", "logs", "config", "config/rclone", "clouddrive",
                "clouddrive/config", "clouddrive/mounts", "openlist", "openlist/data"}

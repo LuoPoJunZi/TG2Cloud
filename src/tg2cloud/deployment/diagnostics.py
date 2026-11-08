@@ -95,6 +95,20 @@ def inspect_entry(instance, session) -> tuple[str, str]:
     from tg2cloud.deployment.proxy.manager import DomainProxyManager
 
     try:
+        if getattr(instance, "deployment_mode", None) == "compose":
+            from tg2cloud.compose import access
+            from tg2cloud.compose.https import ComposeInstance, ComposeProxyManager
+            from tg2cloud.deployment.host import SafeLog
+            core = ComposeInstance(instance.directory, session, SafeLog(),
+                                   source=instance.directory / "https-tools")
+            core.validate(loopback=False, require_running=False)
+            plan = access.read_access(instance.directory, instance.product.key)
+            if plan is None or plan["mode"] == "local":
+                return "Compose 本地管理入口", "未执行网络验收（无需证书）"
+            if plan["mode"] == "external":
+                return "已有反向代理入口", "待外部代理独立验收"
+            report = ComposeProxyManager(core, None).inspect_status()
+            return "HTTPS 管理入口", {"healthy": "本机检查通过", "not_configured": "未配置"}.get(report.state, "未通过")
         saved = lan.load_state(instance.product)
         if saved:
             if instance.directory != Path(saved["install_dir"]):
@@ -140,7 +154,7 @@ def recommendations(checks: dict, failures: dict, configuration: str, containers
     if "cooldown" in checks.values() or failures.get("rate_limited", 0):
         tips.append("检测到限流或冷却记录：等待现有冷却结束；历史失败分类不代表当前仍被限流，不反复探测或重启绕过。")
     if checks.get("capacity") == "failed":
-        tips.append("容量不足：分别核对暂存额度与相关文件系统可用空间；只人工清理已确认归属的资料，不删除失败保留文件。")
+        tips.append("下载资源不足：核对可用内存、容器内存上限、暂存额度与文件系统可用空间；不降低保护阈值或删除失败保留文件。")
     if checks.get("queue") == "paused":
         tips.append("调度已手动暂停：确认暂停原因解决后再恢复；诊断不会自动恢复调度。")
     if failures.get("remote_conflict", 0):
@@ -221,6 +235,8 @@ def collect(instance, session) -> str:
             lines.append("临时异常观察：未核实（旧快照、记录缺失或过期）")
         for key, label in readiness.LABELS.items():
             lines.append(label + "：" + readiness.STATES[value["checks"][key]])
+        lines.extend(readiness.admission_lines(value.get("admission")))
+        lines.extend(readiness.waiting_lines(value.get("waiting")))
         for key, label in (("disk_free_bytes", "已检查目录最小可用空间"), ("budget_bytes", "任务暂存额度")):
             amount = value.get(key)
             lines.append(label + "：" + (f"{amount / 1024**3:.2f} GB" if type(amount) is int and 0 <= amount <= 2**60 else "未检查"))

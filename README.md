@@ -33,9 +33,9 @@ Telegram → TG2Cloud → rclone → CloudDrive2 / OpenList WebDAV → 你的云
 - 普通下载与大文件流式传输，配合动态并发和磁盘保护。
 - 公网 HTTPS / 可信内网部署，提供磁盘预算推荐和保留配置升级。
 
-当前稳定版 **[v1.5.7](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7)**，支持 Linux；发布与兼容范围见[本版记录](docs/development/V157-ACCEPTANCE.md)。
+当前稳定版 **[v1.5.7](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7)**，支持 Linux；发布与兼容范围见[本版记录](docs/development/V158-ACCEPTANCE.md)。
 
-v1.5.7 改善监听限流恢复与来源提示，核对实际容器日志轮转；[发布与兼容说明](docs/development/V157-ACCEPTANCE.md)。
+v1.5.8 待发布：Compose 统一管理、凭据隔离和资源诊断；[发布与兼容说明](docs/development/V158-ACCEPTANCE.md)。
 
 ## 开始使用
 
@@ -98,7 +98,7 @@ tg2cloud uninstall --edition all --check
 | 家庭与手机读取 | [Bot 家人授权](docs/FAMILY-SHARING.md) · [外部 WebDAV 只读入口](docs/external-webdav.md) |
 | 可选功能 | [文件分类、通知与配额](docs/FEATURE-ENHANCEMENTS.md) · [复用已有 Nginx](docs/DOCKER-NGINX.md) |
 | 运行与故障排查 | [管理命令、日志与 HTTPS 维护](docs/OPERATIONS.md) · [任务恢复、验证与备份](docs/RECOVERY.md) |
-| 当前维护 | [v1.5.7 发布与兼容](docs/development/V157-ACCEPTANCE.md) |
+| 当前维护 | [v1.5.8 发布与兼容](docs/development/V158-ACCEPTANCE.md) |
 | 卸载 | [卸载指南](docs/UNINSTALL.md) |
 | 开发与测试 | [贡献指南](.github/CONTRIBUTING.md) · [仓库结构](docs/development/REPOSITORY.md) · [Linux 开发与测试](docs/development/DEVELOPMENT.md) |
 | 版本与发布 | [所有版本分别做了什么](CHANGELOG.md) · [当前发布说明](RELEASE_NOTES.md) |

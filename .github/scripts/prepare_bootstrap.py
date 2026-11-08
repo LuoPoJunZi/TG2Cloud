@@ -22,6 +22,9 @@ def helper_files(root: Path) -> list[str]:
             if path.is_symlink() or path.absolute() != path.resolve():
                 raise ValueError("helper source contains a link")
             paths.append(path.relative_to(root).as_posix())
+    if (root / "src/tg2cloud/compose/management.py").is_file():
+        paths.extend(path.relative_to(root).as_posix() for path in (root / "src/tg2cloud/compose").rglob("*.py"))
+        paths.extend("packaging/compose/docker-compose." + edition + ".yml" for edition in ("clouddrive2", "openlist"))
     for name in paths:
         path = root / name
         if not path.is_file() or path.is_symlink() or path.absolute() != path.resolve():

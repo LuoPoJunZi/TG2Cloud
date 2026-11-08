@@ -1,6 +1,6 @@
 # 安装、下载与校验
 
-当前正式稳定版为 **TG2Cloud v1.5.7**（[正式发布](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7)），资料核对日期：2026-11-04。源码、共享双架构镜像和两份 Compose 包已核验；实际 CI、SHA256 与尚未执行的实机范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V157-ACCEPTANCE.md)。已有实例先备份，再按原部署方式显式升级。
+本文源码版本为 **TG2Cloud v1.5.8**（待发布），核对日期：2026-11-08。当前正式稳定下载仍为 [v1.5.7](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7)，本页下载链接保持已存在资产。新版本资源及尚未执行的真实 VPS 验收见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V158-ACCEPTANCE.md)；资产齐全并核验后再切换。已有实例先备份，先做只读预检，再按原部署方式升级。
 
 业务部署只使用正式稳定源码，部署平台为 Linux。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
 

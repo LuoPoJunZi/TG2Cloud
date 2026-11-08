@@ -34,6 +34,8 @@ assert setup(Path('/workspace'),UI()) is False
 """
 CHECK = """import os;from pathlib import Path;from tg2cloud.config import Settings
 assert os.geteuid()==10001
+assert 'OPENLIST_ADMIN_PASSWORD' not in os.environ
+assert 'DOCKER_HOST' not in os.environ
 s=Settings.from_env()
 p=s.data_dir/'synthetic-write-test';p.write_text('test');p.unlink()
 assert s.rclone_config_path.parent.is_dir()
@@ -94,19 +96,29 @@ class ComposeDockerTests(unittest.TestCase):
                     target.parent.mkdir(parents=True, exist_ok=True)
                     target.write_bytes(data)
                 identifier = "tg2cloud-compose-test-" + uuid.uuid4().hex
-                override = {"services": {"setup": {"image": IMAGE}, product.bot_service: {"image": IMAGE, "container_name": identifier}},
+                override = {"services": {"setup": {"image": IMAGE}, product.bot_service: {
+                    "image": IMAGE, "container_name": identifier, "mem_limit": "1g", "pids_limit": 128, "cpus": 0.5}},
                             "networks": {product.docker_network: {"name": identifier}}}
                 (root / "override.json").write_text(json.dumps(override))
                 compose = ["docker", "compose", "-p", identifier, "-f", str(root / "docker-compose.yml"), "-f", str(root / "override.json")]
                 try:
                     self.run_command([*compose, "config", "--quiet"])
                     self.assertIn("HTTPS", self.run_command(["bash", str(root / "https.sh"), "--help"]))
+                    self.assertIn("uninstall", self.run_command(["bash", str(root / "manage.sh"), "--help"]))
                     self.run_command([*compose, "run", "--rm", "-T", "--pull", "never", "setup", "python", "-c", setup])
                     self.run_command([*compose, "run", "--rm", "-T", "--pull", "never", "setup", "python", "-m", "tg2cloud.compose", "check"])
+                    self.run_command([*compose, "up", "--no-start", "--no-deps", "--no-build", "--pull", "never", product.bot_service])
+                    actual = self.run_command(["docker", "inspect", "--format",
+                        "{{json .HostConfig.Memory}} {{json .HostConfig.NanoCpus}} {{json .HostConfig.PidsLimit}}", identifier])
+                    self.assertEqual(actual.strip(), "1073741824 500000000 128")
+                    self.run_command(["docker", "rm", identifier])
                     output = self.run_command([*compose, "run", "--rm", "-T", "--no-deps", "--pull", "never", product.bot_service, "python", "-c", CHECK])
                     self.assertIn("COMPOSE_NONROOT=OK", output)
                     self.assertEqual((root / ".env").stat().st_mode & 0o777, 0o600)
                 finally:
+                    # A failed create/inspect must not leave this test's named container.
+                    subprocess.run([*(["sudo", "-n"] if os.geteuid() != 0 else []), "docker", "rm", "-f", identifier],
+                                   capture_output=True, check=False, timeout=30)
                     # Only return ownership of this test's private temporary tree;
                     # no project teardown, daemon prune or production path is used.
                     cleanup = """import os

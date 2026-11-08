@@ -175,6 +175,7 @@ class ListeningMenuTests(unittest.TestCase):
     def test_selected_edition_custom_path_and_three_actions_are_reused(self):
         for edition, product in PRODUCTS.items():
             manager = Mock()
+            manager.listen_action = None  # Script manager has no Compose execution adapter.
             instance = NS(product=product, directory=Path("/opt/custom-test"))
             manager.recheck.side_effect = lambda item: item
             answers = iter(("1", "0", "2", "0", "3", "0", "0"))

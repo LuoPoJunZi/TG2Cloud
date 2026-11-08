@@ -30,23 +30,25 @@ from tg2cloud.deployment.proxy.state import certificate_domains
 
 
 class Service:
-    def __init__(self, product, session, log, ui, *, root: Path = config.ROOT):
+    def __init__(self, product, session, log, ui, *, root: Path = config.ROOT, instance_provider=None, proxy_manager=None):
         self.product, self.session, self.log, self.ui, self.root = product, session, log, ui, root
         self.directory = root / product.key
         self.record_path = self.directory / "config.json"
         self.auth = Path(PROXY_ROOT) / "external-auth" / (product.key + ".htpasswd")
         self.launcher = Path("/usr/local/bin/tg2cloud-webdav")
         self._inside_lock = False
-        self.manager = DomainProxyManager(
+        self.instance_provider = instance_provider
+        self.manager = proxy_manager or DomainProxyManager(
             session, product, {"vps_host": "127.0.0.1"}, log,
             confirm_public_ipv4=(lambda domain, environment: confirm_nat_public_ipv4(ui, domain, environment, log))
             if ui is not None else None,
         )
 
     def preflight(self, directory: str | None, domain: str = "", *, require_running: bool = True):
-        instance = discovery.selected(self.product, directory, self.session, self.log, require_running=require_running)
+        provider = self.instance_provider or discovery.selected
+        instance = provider(self.product, directory, self.session, self.log, require_running=require_running)
         self.manager.prepare()
-        state = uninstall.read_state()
+        state = self.manager.read_state() if self.instance_provider else uninstall.read_state()
         retained = state.get("external_webdav", {}).get(self.product.key)
         if retained and (self.record() is None or retained["instance_dir"] != str(instance.directory)):
             raise ValueError("活动外部路由缺少对应记录或实例不符；不自动接管。")

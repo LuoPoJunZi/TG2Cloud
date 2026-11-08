@@ -98,7 +98,7 @@ class ComposeHttpsTests(unittest.TestCase):
         root = self.directory / edition
         root.mkdir()
         (root / "docker-compose.yml").write_text(packaging.render(SOURCE, edition, IMAGE), encoding="utf-8")
-        (root / "compose-bundle.json").write_text(json.dumps({"format": 1, "mode": "compose", "edition": edition,
+        (root / "compose-bundle.json").write_text(json.dumps({"format": 3, "https_tools": 1, "mode": "compose", "edition": edition,
                                                             "version": VERSION, "image": IMAGE, "commit": "a" * 40}), encoding="utf-8")
         config = configuration.new_config(product, {"api_id": "123456", "api_hash": "a" * 32,
             "bot_token": "123456789:FAKE_COMPOSE_HTTPS_TEST_ONLY", "user_id": "123456789", "webdav_user": "tg2cloud",

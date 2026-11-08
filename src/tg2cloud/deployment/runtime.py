@@ -59,6 +59,9 @@ def files(source: Path) -> dict[str, bytes]:
         names.append("src/tg2cloud/persistence/paths.py")
     for directory in ("cli", "deployment", "addons"):
         names.extend(p.relative_to(source).as_posix() for p in (source / "src/tg2cloud" / directory).rglob("*.py"))
+    if (source / "src/tg2cloud/compose/management.py").is_file():
+        names.extend(p.relative_to(source).as_posix() for p in (source / "src/tg2cloud/compose").rglob("*.py"))
+        names.extend("packaging/compose/docker-compose." + edition + ".yml" for edition in ("clouddrive2", "openlist"))
     result = {}
     for name in sorted(set(names)):
         path = source / name

@@ -1,9 +1,9 @@
 {
   "name": "TG2Cloud",
-  "version": "1.5.7",
+  "version": "1.5.8",
   "publishedVersion": "1.5.7",
-  "releaseStatus": "released",
-  "verifiedAt": "2026-11-04",
+  "releaseStatus": "unreleased",
+  "verifiedAt": "2026-11-08",
   "repo": "https://github.com/LuoPoJunZi/TG2Cloud",
   "upstreamRepo": "https://github.com/whyhhh20/TG115",
   "siteUrl": "https://tg2cloud.pages.dev",
@@ -72,6 +72,10 @@
         {
           "title": "Docker Compose",
           "slug": "deploy/compose"
+        },
+        {
+          "title": "Compose 管理",
+          "slug": "deploy/compose-management"
         }
       ]
     },

@@ -55,33 +55,30 @@ def main(argv=None):
             )
             if not item.present or not item.running:
                 raise ValueError("请先安装并启动所选 Edition")
-            command = [
-                docker,
-                "exec",
-                *(["-it"] if args.action == "login" else []),
-                product.bot_container,
-                "python",
-                "-B",
-                "-m",
-                "tg2cloud.listening.account",
-                args.action,
-            ]
             stage = "个人监听账号操作"
-            with ExitStack() as stack:
-                options = {}
-                if args.action == "login" and (not os.isatty(0) or not os.isatty(1)):
-                    stage = "交互终端检查；请从自己的 SSH 终端运行 tg2cloud"
-                    # Online Bash launches the wizard asynchronously, so stdin may
-                    # be /dev/null even though Terminal's /dev/tty menu works.
-                    tty = stack.enter_context(open("/dev/tty", "r+b", buffering=0))
-                    if not os.isatty(tty.fileno()):
-                        raise ValueError("无法取得控制终端")
-                    options = {"stdin": tty, "stdout": tty, "stderr": tty}
-                # Inherit/reopen only the private terminal, never capture secrets.
-                return subprocess.run(command, check=False, **options).returncode  # nosec B603
+            return account_command(product, args.action, docker=docker)
     except (ValueError, RuntimeError, OSError):
         log("监听操作未完成：" + stage + "未通过；未显示凭据或内部异常。")
         return 1
+
+
+def account_command(product, action, *, docker=None):
+    """Execute only the personal-account endpoint after caller identity checks."""
+    if action not in {"login", "status", "disable"}:
+        raise ValueError("未知监听操作")
+    docker = docker or shutil.which("docker")
+    if not docker:
+        raise ValueError("Docker 不可用")
+    command = [docker, "exec", *(["-it"] if action == "login" else []), product.bot_container,
+               "python", "-B", "-m", "tg2cloud.listening.account", action]
+    with ExitStack() as stack:
+        options = {}
+        if action == "login" and (not os.isatty(0) or not os.isatty(1)):
+            tty = stack.enter_context(open("/dev/tty", "r+b", buffering=0))
+            if not os.isatty(tty.fileno()):
+                raise ValueError("请在自己的 SSH 交互终端登录监听账号")
+            options = {"stdin": tty, "stdout": tty, "stderr": tty}
+        return subprocess.run(command, check=False, **options).returncode  # nosec B603
 
 
 def manage(manager, instance):
@@ -99,8 +96,10 @@ def manage(manager, instance):
         selected = choose(manager.ui, "选择操作", ("0", *actions), "0")
         if selected == "0":
             return
-        result = main([actions[selected], "--edition", instance.product.key,
-                       "--install-dir", str(instance.directory)])
+        operation = getattr(manager, "listen_action", None)
+        result = (operation(instance, actions[selected]) if operation else
+                  main([actions[selected], "--edition", instance.product.key,
+                        "--install-dir", str(instance.directory)]))
         if result:
             manager.log("监听操作未完成，请核对上方结果。")
         manager.log(numbered_menu(((0, "返回监听管理"),)))

@@ -48,6 +48,9 @@ python -B .github/scripts/release_metadata.py --tag v1.5.4
 - 发布／核验共享 GHCR index，确认可匿名读取；两 Edition 包固定同一真实镜像 digest。
 - 附加两份 Compose 包与 `COMPOSE-SHA256SUMS.txt`，不替换源码原资产。
 - 下载实际资产，比对清单、GitHub 资产 digest、Tag 源码、包内 helper 和镜像身份；校验和不是数字签名。
+- Compose format 3 同时核验 `manage.sh`／`https.sh`、全部 helper 和两版模板；原生测试确认 Bot 环境不包含 OpenList 管理员密码，Docker 实际内存／CPU／进程数限制匹配配置。
+- 回归 format 1／2 的静态格式校验、完整 format 2 旧实例升级，以及无 helper 的 format 1 安全停止；保留数据库／Session 原路径，验证升级失败前后两种回退边界、外部 WebDAV 共存和单 Edition 清理。在真实网关验收前不把模拟写成实机通过。
+- 共享代码变更须分别复验公网／内网一键脚本和 Compose：安装、保留配置升级、管理菜单、监听终端、备份／回退及卸载归属；任一容器或目录混入另一模式标记时拒绝操作。完整离线 CLI 在无 Bot 依赖、非项目工作目录仍须能打开各入口帮助。
 
 ## 5. 文档与安装目标复核
 

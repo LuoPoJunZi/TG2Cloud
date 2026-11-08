@@ -1859,7 +1859,7 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         self.owner.destination_healthy = True
         self.owner._sample_fresh = lambda: True
         self.owner._destination_ready = lambda: True
-        self.owner.snapshot = NS(filesystems=[], disk_free=100 * 1024**3)
+        self.owner.snapshot = NS(filesystems=[], disk_free=100 * 1024**3, memory_available=4 * 1024**3)
         self.owner.download_window = NS(value=2)
         self.owner.upload_window = NS(value=2)
         self.owner._download_one = AsyncMock()
@@ -2215,7 +2215,7 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         self.owner.destination_healthy = True
         self.owner._sample_fresh = lambda: True
         self.owner._destination_ready = lambda: True
-        self.owner.snapshot = NS(filesystems=[], disk_free=100 * 1024**3)
+        self.owner.snapshot = NS(filesystems=[], disk_free=100 * 1024**3, memory_available=4 * 1024**3)
         self.owner.download_window = NS(value=4)
         self.owner.upload_window = NS(value=4)
         release = asyncio.Event()
@@ -2251,7 +2251,7 @@ class ListenerTests(unittest.IsolatedAsyncioTestCase):
         self.owner.destination_healthy = True
         self.owner._sample_fresh = lambda: True
         self.owner._destination_ready = lambda: True
-        self.owner.snapshot = NS(filesystems=[], disk_free=100 * 1024**3)
+        self.owner.snapshot = NS(filesystems=[], disk_free=100 * 1024**3, memory_available=4 * 1024**3)
         self.owner.download_window = NS(value=4)
         self.owner.upload_window = NS(value=4)
         release = asyncio.Event()

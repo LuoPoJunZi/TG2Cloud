@@ -12,11 +12,37 @@ import tempfile
 import time
 from pathlib import Path
 
+from tg2cloud.deployment.readiness import validated_admission
 from tg2cloud.monitoring import observations
 from tg2cloud.version import VERSION
 
 CHECKS = ("heartbeat", "telegram", "destination", "queue", "capacity")
 STATES = {"ok", "failed", "unknown", "paused", "cooldown", "partial"}
+
+
+def admission(service, used: int, free: int) -> dict:
+    snapshot, settings = service.snapshot, service.settings
+    available = snapshot.memory_available
+    minimum = settings.memory_hard_min_bytes
+    windows = {}
+    for name in ("download", "upload"):
+        value = getattr(getattr(service, name + "_window", None), "value", None)
+        windows[name + "_window"] = value if type(value) is int and 0 <= value <= 10**12 else None
+    blocked = []
+    if available < minimum:
+        blocked.append("memory")
+    if free <= settings.min_free_disk_bytes:
+        blocked.append("disk")
+    if used >= settings.local_budget_bytes:
+        blocked.append("budget")
+    if not service._destination_ready():
+        blocked.append("destination")
+    if service.db.is_paused():
+        blocked.append("paused")
+    if windows["download_window"] == 0:
+        blocked.append("download_window")
+    return {**windows, "memory_available_bytes": available, "memory_hard_min_bytes": minimum,
+            "memory_limit_bytes": getattr(snapshot, "memory_limit", None), "blocked_by": blocked}
 
 
 def publish(service, counts, *, used_local_bytes: int | None = None) -> None:
@@ -34,15 +60,18 @@ def publish(service, counts, *, used_local_bytes: int | None = None) -> None:
         destination = "cooldown"
     if used_local_bytes is None:
         used_local_bytes = service.db.used_local_bytes()
+    resources = admission(service, used_local_bytes, free)
     checks = {"telegram": "ok" if connected is True else "failed" if connected is False else "unknown",
               "destination": destination, "queue": "paused" if service.db.is_paused() else "ok",
               "capacity": "ok" if free > settings.min_free_disk_bytes
-              and used_local_bytes < settings.local_budget_bytes else "failed"}
+              and used_local_bytes < settings.local_budget_bytes
+              and service.snapshot.memory_available >= settings.memory_hard_min_bytes else "failed"}
     value = {"schema": 1, "version": VERSION, "edition": settings.storage_backend,
              "sampled_at": time.time(), "ttl": min(300, max(15, settings.control_interval * 3)),
              "checks": checks, "cooldown_seconds": cooldown,
              "queued": int(counts.get("queued", 0)),
              "active": len(service.download_tasks) + len(service.upload_tasks),
+             "admission": resources,
              "listener": observations.listener_observation(service),
              "observations": observations.recent_events(service)}
     descriptor, name = tempfile.mkstemp(prefix=".readiness-", dir=settings.data_dir)
@@ -67,7 +96,7 @@ def read(data_dir: Path, *, now: float, started_at: float = 0) -> dict:
             checks["heartbeat"] = "failed"
     result = {"schema": 1, "checks": checks, "ready": False, "version": VERSION,
               "queued": 0, "active": 0, "cooldown_seconds": 0,
-              "listener": observations.unknown_listener(), "observations": None}
+              "listener": observations.unknown_listener(), "observations": None, "admission": None}
     try:
         path = data_dir / "readiness.json"
         if path.is_symlink() or path.stat().st_size > 16384:
@@ -90,6 +119,7 @@ def read(data_dir: Path, *, now: float, started_at: float = 0) -> dict:
         result.update({key: raw[key] for key in ("edition", "queued", "active", "cooldown_seconds")})
         result["listener"] = observations.validate_listener(raw.get("listener")) or observations.unknown_listener()
         result["observations"] = observations.validate_events(raw.get("observations"))
+        result["admission"] = validated_admission(raw.get("admission"))
         result["ready"] = all(state == "ok" for state in checks.values())
     except (OSError, ValueError, TypeError, KeyError):
         pass

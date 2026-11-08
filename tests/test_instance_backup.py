@@ -69,6 +69,20 @@ class SnapshotTests(unittest.TestCase):
         with patch.object(backup, "container", side_effect=docker.inspect):
             return backup.create(instance, docker, target)
 
+    def test_compose_metadata_only_enters_explicit_compose_backup(self):
+        for edition in PRODUCTS:
+            with self.subTest(edition=edition):
+                instance, _, _ = self.fixture(edition)
+                names = {"tg2cloud-compose.json", "compose-bundle.json", "compose-access.json"}
+                for name in names:
+                    (instance.directory / name).write_text('{"synthetic":true}')
+                script_files = backup.selected_files(instance)
+                self.assertFalse(names & script_files.keys())
+                self.assertIn("tg2cloud-release.json", script_files)
+                instance.deployment_mode = "compose"
+                self.assertTrue(names <= backup.selected_files(instance).keys())
+                self.assertEqual((instance.directory / ".env").read_bytes(), b"SYNTHETIC_BACKUP_FIXTURE=true\n")
+
     def test_both_editions_backup_database_session_identity_and_restore_exact_services(self):
         for key in PRODUCTS:
             with self.subTest(edition=key):

@@ -138,7 +138,11 @@ class ComposeInstance:
 
     def validate(self, *, loopback: bool = True, require_running: bool = True, allow_missing: bool = False) -> dict:
         physical_directory(self.root)
-        self.info = runtime.metadata(self.root)
+        if any((self.root / name).exists() or (self.root / name).is_symlink()
+               for name in ("app", "remote_install.sh", "tg2cloud-release.json")):
+            raise runtime.ComposeError("目录含一键脚本部署文件；不接管或混用实例")
+        from tg2cloud.deployment.releases import source_version
+        self.info = runtime.metadata(self.root, expected_version=source_version(self.source))
         self.product = PRODUCTS[self.info["edition"]]
         for name in ("docker-compose.yml", "compose-bundle.json", runtime.MARKER):
             owned_file(self.root / name)
@@ -152,7 +156,7 @@ class ComposeInstance:
         image = self.info.get("image", "")
         if not isinstance(image, str) or not packaging.IMAGE.fullmatch(image) or not re.search(r"@sha256:[a-f0-9]{64}$", image):
             raise runtime.ComposeError("HTTPS 只接受部署包中固定 digest 的 Bot 镜像")
-        expected = packaging.render(self.source, self.product.key, image)
+        expected = packaging.render(self.source, self.product.key, image, legacy=self.info["format"] < 3)
         if (self.root / "docker-compose.yml").read_text(encoding="utf-8") != expected:
             raise runtime.ComposeError("基础 Compose 已修改或不属于当前部署包；停止")
         if loopback and self.config.get("TG2CLOUD_BIND_IP", "127.0.0.1") != "127.0.0.1":
@@ -188,7 +192,7 @@ class ComposeInstance:
                 # their persistent HostConfig bindings still prove isolation.
                 for key in (("ports", "bindings") if item.get("running") is True else ("bindings",)):
                     values = item.get(key)
-                    expected_bind = [{"HostIp": "127.0.0.1", "HostPort": port}]
+                    expected_bind = [{"HostIp": "127.0.0.1" if loopback else self.config.get("TG2CLOUD_BIND_IP", "127.0.0.1"), "HostPort": port}]
                     if not isinstance(values, dict) or values.get(port + "/tcp") != expected_bind or any(value for name, value in values.items() if name != port + "/tcp"):
                         raise runtime.ComposeError("网关管理端口不是唯一的回环发布；停止")
             if uninstall.bind_map(item) != mounts:
@@ -298,6 +302,15 @@ class ComposeProxyManager(DomainProxyManager):
         # already revalidated the instance under its operation/shared locks;
         # re-read the strict registry against the exact state being committed.
         self.validate_shared(state, container_snapshot(self.session))
+
+    def apply_shared_state_locked(self, target, **kwargs):
+        # Add-on transactions take the Edition/shared locks before reaching
+        # here. Preserve the same physical-instance boundary as management TLS.
+        self.guard(require_running=False)
+        route = target.get("external_webdav", {}).get(self.product.key)
+        if route and route["instance_dir"] != str(self.instance.root):
+            raise runtime.ComposeError("外部 WebDAV 路由不属于当前 Compose 目录")
+        return super().apply_shared_state_locked(target, **kwargs)
 
     def _configure_locked(self, domain, email):
         self.guard()

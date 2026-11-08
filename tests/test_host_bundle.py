@@ -8,6 +8,7 @@ import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import nullcontext
 from pathlib import Path
 from unittest.mock import Mock, patch
 
@@ -18,6 +19,25 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 class HostBundleTests(unittest.TestCase):
+    def test_expanded_offline_bundle_keeps_all_script_help_entries_without_bot_dependencies(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            directory = Path(temporary).resolve()
+            root, command = directory / "manager", directory / "bin/tg2cloud"
+            with patch.object(runtime, "publication_lock", return_value=nullcontext()):
+                marker = runtime.install(source=ROOT, root=root, command=command)
+            bundle = next((root / "runtime").iterdir())
+            self.assertEqual(runtime.verify(bundle), marker)
+            self.assertIn("src/tg2cloud/compose/management.py", marker["files"])
+            for entry in ("install", "lan", "manage", "listen", "webdav", "uninstall", "compose"):
+                with self.subTest(command=entry):
+                    result = subprocess.run([sys.executable, "-I", "-S", "-B",
+                        str(bundle / "src/tg2cloud/deployment/runtime.py"), entry, "--help"],
+                        cwd=directory, capture_output=True, text=True, encoding="utf-8", timeout=20, check=False)
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertIn("usage:", result.stdout)
+            self.assertEqual(runtime.verify(bundle), marker)
+            self.assertFalse((directory / "data").exists())
+
     def test_new_clean_bundle_imports_backup_and_runs_preview_without_site_packages(self):
         with tempfile.TemporaryDirectory() as temporary:
             directory = Path(temporary).resolve()

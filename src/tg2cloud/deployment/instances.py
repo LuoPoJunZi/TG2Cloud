@@ -66,17 +66,20 @@ def discover(
     bot = inspect_container(session, product.bot_container)
     gateway = inspect_container(session, product.storage_container)
     labels = bot.get("labels") or {}
-    if labels.get("com.tg2cloud.install-mode") == "compose":
+    gateway_labels = gateway.get("labels") or {}
+    if any(item.get("com.tg2cloud.install-mode") == "compose" for item in (labels, gateway_labels)):
         raise ValueError("此实例使用独立 Docker Compose 部署，请按 Compose 指南维护；不由一键脚本接管")
     if not labels.get("com.docker.compose.project"):
         raise ValueError("容器缺少 Compose 项目身份")
     directory = configuration.checked_directory(labels.get("com.docker.compose.project.working_dir", ""))
     configuration.check_product_directory(product, directory)
+    if any((directory / name).exists() or (directory / name).is_symlink()
+           for name in ("compose-bundle.json", "tg2cloud-compose.json")):
+        raise ValueError("实例目录含独立 Docker Compose 归属标记；不混用两种部署方式")
     if install_dir and directory != default:
         raise ValueError("指定目录与容器实际目录不一致")
     if labels.get("com.docker.compose.service") != product.bot_service:
         raise ValueError("同名 Bot 容器不属于预期 Compose 服务")
-    gateway_labels = gateway.get("labels") or {}
     if (gateway_labels.get("com.docker.compose.project.working_dir") != str(directory)
             or gateway_labels.get("com.docker.compose.project") != labels.get("com.docker.compose.project")
             or gateway_labels.get("com.docker.compose.service") != ("openlist" if product.is_openlist else "clouddrive2")):

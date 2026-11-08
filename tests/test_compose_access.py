@@ -60,7 +60,7 @@ class AccessTests(unittest.TestCase):
         path.mkdir()
         (path / "docker-compose.yml").write_text(packaging.render(ROOT, edition, IMAGE))
         (path / "compose-bundle.json").write_text(json.dumps({
-            "format": 2, "https_tools": 1, "mode": "compose", "edition": edition,
+            "format": 3, "https_tools": 1, "mode": "compose", "edition": edition,
             "version": VERSION, "image": IMAGE, "commit": "b" * 40}))
         return path
 

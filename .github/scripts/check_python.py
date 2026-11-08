@@ -11,7 +11,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[2]
 CLI_TESTS = (
     "test_database_paths.py", "test_compose.py", "test_compose_access.py", "test_compose_https.py",
-    "test_compose_https_bundle.py", "test_compose_proxy_dependencies.py",
+    "test_compose_https_bundle.py", "test_compose_proxy_dependencies.py", "test_compose_management.py",
     "test_architecture.py",
     "test_vps_installer.py", "test_lan_installer.py", "test_uninstaller.py",
     "test_proxy_host_compat.py", "test_repository.py", "test_storage_wizard.py", "test_source_release.py", "test_layout_contracts.py",

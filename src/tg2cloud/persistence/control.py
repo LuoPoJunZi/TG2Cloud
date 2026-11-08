@@ -18,6 +18,21 @@ def handle(connection, admin: int, request: dict) -> dict:
     if type(request.get("admin_id")) is not int or request["admin_id"] != admin:
         raise ValueError("管理员身份不匹配")
     action = request.get("action")
+    if action in {"queue-read", "queue-pause", "queue-resume"}:
+        connection.execute("BEGIN IMMEDIATE")
+        try:
+            if action != "queue-read":
+                connection.execute("INSERT INTO service_meta(key,value) VALUES('paused',?) "
+                                   "ON CONFLICT(key) DO UPDATE SET value=excluded.value",
+                                   ("1" if action == "queue-pause" else "0",))
+            row = connection.execute("SELECT value FROM service_meta WHERE key='paused'").fetchone()
+            count = connection.execute("SELECT COUNT(*) FROM tasks WHERE state IN "
+                                       "('reserved','downloading','streaming','uploading','verifying','finalizing','cleanup_pending')").fetchone()[0]
+            connection.execute("COMMIT")
+            return {"api": 1, "queue": {"paused": bool(row and row[0] == "1"), "active": count}}
+        except BaseException:
+            connection.execute("ROLLBACK")
+            raise
     if action == "settings-read":
         return {"api": 1, "settings": features.read(connection)}
     if action == "settings-write":

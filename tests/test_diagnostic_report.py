@@ -51,6 +51,20 @@ class ReportTests(unittest.TestCase):
         self.assertIn("原消息可能已删除", report)
         self.assertNotIn("其他：1", report)
 
+    def test_waiting_summary_is_readonly_and_never_includes_raw_reasons(self):
+        reasons = ["等待个人并发额度", "等待本地临时空间额度", "等待真实磁盘空间（合成测试）", "SYNTHETIC_PRIVATE_REASON"]
+        tasks = []
+        for number, reason in enumerate(reasons, 1):
+            task, _ = self.db.create_task(chat_id=1, sender_id=1, message_id=number,
+                                         file_name="SYNTHETIC_PRIVATE_NAME-" + str(number), file_size=5)
+            self.db.update(task["id"], wait_reason=reason)
+            tasks.append(self.db.get(task["id"]))
+        result = collect(self.root, environment={"DATA_DIR": str(self.root)})
+        self.assertEqual(result["waiting"], {"budget": 1, "disk": 1, "member": 1, "other": 1})
+        self.assertNotIn("SYNTHETIC_PRIVATE", json.dumps(result))
+        self.assertEqual([self.db.get(task["id"]) for task in tasks], tasks)
+        self.assertEqual(host.readiness.waiting_lines({"PRIVATE_KIND": 1}), ["排队任务分类：未核实"])
+
     def test_hostile_subprocess_output_not_echoed_and_unknown_does_not_pass(self):
         session = SimpleNamespace(run=lambda *a, **k: (0, "PRIVATE_TOKEN_AND_PATH"))
         instance = SimpleNamespace(product=PRODUCTS["openlist"])
@@ -90,7 +104,7 @@ class ReportTests(unittest.TestCase):
                 value["failures"] = {kind: 1 for kind in host.FAILURES if kind != "unchecked"}
                 with patch.object(host, "inspect_entry", return_value=("HTTPS 管理入口", "未通过")):
                     report = host.collect(instance, session)
-                for text in ("建议处理顺序", "Bot 专用账号", "写入权限", "冷却", "换名重传", "不要删除或覆盖", "容量不足", "手动暂停"):
+                for text in ("建议处理顺序", "Bot 专用账号", "写入权限", "冷却", "换名重传", "不要删除或覆盖", "下载资源不足", "可用内存", "手动暂停"):
                     self.assertIn(text, report)
                 commands = "\n".join(call.args[0] for call in session.run.call_args_list)
                 for forbidden in (" restart ", " stop ", " rm ", "curl", "verify_destination"):

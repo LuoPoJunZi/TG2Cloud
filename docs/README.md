@@ -13,6 +13,8 @@
 
 一键脚本与 Compose 是不同部署方式，已有实例按原方式升级，不能相互覆盖或接管。
 
+v1.5.8 的 Compose 统一菜单、凭据隔离与资源保护见 [Compose 安全维护](COMPOSE-MANAGEMENT.md)；发布状态及未验收范围见[本版记录](development/V158-ACCEPTANCE.md)。
+
 ## 使用与可选功能
 
 - [Bot 使用、菜单和命令](BOT-USAGE.md)：发送文件、查看任务、失败重试和恢复。
@@ -33,6 +35,8 @@
 - [常见问题](FAQ.md)：按安装、网关、任务和数据问题快速定位。
 
 ## 开发与发布
+
+- [v1.5.8 发布与兼容记录](development/V158-ACCEPTANCE.md)：两种部署的共享兼容、Compose 管理与安全维护；实机验收安排在发布后。
 
 - [贡献指南](../.github/CONTRIBUTING.md)
 - [仓库结构与维护规范](development/REPOSITORY.md)

@@ -79,6 +79,9 @@ def helpers_in_tree(files: set[str]) -> set[str]:
             "domain/__init__.py", "domain/naming.py"))
     if "src/tg2cloud/persistence/paths.py" in files:
         result.add("src/tg2cloud/persistence/paths.py")
+    if "src/tg2cloud/compose/management.py" in files:
+        result.update(path for path in files if path.startswith("src/tg2cloud/compose/") and path.endswith(".py"))
+        result.update("packaging/compose/docker-compose." + edition + ".yml" for edition in ("clouddrive2", "openlist"))
     return result
 
 

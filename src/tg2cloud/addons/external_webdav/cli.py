@@ -165,7 +165,7 @@ def perform(service, args) -> None:
         service.maintain(args.action, sample_file=args.sample_file)
 
 
-def interactive(service, args) -> None:
+def interactive(service, args, *, operation=None) -> None:
     """Result pages stay visible; refreshing never repeats a mutation."""
     from tg2cloud.cli.presentation import page_heading
     from tg2cloud.version import VERSION
@@ -182,7 +182,7 @@ def interactive(service, args) -> None:
             return
         args.action = action
         while True:
-            perform(service, args)
+            (operation or perform)(service, args)
             if action in {"users", "uninstall", "upgrade"}:
                 # Uninstall/upgrade can remove or replace the executing runtime.
                 # Do not continue reading old code after either operation.

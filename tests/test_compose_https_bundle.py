@@ -55,7 +55,7 @@ class HTTPSBundleTests(unittest.TestCase):
     def test_complete_shared_source_and_compose_resources_are_hashed(self):
         files = packaging.bundle_files(ROOT, "openlist", IMAGE)
         metadata = json.loads(files["compose-bundle.json"])
-        self.assertEqual((metadata["format"], metadata["https_tools"]), (2, 1))
+        self.assertEqual((metadata["format"], metadata["https_tools"]), (3, 1))
         manifest = json.loads(files["https-tools/manifest.json"])
         expected = set(host_files(ROOT))
         expected.update(path.relative_to(ROOT).as_posix() for path in (ROOT / "src/tg2cloud/compose").rglob("*.py"))

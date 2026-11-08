@@ -1,11 +1,20 @@
 # 更新记录
 
-## 待发布
+## TG2Cloud v1.5.8
 
+版本日期：2026-11-08。Compose 统一管理与部署兼容维护版，正在执行发布检查；源码、共享镜像和两 Edition 部署包核验完成后补录[发布记录](docs/development/V158-ACCEPTANCE.md)。用户 VPS 实机验收安排在发布之后。
+
+- Compose 新增随部署包离线运行的管理菜单，复用家人授权、分类通知、监听登录、诊断、WebDAV 验收和外部只读入口；专用升级、备份、资源限额及卸载保持独立归属，不调用一键脚本重新部署。
+- Compose format 3 使用 Bot 配置白名单，隔离 OpenList 首次管理员密码；增加 Bot 默认进程限额和可选 CPU／内存限制，应用后核对容器实际值。保留旧 format 1／2 的原模板核验、配置、任务及两个 Session。
+- 内存采样纳入标准 Docker cgroup v1／v2 余量；业务就绪补充内存、并发窗口和等待原因，避免低内存不下载却报告资源通过。诊断增加脱敏的排队原因分类，不改变 Bot 首页。
+- Compose 升级在停止旧 Bot 后备份，拉取后复核容器身份；新 Bot 可能写库后失败时保留现场并停止，不自动覆盖数据库。卸载先核对所有清理范围，保留另一 Edition、云端文件和独立导出备份；可选宿主 GnuPG 加密副本不新增 Bot 依赖。
+- 采用 helper A／入口 B 与同 Tag 发布流程，同步源码、共享双架构镜像及两份 format 3 Compose 部署包；不改动 v1.5.7 的 Tag 或既有资产。已有第三方代理的自动接管、真实用户网关与长期负载仍按发布验收清单确认。
+- 复核共享代码的部署边界：一键脚本同时核对 Bot 与网关的 Compose 标记，两种模式互相拒绝混合目录；原脚本实例备份不额外纳入 Compose 元数据。新增完整离线 CLI 帮助回归；无 helper 的早期 Compose 包明确停止菜单升级，保留原数据与人工升级路径。
 - CI 的 actions/setup-python 更新至官方 v7.1.0 固定提交；Bot Python 3.12 slim trixie 基础摘要经过原生双架构验证后更新，两个网关镜像保持原样。
 - 合并开发工具维护更新：pytest 9.2.0、Ruff 0.17.3、uv 0.13.6，以及仅用于开发审计的 pip 26.2.2／msgpack 1.2.4。统一工具生成锁文件，Bot 运行依赖保持原样。
 - 同步宿主 CLI 检查与贡献指南的 Ruff 版本，增加声明、锁文件及 CLI 测试工具一致性回归；不降低检查规则。
-- 已发布 v1.5.7 的 Tag、源码、镜像和 Compose 资产保持不变；这些 main 维护更新留待后续版本，不自动升级 VPS。
+- 纳入此前 main 上已通过原生验证的 CI、开发工具与 Bot 基础镜像维护更新；网关镜像保持原样，不自动升级 VPS。
+- 增加原 v1.5.7 不可变提交的两 Edition 可信升级基线，保留业务 schema 3、已有配置、任务、数据库名称和两个 Session；无数据库迁移。
 
 ## TG2Cloud v1.5.7
 
@@ -188,12 +197,13 @@
 
 发布后验收补充：用户已提供 v1.4.5 的 CloudDrive2 ARM64 升级与单独 WebDAV 写入日志，按[记录范围](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V145-ACCEPTANCE.md)保留；上段未验收说明是发布当时状态，不扩展到本版或其他场景。
 
-本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.6 共 38 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
+本文件是 TG2Cloud 的完整版本记录，保留 **v1.0.0 至 v1.5.8 共 39 个版本**分别新增、修复和调整的内容，不以 GitHub 当前保留的 Release 数量裁剪历史。下表用于速查，点击版本可阅读当时的详细改动与验收边界。
 
 截至 **2026-10-21**，GitHub 保留 [v1.4.2](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.2)、[v1.4.1](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.4.1)、[v1.2.1](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/CHANGELOG.md#tg2cloud-v121) 三个 Release／Tag。v1.0.2 及其他版本的发布页和标签虽已移除，下面的变更记录仍完整保留；“当时已发布／测试通过”不代表今天仍可下载，也不代表当前所有环境已验收。
 
 | 版本 | 这一版主要做了什么 |
 | --- | --- |
+| [v1.5.8](#tg2cloud-v158) | Compose 统一管理、凭据隔离、资源诊断及两种部署的安全升级边界。 |
 | [v1.5.7](#tg2cloud-v157) | 监听下载有限冷却恢复、来源提示和实际容器日志限额诊断。 |
 | [v1.5.6](#tg2cloud-v156) | 凭据标准输入、私密文件权限、容器日志轮转与独立监听健康诊断。 |
 | [v1.5.5](#tg2cloud-v155) | 推广前后缀清理、规则解释与方案、小批失败恢复和受控历史补拉。 |

@@ -9,6 +9,7 @@ from pathlib import Path
 import psutil
 
 from tg2cloud.config import Settings
+from tg2cloud.monitoring.memory import available
 
 
 @dataclass(frozen=True)
@@ -20,6 +21,7 @@ class ResourceSnapshot:
     network_bytes_per_second: float
     sampled_at: float
     filesystems: tuple[tuple[str, int], ...] = ()
+    memory_limit: int | None = None
 
 
 class ResourceMonitor:
@@ -37,6 +39,7 @@ class ResourceMonitor:
         self._cpu_samples.append(float(cpu))
         cpu_average = sum(self._cpu_samples) / len(self._cpu_samples)
         memory = psutil.virtual_memory()
+        memory_available, memory_limit = available(int(memory.available), int(memory.total))
         swap = psutil.swap_memory()
         disk = psutil.disk_usage(str(self.download_dir))
         filesystems: dict[int, tuple[list[str], int]] = {}
@@ -57,12 +60,13 @@ class ResourceMonitor:
         self._last_time = now
         return ResourceSnapshot(
             cpu_percent=cpu_average,
-            memory_available=int(memory.available),
+            memory_available=memory_available,
             swap_used=int(swap.used),
             disk_free=int(disk.free),
             network_bytes_per_second=network_rate,
             sampled_at=time.time(),
             filesystems=tuple(("/".join(labels), free) for labels, free in filesystems.values()),
+            memory_limit=memory_limit,
         )
 
 

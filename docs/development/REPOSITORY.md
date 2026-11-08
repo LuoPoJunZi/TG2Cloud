@@ -8,7 +8,7 @@
 | --- | --- |
 | `install.sh`、`install-lan.sh` | 公网、可信内网安装与管理；保留公开 URL 和受支持参数 |
 | `src/tg2cloud/` | 共享 Bot、CLI、部署、传输、存储、持久化和监测 |
-| `src/tg2cloud/compose/` | 独立 Compose 初始化、离线包和可选宿主 HTTPS |
+| `src/tg2cloud/compose/` | 独立 Compose 初始化、离线包、宿主菜单、安全维护、升级卸载和可选 HTTPS |
 | `src/tg2cloud/addons/external_webdav/` | 统一菜单内按需管理的只读附加功能 |
 | `scripts/run_source.py` | 不依赖当前目录或 Bot 依赖的源码入口 |
 | `packaging/` | Dockerfile、两 Edition Compose、部署钩子和必要薄入口 |

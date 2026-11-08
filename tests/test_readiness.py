@@ -24,10 +24,10 @@ class ReadinessTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)
         self.settings = SimpleNamespace(data_dir=self.root, storage_backend="openlist", control_interval=3,
-                                        min_free_disk_bytes=100, local_budget_bytes=1000,
+                                        min_free_disk_bytes=100, local_budget_bytes=1000, memory_hard_min_bytes=100,
                                         bot_token="SYNTHETIC_NEVER_EXPORT")
         self.service = SimpleNamespace(settings=self.settings, client=SimpleNamespace(is_connected=lambda: True),
-                                       snapshot=SimpleNamespace(disk_free=10000, filesystems=()),
+                                       snapshot=SimpleNamespace(disk_free=10000, filesystems=(), memory_available=10000),
                                        destination_scope="target", destination_last_checked=time.time(),
                                        _destination_ready=lambda: True, _destination_next_probe_at=0,
                                        db=SimpleNamespace(is_paused=lambda: False, used_local_bytes=lambda: 10),

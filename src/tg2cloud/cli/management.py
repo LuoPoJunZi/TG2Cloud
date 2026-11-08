@@ -46,10 +46,21 @@ def choose(ui, prompt: str, values: tuple[str, ...], default: str = "") -> str:
 
 
 class Management:
+    menu_items = MENU_ITEMS
+
     def __init__(self, product, session, log, ui, install_dir=None, *, mode_hint=None):
         self.product, self.session, self.log, self.ui = product, session, log, ui
         self.install_dir = install_dir
         self.mode_hint = mode_hint
+        self.additional_handlers = {}
+
+    def external_webdav(self, instance):
+        from tg2cloud.addons.external_webdav.entry import open_menu
+        open_menu(self.recheck(instance), self.ui, self.log)
+
+    def listening(self, instance):
+        from tg2cloud.deployment.listening import manage
+        manage(self, self.recheck(instance))
 
     def discover(self):
         architecture.check_environment()
@@ -394,19 +405,21 @@ class Management:
                 if self.ui.confirm(self.product.display_name + " 尚未安装，是否进入安装向导？"):
                     self.upgrade(instance)
                 return 0
-            self.log(MENU + "\n")
-            action = choose(self.ui, "选择操作", MENU_ACTIONS, "0")
+            self.log(numbered_menu(self.menu_items) + "\n\n")
+            action = choose(self.ui, "选择操作", tuple(str(number) for number, _ in self.menu_items), "0")
             if action == "0":
                 return 0
             try:
                 if action == "1":
                     self.upgrade(instance)
+                    if getattr(self, "exit_after_upgrade", False):
+                        return 0
                     self.return_to_main()
                     continue
                 if not instance.present:
                     raise ValueError("尚无完整实例，请先安装；不会执行维护操作")
                 handlers = {"4": self.control,
-                            "7": self.entry, "11": self.verify, "13": self.backups}
+                            "7": self.entry, "11": self.verify, "13": self.backups, **self.additional_handlers}
                 completed = False
                 if action in {"2", "3", "10"}:
                     operation, refresh = {"2": (self.status, "重新检查"), "3": (self.logs, "重新读取"),
@@ -423,11 +436,9 @@ class Management:
                     from tg2cloud.deployment.users import manage
                     manage(self, instance)
                 elif action == "15":
-                    from tg2cloud.addons.external_webdav.entry import open_menu
-                    open_menu(self.recheck(instance), self.ui, self.log)
+                    self.external_webdav(instance)
                 elif action == "16":
-                    from tg2cloud.deployment.listening import manage
-                    manage(self, self.recheck(instance))
+                    self.listening(instance)
                 elif action in {"8", "9"}:
                     from tg2cloud.deployment.feature_settings import (
                         manage_classification,

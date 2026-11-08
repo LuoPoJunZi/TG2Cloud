@@ -62,8 +62,12 @@ def selected_files(instance) -> dict[str, Path]:
         if personal.is_symlink() or not personal.is_file():
             raise ValueError("监听 Session 不是常规文件，停止备份")
         names.append("data/listener/personal.session")
-    if (root / "tg2cloud-release.json").exists():
-        names.append("tg2cloud-release.json")
+    optional = ["tg2cloud-release.json"]
+    if getattr(instance, "deployment_mode", None) == "compose":
+        optional.extend(("tg2cloud-compose.json", "compose-bundle.json", "compose-access.json"))
+    for name in optional:
+        if (root / name).exists():
+            names.append(name)
     files = {}
     total = 0
     checked = 0

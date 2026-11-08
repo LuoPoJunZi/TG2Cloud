@@ -159,8 +159,13 @@ def _queued_batches(self, states: tuple[str, ...]):
 
 async def _start_downloads(self) -> None:
     if not self.destination_healthy or not self._sample_fresh() or not self._destination_ready():
+        self._resource_pause_reason = "等待目的端检查或资源采样就绪；未开始下载"
         return
     if self.db.is_paused():
+        self._resource_pause_reason = "调度已暂停；恢复后继续处理排队任务"
+        return
+    if self.snapshot.memory_available < self.settings.memory_hard_min_bytes:
+        self._resource_pause_reason = "可用内存低于下载保护门槛；等待内存恢复"
         return
     if self.snapshot.filesystems and any(free <= self.settings.min_free_disk_bytes
                                         for _, free in self.snapshot.filesystems):
@@ -170,6 +175,7 @@ async def _start_downloads(self) -> None:
     available_slots = self.download_window.value - len(self.download_tasks)
     listener_active = None
     if available_slots <= 0:
+        self._resource_pause_reason = "等待下载并发窗口；请查看内存、目的端与活动任务"
         return
     for batch in self._queued_batches(("queued",)):
         await asyncio.sleep(0)
