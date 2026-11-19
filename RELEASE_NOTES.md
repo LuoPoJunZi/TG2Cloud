@@ -16,6 +16,6 @@
 
 ## 验证与发布门槛
 
-真实本地检查结果、已发布 helper 身份和待完成的 A／B、GitHub CI、同标签源码／镜像／两版 Compose 资产核验，见[发布准备记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V160-ACCEPTANCE.md)。正式安装以通过 CI、匹配真实 helper 和不可变 Tag 的已核验资产为准，不以本地版本标识代替发布验证。
+真实本地检查、A／B 版本链与 GitHub CI、同标签源码／镜像／两版 Compose 资产核验结果，见[发布准备记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V160-ACCEPTANCE.md)。正式安装以通过 CI、匹配真实 helper 和不可变 Tag 的已核验资产为准，不以本地版本标识代替发布验证。
 
 真实 VPS、Telegram、两网关、DNS／ACME、长期负载和回退演练留待发布后单独验收；历史通过结论只覆盖对应版本与范围。升级前做私密一致性备份，回退须匹配代码、配置和数据库快照，不能只降低镜像版本。WebDAV 接收及大小复验不等于云存储官方最终入库或内容哈希验证。

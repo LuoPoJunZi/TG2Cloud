@@ -15,9 +15,10 @@
 
 | 身份 | 真实提交 | 本轮处理 |
 | --- | --- | --- |
-| 已发布 helper A | `16a51c86dd948fe897ace17e464e3ab2828ca953` | 公网／内网入口原 pin 保留，属于 v1.5.9 |
+| 前版 helper A | `16a51c86dd948fe897ace17e464e3ab2828ca953` | 属于原 v1.5.9，保留历史对象 |
 | v1.5.9 入口 B／Tag 指向 | `0bd9ec6c6c5a829a2f98c060c1d9f42a7486bff3` | 用于计算可信升级基线，原 Tag 与资产不变 |
-| v1.6.0 新 helper A／入口 B | 尚未创建 | 待授权后依次提交、CI、固定真实 SHA 和复核 |
+| v1.6.0 helper A | `dde1faa6d0ef750e9b3e3a99d99697d0ef56c6e6` | 五组 CI 通过；80 个 helper 远端对象及匿名样本已核验 |
+| v1.6.0 入口 B | 本次入口提交 | 两个公开入口固定 A，提交后等待对应 CI，最终 SHA 在发布后补入 |
 
 新增基线按原工具从 v1.5.9 的不可变提交计算：CloudDrive2 载荷 `eaaf4f59c5c8751ab70d05eb37d07c70178b6612afc713b23e7b699afc708420`，OpenList 载荷 `25588861e67863132b41bb3bc2cd3febdc3f8dd4bfd123411da77989874162d5`。它们是升级比对指纹，不是新发布包的 SHA256。
 
@@ -27,7 +28,7 @@
 release: TG2Cloud v1.6.0
 ```
 
-各提交正文说明各自职责。GitHub 文件列表显示每条路径最近一次真实修改的提交，未修改路径继续显示原说明；不重写历史，不为统一这一列触碰无关文件。由于新 A 尚未公开，当前本地版本标识不能视为 v1.6.0 已可在线安装，helper 版本门槛仍须在后续 A／B 流程满足。
+各提交正文说明各自职责。GitHub 文件列表显示每条路径最近一次真实修改的提交，未修改路径继续显示原说明；不重写历史，不为统一这一列触碰无关文件。A 已公开并通过 CI，B 固定同一真实 A；正式安装仍以通过同标签检查的已核验 Release 资产为准，源码版本标识不能代替发布结果。
 
 ## 自动化验证
 
@@ -41,11 +42,11 @@ release: TG2Cloud v1.6.0
 | 保留性审阅 | 50 篇原指南的 613 个章节锚点全部可定位；7 份原验收文件及两个更新日志的历史内容保留，品牌与许可证未改 |
 | 两 Edition 离线组装 | 干净公开副本的脚本载荷各 143 个 Bot 文件且一致；两份 format 3 Compose 候选包及 21 项无第三方依赖 CLI 帮助检查通过，未构建或运行 Docker |
 | Bash／ShellCheck、Bandit | 现有检查范围通过；没有更改规则或新增跳过 |
-| 版本与发布预检 | 版本、清单、既有可信基线及发布说明格式通过；在线 helper 一致性按预期待新 A／B 发布核验，整体发布门槛尚未完成 |
+| 版本与发布预检 | 版本、清单、既有可信基线、发布说明格式与在线 helper 字节一致性均通过；B 远端 CI、Tag 和正式资源核验尚待完成 |
 
 条件跳过包括缺少本机 rclone、真实 Linux 权限／终端条件和未启用的 Docker 集成；不计作通过，不新增无依据 skip。候选组装使用合成镜像引用，不产生正式资产或真实 digest。下载链接继续指向已发布资源。
 
-GitHub Actions 尚未执行本轮变更，同标签原生双架构构建尚未执行。尚未启动本地 Linux Docker 或真实网关。历史 CI 与测试不作为本版结果，已发布基线的真实实机范围见 [v1.5.9 记录](V159-ACCEPTANCE.md)。
+辅助 A 五组 GitHub Actions 已通过：[原生双架构](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/44451281574)、[宿主 CLI](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/44451282244)、[文档](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/44451281590)、[网站](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/44451281748)、[公共仓库](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/44451279590)。入口 B 与同标签原生双架构发布检查仍须分别执行。尚未启动本地 Linux Docker 或真实网关。历史 CI 与测试不作为本版结果，已发布基线的真实实机范围见 [v1.5.9 记录](V159-ACCEPTANCE.md)。
 
 ## 发布资源与安装边界
 
