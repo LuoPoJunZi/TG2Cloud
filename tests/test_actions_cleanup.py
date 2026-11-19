@@ -145,6 +145,17 @@ class ExecutionTests(unittest.TestCase):
         self.assertEqual(self.client.deleted, [])
         self.assertEqual(report["preserved_changed"], 5)
 
+    def test_state_is_read_after_write_pacing_wait(self):
+        waits = []
+        def during_wait(seconds):
+            waits.append(seconds)
+            self.client.runs[4].update(status="queued", conclusion=None)
+        report = self.execute(sleep=during_wait)
+        self.assertTrue(waits)
+        self.assertNotIn(4, self.client.deleted)
+        self.assertIn(4, self.client.runs)
+        self.assertEqual(report["preserved_changed"], 1)
+
     def test_current_or_documented_run_and_new_runs_survive(self):
         self.client.before_latest = lambda: self.client.runs.setdefault(99, run(99, status="in_progress", conclusion=None))
         report = self.execute(references={1}, current_id=2)
@@ -237,6 +248,17 @@ class APIBoundaryTests(unittest.TestCase):
         with self.assertRaises(cleanup.CleanupError):
             client.get_run(1)
         self.assertEqual(waits, [60, 120, 240])
+
+    def test_rate_limited_delete_is_never_retried_with_a_stale_state(self):
+        for response in (self.response(429, headers="Retry-After: 1\r\n"),
+                         self.response(403, headers="X-RateLimit-Remaining: 0\r\n")):
+            calls, waits = [], []
+            client = cleanup.GitHub("gh", sleep=waits.append,
+                run=lambda command, value=response, recorded=calls, **_k: recorded.append(command) or value)
+            with self.subTest(response=response.stdout[:15]), self.assertRaises(cleanup.CleanupError):
+                client.delete_run(1)
+            self.assertEqual(len(calls), 1)
+            self.assertEqual(waits, [])
 
     def test_primary_reset_is_respected_and_long_wait_does_not_retry_early(self):
         responses = [self.response(403, headers="X-RateLimit-Remaining: 0\r\nX-RateLimit-Reset: 220\r\n"),

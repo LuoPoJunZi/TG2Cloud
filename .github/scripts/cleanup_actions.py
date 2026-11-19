@@ -139,6 +139,9 @@ class GitHub:
             limited = status in {403, 429} and ("retry-after" in headers
                         or headers.get("x-ratelimit-remaining") == "0" or b"rate limit" in body.lower())
             if limited:
+                if method == "DELETE":
+                    # A rerun may finish while waiting; never retry a stale deletion.
+                    raise CleanupError("Deletion rate limited; retry later with a fresh inventory")
                 if attempt == 3:
                     raise CleanupError("GitHub rate limit persists; inspect audit and retry later")
                 delay = max(60 * 2**attempt, int(headers.get("retry-after", "0")))
@@ -264,6 +267,9 @@ def cleanup(client, root, directory, *, apply=False, current_id=0, parent_id=0,
                     for run in client.latest():
                         protected.setdefault(run["id"], ["fresh_latest_50"])
                 run_id = snapshot["id"]
+                delay = max(0, next_write - clock())
+                if delay:
+                    sleep(delay)
                 fresh = client.get_run(run_id)
                 if fresh is None:
                     outcome = "already_absent"
@@ -271,11 +277,8 @@ def cleanup(client, root, directory, *, apply=False, current_id=0, parent_id=0,
                       or any(fresh.get(key) != snapshot.get(key) for key in IDENTITY_FIELDS)):
                     outcome = "preserved_changed"
                 else:
-                    delay = max(0, next_write - clock())
-                    if delay:
-                        sleep(delay)
-                    next_write = clock() + 1
                     outcome = client.delete_run(run_id)
+                    next_write = clock() + 1
                 if outcome in {"deleted", "already_absent"}:
                     removed.add(run_id)
                     summary[outcome] += 1
