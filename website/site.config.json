@@ -1,9 +1,9 @@
 {
   "name": "TG2Cloud",
-  "version": "1.5.9",
+  "version": "1.6.0",
   "publishedVersion": "1.5.9",
-  "releaseStatus": "released",
-  "verifiedAt": "2026-11-15",
+  "releaseStatus": "unreleased",
+  "verifiedAt": "2026-11-19",
   "repo": "https://github.com/LuoPoJunZi/TG2Cloud",
   "upstreamRepo": "https://github.com/whyhhh20/TG115",
   "siteUrl": "https://tg2cloud.pages.dev",

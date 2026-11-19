@@ -41,7 +41,7 @@
 
 ### ARM64 公网 NAT 首次安装是否有实机记录？
 
-有。用户提供的v1.4.1日志覆盖Ubuntu26.04.1／原生ARM64／公网NAT的CloudDrive2首装、Bot健康、本机HTTPS及WebDAV认证／读写／大小／改名／测试清理，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V141-ACCEPTANCE.md)。不是OpenList、任意NAS、升级回退、外网手机或长期续期通过的承诺。
+有历史原生 ARM64、公网 NAT 的 CloudDrive2 首装反馈，但不覆盖所有系统、网关或后续版本。具体已确认项目见[完整更新记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)及对应实机记录；当前环境仍须独立验收。
 
 ### APT 报没有 Release 文件怎么办？
 
@@ -49,7 +49,7 @@
 
 ### 找不到 OpenList 首次管理员密码？
 
-已有实例仍应使用当前管理员凭据；不要把新的本地表单值当成服务端已重置的密码。v1.1.5 的 `--edition openlist --show-credentials` 可在私有交互终端逐项确认后展示保存的初始化密码，但它可能已被更改；没有保存值时不会重新生成，也不会重置账号。命令见 [已有凭据查看](/download/)，部署步骤见 [OpenList 教程](/deploy/openlist/)。
+已有实例仍应使用当前管理员凭据；不要把新的本地表单值当成服务端已重置的密码。`--edition openlist --show-credentials` 可在私有交互终端逐项确认后展示保存的初始化密码，但它可能已被更改；没有保存值时不会重新生成，也不会重置账号。命令见 [已有凭据查看](/download/)，部署步骤见 [OpenList 教程](/deploy/openlist/)。
 
 ### CloudDrive2 提示没有 FUSE？
 
@@ -85,7 +85,7 @@
 
 ### MOVE 返回成功就通过了吗？
 
-不能这样判断。v1.0.2 对 OpenList 改为直接写入预留最终路径；CloudDrive2 仍使用临时文件改名后复验。必须看最终验收结果。
+不能这样判断。OpenList 采用直接写入预留最终路径；CloudDrive2 仍使用临时文件改名后复验。必须看最终验收结果。
 
 ## 任务与数据
 

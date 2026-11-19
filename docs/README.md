@@ -13,7 +13,7 @@
 
 一键脚本与 Compose 是不同部署方式，已有实例按原方式升级，不能相互覆盖或接管。
 
-v1.5.9 提供下载停滞保护与排队诊断修复。用户已确认 CloudDrive2 一键脚本升级与实际转存通过，详细证据及其他待验收范围见[本版记录](development/V159-ACCEPTANCE.md)。两种部署仍按原方式升级。
+教程按当前功能组织；历史版本改动集中在[完整版本记录](../CHANGELOG.md)。v1.6.0 正在准备，安装下载仍以已发布资源为准，两种部署按原方式升级。
 
 ## 使用与可选功能
 
@@ -37,6 +37,7 @@ v1.5.9 提供下载停滞保护与排队诊断修复。用户已确认 CloudDriv
 
 ## 开发与发布
 
+- [v1.6.0 发布准备与兼容记录](development/V160-ACCEPTANCE.md)：文档整合、版本同步、验证结果及尚未执行项。
 - [v1.5.9 发布与兼容记录](development/V159-ACCEPTANCE.md)：下载无进度保护、就绪降级与排队原因。
 - [v1.5.8 发布与兼容记录](development/V158-ACCEPTANCE.md)：两种部署的共享兼容、Compose 管理与安全维护；实机验收安排在发布后。
 
@@ -44,7 +45,7 @@ v1.5.9 提供下载停滞保护与排队诊断修复。用户已确认 CloudDriv
 - [仓库结构与维护规范](development/REPOSITORY.md)
 - [Linux 开发与测试](development/DEVELOPMENT.md)
 - [发布检查清单](development/RELEASE-CHECKLIST.md)
-- [当前 v1.5.7 发布与兼容记录](development/V157-ACCEPTANCE.md)：监听冷却恢复、来源提示与实际日志限额；CI、资产与未执行的实机项目。
+- [v1.5.7 发布与兼容记录](development/V157-ACCEPTANCE.md)：监听冷却恢复、来源提示与实际日志限额；CI、资产与未执行的实机项目。
 - [v1.5.6 发布与兼容记录](development/V156-ACCEPTANCE.md)：运行安全与诊断维护、发布和未执行的实机验收范围。
 - [v1.5.5 发布记录](development/V155-ACCEPTANCE.md)：前版命名／监听增强及历史验收证据。
 - [v1.5.4 发布与兼容记录](development/V154-ACCEPTANCE.md)：监听下载修复、验证边界与升级步骤。

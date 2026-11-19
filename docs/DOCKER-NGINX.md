@@ -1,8 +1,10 @@
-# 复用已有 Docker Nginx（v1.4.2）
+<a id="复用已有-docker-nginxv142"></a>
 
-本页对应已发布的 v1.4.2：辅助 A／固定入口 B 各五项 CI、[同标签原生双架构发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39592291162)全部通过，实际下载的源码包、SHA256 和 GitHub 摘要已核验。正式在线入口已固定经过验证的辅助代码，不使用 moving-main 业务源码；external_docker 的真实 VPS 接入、ACME、长期续期和迁移仍须独立验收。
+# 复用已有 Docker Nginx
 
-2026-10-21 的[CloudDrive2 v1.4.2 人工升级检查](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V142-ACCEPTANCE.md)保留原 managed／schema 2，确认数据、只读 WebDAV 与管理 HTTPS 正常；没有切换或验证本页的 external_docker 新模式，两项结论分开记录。
+本页说明复用现有 Docker Nginx 的支持条件、显式授权与证书责任。在线入口使用经过验证的固定 helper，不取 moving-main 业务源码；真实 VPS 接入、ACME、长期续期和迁移按实际环境独立验收。
+
+历史 managed 模式升级结果与 external_docker 接入验收分别记录，不能相互替代；证据见[完整版本记录](../CHANGELOG.md)。
 
 ## 两种入口模式
 
@@ -15,7 +17,7 @@
 
 ## 支持条件
 
-v1.4.3 新增的密码轮换、证书加载、后端换 IP 与路由移除隔离用例已通过原生双架构及[同标签发布](https://github.com/LuoPoJunZi/TG2Cloud/actions/runs/39901152742)。换 IP 测试补齐显式子网，不改生产网络。范围见[生命周期回归](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-IMPROVEMENTS.md#4-nginx-生命周期回归与实机门槛)；真实 ACME、生产网关与迁移仍需独立验收。下文旧 A／B 是 v1.4.2 的历史记录。
+密码轮换、证书加载、后端换 IP 与路由移除有隔离自动回归；验证证据保留在[历史记录](../CHANGELOG.md)。这些测试不代替真实站点接入或长期续期验收。
 
 - Debian / Ubuntu、Python 3.10+、原生 AMD64 / ARM64、本机默认 rootful Docker daemon；不使用 QEMU、远端 daemon、rootless 或用户命名空间重映射。
 - 普通 Nginx，有真实 master 进程和标准 `nginx -T` 输出；需完整配置检查及 `nginx -s reload`。
@@ -126,4 +128,4 @@ tg2cloud proxy migrate --edition clouddrive2 --nginx-container edge-nginx --yes 
 
 ## 验证与实机边界
 
-模式、身份、事务与隔离 Nginx 的自动检查不等于真实站点接入、ACME 或长期续期验收。先备份原站点，明确证书责任和回退计划，再按专用测试环境逐项验收；不自动重启其他项目代理。实际发布证据见[当前记录](development/V155-ACCEPTANCE.md)。
+模式、身份、事务与隔离 Nginx 的自动检查不等于真实站点接入、ACME 或长期续期验收。先备份原站点，明确证书责任和回退计划，再按专用测试环境逐项验收；不自动重启其他项目代理。实际发布证据见[当前记录](development/V160-ACCEPTANCE.md)。

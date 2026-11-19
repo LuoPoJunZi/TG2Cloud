@@ -1,6 +1,6 @@
 # 安装、下载与校验
 
-本文对应 **TG2Cloud v1.5.9**，核对日期：2026-11-15。[正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.9)源码、共享镜像和两版 Compose 包已发布并核验；用户已确认 CloudDrive2 一键脚本升级与实际转存通过，其他未验收范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V159-ACCEPTANCE.md)。
+本文对应 **TG2Cloud v1.6.0** 的文档准备，核对日期：2026-11-19，**待发布**。目前请使用下面已经发布并核验的 [v1.5.9 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.9)资源。新版本准备与待完成项见[准备记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V160-ACCEPTANCE.md)；已发布版本的用户实机范围见[历史记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V159-ACCEPTANCE.md)。
 
 业务部署只使用正式稳定源码，部署平台为 Linux。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
 
@@ -86,7 +86,7 @@ tg2cloud uninstall --edition all --check
 sha256sum -c SHA256SUMS.txt
 ```
 
-本版源码包 SHA256 为 `453a535c490d855ac861a380db315833dba743606e580484b8cc5ab51a83cf99`。校验不一致时停止，不混用其他版本的清单。校验和不是数字签名。
+下列已发布 v1.5.9 源码包 SHA256 为 `453a535c490d855ac861a380db315833dba743606e580484b8cc5ab51a83cf99`。校验不一致时停止，不混用其他版本的清单。校验和不是数字签名。
 
 [本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.9) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 

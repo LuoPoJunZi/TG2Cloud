@@ -6,9 +6,11 @@
 
 当前在线入口固定辅助 A `16a51c86dd948fe897ace17e464e3ab2828ca953`；不另设卸载 Shell 下载命令。核验依据见[当前发布记录](development/V159-ACCEPTANCE.md)。
 
-## v1.3.2 统一菜单与最后实例清理
+<a id="v132-统一菜单与最后实例清理"></a>
 
-v1.4.2 的[外部 Docker Nginx 模式](DOCKER-NGINX.md)有额外保护：未恢复的事务阻止卸载；只删除所选 Edition 专属站点，绝不停止或删除外部 Nginx／Compose／网络。最后路由移除后撤销本功能续期任务，但默认保留外部证书、私密恢复状态及离线维护命令；不会套用下文 managed 的整目录清理。旧 v1.4.1 工具不支持 schema 3。
+## 统一菜单与最后实例清理
+
+[外部 Docker Nginx 模式](DOCKER-NGINX.md)有独立保护：未恢复事务阻止卸载，只删除当前 Edition 专属站点，不停止外部 Nginx、Compose 或网络。最后路由移除后撤销本功能续期任务，默认保留外部证书、恢复状态与离线命令。管理该模式须使用支持 schema 3 的工具，不能套用 managed 的整目录清理。
 
 公网／内网安装入口不带参数时，可进入已安装 Edition 的管理菜单。当前选择 **14. 卸载当前实例**，复用同一卸载核心、依赖保护和删除确认，仅作用于所选 Edition，不会自动选择 all。另一 Edition 的容器和数据继续保留，仍使用的共享路由受到保护。
 
@@ -16,11 +18,11 @@ v1.4.2 的[外部 Docker Nginx 模式](DOCKER-NGINX.md)有额外保护：未恢�
 
 最后一套默认完整清理后，重新核对 Docker、两个 Edition（包括停止/部分状态）、保留数据/备份、LAN 与附加路由、挂载和管理代码归属；无依赖时删除受管 `/usr/local/bin/tg2cloud` 及 `/opt/tg2cloud-cli` 中全部已核验代码，随后退出菜单。`--keep-data`、保留备份或其他实例仍在用时保留工具；未知同名命令/文件、忙碌或清理异常时不强删，返回 `TG2CLOUD_UNINSTALL_RESULT=PARTIAL` 和非零退出码，明确业务资源可能已移除而管理代码尚未确认清完，不自动重新安装。仅删除核验过的代码文件及空目录，不递归清空推算出的父路径。锁元数据保留以避免替换正在锁定的 inode，系统应用、镜像缓存和云端文件仍不删除。
 
-v1.4.7 不再保留主分支的独立卸载脚本。命令缺失或损坏时，重新运行原 `install.sh`／`install-lan.sh`，选择已安装 Edition 后进入“卸载当前实例”，不要选择重新安装；若实例不完整而不能进入菜单，使用核验过的完整源码及下方 CLI 预检。历史 v1.4.6 脚本可在原 Tag 查看，不建议用旧工具覆盖新状态。旧主机须显式更新管理代码；本轮没有真实卸载验收。
+当前主分支不提供独立卸载 Shell。命令缺失时重新运行原 `install.sh`／`install-lan.sh`，选择已有 Edition 的“卸载当前实例”；部分实例使用核验过的完整源码和下方预检。历史入口保留在原 Tag，不能用未知旧工具覆盖新状态。
 
 ## 在线一键入口
 
-外部 WebDAV 安装后，先在外部管理菜单卸载附加入口，解除对应网关依赖，再主卸载；仅停用不解除依赖。v1.4.7 统一入口为 `tg2cloud` → 当前 Edition → **15. 外部 WebDAV → 7. 卸载外部 WebDAV**，历史 v1.4.6 尚无主菜单 15；既有 `tg2cloud-webdav uninstall --edition openlist`（或 `clouddrive2`）仍兼容。附加卸载不删除云端数据或人工原生账号，见[独立功能指南](external-webdav.md)。
+安装外部 WebDAV 后，先通过 `tg2cloud` → 当前 Edition → **15. 外部 WebDAV → 7. 卸载外部 WebDAV** 解除网关依赖，再主卸载；仅停用不能解除依赖。历史 `tg2cloud-webdav uninstall --edition openlist` 或 `clouddrive2` 继续兼容。附加卸载不删除云端数据或人工账号，见[独立功能指南](external-webdav.md)。
 
 源码的本地帮助入口为 `python3 scripts/run_source.py uninstall --help`，业务位于公共 `deployment/uninstall.py`。公网／内网在线 URL 不变，两个退役脚本的旧 main URL 不再提供；helper pin 已更新到 CI 验证的新布局提交；确认、归属检查、保留数据和共享资源保护不因目录整理改变。本轮未执行真实卸载。详见[Linux 重构说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LINUX-REFACTOR.md)。
 
@@ -38,7 +40,7 @@ tg2cloud
 
 ## 本地源码运行
 
-在目标 Linux 的 TG2Cloud 源码根目录中以 root 执行。要求 Debian / Ubuntu 原生 64 位用户态、Python 3.10+、Bash、本机默认 Docker；正式 v1.4.4 继续支持 AMD64 / ARM64，见[双架构与发布边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要现有 Docker Compose 及 `flock`，不会替你安装、升级、重启或卸载系统软件。
+在目标 Linux 源码根目录中以 root 执行。要求 Debian / Ubuntu、原生 64 位 AMD64 或 ARM64、Python 3.10+、Bash 和本机默认 Docker，见[平台边界](ARCHITECTURES.md)。涉及 HTTPS 路由时需要 Docker Compose 与 `flock`；卸载不安装、升级、重启或删除系统软件。
 
 先只读查看范围：
 

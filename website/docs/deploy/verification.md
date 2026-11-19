@@ -29,7 +29,7 @@ Bot 与 OpenList 健康
   → 删除测试文件并检查清理
 ```
 
-OpenList v1.0.2 不依赖 WebDAV MOVE，因此两版的最终落盘步骤不同。
+OpenList 不依赖 WebDAV MOVE，因此两版的最终落盘步骤不同。
 
 ## 唯一明确的通过标记
 

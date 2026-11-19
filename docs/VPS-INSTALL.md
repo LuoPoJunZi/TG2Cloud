@@ -8,17 +8,17 @@
 
 ## 公网 NAT 与域名检查
 
-已发布 v1.4.0 的 HTTPS 检查要求域名地址匹配网卡地址，Oracle 等公网映射到私有网卡的主机可能误报 DNS 失败，即使 A 记录正确、80／443 空闲。不要将公网 A 改成私有网卡地址，也不要为此关闭防火墙或停止其他项目。
+Oracle 等使用公网 NAT 的主机可能只有私有网卡地址。公网 A 记录应指向云控制台分配的公网地址；不能把 A 改成私有 IP，也不能为通过预检而关闭防火墙或停止其他项目。
 
-v1.4.1 增加交互确认：仅在单一公网 A、所有 AAAA 均匹配本机、没有其他公网 IPv4 网卡且端口归属安全时，要求手动输入**云控制台分配给本机的公网 IPv4**，与 A 记录比对后再确认映射。不会从 DNS 自动填写或通过第三方查询出口 IP。留空、拒绝确认、地址不一致均停止。该确认仅保留在当前进程，重新操作须再次核对；它不是自动证明入站映射，后续 ACME 和 HTTPS 自检仍须通过。
+公网 NAT 确认仅在单一公网 A、所有 AAAA 均匹配本机、没有其他公网 IPv4 网卡且端口归属安全时提供。用户手动填写**云控制台分配给本机的公网 IPv4**，与 A 记录比对并确认映射；不从 DNS 自动填写，不借第三方查询出口 IP。留空、拒绝或不一致即停止；确认只在当前进程有效，执行前会复核，后续 ACME 和 HTTPS 自检仍须通过。
 
-此修复已进入 v1.4.1 正式资产与匹配在线 helper；重新运行本页公开命令可获得新版向导。独立外部 WebDAV 和 `tg2cloud` 的 HTTPS 修复也需显式更新到本版代码，既有离线命令不会自动更新。NAT 不影响 CPU 架构检测；本次 CloudDrive2 ARM64 首装已收到用户验收，其他版本／场景仍单独验证。章节原标题保留以兼容既有链接，不表示当前版本仍未发布。
+使用本页公开入口获取当前稳定工具，已有离线管理及外部 WebDAV 工具须各自显式升级。NAT 检查与 CPU 架构检测分别进行；历史反馈见[完整更新记录](../CHANGELOG.md)，当前实测范围见[发布记录](development/V160-ACCEPTANCE.md)。
 
 ## 支持范围
 
-v1.3.0 已发布 `src/tg2cloud` 新布局；本地可运行 `python3 scripts/run_source.py install --help`。在线一键命令 URL 不变，使用本版已验证 helper pin 和正式稳定 payload；修改本地源码或仅推送文档不会更新 VPS。迁移与本地预检说明见[Linux 重构](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LINUX-REFACTOR.md)。
+本地源码入口为 `python3 scripts/run_source.py install --help`。在线命令使用经核验的固定 helper 和正式稳定载荷；修改本地源码或更新文档不会自动更新 VPS。模块布局与源码检查见[开发指南](development/DEVELOPMENT.md)。
 
-v1.3.1 的[外部 WebDAV](external-webdav.md) 是独立可选入口，主安装不增加询问。附加功能启用后共享代理为 schema 2，后续管理和主卸载须使用匹配的新脚本；主卸载前先独立 uninstall 附加入口，不删除网盘文件。
+[外部 WebDAV](external-webdav.md)是可选附加功能，主安装向导不增加询问。启用后须使用理解共享代理状态的管理工具；主卸载前先卸载附加入口解除依赖，不删除网盘文件。
 
 | 场景 | 行为 |
 | --- | --- |
@@ -31,7 +31,7 @@ v1.3.1 的[外部 WebDAV](external-webdav.md) 是独立可选入口，主安装�
 | 手工修改过程序、Compose 或 Dockerfile | 停止，请先人工核对；不提供强制覆盖参数 |
 | 新稳定版更换云网关镜像 digest | 停止自动升级；不隐式迁移 OpenList/CloudDrive2 数据库，先备份并在隔离环境验证网关迁移；不绕过身份与镜像检查 |
 
-正式 v1.4.1 面向 Debian/Ubuntu 原生 AMD64／ARM64，两架构共用检查和入口，仍要求 root、64 位用户态、Python 3.10+、Bash 和可交互终端。匹配 helper 与稳定包均已发布核验；CI 通过不等于 Oracle 或任意 NAS 实机通过。镜像证据、Oracle Cloud 与验证结果见[双架构说明](ARCHITECTURES.md)。系统需有可用 CA 根证书和时区数据库，CloudDrive2 仍需 `/dev/fuse`，内存和磁盘检查不变。
+支持 Debian/Ubuntu、Linux 原生 AMD64 和 ARM64，共用检查与入口；要求 root、64 位用户态、Python 3.10+、Bash 和可交互终端。CI 与单机验收不能推定任意 NAS 或云主机均兼容，详见[平台要求](ARCHITECTURES.md)。
 
 缺少 Python 时请先自行确认系统环境，并安装 `python3`、`ca-certificates`、`tzdata`。脚本不会在信息收集与确认前自动安装软件。APT/Docker 的安装权限只在首次基础安装的最终确认后交给现有安装器；升级要求已有 Docker daemon 和 Compose 可用，不自动升级 Docker 引擎。
 
@@ -104,11 +104,11 @@ OpenList 使用 `--edition openlist`，其脚本实机验收仍暂缓。不指�
 
 ### 旧版本 Release／Tag 已删除
 
-v1.4.3 已增加四个受支持旧版的[可信目录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-IMPROVEMENTS.md#1-旧版本可信基线)，旧 Release 删除时仍核对原提交和载荷。未知版本继续要求正式基线。下面保留 v1.4.2 当时的限制与人工验收记录，不要下载任意 SHA 或绕过源码核验。
+受支持旧版使用经审阅的[可信源码基线](development/DEVELOPMENT.md)，旧 Release 被移除时仍须逐文件比对实例身份。未知或改动过的源码不能仅凭版本文本自动接管。
 
 当前向导需要核验已安装版本的正式源码基线。若该版本的 GitHub Release 或 Tag 已删除，旧版本查询可能返回 404 并在升级前停止；即使版本号、容器和现有服务正常，也不能据此跳过基线检查。先保留原实例，不卸载、不改版本标记、不从未知来源覆盖代码。
 
-应先保存配置、数据库一致性快照、Session、必要网关配置和共享代理备份，再由维护者单独审阅可追溯的原提交与目标正式资产。本次 v1.3.4 → v1.4.2 按明确授权完成了这条人工路径，见[验收记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V142-ACCEPTANCE.md)；它不是新增的自动接管功能，不提供通用强制升级参数。升级后同版本在线 `--check` 通过，也不代表升级前缺失的 Release 已恢复可用。
+找不到可核验的旧版来源时，先保存配置、数据库一致性快照、Session 及必要网关和代理资料，再单独审阅原提交与目标正式资产。历史人工路径保留在[完整更新记录](../CHANGELOG.md)，不提供通用强制接管参数。
 
 ### 终端输入错误
 
@@ -116,7 +116,7 @@ v1.4.3 已增加四个受支持旧版的[可信目录](https://github.com/LuoPoJ
 
 终端修复只影响独立向导，不改写已有 Release。单行入口固定到不可变向导 commit，只有维护者将入口 pin 更新到通过 CI 的修复提交后，重新下载才会使用修复；不要通过删除实例、改为无人值守管道或跳过确认绕过错误。
 
-目标 payload 始终来自 GitHub 最新正式稳定 Release 的源码，不是本地工作树或 `main`。v1.3.0 起已包含脚本和模块化源码；未来从本地试用新向导时，也不会把尚未发布的业务代码装到 VPS。
+目标载荷来自正式稳定 Release 的不可变源码；在线入口先固定并核验 helper，再解析正式业务资产。本地候选和未发布代码不会自动部署到 VPS。
 
 ### APT 软件源错误
 
@@ -124,7 +124,7 @@ v1.4.3 已增加四个受支持旧版的[可信目录](https://github.com/LuoPoJ
 
 核对当前系统使用的活跃源文件（通常为 `/etc/apt/sources.list`、`/etc/apt/sources.list.d/*.sources` 或 `*.list`），尤其是 URI 的协议、主机名与路径，以及 Suites 的发行代号和 Signed-By。`.bak` 文件不等于活跃配置。先备份具体文件，只修正已经确认错误的条目；不整份覆盖源列表、不混用发行代号、不删除安全更新源或关闭签名验证。
 
-本次 Ubuntu26.04.1 ARM64 用户反馈中，源文件实际为 `https:///ubuntu-ports/`，APT 输出为 `https:/ubuntu-ports`；日志地址可能经过格式化，不能只按其缩写精确搜索就认定源文件无误。用户备份并修正缺失主机名的 URI 后，索引更新成功，再运行原安装入口完成验收，见[v1.4.1 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V141-ACCEPTANCE.md)。这是该主机的系统配置修正，不是脚本自动换源功能。
+APT 输出可能格式化源地址；排查时查看实际 `.list` 或 `.sources` 的 URI、系统代号和架构，先备份再修正系统配置，不因安装错误自动换源。历史系统配置排查保留在[更新记录](../CHANGELOG.md)。
 
 分享排查信息前移除私有源账号、令牌和全部建号密码。APT 失败或终端提示交错时，不通过删除数据库、Session、整个安装目录或批量结束 Python 进程“修复”；先核对实际失败阶段与对应进程。本次重跑未复现此前的提示交错，不代表其根因已被代码修复。
 
@@ -144,11 +144,13 @@ v1.4.3 已增加四个受支持旧版的[可信目录](https://github.com/LuoPoJ
 
 ## 首次安装
 
-### v1.3.2 安装与管理交互
+<a id="v132-安装与管理交互"></a>
 
-v1.3.2 的公网／内网入口不带参数时进入新版向导；业务 payload 仍只取正式稳定 Release，不部署 main 或预发布 Bot。本地运行 `bash ./install.sh` 同样有效。在线入口必须按[发布门槛](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/LINUX-REFACTOR.md#递归指纹与发布门槛)先验证 helper A，再更新入口 B 的 pin 和清单；已部署主机需显式运行向导确认更新。
+### 安装与管理交互
 
-不带参数的公网／内网入口先选择 Edition：未安装则确认进入其安装向导；已有实例则打开统一管理菜单，可按名称选择“卸载当前实例”，不必另找卸载命令。正式 v1.4.3 为 9，v1.4.4 新菜单为 14，须更新离线工具才会变化，完整说明见[运维菜单](OPERATIONS.md#本地管理菜单)。已保存的公网／内网模式优先于入口名称，不会隐式转模式。v1.4.7 移除根目录独立卸载脚本；卸载预检、全 Edition 和数据保留参数仍可用 `tg2cloud uninstall --edition all --check` 等子命令调用同一核心。快捷命令损坏时重新运行原安装入口，选择已安装实例的卸载项，不选择重新安装。
+公网／内网入口不带参数时进入安装与管理菜单；业务载荷只取正式稳定 Release。本地源码入口同样遵守确认和发布校验，不因源码准备完成而部署尚未发布的业务代码。
+
+入口先选择 Edition：未安装则确认进入安装向导，已有实例打开统一管理菜单。卸载按名称选择“卸载当前实例”，只作用于当前 Edition；命令缺失时重新运行原入口。已有公网／内网模式按保存配置维护，CLI 预检和显式清理参数见[卸载指南](UNINSTALL.md)。
 
 - Edition 使用编号选择；版本提示不显示提交摘要，实际 commit 仍保存在引导元数据并校验。
 - WebDAV 用户名提示为“回车默认 tg2cloud”；手动填写的值原样使用。密码隐藏输入，回车生成 **8 位**大小写字母与数字，手动密码仍可使用更长值。只改变 Bot 默认 WebDAV 密码，不改变 OpenList 初始化管理员密码和外部 WebDAV 的密码策略。
@@ -212,7 +214,7 @@ bash ./install.sh --edition openlist --verify
 
 `--configure-https` 是明确的配置/修复授权，执行前仍需要确认。有已保存域名时只能沿用它，不提供隐式切换。已是最新版本时只续做 HTTPS，不重建 Bot。没有保存域名时才收集新域名。
 
-首次 HTTPS 失败前生成的秘密已经由安装器保存到 VPS `.env`。v1.1.5 向导在 HTTPS 续做成功后再次提供逐项确认显示；也可单独查看已有凭据，不安装、不升级、不修复 HTTPS、不重置密码：
+首次 HTTPS 失败前收集的凭据保存在 VPS 私密 `.env`。续做成功后可逐项确认查看；也可只查看已有凭据，不安装、升级或重置密码：
 
 ```bash
 bash <(curl -fsSL https://raw.githubusercontent.com/LuoPoJunZi/TG2Cloud/main/install.sh) --edition openlist --show-credentials
@@ -255,13 +257,13 @@ cd /opt/tg2cloud-openlist && docker compose down
 
 ## 验证与验收范围
 
-自动检查、历史用户反馈和本次实际业务验收分别记录。新安装、保留配置升级、WebDAV、真实 Telegram 转存、外部网络、续期及回退都要核对自己的环境；当前 CI、资产和待验收清单见[发布记录](development/V157-ACCEPTANCE.md)。
+自动检查、历史用户反馈和本次实际业务验收分别记录。新安装、保留配置升级、WebDAV、真实 Telegram 转存、外部网络、续期及回退都要核对自己的环境；当前 CI、资产和待验收清单见[发布记录](development/V160-ACCEPTANCE.md)。
 
 ## 参数、升级后检查与下一步
 
-v1.4.4 源码在确认执行后增加日志分类、逐项结果摘要与一次只读业务就绪观察，原命令退出码、成功标记、WebDAV 确认和真实转存人工验收边界不变。旧 v1.4.3 入口及工具不含新增反馈，须升级为 v1.4.4 匹配的离线工具后才生效；完整用法见[安装日志与结果摘要](OPERATIONS.md#安装日志与结果摘要v144)。不重复调整已确认菜单，不改预算、配置、数据库或后端提交策略。
+确认执行后，安装器按信息、提醒、待核对和错误分类输出，完成后显示逐项结果与近期只读业务就绪观察。原命令退出码、成功标记、WebDAV 确认和真实转存验收边界不变，见[日志与结果摘要](OPERATIONS.md#安装日志与结果摘要v144)。旧工具须显式升级。
 
-v1.4.2 提供[复用已有 Docker Nginx](DOCKER-NGINX.md)，由只读检测、明确授权和持久化条件决定是否接入，不停止原 Nginx、不增加第二层代理。新参数 `--proxy-mode`、`--nginx-container`、`--authorize-proxy` 的实际用法及支持边界见专题。原有 managed 实例不会自动切换。
+提供[复用已有 Docker Nginx](DOCKER-NGINX.md)，由只读检测、明确授权和持久化条件决定是否接入，不停止原 Nginx、不增加第二层代理。新参数 `--proxy-mode`、`--nginx-container`、`--authorize-proxy` 的实际用法及支持边界见专题。原有 managed 实例不会自动切换。
 
 | 参数／入口 | 用途 | 会不会修改实例 |
 | --- | --- | --- |
@@ -274,6 +276,6 @@ v1.4.2 提供[复用已有 Docker Nginx](DOCKER-NGINX.md)，由只读检测、�
 | `--show-credentials` | 私有终端逐项查看已保存凭据。 | 不升级／改密，不能与其他操作标志混用。 |
 | `--install-dir /opt/自定义目录` | 单 Edition 的受支持安装／识别位置。 | 不搬迁数据；与其他受管路径重叠或身份不符会拒绝。 |
 
-升级完成后核对：实际版本为目标正式版，Bot healthy 且不重启循环；配置、任务与 Session 保留；管理页在本机和外部网络均可访问；再用自己的小文件完成转存。后续再验证大文件、取消／恢复和家庭权限，不把一次正常转存写成全部场景通过。本次已执行范围见 [v1.3.3 记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V133-ACCEPTANCE.md)。
+升级后核对实际 Bot／CLI 版本、容器健康、原配置、任务及 Session，再分别测试管理入口和自有文件转存。大文件、取消恢复、家人权限及公网访问各自验收，不将一次正常转存扩大为全部场景通过；已确认范围见[当前发布记录](development/V160-ACCEPTANCE.md)。
 
 完整字段和数据位置见[配置参考](CONFIGURATION.md)，独立备份见[备份与恢复预检](BACKUP-RESTORE.md)，命名规则见[命名指南](NAMING.md)，常见异常见 [FAQ](FAQ.md)。

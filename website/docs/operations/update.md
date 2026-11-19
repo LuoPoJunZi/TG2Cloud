@@ -48,7 +48,7 @@ bash /opt/tg2cloud-clouddrive2/manage.sh update
 
 ## 安装与升级反馈
 
-v1.4.4 增加了日志分类、逐项结果摘要与验收引导；须升级为匹配的离线工具后才生效。更新网站不会更新 VPS，旧 v1.4.3 工具不包含新增反馈。发布状态与实际资产以[下载页](/download/)为准。
+安装结果按日志分类、逐项摘要与验收引导展示；旧工具须显式升级后使用。更新网站不会更新 VPS；实际资源以[下载页](/download/)为准。
 
 `[信息]` 表示正常阶段进度，`[提醒]` 解释受管构建中匹配的 pip root、CA 合集、固定 UID 或推荐容量提示；未知 WARNING 标为 `[待核对]`，明确错误标为 `[错误]`。同类解释只出现一次，原日志保留并脱敏。是否成功仍由原命令退出码和完整成功标记决定，常见提醒不能掩盖后续错误。
 
@@ -88,4 +88,4 @@ WebDAV 写入与大小复验：未执行
 5. 向 Bot 转发自有小文件，在目标网盘确认可打开；公网从外部网络、内网从其他局域网设备访问。
 6. 核对共享代理另一 Edition 和只读入口正常，后续再安排续期与隔离恢复演练。
 
-实际版本证据及未运行场景见[当前记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V154-ACCEPTANCE.md)。升级成功不等于云盘官方最终入库或完整灾难恢复通过。
+实际版本证据及未运行场景见[当前记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V160-ACCEPTANCE.md)。升级成功不等于云盘官方最终入库或完整灾难恢复通过。

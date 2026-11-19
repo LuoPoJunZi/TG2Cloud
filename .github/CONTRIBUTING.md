@@ -92,6 +92,8 @@ npm test
 
 ## 版本与 Release
 
+发布批次的提交主题使用 `release: TG2Cloud vX.Y.Z`；同批 helper A、入口 B 和发布文档使用相同主题，在正文区分职责。GitHub 文件列表显示各路径最近一次真实变更的提交，不能靠重写历史、无意义修改或触碰许可证来统一这一列。
+
 Bot、包和脚本唯一版本源为 `src/tg2cloud/version.py`；重构不自动提版本。新版本同步安装入口、网站、CHANGELOG 和 RELEASE_NOTES。`python .github/scripts/release_metadata.py --tag vX.Y.Z` 仅检查，不创建标签或发布。新目录、载荷组装、递归清单和未发布 helper pin 的 A/B 步骤见[开发与测试](../docs/development/DEVELOPMENT.md)；本地验证不能绕过正式发布门槛。
 
 Release Workflow 仅接受严格版本标签 `vX.Y.Z` 或 `vX.Y.Z-alpha.N` / `beta.N` / `rc.N`。手动触发也必须选择已有 Tag，不允许把 main 当作发布来源。预发布的 Release Notes 必须写明完整预发布标签；Workflow 自动标记 Pre-release。Linux 检查从同一标签执行，包含完整回归、两 Edition Docker 和本地 WebDAV。`source_release.py build` 从该 Tag 打包一次并校验在线向导 pin；Release Job 下载同一 artifact，再次 verify 后发布源码归档和 SHA256。旧 pin 与本版辅助代码不一致会阻断发布；不替换已有 Release，不上传本机产物。

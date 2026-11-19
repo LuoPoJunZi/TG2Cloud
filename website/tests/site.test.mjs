@@ -9,6 +9,14 @@ const config=JSON.parse(await read('site.config.json'));
 const aliases=JSON.parse(await read('src/legacy-anchors.json'));
 const hashes={css:'test',js:'test',init:'test'};
 
+test('homepage describes optional authorized listening without promising unrestricted history',()=>{
+  const html=renderPage({config,page:{slug:'',title:'首页'},body:'',headings:[],hashes,home:true});
+  for(const value of ['监听默认关闭','仅管理员','已授权来源','历史补拉须预览并确认','不自动抓取全部历史']){
+    assert.ok(html.includes(value),value);
+  }
+  assert.doesNotMatch(html,/当前不自动监听频道/);
+});
+
 test('Linux walkthroughs do not direct users through retired desktop controls',async()=>{
   for(const path of ['guide/quick-start','deploy/ssh','deploy/clouddrive2','deploy/openlist']){
     const article=await read('docs/'+path+'.md');
@@ -51,7 +59,8 @@ test('backup submenu numbering matches source in both maintained guides',async()
   }
   assert.ok(article.includes('0. 返回主菜单'));
   assert.doesNotMatch(article,/\*\*(?:6\. 创建实例快照|7\. 实例快照隔离预检)\*\*/);
-  assert.ok(guide.includes('旧 v1.4.4'),'historical mapping remains explicit');
+  assert.ok(guide.includes('旧离线工具'),'older management tools must be explicitly upgraded');
+  assert.ok(guide.includes('schema 3'),'backup guidance must describe the current schema');
   assert.doesNotMatch(guide,/正式 v1\.4\.4 尚不包含此工具/,'current recovery documentation must not retain the unpublished notice');
 });
 

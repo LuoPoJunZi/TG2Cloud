@@ -1,6 +1,6 @@
 # 来源、致谢与素材说明
 
-**TG2Cloud v1.5.9**，资料核对日期：2026-11-15。文档整理不新增第三方依赖、品牌资源或许可证；原版权与上游致谢继续保留。
+**TG2Cloud v1.6.0**，资料核对日期：2026-11-19，待发布。文档整理不新增第三方依赖、品牌资源或许可证；原版权与上游致谢继续保留。
 
 ## 主项目与上游
 
@@ -13,7 +13,7 @@ TG2Cloud 的公开 LICENSE 为 MIT，版权行为 `Copyright (c) 2026 TG115 Cont
 
 主要技术资料：
 - README：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/README.md
-- 当前正式发布：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.7
+- 当前正式发布：https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.9
 - 运行维护：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/OPERATIONS.md
 - VPS 单行脚本：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/VPS-INSTALL.md
 - CHANGELOG：https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md
@@ -31,7 +31,7 @@ README 与 main 分支可能在之后更新。正式 Release 的确定行为应�
 
 CloudDrive2、OpenList、Telegram、GitHub、Cloudflare 等名称仅用于描述兼容组件、资料来源与部署平台，不表示这些平台对本网站的背书。
 
-TG2Cloud v1.0.3 的可选域名 HTTPS 功能使用 Nginx 与 Certbot 容器。Nginx 开源版采用 BSD-2-Clause 许可，Certbot 采用 Apache-2.0 许可；具体版本与其他第三方组件说明见主仓库的 `docs/第三方组件说明.md`。
+TG2Cloud 的可选域名 HTTPS 功能使用 Nginx 与 Certbot 容器。Nginx 开源版采用 BSD-2-Clause 许可，Certbot 采用 Apache-2.0 许可；具体版本与其他第三方组件说明见主仓库的 `docs/第三方组件说明.md`。
 
 ## 构建实现
 

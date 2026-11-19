@@ -1,6 +1,6 @@
 # Compose 管理与安全维护
 
-本页适用于 **v1.5.9 format 3 完整部署包**。先核对[发布状态](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V159-ACCEPTANCE.md)及资源，旧 v1.5.7 包没有 manage.sh，不只复制单个脚本。安装步骤见 [Compose 教程](/deploy/compose/)。
+本页适用于带完整 helper 的 **format 3 部署包**。先核对[发布状态](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V160-ACCEPTANCE.md)；旧包缺少 manage.sh 时按兼容流程升级，不只复制单个脚本，步骤见 [Compose 教程](/deploy/compose/)。
 
 ## 随包离线菜单
 

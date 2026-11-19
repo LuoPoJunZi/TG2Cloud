@@ -491,7 +491,7 @@ docker compose run --rm setup python -m tg2cloud.compose check
 
 ## 运行后文件放在哪里
 
-以下目录图以 v1.5.9 全新安装为准；已发布的 v1.5.2 使用 `data/tg115.db`，升级后继续使用原文件，不手动改名。
+以下目录图说明当前完整部署包的全新安装；已有唯一 `data/tg115.db` 的实例继续使用原文件，不手动改名。
 
 下面是初始化和运行后逐步生成的目录示意；CloudDrive2／OpenList 的网关目录只出现所选版本对应的一项：
 
@@ -503,7 +503,7 @@ docker compose run --rm setup python -m tg2cloud.compose check
 ├── .env                     初始化生成的私密配置
 ├── tg2cloud-compose.json    已初始化实例标记
 ├── data/                    业务数据库、Bot Session 等
-│   ├── tg2cloud.db          v1.5.3 起新安装的业务数据库
+│   ├── tg2cloud.db          新安装的业务数据库
 │   └── bot.session          Bot 登录状态，不要公开
 ├── downloads/               下载暂存和失败后保留的本地文件
 ├── config/rclone/           传输配置
@@ -558,7 +558,7 @@ cd /opt/tg2cloud-compose-openlist
 
 ### 可选 HTTPS 配置向导
 
-v1.5.9 的完整 format 3 包包含 `manage.sh`、`https.sh` 与全部 `https-tools/`；必须使用同版镜像和清单。历史 v1.5.2 包只有五个公开文件，不包含该向导；不要给旧包只复制一个脚本或混合不同版本的 helper。
+完整 format 3 包包含 `manage.sh`、`https.sh` 和全部 `https-tools/`，须使用同版镜像和清单。早期不带 helper 的 format 1 包不具备该向导，不能只复制一个脚本或混合不同版本 helper；完整 format 2 的核验与升级条件另见维护说明。
 
 #### 先选访问方式，再配置 HTTPS
 

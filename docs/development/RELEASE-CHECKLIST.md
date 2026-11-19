@@ -1,6 +1,6 @@
 # 发布检查清单
 
-本页面向维护者。用户安装、升级见[VPS 指南](../VPS-INSTALL.md)、[内网指南](../LAN-INSTALL.md)和[Compose 教程](../COMPOSE.md)。版本唯一来源为 `src/tg2cloud/version.py`；文档整理本身不提升版本。
+本页面向维护者。用户安装、升级见[VPS 指南](../VPS-INSTALL.md)、[内网指南](../LAN-INSTALL.md)和[Compose 教程](../COMPOSE.md)。版本唯一来源为 `src/tg2cloud/version.py`；文档整理本身不提升版本。本轮按用户要求准备 v1.6.0，状态为待发布；当前已发布稳定版是 v1.5.9。
 
 ## 1. 本地准备
 
@@ -13,11 +13,13 @@
 可生成审阅计划，下面的目标版本仅为示例，须高于当前版本：
 
 ```bash
-python -B .github/scripts/prepare_release.py --version 1.5.10 --directory build/release-plan-1510
-python -B .github/scripts/maintenance_preflight.py --previous-tag v1.5.8 --json
+python -B .github/scripts/prepare_release.py --version 1.6.1 --directory build/release-plan-161
+python -B .github/scripts/maintenance_preflight.py --previous-tag v1.5.9 --json
 ```
 
 工具不提交、不推送、不创建 Tag，也不安装到 VPS。候选目录必须全新，不为了通过预检放宽规则。
+
+本轮发布已获用户授权，所有提交主题统一为 `release: TG2Cloud v1.6.0`，正文区分 A、B 和文档。上面的生成计划命令是下一版本示例，已经准备为 1.6.0 时不能再用工具生成同版本。
 
 ## 2. 辅助 A 与入口 B
 
@@ -28,10 +30,10 @@ python -B .github/scripts/maintenance_preflight.py --previous-tag v1.5.8 --json
 
 ```bash
 python -B .github/scripts/prepare_bootstrap.py --directory build/bootstrap-candidate
-python -B .github/scripts/release_metadata.py --tag v1.5.9
+python -B .github/scripts/release_metadata.py --tag v1.6.0
 ```
 
-只生成候选或检查元数据不代表已经发布。当前 helper 身份及实际 A/B 结果见[当前发布记录](V159-ACCEPTANCE.md)。
+只生成候选或检查元数据不代表已经发布。当前 helper 身份及实际 A/B 结果见[当前发布记录](V160-ACCEPTANCE.md)。
 
 ## 3. 源码发布
 

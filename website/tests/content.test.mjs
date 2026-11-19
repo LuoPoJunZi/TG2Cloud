@@ -91,19 +91,19 @@ test('management menu matches source labels and keeps old-version boundaries',as
     assert.ok(article.includes(`${(number+'.').padEnd(3)} ${label}`),label);
     assert.ok(guide.includes(`| ${number} | ${label} |`),label);
   }
-  for(const text of ['v1.4.4 菜单','旧版 v1.4.3','更新文档不会更新 VPS','tg2cloud naming-preview']){
+  for(const text of ['旧工具编号可能不同','先升级匹配的离线工具','更新文档不会更新 VPS','tg2cloud naming-preview']){
     assert.ok(article.includes(text),text);
   }
   assert.ok(!entries.some(([,label])=>label.includes('命名预览')));
-  for(const text of ['v1.4.7','历史正式 v1.4.6 尚无此选项','无需额外安装命令','当前 Edition','不重启 Bot／网关']){
+  for(const text of ['15. 外部 WebDAV','旧工具缺少相应选项时先显式升级','无需额外安装命令','当前 Edition','不重启 Bot／网关']){
     assert.ok(article.includes(text),text);
   }
 });
 
-test('external WebDAV unified entry retains optional lifecycle and published-version boundaries',async()=>{
+test('external WebDAV unified entry retains optional lifecycle and tool compatibility',async()=>{
   const article=await read('docs/deploy/external-webdav.md');
   const guide=await readFile(new URL('../../docs/external-webdav.md',import.meta.url),'utf8');
-  for(const text of ['v1.4.7','15. 外部 WebDAV','历史正式 v1.4.6 尚无','10. 用户管理','返回主菜单','不重启 Bot']){
+  for(const text of ['15. 外部 WebDAV','旧工具','10. 用户管理','返回主菜单','不重启 Bot']){
     assert.ok(article.includes(text),text);
     assert.ok(guide.includes(text),text);
   }
@@ -120,13 +120,13 @@ test('external WebDAV unified entry retains optional lifecycle and published-ver
 
 test('installation feedback distinguishes evidence from manual acceptance',async()=>{
   const update=await read('docs/operations/update.md');
-  for(const text of ['v1.4.4','旧 v1.4.3 工具不包含新增反馈','[信息]','[提醒]','[待核对]','[错误]','20 秒',
+  for(const text of ['旧工具须显式升级后使用','[信息]','[提醒]','[待核对]','[错误]','20 秒',
                     'WebDAV 写入与大小复验：未执行','实际 Telegram 转存：待人工验收',
                     '公网访问：待外部网络验收','原命令退出码','用户中断时不追加读取']){
     assert.ok(update.includes(text),text);
   }
   const guide=await readFile(new URL('../../docs/OPERATIONS.md',import.meta.url),'utf8');
-  for(const text of ['v1.4.4','显式参数模式的 `TG2CLOUD_*` 标记保持原样',
+  for(const text of ['显式参数模式的 `TG2CLOUD_*` 标记保持原样',
                     '不持久化原日志','不新增生产数据库字段','不因就绪未确认自动重启或回退']){
     assert.ok(guide.includes(text),text);
   }

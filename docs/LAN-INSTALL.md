@@ -6,11 +6,11 @@
 
 ## 支持范围与边界
 
-v1.4.4 源码在确认执行后补充内网安装／升级摘要、日志分级和一次只读业务就绪观察；公网 HTTPS 明确不适用，局域网其他设备访问和真实转存仍须人工验收。沿用原 WebDAV 确认，不新增写入或网络探测，不改内网模式和下面的支持范围。旧 v1.4.3 入口与工具不包含这些新增反馈，见[结果与验收说明](OPERATIONS.md#安装日志与结果摘要v144)。
+安装或升级确认后，程序按信息、提醒和错误分类输出日志，完成后展示结果摘要与近期只读业务就绪观察。局域网其他设备访问、WebDAV 写入和实际转存分别验收；公网 HTTPS 检查不适用于内网模式，见[结果与验收说明](OPERATIONS.md#安装日志与结果摘要v144)。旧工具缺少这些反馈时先更新离线管理代码。
 
-当前源码入口为 `python3 scripts/run_source.py lan --help`；公共在线 URL 不变，helper pin 已更新到 CI 验证的新布局提交。CLI 与 VPS 入口共享部署模块，不导入另一个向导；内网 IP 收集和 HTTPS 边界不变。见[Linux 开发说明](development/DEVELOPMENT.md)。
+当前源码入口为 `python3 scripts/run_source.py lan --help`；公共在线 URL 不变，正式下载以已核验 Release 为准；新的 helper pin 仅在发布流程完成后启用。CLI 与 VPS 入口共享部署模块，不导入另一个向导；内网 IP 收集和 HTTPS 边界不变。见[Linux 开发说明](development/DEVELOPMENT.md)。
 
-- Debian/Ubuntu、64 位原生用户态、root、Python 3.10+、Bash、curl（在线入口）、iproute2、CA 证书、时区数据库及可交互终端。正式 v1.4.1 支持原生 AMD64 / ARM64；匹配稳定包和 helper 已发布，原生隔离 CI 通过，NAS 实机仍需独立验收，见[双架构说明](ARCHITECTURES.md)。
+- Debian/Ubuntu、64 位原生用户态、root、Python 3.10+、Bash、curl（在线入口）、iproute2、CA 证书、时区数据库及可交互终端。支持 Linux 原生 AMD64 和 ARM64；NAS 实机仍需独立验收，见[平台与架构要求](ARCHITECTURES.md)。
 - 本机默认 rootful Docker Engine 28+、Compose v2；不支持远端 Docker、rootless 或外部 Compose 覆盖。Docker 尚未安装时，由原安装器在最终确认后安装；已安装的旧引擎需要人工升级，脚本不会为此重启 NAS 上的其他容器。
 - CloudDrive2 仍需要 `/dev/fuse`，容量和磁盘保护沿用原安装器。容器权限、APT 依赖安装等原有要求不会因“内网模式”消失。
 - 不承诺直接支持 DSM、QTS、Unraid、OpenWrt 或 Docker Desktop。原生 ARM64 不等于支持所有 ARM NAS 的厂商系统；可建立符合条件的 Debian/Ubuntu 虚拟机，填写**虚拟机自己的 IP**。
@@ -41,9 +41,9 @@ Nginx 仅监听指定内网 IPv4，不监听 `0.0.0.0`、公网 IPv4 或 IPv6，
 
 ## 在线一键向导（推荐）
 
-v1.3.2 的默认交互采用新版中文提示：WebDAV 密码回车生成 8 位，新安装默认时区 `Asia/Shanghai`，账号根目录仍在后台设置；已有配置不改写。最终确认后安装离线 `tg2cloud` 菜单，保留内网模式与保存的 IP，不隐式转换到公网 HTTPS。旧主机须显式更新，不会自动获得新版菜单；也可从已审阅源码运行 `python3 scripts/run_source.py manage`，详见[本地管理说明](OPERATIONS.md#本地管理菜单)。原有显式参数和结果标记保持兼容。
+向导使用中文编号提示；WebDAV 密码回车生成 8 位，新安装默认时区 `Asia/Shanghai`，账号根目录在后台设置，升级保留已有配置。确认后安装离线 `tg2cloud` 菜单，保留内网模式和已保存 IP。已有工具需显式更新，也可从已审阅源码运行 `python3 scripts/run_source.py manage`，见[本地管理](OPERATIONS.md#本地管理菜单)。
 
-新版不带参数时与公网入口共用 Edition 选择及管理菜单：未安装则确认进入对应 Edition 的内网安装向导；已有实例显示包含卸载的菜单，并按原已保存模式维护。无需另记卸载命令；v1.4.7 移除根目录独立卸载脚本，保留 `tg2cloud uninstall` 预检及原清理参数；命令缺失时可重新运行本内网入口，进入已安装 Edition 的管理菜单。最后一套默认完整卸载后，核验无依赖才清理 `tg2cloud` 和受管管理代码；另有实例或选择保留数据时不清理它们。
+不带参数时与公网入口共用 Edition 选择及管理菜单：未安装则确认进入内网安装向导，已有实例按保存模式维护。卸载通过菜单或 `tg2cloud uninstall` 进入；命令缺失时重新运行本入口。最后一套实例完整卸载后，核验无依赖才清理维护命令；另有实例或选择保留数据时保留工具。
 
 目标 Linux 能联网，并已具备上述运行条件时，以 root 执行：
 
@@ -86,7 +86,7 @@ bash ./install-lan.sh --edition clouddrive2
 
 首次安装会要求输入内网地址；也可以提前通过 `--lan-ip` 指定。向导随后收集 Telegram 和专用 WebDAV 信息、检查容量、展示 HTTP 风险和安装计划。最终确认默认 **N**：确认前不安装软件、不写入实例或内网模式记录。
 
-首次 `--check` 使用默认 20GB 任务预算与 8GB 最低剩余空间，不收集秘密。v1.3.0 交互向导提供流式优先、均衡和手动预算，复用 VPS 推荐算法，执行前重新校验；已有实例升级保留原值。见[切换说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/SCRIPT-FIRST.md)。安装目录使用 Edition 的标准 `/opt` 路径，不提供自定义目录或迁移功能。
+首次 `--check` 使用默认 20GB 任务预算和 8GB 最低剩余空间，不收集秘密。交互向导提供流式优先、均衡与手动预算，复用容量推荐并在执行前重新校验；已有实例保留原值。安装目录使用 Edition 标准 `/opt` 路径，不提供自动迁移。
 
 OpenList 对应命令：
 

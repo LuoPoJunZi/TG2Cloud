@@ -357,10 +357,26 @@ class UserDocumentationTests(unittest.TestCase):
                     self.assertTrue(target.is_relative_to(ROOT))
                     self.assertTrue(target.is_file())
                     if fragment:
-                        headings = re.findall(r"^#{1,6}\s+(.+)$", target.read_text(encoding="utf-8"), re.MULTILINE)
+                        target_text = target.read_text(encoding="utf-8")
+                        headings = re.findall(r"^#{1,6}\s+(.+)$", target_text, re.MULTILINE)
                         anchors = {re.sub(r"[^\w\s-]", "", heading.strip().lower()).replace(" ", "-")
                                    for heading in headings}
+                        anchors.update(re.findall(r'<a id="([^"]+)"></a>', target_text))
                         self.assertIn(unquote(fragment), anchors)
+
+    def test_current_guides_keep_capability_headings_and_bookmarked_sections(self):
+        for guide in (ROOT / "docs").glob("*.md"):
+            if guide.name in {"AUDIT.md", "WORKLOG.md"}:
+                continue
+            text = guide.read_text(encoding="utf-8")
+            headings = re.findall(r"^#{1,6}\s+(.+)$", text, re.MULTILINE)
+            with self.subTest(guide=guide.name):
+                self.assertNotRegex("\n".join(headings), r"\bv1\.\d+\.\d+\b")
+        for name, anchor in (
+            ("DOCKER-NGINX.md", "复用已有-docker-nginxv142"),
+            ("RECOVERY.md", "下载长时间不动与排队积压v159"),
+        ):
+            self.assertIn(f'<a id="{anchor}"></a>', (ROOT / "docs" / name).read_text(encoding="utf-8"))
 
     def test_repository_navigation_does_not_depend_on_website_articles_or_source(self):
         for name in self.GUIDES:

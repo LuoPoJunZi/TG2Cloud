@@ -1,14 +1,14 @@
 # 备份与恢复边界
 
-v1.4.5 备份子菜单按实例／代理分组：实例快照创建／校验为 2／3，代理创建／查看／校验／清理为 4／5／6／7；主菜单仍为 13，确认及操作范围不变。下文使用新版序号，旧 v1.4.4 工具需升级，按本页菜单选择，不与旧编号混用。
+备份子菜单按实例／代理分组；主菜单为 13。下文按当前序号操作，旧工具须先升级并按名称选择，避免混用编号。
 
-v1.4.5 增加仅针对临时副本的数据库启动／迁移与重启恢复演练；不加载 Session、不启动网关，不代表完整服务恢复。菜单校验仍只做结构／数据库预检，不自动启动演练；新工具与限制见[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-NEXT.md#2-隔离数据库恢复演练)。
+提供仅针对临时副本的数据库启动／迁移与重启恢复演练；不加载 Session、不启动网关，不代表完整服务恢复。菜单校验仍只做结构／数据库预检，不自动启动演练；新工具与限制见[维护说明](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/MAINTENANCE-NEXT.md#2-隔离数据库恢复演练)。
 
 先确认备份包含什么、怎样校验，以及哪些数据需要另存。备份包可能含 Token、Session 和证书私钥，只放在自己的受限目录，不公开上传。
 
 ## 当前入口与数据库兼容
 
-v1.4.5 的子菜单如下，旧版按文字核对后再升级：
+当前子菜单如下，快照与代理备份分别管理：
 
 ```text
 实例备份
@@ -26,7 +26,7 @@ v1.4.5 的子菜单如下，旧版按文字核对后再升级：
 
 运行 `tg2cloud`，选择对应 Edition，再选 **13. 数据备份管理**。两版都支持实例快照；**7. HTTPS 与管理** 用于入口检查 / 修复和续期演练，不是创建备份的菜单。
 
-业务数据库从 v1.4.3 使用 schema 2。升级前保存与旧代码匹配的一致性快照；旧 Bot 不直接打开 schema 2，不能只降级镜像。回退前要保护当前数据，再核验旧数据库与代码，不能删表“降级”。
+当前业务数据库为 schema 3；历史 schema 1 → 2 → 3 通过事务迁移并保留升级前一致性快照。旧 Bot 不直接打开新 schema，不能只降级镜像。回退前保护当前数据，再核验匹配的旧数据库与代码，不能删表“降级”。
 
 ## 三类备份不要混用
 
@@ -106,7 +106,7 @@ sudo /opt/tg2cloud-openlist/manage.sh backups
 
 没有覆盖生产数据的一键 Restore。正式恢复前需核对版本、数据库、Session、网关授权、资源与代理状态，保护当前可用配置，防止新旧 Bot 同时使用同一 Token。
 
-不要把整包直接解压覆盖生产 `/opt`，也不要删除现有证书强迫签发。验收记录只证明各自执行过的范围：[v1.4.4 双架构升级](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V144-ACCEPTANCE.md)、[v1.4.2 人工升级与备份核验](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V142-ACCEPTANCE.md)、[v1.3.3 升级与用户转存](https://github.com/LuoPoJunZi/TG2Cloud/blob/c7e0b4b7497fbfa258c752dcff4666d1e2011eae/docs/development/V133-ACCEPTANCE.md)。它们不等于灾难恢复已通过。
+不要把整包直接解压覆盖生产 `/opt`，也不要删除现有证书强迫签发。历史验收证据见[完整版本记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/CHANGELOG.md)，只证明当时执行过的范围，不等于灾难恢复已通过。
 
 ## 私密保存
 

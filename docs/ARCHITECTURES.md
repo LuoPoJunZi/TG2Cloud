@@ -2,7 +2,7 @@
 
 TG2Cloud 维护 Linux 一键脚本和 Docker Compose。下表区分已实现的平台检查、CI 与真实环境验收；同一架构上的构建通过不代表任意发行版、NAS 或实际网盘都已通过。
 
-当前发布的源码、共享镜像与两版部署包证据见[本版记录](development/V157-ACCEPTANCE.md)。
+平台检查保留原生 AMD64／ARM64 区分。当前发布准备见[待发布记录](development/V160-ACCEPTANCE.md)，已发布资产及历史验收见[版本记录](../CHANGELOG.md)。
 
 ## 支持范围
 
@@ -19,7 +19,7 @@ TG2Cloud 维护 Linux 一键脚本和 Docker Compose。下表区分已实现的�
 
 ## 现用镜像证据
 
-2026-11-04 通过 Docker Hub 官方 Registry 只读复核更新后的 Python 固定索引及两个 Linux 子 manifest 的 SHA256，并在 PR #29 的原生双架构 CI 验证运行；两个网关和代理条目保留此前已核验的稳定引用。以下为当前 main 源码引用，正式版本以其不可变 Tag 和发布记录为准；本轮维护不改写 v1.5.7 已发布镜像与部署包。
+当前固定镜像的只读核验与原生 CI 证据保留在发布记录中。下表列出当前源码引用；正式安装以对应不可变 Tag、真实镜像摘要和已核验资产为准，文档整理不替换历史镜像或部署包。
 
 | 用途 | 当前引用 | 核验结果 |
 | --- | --- | --- |
@@ -49,7 +49,7 @@ CloudDrive2 保留 `/dev/fuse`、privileged、host PID 与挂载传播权限；O
 
 ## Oracle Ampere A1 准备与验收
 
-2026-10-21 实机反馈：原生 ARM64 环境检测已通过，但在只有私有网卡地址的公网 NAT 主机上，v1.4.0 的 HTTPS 预检会误报 DNS／端口问题。该反馈不代表安装或转存已验收。修复已进入 v1.4.1 正式包与匹配 helper，新增严格条件下的控制台公网 IPv4 人工确认；仍须通过 ACME、TLS 与用户实机验收，见[VPS 指南](VPS-INSTALL.md#公网-nat-与域名检查)。
+只有私有网卡地址的公网 NAT 主机，需要按严格条件核对云控制台公网 IPv4、DNS 和端口归属；确认后仍须完成 ACME 与 TLS 自检。旧离线工具缺少人工确认步骤时先更新，见[VPS 指南](VPS-INSTALL.md#公网-nat-与域名检查)。历史反馈继续保留在[完整更新记录](../CHANGELOG.md)。
 
 新源码在严格候选条件下允许用户独立输入并确认云控制台的公网 IPv4；不自动查询出口 IP，不改网卡、DNS、防火墙或代理所有权。确认仅存于内存，绑定本次域名、DNS 和原有网卡地址，增加受管 Docker 网桥不使它失效，地址移除／DNS 或域名改变则停止复用。错误 AAAA、多 A、其他公网 IPv4 网卡和不安全端口不能走此分支；无交互确认仍按原规则拒绝。helper 与正式包已发布核验，用户本次 CloudDrive2 首装及证书流程通过；OpenList 及其他主机仍须单独验收。
 
@@ -87,4 +87,4 @@ OpenList 将 edition 换为 `openlist`。`--check` 仅预检，不部署；正�
 
 CI 使用原生 AMD64、ARM64 Linux Runner，分别验证 CLI Python 3.10 / 3.13、共享 Bot、镜像平台、网关 HTTP／FUSE 和隔离代理。Release 从同一 Tag 验证源码，再发布相匹配的共享多架构镜像与 Compose 部署包。
 
-自动检查不能代替真实 DNS／ACME、Telegram、网盘上传、NAS、长期续期或灾难恢复。当前检查结果和未执行清单见[发布记录](development/V155-ACCEPTANCE.md)，维护命令见[开发指南](development/DEVELOPMENT.md)。
+自动检查不能代替真实 DNS／ACME、Telegram、网盘上传、NAS、长期续期或灾难恢复。当前检查结果和未执行清单见[发布记录](development/V160-ACCEPTANCE.md)，维护命令见[开发指南](development/DEVELOPMENT.md)。
