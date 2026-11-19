@@ -1,6 +1,6 @@
 # 安装、下载与校验
 
-本文对应 **TG2Cloud v1.6.0** 的文档准备，核对日期：2026-11-19，**待发布**。目前请使用下面已经发布并核验的 [v1.5.9 正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.9)资源。新版本准备与待完成项见[准备记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V160-ACCEPTANCE.md)；已发布版本的用户实机范围见[历史记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V159-ACCEPTANCE.md)。
+本文对应 **TG2Cloud v1.6.0**，核对日期：2026-11-19。[正式版](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.6.0)源码、共享双架构镜像和两版 Compose 包已发布并核验；CI、实际摘要及尚未执行的真实 VPS 验收见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V160-ACCEPTANCE.md)。
 
 业务部署只使用正式稳定源码，部署平台为 Linux。已有外部 WebDAV 工具须在主菜单 15 的子菜单选择 8 升级，才会使用新向导。
 
@@ -77,8 +77,8 @@ tg2cloud uninstall --edition all --check
 
 | 文件 | 用途 |
 | --- | --- |
-| [TG2Cloud-v1.5.9-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.9/TG2Cloud-v1.5.9-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
-| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.9/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
+| [TG2Cloud-v1.6.0-source.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.6.0/TG2Cloud-v1.6.0-source.tar.gz) | 同标签源码，包含两 Edition 运行资源 |
+| [SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.6.0/SHA256SUMS.txt) | 对应该次 Actions 源码包的校验清单 |
 
 将两个文件保存到同一目录，在 Linux 中执行：
 
@@ -86,9 +86,9 @@ tg2cloud uninstall --edition all --check
 sha256sum -c SHA256SUMS.txt
 ```
 
-下列已发布 v1.5.9 源码包 SHA256 为 `453a535c490d855ac861a380db315833dba743606e580484b8cc5ab51a83cf99`。校验不一致时停止，不混用其他版本的清单。校验和不是数字签名。
+下列已发布 v1.6.0 源码包 SHA256 为 `9cb0dec06fe9de12ab58e3644f63d2bfd9fd7ab8e674e0256d466444944f6c87`。校验不一致时停止，不混用其他版本的清单。校验和不是数字签名。
 
-[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.9) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
+[本版 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.6.0) · [最新 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/latest) · [全部 Releases](https://github.com/LuoPoJunZi/TG2Cloud/releases)
 
 ### 在线入口与源码资产的区别
 
@@ -98,6 +98,6 @@ sha256sum -c SHA256SUMS.txt
 
 ## 发布与验收范围
 
-源码、镜像和两版 Compose 部署包须使用同一版本；Compose 下载和摘要核对见[完整教程](/deploy/compose/)。完整版本事实见[更新日志](/changelog/)，当前资产、用户实机结果和未验收范围见[发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V159-ACCEPTANCE.md)。
+源码、镜像和两版 Compose 部署包须使用同一版本；Compose 下载和摘要核对见[完整教程](/deploy/compose/)。完整版本事实见[更新日志](/changelog/)，当前资产、用户实机结果和未验收范围见[发布记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V160-ACCEPTANCE.md)。
 
 发布及校验成功不等于真实 VPS、Telegram、DNS／ACME 或网盘转存已验收。测试结论按实际版本和范围理解，不提供 EXE 下载和桌面构建步骤。

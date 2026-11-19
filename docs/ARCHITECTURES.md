@@ -2,7 +2,7 @@
 
 TG2Cloud 维护 Linux 一键脚本和 Docker Compose。下表区分已实现的平台检查、CI 与真实环境验收；同一架构上的构建通过不代表任意发行版、NAS 或实际网盘都已通过。
 
-平台检查保留原生 AMD64／ARM64 区分。当前发布准备见[待发布记录](development/V160-ACCEPTANCE.md)，已发布资产及历史验收见[版本记录](../CHANGELOG.md)。
+平台检查保留原生 AMD64／ARM64 区分。源码、共享镜像与两版部署包的实际核验见[本版记录](development/V160-ACCEPTANCE.md)，历史验收见[版本记录](../CHANGELOG.md)。
 
 ## 支持范围
 

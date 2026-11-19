@@ -33,9 +33,9 @@ Optional [administrator monitoring and transfer plans](docs/LISTENING.md) are di
 - Regular downloads and large-file streaming with adaptive concurrency and disk protection.
 - Public HTTPS / trusted LAN deployment, storage recommendations and configuration-preserving upgrades.
 
-Current stable version: **[v1.5.9](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.9)**, for Linux. See the [release and compatibility record](docs/development/V159-ACCEPTANCE.md).
+Current stable version: **[v1.6.0](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.6.0)**, for Linux. See the [release and compatibility record](docs/development/V160-ACCEPTANCE.md).
 
-**v1.6.0 is being prepared** for stable maintenance and documentation consolidation. It has not been released; see the [preparation record](docs/development/V160-ACCEPTANCE.md).
+Stable maintenance and documentation consolidation. The script source, shared image and both Compose bundles have been published and verified.
 
 ## Getting started
 
@@ -98,7 +98,7 @@ Browse repository guides by topic; see the [full index](docs/README.md) and [rel
 | Family and mobile reading | [Bot family grants](docs/FAMILY-SHARING.md) · [Read-only external WebDAV](docs/external-webdav.md) |
 | Optional features | [Classification, notifications and quotas](docs/FEATURE-ENHANCEMENTS.md) · [Existing Nginx reuse](docs/DOCKER-NGINX.md) |
 | Operation and troubleshooting | [Management commands, logs and HTTPS maintenance](docs/OPERATIONS.md) · [Task recovery, verification and backup](docs/RECOVERY.md) |
-| Current maintenance | [v1.6.0 release preparation](docs/development/V160-ACCEPTANCE.md) · [published version history](CHANGELOG.md) |
+| Current maintenance | [v1.6.0 release and compatibility](docs/development/V160-ACCEPTANCE.md) · [published version history](CHANGELOG.md) |
 | Uninstall | [Uninstall guide](docs/UNINSTALL.md) |
 | Development and tests | [Contributing](.github/CONTRIBUTING.md) · [Repository structure](docs/development/REPOSITORY.md) · [Linux development and tests](docs/development/DEVELOPMENT.md) |
 | Versions and releases | [Complete version history](CHANGELOG.md) · [Current release notes](RELEASE_NOTES.md) |

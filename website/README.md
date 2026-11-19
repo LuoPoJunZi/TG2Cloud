@@ -1,6 +1,6 @@
 # TG2Cloud Docs
 
-**TG2Cloud v1.6.0**，资料核对日期：2026-11-19，待发布。当前实际下载仍为 v1.5.9；本地准备、验证与发布门槛见[准备记录](../docs/development/V160-ACCEPTANCE.md)，历史实机证据保留在对应版本记录中。
+**TG2Cloud v1.6.0**，资料核对日期：2026-11-19。源码、共享双架构镜像和两版 Compose 包已发布并核验；真实 VPS 验收尚未执行，证据与边界见[本版记录](../docs/development/V160-ACCEPTANCE.md)。
 
 这是静态文档网站，部署网站不会部署 TG2Cloud 服务。项目来源：[LuoPoJunZi/TG2Cloud](https://github.com/LuoPoJunZi/TG2Cloud)；上游致谢：[whyhhh20/TG115](https://github.com/whyhhh20/TG115)。完整版本事实见[更新日志](docs/changelog.md)。
 

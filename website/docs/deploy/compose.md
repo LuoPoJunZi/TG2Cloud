@@ -2,7 +2,7 @@
 
 这份教程适合第一次使用 Docker Compose 的用户，按“检查环境 → 下载部署包 → 填写信息 → 配置网关 → 启动 Bot → 测试转存”的顺序操作。
 
-示例对应 **v1.5.9**；安装前须核对同版 Release、镜像、两份 Compose 包及校验清单，资源未齐时等待发布。CloudDrive2 和 OpenList 各有一份部署包，两者共用 Bot 核心；**选其中一个路线即可，不要把两套命令混着执行**。实际发布资产及测试范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V159-ACCEPTANCE.md)。
+示例对应 **v1.6.0**；安装前须核对同版 Release、镜像、两份 Compose 包及校验清单，资源未齐时等待发布。CloudDrive2 和 OpenList 各有一份部署包，两者共用 Bot 核心；**选其中一个路线即可，不要把两套命令混着执行**。实际发布资产及测试范围见[本版记录](https://github.com/LuoPoJunZi/TG2Cloud/blob/main/docs/development/V160-ACCEPTANCE.md)。
 
 如果你已经通过 `install.sh` 或 `install-lan.sh` 安装，并能使用 `tg2cloud` 菜单，请继续按原方式升级。这篇教程用于独立 Compose 部署，不会自动迁移、接管或覆盖原来的实例。
 
@@ -260,12 +260,12 @@ ip -br -4 addr
 
 ### 4. 选择路线并下载
 
-从[正式 v1.5.9 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.5.9)下载 **Compose 部署包**，不是 `source.tar.gz`。
+从[正式 v1.6.0 Release](https://github.com/LuoPoJunZi/TG2Cloud/releases/tag/v1.6.0)下载 **Compose 部署包**，不是 `source.tar.gz`。
 
 | 选择 | 部署包 | 校验文件 |
 | --- | --- | --- |
-| CloudDrive2 | [TG2Cloud-v1.5.9-compose-clouddrive2.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.9/TG2Cloud-v1.5.9-compose-clouddrive2.tar.gz) | [COMPOSE-SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.9/COMPOSE-SHA256SUMS.txt) |
-| OpenList | [TG2Cloud-v1.5.9-compose-openlist.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.9/TG2Cloud-v1.5.9-compose-openlist.tar.gz) | 使用同一个 Compose 校验文件。 |
+| CloudDrive2 | [TG2Cloud-v1.6.0-compose-clouddrive2.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.6.0/TG2Cloud-v1.6.0-compose-clouddrive2.tar.gz) | [COMPOSE-SHA256SUMS.txt](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.6.0/COMPOSE-SHA256SUMS.txt) |
+| OpenList | [TG2Cloud-v1.6.0-compose-openlist.tar.gz](https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.6.0/TG2Cloud-v1.6.0-compose-openlist.tar.gz) | 使用同一个 Compose 校验文件。 |
 
 下面两段**只执行所选 Edition 的一段**。示例会创建全新的目录，每行末尾的 `&&` 表示前一步成功后才继续；如果目录已存在或任一步报错，就停止核对，不删除旧目录来重装。
 
@@ -274,10 +274,10 @@ CloudDrive2：
 ```bash
 mkdir /opt/tg2cloud-compose-clouddrive2 &&
 cd /opt/tg2cloud-compose-clouddrive2 &&
-curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.9/TG2Cloud-v1.5.9-compose-clouddrive2.tar.gz &&
-curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.9/COMPOSE-SHA256SUMS.txt &&
+curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.6.0/TG2Cloud-v1.6.0-compose-clouddrive2.tar.gz &&
+curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.6.0/COMPOSE-SHA256SUMS.txt &&
 sha256sum --ignore-missing -c COMPOSE-SHA256SUMS.txt &&
-tar -xzf TG2Cloud-v1.5.9-compose-clouddrive2.tar.gz --strip-components=1
+tar -xzf TG2Cloud-v1.6.0-compose-clouddrive2.tar.gz --strip-components=1
 ```
 
 OpenList：
@@ -285,10 +285,10 @@ OpenList：
 ```bash
 mkdir /opt/tg2cloud-compose-openlist &&
 cd /opt/tg2cloud-compose-openlist &&
-curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.9/TG2Cloud-v1.5.9-compose-openlist.tar.gz &&
-curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.5.9/COMPOSE-SHA256SUMS.txt &&
+curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.6.0/TG2Cloud-v1.6.0-compose-openlist.tar.gz &&
+curl -fLO https://github.com/LuoPoJunZi/TG2Cloud/releases/download/v1.6.0/COMPOSE-SHA256SUMS.txt &&
 sha256sum --ignore-missing -c COMPOSE-SHA256SUMS.txt &&
-tar -xzf TG2Cloud-v1.5.9-compose-openlist.tar.gz --strip-components=1
+tar -xzf TG2Cloud-v1.6.0-compose-openlist.tar.gz --strip-components=1
 ```
 
 NAS 用户可以把示例 `/opt/...` 换成自己的**全新、本地、真实数据目录**，同一段中的两处路径一起替换；不要使用已有实例目录、云盘挂载目录或软链接。NFS／SMB 共享目录可能无法提供所需权限，优先使用宿主机的本地受支持文件系统。
@@ -298,7 +298,7 @@ NAS 用户可以把示例 `/opt/...` 换成自己的**全新、本地、真实�
 应看到所选文件显示 `OK`，例如：
 
 ```text
-TG2Cloud-v1.5.9-compose-clouddrive2.tar.gz: OK
+TG2Cloud-v1.6.0-compose-clouddrive2.tar.gz: OK
 ```
 
 只下载一版时，`--ignore-missing` 会略过没有下载的另一 Edition；仍须看到**自己这份包**显示 `OK`。失败或提示没有文件被验证时不要继续。`COMPOSE-SHA256SUMS.txt` 与源码用的 `SHA256SUMS.txt` 不同，不能混用；校验和用于检查完整性，不是数字签名。

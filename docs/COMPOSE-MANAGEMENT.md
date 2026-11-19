@@ -1,6 +1,6 @@
 # Compose 统一管理与安全维护
 
-本页适用于带完整 helper 的 **format 3 部署包**；旧包缺少 `manage.sh` 时先按下文兼容流程核验。可下载版本见[Compose 教程](COMPOSE.md)，发布准备状态见[待发布记录](development/V160-ACCEPTANCE.md)，安装步骤见 [Compose 安装](COMPOSE.md)，不能只复制 main 的单个脚本。
+本页适用于带完整 helper 的 **format 3 部署包**；旧包缺少 `manage.sh` 时先按下文兼容流程核验。安装步骤见[Compose 教程](COMPOSE.md)，资源与兼容范围见[发布记录](development/V160-ACCEPTANCE.md)，不能只复制 main 的单个脚本。
 
 ## 管理入口
 

@@ -1,6 +1,6 @@
 # 发布检查清单
 
-本页面向维护者。用户安装、升级见[VPS 指南](../VPS-INSTALL.md)、[内网指南](../LAN-INSTALL.md)和[Compose 教程](../COMPOSE.md)。版本唯一来源为 `src/tg2cloud/version.py`；文档整理本身不提升版本。本轮按用户要求准备 v1.6.0，状态为待发布；当前已发布稳定版是 v1.5.9。
+本页面向维护者。用户安装、升级见[VPS 指南](../VPS-INSTALL.md)、[内网指南](../LAN-INSTALL.md)和[Compose 教程](../COMPOSE.md)。版本唯一来源为 `src/tg2cloud/version.py`；文档整理本身不提升版本。当前正式版的发布事实见[v1.6.0 记录](V160-ACCEPTANCE.md)，以下步骤供后续维护复用。
 
 ## 1. 本地准备
 
