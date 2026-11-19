@@ -59,3 +59,5 @@ README 保持简洁，详细导航指向[仓库文档目录](../README.md)。仓
 版本唯一来源、helper A／入口 B、源码资产、原生多架构镜像、两版 Compose 包和实际下载核验按[发布检查清单](RELEASE-CHECKLIST.md)执行。正式业务仍只取稳定 Release，不改为 moving main；不移动历史 Tag 或替换发布资产。
 
 文档更新不代表已经更新用户 VPS 或上线网站。未经本轮明确授权，不提交、推送、创建 Tag、发布镜像或连接真实实例。缺少 Linux／Docker／网关条件时如实列出未执行项。
+
+发布后 Actions 清理属于 `.github/` 的仓库维护，不进入 Bot／CLI 载荷。全局保留最新 50 条、关键发布及文档引用证据，所有未完成或待审批记录不删；触发点、预览入口与审计规则见[发布检查清单](RELEASE-CHECKLIST.md#7-actions-记录自动维护)。
